@@ -4,9 +4,9 @@ title: Create a gMSA for Use With SharpHound Community Edition
 
 import MySnippet from '/snippets/gmsa-intro-snippet.mdx';
 
-<img noZoom src="/assets/community-edition-pill-tag.svg"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-This page describes how to configure and run the SharpHound Community Edition collection tool using an Active Directory gMSA. 
+This page describes how to configure and run the SharpHound Community Edition collection tool using an Active Directory gMSA.
 
 <MySnippet word="Community Edition"/>
 
@@ -24,19 +24,19 @@ At this time there are two main paths that could give the SharpHound gMSA accoun
 - **Method 1**: Make the SharpHound gMSA account a member of the Local Administrators group on all computers in the domain.
 - **Method 2**: Make the SharpHound gMSA account a member of the Domain Admins group.
 
-Using an account that has Domain Admins permissions enables the SharpHound executable to collect all of the possible pertinent information from Active Directory for the best possible analysis by BloodHound. 
+Using an account that has Domain Admins permissions enables the SharpHound executable to collect all of the possible pertinent information from Active Directory for the best possible analysis by BloodHound.
 
 #### Implement gMSA account protections
 Regardless of whether the permissions that are given to the SharpHound gMSA account are using Method 1 or Method 2, consider additional protections.
 
-See [SharpHound Enterprise Service Hardening](/manage-bloodhound/securing-bloodhound-and-collectors/sharphound-hardening.mdx) to learn about protections you can implement to prevent the SharpHound gMSA account from being compromised and leveraged by an attacker. 
+See [SharpHound Enterprise Service Hardening](/manage-bloodhound/securing-bloodhound-and-collectors/sharphound-hardening.mdx) to learn about protections you can implement to prevent the SharpHound gMSA account from being compromised and leveraged by an attacker.
 
 The gMSA account should be a member of the Active Directory **Protected Users** group.
 [Tiering the Sharphound gMSA account access](install-data-collector/install-sharphound/tiered-collector-strategy) is another methodology you can implement.
 
-#### Configure the gMSA account as a Domain Admin 
+#### Configure the gMSA account as a Domain Admin
 
-Add the gMSA account to the **Domain Admins** group. 
+Add the gMSA account to the **Domain Admins** group.
 
 <Note>The account has a `$` at the end of it. Enter the account in this format when adding it to the **Domain Admins** group.</Note>
 
@@ -44,11 +44,11 @@ You should also add the gMSA account to the **Protected Users** group. If you're
 
 ## Create a SharpHound PowerShell script to run as a scheduled task
 
-Create a PowerShell script to run SharpHound with a scheduled task. 
+Create a PowerShell script to run SharpHound with a scheduled task.
 
 ### Create a script
 
-To create the script: 
+To create the script:
 
 1. Create a directory named `Sharphound` in the `C:\Support` directory.
 2. Create a sub-directory named `Results` in the `C:\Support\Sharphound` directory.
@@ -58,22 +58,22 @@ To create the script:
 
     - The full path to the SharpHound executable
     - The command line arguments that you want to pass to SharpHound
-    - Redirection of the output to a log file 
+    - Redirection of the output to a log file
     - Deletion of files in the `C:\Support\Sharphound\Results` directory that are older than 2 months
 
 ```
-$FileDateStamp = Get-Date -Format FileDateTime  
-C:\Support\SharpHound\SharpHound.exe -c all --outputdirectory C:\Support\SharpHound\Results\ --zipfilename <DomainName>_BloodHound_gmsa.zip *> "C:\Support\SharpHound\Results\$FileDateStamp-<DomainName>_sharphound-gmsa.log"  
-  
-$Folder = "C:\Support\Sharphound\Results"  
-  
-#Delete files older than 2 months  
-Get-ChildItem $Folder -Recurse -Force -ea 0 |  
-? {!$_.PsIsContainer -and $_.LastWriteTime -lt (Get-Date).AddDays(-60)} |  
-ForEach-Object {  
-   $_ | del -Force  
-   $_.FullName | Out-File "C:\Support\Sharphound\$FileDateStamp-deletedlog.txt"  
-   }  
+$FileDateStamp = Get-Date -Format FileDateTime
+C:\Support\SharpHound\SharpHound.exe -c all --outputdirectory C:\Support\SharpHound\Results\ --zipfilename <DomainName>_BloodHound_gmsa.zip *> "C:\Support\SharpHound\Results\$FileDateStamp-<DomainName>_sharphound-gmsa.log"
+
+$Folder = "C:\Support\Sharphound\Results"
+
+#Delete files older than 2 months
+Get-ChildItem $Folder -Recurse -Force -ea 0 |
+? {!$_.PsIsContainer -and $_.LastWriteTime -lt (Get-Date).AddDays(-60)} |
+ForEach-Object {
+   $_ | del -Force
+   $_.FullName | Out-File "C:\Support\Sharphound\$FileDateStamp-deletedlog.txt"
+   }
 ```
 
 4. Save the PowerShell script named `Sharphound_Collection.ps1` to the `C:\Support\Sharphound` directory.
@@ -81,16 +81,16 @@ ForEach-Object {
 5. Modify the names of the base --zipfilename and the log file for each specific domain where this is deployed.
 
 
-The resulting directory structure should resemble: 
+The resulting directory structure should resemble:
     <Frame>
         <img src="/assets/sharphound-gmsa-directory-structure.png" alt=""/>
-    </Frame> 
+    </Frame>
 
 The resulting `SharpHound_Collection.ps1` PowerShell script should resemble:
 
     <Frame>
         <img src="/assets/sharphound-gmsa-powershell-script.png" alt=""/>
-    </Frame> 
+    </Frame>
 
 ### Create a scheduled task
 
@@ -101,24 +101,24 @@ To create the scheduled task with PowerShell:
 1. Run these PowerShell commands, modifying files names and domain names as necessary:
 
     ```
-    $arg = "-ExecutionPolicy ByPass -NoProfile -File C:\Support\SharpHound\Sharphound_Collection.ps1"  
-    $ta = New-ScheduledTaskAction -Execute C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe  -Argument $arg  
-    $tt = New-ScheduledTaskTrigger -At 9:00 -Weekly -DaysOfWeek Monday  
-    $ap = New-ScheduledTaskPrincipal -UserID 2022TESTING\t0_gMSA_SHS$ -LogonType Password   
-    Register-ScheduledTask SharpHoundCollection –Action $ta –Trigger $tt –Principal $ap  
+    $arg = "-ExecutionPolicy ByPass -NoProfile -File C:\Support\SharpHound\Sharphound_Collection.ps1"
+    $ta = New-ScheduledTaskAction -Execute C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe  -Argument $arg
+    $tt = New-ScheduledTaskTrigger -At 9:00 -Weekly -DaysOfWeek Monday
+    $ap = New-ScheduledTaskPrincipal -UserID 2022TESTING\t0_gMSA_SHS$ -LogonType Password 
+    Register-ScheduledTask SharpHoundCollection –Action $ta –Trigger $tt –Principal $ap
     ```
 2. Construct the PowerShell commands needed for your environment in preparation for executing them in an elevated PowerShell shell.
 
     <Frame>
         <img src="/assets/sharphound-gmsa-powershell-env-commands.png" alt=""/>
-    </Frame> 
+    </Frame>
 
 3. Copy and paste the PowerShell commands into the elevated PowerShell shell to create the scheduled task.
 4. After refreshing the Scheduled Tasks MMC, you should see the newly created scheduled task that runs as the gMSA account.
 
  <Frame>
         <img src="/assets/sharphound-gmsa-powershell-created-task.png" alt=""/>
- </Frame> 
+ </Frame>
 
 To create the scheduled task with the GUI:
 
@@ -126,10 +126,10 @@ To create the scheduled task with the GUI:
 
      <Frame>
         <img src="/assets/sharphound-gmsa-gui-created-task.png" alt=""/>
-    </Frame> 
+    </Frame>
 
 2. Configure the scheduled task to run on the desired schedule.
-3. Configure the scheduled task with this **Action**: 
+3. Configure the scheduled task with this **Action**:
 
     -  **Program / script**: `powershell.exe`
     - **Arguments**: `-ExecutionPolicy ByPass -File C:\Support\SharpHound.ps1`
@@ -139,7 +139,7 @@ To create the scheduled task with the GUI:
 6. Click **OK** on the scheduled task to complete the creation.
 7. Provide the password for the standard user account when prompted and click **OK**.
 
-You should now have a scheduled task to run SharpHound created. 
+You should now have a scheduled task to run SharpHound created.
 
 ### Modify the scheduled task to run as the gMSA account
 
@@ -147,18 +147,18 @@ At this point you should see the scheduled task setup to run using the user acco
 
      <Frame>
         <img src="/assets/sharphound-gmsa-gui-task-setup.png" alt=""/>
-    </Frame> 
+    </Frame>
 
-Run this following command to modify the scheduled task to run as the gMSA account: 
-
-```
-schtasks /change /TN \SharpHound /RU 2022TESTING\t0_gMSA_SHS$ /RP 
-```
-
-An alternate PowerShell method of modifying the scheduled task to run as the gMSA account: 
+Run this following command to modify the scheduled task to run as the gMSA account:
 
 ```
-New-ScheduledTaskPrincipal -Id SharpHound -UserID Domain\GMServiceAccount$ -LogonType Password -RunLevel Highest  
+schtasks /change /TN \SharpHound /RU 2022TESTING\t0_gMSA_SHS$ /RP
+```
+
+An alternate PowerShell method of modifying the scheduled task to run as the gMSA account:
+
+```
+New-ScheduledTaskPrincipal -Id SharpHound -UserID Domain\GMServiceAccount$ -LogonType Password -RunLevel Highest
 ```
 
 You should see a message stating that command was successful.
@@ -169,7 +169,7 @@ If you open the scheduled task you should see that the account it will run as is
 
 To test the scheduled task running as the gMSA account, right click on the scheduled task and click **Run**.
 
-When completed, a zip file should appear with the results. 
+When completed, a zip file should appear with the results.
 
 ----
 <Check><Icon icon="heart" iconType="solid" /> Thank you to [@robertstrom](https://github.com/robertstrom) for your contribution and permission in modifying your [original docs](https://github.com/robertstrom/SharphoundgMSA/tree/main) for inclusion in BloodHound's documentation for other users!</Check>
