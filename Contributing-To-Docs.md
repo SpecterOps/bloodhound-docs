@@ -47,17 +47,16 @@ To add a new page:
 
 ## 2. Edit the Docs
 To edit the docs:
-1. Preview the docs locally to ensure they look great. Go to the /docs directory and run `mintlify dev`
-to generate a site where you can preview your changes.
+1. Preview the docs locally to ensure they look great. Go to the /docs directory and run `mintlify dev` to generate a site where you can preview your changes.
 
 *If you get stuck on this step, go to https://mintlify.com/docs/development.*
 
 2. Use this checklist to review your docs for quality.
-  - **Task-ify page titles and headings**: Where possible, use task-based titles like “Create a data collection schedule” instead of  “Creating a data collection schedule”.
-  - **Add an introduction paragraph**: Give brief context and define new terms. Let readers know what to expect with text like, “This guide describes how to…”
-  - **Improve writing quality**: Use a tool like Grammarly or a code editor extension to check your grammar. Use present tense and active voice (remove “will”).
-  - **Break up any walls of words**: Incorporate [code blocks](https://mintlify.com/docs/content/components/code), [lists, tables](https://mintlify.com/docs/list-table), [images](https://mintlify.com/docs/image-embeds), [tabs](https://mintlify.com/docs/content/components/tabs), and other [visual components](https://mintlify.com/docs/content/components/accordions).
-  - **Improve flow**: Use progressive disclosure: start high-level, then drill down. Put yourself in your reader’s shoes. Orient the content around the user journey. Add framing sentences so the content connects to the reader’s goals. Be directive and tell the reader what to do (don’t present too many options).
+    - **Task-ify page titles and headings**: Where possible, use task-based titles like “Create a data collection schedule” instead of  “Creating a data collection schedule”.
+    - **Add an introduction paragraph**: Give brief context and define new terms. Let readers know what to expect with text like, “This guide describes how to…”
+    - **Improve writing quality**: Use a tool like Grammarly or a code editor extension to check your grammar. Use present tense and active voice (remove “will”).
+    - **Break up any walls of words**: Incorporate [code blocks](https://mintlify.com/docs/content/components/code), [lists, tables](https://mintlify.com/docs/list-table), [images](https://mintlify.com/docs/image-embeds), [tabs](https://mintlify.com/docs/content/components/tabs), and other [visual components](https://mintlify.com/docs/content/components/accordions).
+    - **Improve flow**: Use progressive disclosure: start high-level, then drill down. Put yourself in your reader’s shoes. Orient the content around the user journey. Add framing sentences so the content connects to the reader’s goals. Be directive and tell the reader what to do (don’t present too many options).
 
 ## 3. Get your docs reviewed
 To get your docs reviewed:
