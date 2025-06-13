@@ -2,7 +2,7 @@
 title: Work With the BloodHound API
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Enterprise and Community Edition badge"/>
 
 The BloodHound product family are API-first products, meaning everything functions on the underlying API layer. All data displayed in the portal, all commands given to SharpHound or AzureHound Enterprise collectors, and all data uploaded pass through the BloodHound APIs. Customers may utilize these APIs to extend the use of the BloodHound product to function with other tools in their environment. This article will show how to access the API and include some example use cases.
 
@@ -12,7 +12,7 @@ Our API reference is available [here](../../reference/).
 Additionally, API documentation is hosted utilizing Swagger behind authentication within your tenant environment. After logging in, you may access it by clicking the cog in the top right corner of your tenant and clicking **API Explorer.**
 
 <Frame>
-    <img src="/assets/image1-1.png"/>
+    <img src="/assets/image1-1.png" alt="API Explorer menu in the BloodHound UI"/>
 </Frame>
 
 ## Authentication
@@ -35,7 +35,7 @@ Administrators can create non-personal BloodHound users solely meant for API int
 2. [Create a new BloodHound user](../../manage-bloodhound/auth/users-and-roles).
    - Give the user a long and unique password.
 3. **_Optional recommendation:_** Log in as the newly created user and enable MFA.
-4. **_Optional recommendation:_** Securely dispose of the password and MFA configuration, as they are not needed for authenticating with a key/ID pair and they can be reset by an Administrator if needed.
+4. **_Optional recommendation:_** Securely dispose of the password and MFA configuration as they are not needed for authenticating with a key/ID pair and they can be reset by an Administrator if needed.
 5. As the Administrator, go back to the **Manage Users** page.
 6. On the API user, click the hamburger menu > **Generate / Revoke API Tokens**.
 
@@ -53,13 +53,13 @@ Administrators can create non-personal BloodHound users solely meant for API int
 
 Create a personal API Key/ID pair from the **My Profile** section.
 
-1. <p>In the top-right corner click <Icon icon="gear"iconType="solid"/> <Icon icon="arrow-right"iconType="solid"/> **My Profile**.</p>
+1. <p>In the top-right corner click <Icon icon="gear" iconType="solid"/> <Icon icon="arrow-right" iconType="solid"/> **My Profile**.</p>
 <Frame>
   <img src="/assets/image1-3.png" alt="Create Token"/>
 </Frame>
 2. Click **API Key Management**.
 <Frame>
-  <img src="/assets/image1-7.png" alt="API Key Mangement"/>
+  <img src="/assets/image1-7.png" alt="API Key Management"/>
 </Frame>
 3. Click **Create Token**.
 <Frame>
@@ -107,12 +107,13 @@ Calls against the API would need to include the following headers in the HTTP re
 'RequestDate': $RFC3339_DATETIME
 'Signature': $BASE64ENCODED_HMAC_SIGNATURE
 ```
+
 By validating the hash signature against the request, the API can validate that the calls were made by the original requestor, within a reasonable timeframe, against the proper API endpoint, including the original content body, and that no replay or content modification has occurred.
 
 The attached Python script is a full example implementation for calling the BloodHound APIs using the API key/ID pair. The code block specific to calling the API is shown below.
 
 ```python
-def_request(self, method: str, uri: str, body: Optional[bytes] = None) -> requests.Response:
+def _request(self, method: str, uri: str, body: Optional[bytes] = None) -> requests.Response:
     # Digester is initialized with HMAC-SHA-256 using the token key as the HMAC digest key.
     digester = hmac.new(self._credentials.token_key.encode(), None, hashlib.sha256)
 
@@ -144,7 +145,7 @@ def_request(self, method: str, uri: str, body: Optional[bytes] = None) -> reques
     # the signature to prevent replay attacks that seek to modify the payload of a signed request. In the case
     # where there is no body content the HMAC digest is computed anyway, simply with no values written to the
     # digester.
-    ifbodyisnotNone:
+    if body is not None:
         digester.update(body)
 
     # Perform the request with the signed and expected headers
