@@ -4,31 +4,31 @@ title: "Tier Zero: Members and Modification"
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-BloodHound Enterprise borrows from [Microsoft's Enhanced Security Administration Environment (ESAE - Retired)](https://learn.microsoft.com/en-us/security/compass/esae-retirement) model in using the term "Tier Zero." In this model, Tier Zero is the set of objects with full control over the environment AND _any objects with control over those objects_. You may also be familiar with [Microsoft's Enterprise Access Model (EAM)](https://learn.microsoft.com/en-us/security/compass/privileged-access-access-model), which later replaced ESAE; however, they recommend effectively the same advice.
+BloodHound borrows from [Microsoft's Enhanced Security Administration Environment (ESAE - Retired)](https://learn.microsoft.com/en-us/security/compass/esae-retirement) model in using the term "Tier Zero." In this model, Tier Zero is the set of objects with full control over the environment AND _any objects with control over those objects_. You may also be familiar with [Microsoft's Enterprise Access Model (EAM)](https://learn.microsoft.com/en-us/security/compass/privileged-access-access-model), which later replaced ESAE; however, they recommend effectively the same advice.
 
-Although implementing a tiered model remains the best path toward securing your overall environment, BloodHound Enterprise enables your teams to identify and remediate the paths towards control of Tier Zero assets without necessarily implementing a strict tiering model.
+Although implementing a tiered model remains the best path toward securing your overall environment, BloodHound enables your teams to identify and remediate the paths towards control of Tier Zero assets without necessarily implementing a strict tiering model.
 
 Jonas Bülow Knudsen, one of our BloodHound Enterprise team members, has written this fantastic blog on implementing a tiering model in your environment: [Establish security boundaries in your on-prem AD and Azure environment](https://posts.specterops.io/establish-security-boundaries-in-your-on-prem-ad-and-azure-environment-dcb44498cfc2).
 
-## How BloodHound Enterprise Identifies Tier Zero Objects
+## How BloodHound Identifies Tier Zero Objects
 
-The following sections will cover the default objects in Tier Zero in BloodHound Enterprise and what to include in the group manually. Still, it's important to understand how the identification process works. Loosely, the steps look like this in BloodHound Enterprise
+The following sections will cover the default objects in Tier Zero in BloodHound and what to include in the group manually. Still, it's important to understand how the identification process works. Loosely, the steps look like this in BloodHound:
 
 1.  Identify all starting members of Tier Zero (default objects and any objects tagged manually within the environment).
 2.  Unroll group memberships and role assignments:
     1.  For Active Directory, all group objects will be unrolled to identify any nested objects and tag them as members of Tier Zero. This process is recursive, so any nested memberships will also be identified and tagged.
     2.  In Azure, the same process occurs with Roles and Groups, identifying objects with those roles assigned to them. This process only identifies direct group members as Azure does not grant nested group members permissions of the parent group.
-3.  After identifying these objects, BloodHound Enterprise will identify objects which maintain structural control over those things already tagged. This includes things like OUs, Containers, and GPOs in Active Directory and Subscriptions and Management Groups in Azure.
+3.  After identifying these objects, BloodHound will identify objects which maintain structural control over those things already tagged. This includes things like OUs, Containers, and GPOs in Active Directory and Subscriptions and Management Groups in Azure.
 
-At this point, the "Tier Zero Boundary" is drawn, and any remaining control over those objects would be identified as a Tier Zero path within BloodHound Enterprise.
+At this point, the "Tier Zero Boundary" is drawn, and any remaining control over those objects would be identified as a Tier Zero path within BloodHound.
 
-## Default Members of Tier Zero in BloodHound Enterprise
+## Default Members of Tier Zero
 
-BloodHound Enterprise will automatically identify many Tier Zero objects within your environment to get you started on protecting the most critical assets within your environment.
+BloodHound will automatically identify many Tier Zero objects within your environment to get you started on protecting the most critical assets within your environment.
 
 ### Active Directory
 
-In Active Directory, BloodHound Enterprise starts primarily with the default groups that maintain full control of a domain or have the (effectively) irrevocable ability to gain access to those groups. These include (default RIDs are provided for reference):
+In Active Directory, BloodHound starts primarily with the default groups that maintain full control of a domain or have the (effectively) irrevocable ability to gain access to those groups. These include (default RIDs are provided for reference):
 
 * Domain head object
 * AdminSDHolder object
@@ -46,7 +46,7 @@ _Please see the following sections about modifying Tier Zero in an Active Direct
 
 ### Azure
 
-In Azure, BloodHound Enterprise starts primarily with the default roles that maintain full control of an Azure tenant or have the (effectively) irrevocable ability to gain access to those roles. These include:
+In Azure, BloodHound starts primarily with the default roles that maintain full control of an Azure tenant or have the (effectively) irrevocable ability to gain access to those roles. These include:
 
 * Tenant object
 * Global Administrator
@@ -56,7 +56,7 @@ In Azure, BloodHound Enterprise starts primarily with the default roles that mai
 
 ## Modifying Tier Zero
 
-Although BloodHound Enterprise can identify much of Tier Zero by default, many things included in Tier Zero do not have a consistent means to identify them across multiple environments. We recommend splitting this effort into two phases for organizations just starting on developing the internal concept of Tier Zero. If your organization has already begun the process you may decided to go through both phases more rapidly.
+Although BloodHound can identify much of Tier Zero by default, many things included in Tier Zero do not have a consistent means to identify them across multiple environments. We recommend splitting this effort into two phases for organizations just starting to develop the internal concept of Tier Zero. If your organization has already begun the process you may decide to go through both phases more rapidly.
 
 ### Phase One
 
@@ -90,4 +90,4 @@ In Phase 2, you will include systems in Tier Zero that have code execution abili
 
 There are often many systems in this category, and it will usually require some effort to execute this part of the Tier Zero classifications.
 
-We recommend examining the [TierZeroTable](https://github.com/SpecterOps/TierZeroTable) and adding assets classified as Tier Zero in this table to Tier Zero in BloodHound Enterprise as part of this phase as well.
+We recommend examining the [TierZeroTable](https://github.com/SpecterOps/TierZeroTable) and adding assets classified as Tier Zero in this table to Tier Zero in BloodHound as part of this phase as well.
