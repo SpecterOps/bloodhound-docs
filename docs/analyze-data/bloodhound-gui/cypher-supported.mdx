@@ -9,11 +9,11 @@ description: "This page documents the supported openCypher Syntax that BloodHoun
 
 This article describes how to use Cypher Search within BloodHound. Users of BloodHound should use it to extend the basic search functionality of BloodHound.
 
-# Supported Query Components[](#supported-query-components)
+# Supported Query Components
 
 Below are the currently supported openCypher query components translated by CySQL.
 
-## Pattern Matching[](#pattern-matching)
+## Pattern Matching
 ### Node Matching
 
 ```
@@ -79,7 +79,7 @@ Below are the currently supported openCypher query components translated by CySQ
 ### Shortest Paths
 
 ```
-  match p = shortestPaths((u:User)-[*..]->(:Domain)) where u.objectid = 'UUID-1234-567890' return p
+  match p = shortestPath((u:User)-[*..]->(:Domain)) where u.objectid = 'UUID-1234-567890' return p
 ```
 
 ### All Shortest Paths
@@ -148,7 +148,7 @@ The following operators are supported in authoring comparison expressions:
 * `<=`
 * `>=`
 
-When authoring comparison statements user must be aware of the typing requirements of CySQL compared to Cypher as
+When authoring comparison statements, users must be aware of the typing requirements of CySQL compared to Cypher as
 executed by Neo4j.
 
 For more information see the `Differences between Cypher and CySQL` subsection `Stricter Typing Requirements`.
@@ -168,7 +168,7 @@ Conjunction `and` and disjunction `or` operators are both supported:
 
 ### String Searching
 
-Searching strings may be performed a variety of ways. These matches are case-sensitive and do not support wildcard
+Searching strings may be performed in a variety of ways. These matches are case-sensitive and do not support wildcard
 expansions.
 
 #### String Prefix Matching
@@ -274,7 +274,7 @@ Takes a given expression and text delimiter and returns a text array containing 
 given expression does not evaluate to a text value this function will raise an error.
 
 ```
-match (u:User) where '255' in split(n.ip_addr, '.') reutrn n
+match (u:User) where '255' in split(u.ip_addr, '.') return u
 ```
 
 ### `tolower`
@@ -283,7 +283,7 @@ Returns the localized lower-case variant of a given expression. If the given exp
 value this function will raise an error.
 
 ```
-match (u:User) return tolower(n.name)
+match (u:User) return tolower(u.name)
 ```
 
 ### `toupper`
@@ -292,7 +292,7 @@ Returns the localized upper-case variant of a given expression. If the given exp
 value this function will raise an error.
 
 ```
-match (u:User) return toupper(n.name)
+match (u:User) return toupper(u.name)
 ```
 
 ### `tostring`
@@ -301,7 +301,7 @@ Returns the text value of a given expression. If the given expression represents
 text this function will raise an error.
 
 ```
-match (u:User) return tostring(n.num_active_logins)
+match (u:User) return tostring(u.num_active_logins)
 ```
 
 ### `toint`
@@ -310,13 +310,13 @@ Returns the integer value of a given expression. If the given expression represe
 parsed to an integer this function will raise an error.
 
 ```
-match (u:User) return toint(n.integer_in_text_property)
+match (u:User) return toint(u.integer_in_text_property)
 ```
 
 ### `coalesce`
 
 Returns the first non-null value in a list of expressions. This is critically useful for navigating differences in
-`null` bhavior between Cypher and CySQL.
+`null` behavior between Cypher and CySQL.
 
 ```
 match (n:NodeKind1) where n.target = coalesce(n.a, n.b, 'last_resort') return n
@@ -427,7 +427,7 @@ efforts may be pursued to add support for these language features.
 
 ## Differences between Cypher and CySQL[](#cysql-differences)
 
-Translating Cypher to SQL via CyCSQL comes with a few semantic differences that users should be aware of.
+Translating Cypher to SQL via CySQL comes with a few semantic differences that users should be aware of.
 
 ### Stricter Typing Requirements
 
