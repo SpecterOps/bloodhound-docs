@@ -1,0 +1,92 @@
+---
+title: "2025-07-09 Release Notes (v7.6.0)"
+---
+
+## Announcements
+
+### Privilege Zone Analysis Early Access is Live!
+We're excited to announce the early access availability of Privilege Zone Analysis! Going beyond Tier Zero, BloodHound Enterprise can now analyze additional Privilege Zones to help further reduce risk within our customer environments. Whether implementing a traditional tiered administration model or focusing on isolating specific, critical systems, such as production infrastructure or PCI/HIPAA environments, Privilege Zone Analysis is a unique capability that enables our customers to take their Attack Path Management implementation even further to reduce organizational risk.
+
+Please reach out to your TAM or email us at trial@specterops.io to set up a trial of this new exciting functionality!
+
+### PIM Role and Role Eligibility Coverage
+One of our most frequently requested additions to BloodHound's Azure/Entra ID coverage is now live! BloodHound now provides support for PIM roles, role eligibility (including activation requirements), and role approvers. With this addition, principals that are role-eligible for Tier Zero roles will additionally be tagged into Tier Zero, and Attack Paths to these principals displayed in BloodHound Enterprise environments.
+
+Collection of PIM Roles requires the RoleManagement.Read.All API permission, and the deployment of AzureHound v2.6.0.
+
+## Summary
+
+- **BloodHound (v7.6.0)**
+  - New and Improved Features
+    - _[BHE Only]_ Privilege Zone Analysis Early Access trials are now available!
+    - Added support for PIM Role and Role Eligibility coverage.
+    - Added new edges to model Attack Paths through GPOs, containers, and OUs.
+    - _[BHE Only]_ Moved several Attack Path Findings to their own "Hygiene" section.
+    - Privilege Zone Management Early Access updates:
+      - Introduced a new Summary view of Privilege Zones and selected objects.
+      - Automatic rename of migrated selectors to match their targeted objects.
+      - Introduced a new, default-disabled selector for Read-Only Domain Controllers.
+      - Added support for the new "PropagatesACEsTo" and "GPOAppliesTo" Attack Paths for identifying OUs, Containers, and GPOs which should be included in a Privilege Zone.
+    - Added audit log coverage for several additional in-product actions.
+    - Retired the "Automatically add parent OUs and containers of Tier Zero AD objects to Tier Zero" early access setting.
+
+  - Bug Fixes
+    - _[CE Only]_ Pinch-to-zoom now works as expected (and with reasonable speed) for trackpad users.
+    - AZContains edges will consistently indicate the hierarchy of Subscriptions and Management Groups within an Azure Tenant.
+
+- **SharpHound (v2.6.7)**
+  - _No new release. We are actively testing a release candidate for v2.6.8 focused on resolving long-running or timed-out jobs issues. Please contact your TAM for more details._
+
+- **AzureHound (v2.6.0)**
+  - New and Improved Features
+    - Collection support for PIM Roles.
+  - Bug Fixes
+    - Subscriptions and Management Groups will consistently link to the proper Tenant ID.
+
+## BloodHound (v7.6.0)
+
+### New and Improved Features
+
+- **_[BHE Only]_ Privilege Zone Analysis Early Access trials are now available** - We're excited to announce the early access availability of Privilege Zone Analysis! Going beyond Tier Zero, BloodHound Enterprise can now analyze additional Privilege Zones to help further reduce risk within our customer environments. Whether implementing a traditional tiered administration model or focusing on isolating specific, critical systems, such as production infrastructure or PCI/HIPAA environments, Privilege Zone Analysis is a unique capability that enables our customers to take their Attack Path Management implementation even further to reduce organizational risk.
+- **Added support for PIM Role and Role Eligibility coverage** - One of our most frequently requested additions to BloodHound's Azure/Entra ID coverage is now live! BloodHound now provides support for PIM roles, role eligibility (including activation requirements), and role approvers. With this addition, principals which are role eligible for Tier Zero roles will additionally be tagged into Tier Zero, and Attack Paths to these principals displayed in BloodHound Enterprise environments. *Collection of PIM Roles requires the RoleManagement.Read.All API permission, and the deployment of AzureHound v2.6.0.*
+<Frame>
+  <img src="/assets/pimroles.png" alt="PIM Roles and Role Eligibility v7.6.0"/>
+</Frame>
+- **Upgrades for the Contains edge** - The `Contains` edge has had a challenging past. It provides necessary structural information for the structure of the AD graph, however it has always left the critical, "can I exploit this path" unanswered explicitly. With this release, `Contains` is no longer a traversable edge, and it will no longer appear in pathfinding. In its place, we're introducing several edges to answer that question and to replace the previous logic utilized within Privilege Zone Management for tagging OUs and GPOs:
+  - `PropagatesACEsTo`: From parent object to direct child if child inherits ACEs from parent
+  - `GPOAppliesTo`: From GPO to the users/computers it applies to
+  - `CanApplyGPO`: From principals to target users/computers where the principals can link GPOs such that the GPOs apply on the targets
+  - `ContainsIdentity`: From Domain to all users and computers
+- **_[BHE Only]_ Moved several Attack Path Findings to their own "Hygiene" section** - BloodHound Enterprise findings such as Kerberoastable, and our Large Default Group findings have lived side-by-side with violations of Tier Zero. With this release, we're moving them to a new category called "Hygiene." We are moving these findings to more explicitly indicate that, while they are valuable information for reducing risk within a customer environment, they do not strictly present direct risk to Tier Zero objects, and therefore deserve their own view in the product, both in Attack Paths and Posture.
+<Frame>
+  <img src="/assets/hygiene_findings.png" alt="Several findings are moved to a Hygiene section in v7.6.0"/>
+</Frame>
+- **Privilege Zone Management Summary View** - With a significant capability expansion in Privilege Zones, we needed to expand the visibility on what appeared in a Zone and to explain why. This release adds a new default "Summary" view to the Privilege Zone Management page. This new view provides a high-level overview of your configured Zones and Labels, including contextual information such as who created the zone and when it was last modified.
+<Frame>
+  <img src="/assets/pzm_summary_view.png" alt="Privilege Zone Management summary view in v7.6.0"/>
+</Frame>
+- **Automatic rename of migrated selectors to match their targeted objects** - Prior to Privilege Zones, selectors had names, but they never appeared anywhere. With this change in Privilege Zones, we wanted to make this easier to identify your old selectors based on what they targeted. With this release, BloodHound will attempt to rename any previously created selectors that currently utilize an ObjectID and target a single object; if the object still exists, BloodHound will rename the selector to match the name of the targeted object.
+- **Audit log expansions** - Added support for audit logs for the following actions:
+  - Exporting a finding CSV
+  - Toggling Early Access features
+  - Creating a collector client (BHE Only)
+  - Regenerating a collector client API key (BHE Only)
+- Introduced a new selector for Read-Only Domain Controllers to Tier Zero. This selector will be default-disabled in existing BloodHound environments. This selector is in preparation for SharpHound v2.6.9+, to be released.
+- Retired the "Automatically add parent OUs and containers of Tier Zero AD objects to Tier Zero" early access setting.
+
+### Bug Fixes
+
+- _[CE Only]_ Pinch-to-zoom now works as expected (and with reasonable speed) for trackpad users.
+- AZContains edges will consistently indicate the hierarchy of Subscriptions and Management Groups within an Azure Tenant.
+
+## SharpHound (v2.6.7)
+
+_No new release. We are actively testing a release candidate for v2.6.8 focused on resolving long-running or timed-out jobs issues. Please contact your TAM for more details._
+
+## AzureHound (v2.6.0)
+
+### New and Improved Features
+- Collection support for PIM Roles.
+
+### Bug Fixes
+- Subscriptions and Management Groups will now link to the proper Tenant ID.
