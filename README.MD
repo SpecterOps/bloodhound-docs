@@ -1,7 +1,7 @@
 <p align="center">
     <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="img/logo-secondary-transparent-full.svg">
-        <img src="img/logo-transparent-full.svg" alt="BloodHound Community Edition" width='400' />
+        <source media="(prefers-color-scheme: dark)" srcset="img/BloodHoundCE_Color.svg">
+        <img src="img/BloodHoundCE_Color.svg" alt="BloodHound Community Edition" width='400' />
     </picture>
 </p>
 
