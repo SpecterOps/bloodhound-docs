@@ -54,6 +54,8 @@ Nested objects and arrays of objects are not allowed
 
 Arrays must be homogeneous (e.g. all strings or all numbers)
 
+An array of kind labels for the node. The first element is treated as the node's primary kind and is used to determine which icon to display in the graph UI. This primary kind is only used for visual representation and has no semantic significance for data processing.
+
 ### Node JSON
 ``` JSON
 {
@@ -288,31 +290,3 @@ The following is the most simple JSON file we could come up with. You can use it
   }
 }
 ```
-
-# Streaming Support
-
-<Warning> Streaming Support is not available yet. </Warning>
-
-This schema is supports ingest of an entire subgraph, where the source and target nodes exist for every edge specified. In order to support streaming vs batch processing, a few minor changes can be made to the schema
-
-- First,  add a flag (e.g., `allow_orphan`) to the edge schema to indicate whether an edge can be stored without its corresponding node(s) being present.
-
-- When the system processes an **orphaned edge** (i.e., an edge where one or both of its nodes are missing), store it temporarily, in a **pending state** (extend the existing `edge` table to have a status field that can be one of `pending`, or `resolved`)
-
-- When either the `sourceId` or `targetId` arrives, it can trigger a **process to check and resolve** the orphaned edges.
-
-## Edge Cases
-
-If a node never arrives: utilize a **timeout or expiration** for orphaned edges. If a node isn’t received within a certain time window, the edge can be **discarded** or flagged in a **failed** state
-
-## Example Workflow
-
-1. Node A is ingested: `{"id": "A", "name": "Node A"}`
-
-2. An edge is ingested: `{"kind": "HasSession", "sourceId": {"value": "A"}, "targetId": {"value": "B"}, "allow_orphan": true}`
-
-3. The edge is stored with a pending status because targetId (Node B) is missing.
-
-4. Node B arrives: `{"id": "B", "name": "Node B"}`
-
-5. The system checks pending edges and finds the edge from Node A to Node B. The edge is now **resolved**.
