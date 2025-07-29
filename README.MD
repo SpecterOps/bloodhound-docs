@@ -1,15 +1,15 @@
 <p align="center">
     <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="img/logo-secondary-transparent-full.svg">
-        <img src="img/logo-transparent-full.svg" alt="BloodHound Community Edition" width='400' />
+        <source media="(prefers-color-scheme: dark)" srcset="img/BH_Vertical_BlackField.svg">
+        <img src="img/BH_Vertical_BlackField.svg" alt="BloodHound Community Edition" width='400' />
     </picture>
 </p>
 
 <hr />
 
-[BloodHound CE](https://github.com/SpecterOps/BloodHound) uses graph theory to reveal the hidden and often unintended relationships within an Active Directory or Azure environment. Attackers can use BloodHound to quickly identify highly complex attack paths that would otherwise be impossible to find. Defenders can use BloodHound to identify and eliminate those same attack paths. Both red and blue teams can use BloodHound to better understand privileged relationships in an Active Directory or Azure environment.
+[BloodHound Community Edition](https://github.com/SpecterOps/BloodHound) (BHCE) uses graph theory to reveal the hidden and often unintended relationships within an Active Directory or Azure environment. Attackers can use BloodHound to quickly identify highly complex attack paths that would otherwise be impossible to find. Defenders can use BloodHound to identify and eliminate those same attack paths. Both red and blue teams can use BloodHound to better understand privileged relationships in an Active Directory or Azure environment.
 
-BloodHound CE is created and maintained by the [BloodHound Enterprise Team](https://bloodhoundenterprise.io). The original BloodHound was created by [@\_wald0](https://www.twitter.com/_wald0), [@CptJesus](https://twitter.com/CptJesus), and [@harmj0y](https://twitter.com/harmj0y).
+[BloodHound Community Edition](https://github.com/SpecterOps/BloodHound) and [BloodHound Enterprise](https://specterops.io/bloodhound-overview/) are created and maintained by [SpecterOps](https://specterops.io/). The original BloodHound was created by [@\_wald0](https://www.twitter.com/_wald0), [@CptJesus](https://twitter.com/CptJesus), and [@harmj0y](https://twitter.com/harmj0y).
 
 ## Useful Links
 
