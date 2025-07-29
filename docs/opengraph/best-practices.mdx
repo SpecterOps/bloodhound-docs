@@ -1,0 +1,131 @@
+---
+title: BloodHound OpenGraph Best Practices
+sidebarTitle: Best Practices
+description: "Attack Graph Model Design Requirements and Examples"
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+# Introduction
+For several years, one of the biggest pain-points with contributing to BloodHound has been in getting nodes and edges ingested and correctly displayed in the GUI. BloodHound OpenGraph changes that. Now it is easy for anyone to add nodes and edges into BloodHound through the easy-to-use `/file-upload/` endpoint.
+
+However, while the process of adding nodes and edges to the product is greatly simplified, the product will not function as expected without a well-designed attack graph model. This document seeks to educate users on attack graph model design theory, best-practices, and requirements.
+
+An attack graph is a tool - a powerful force multiplier when wielded correctly, a frustrating and confusing hazard when not. This document aims to equip you with the knowledge and skills necessary to effectively wield this tool.
+# Basic Attack Graph Vocabulary and Design Theory
+Graphs are [well-understood](https://en.wikipedia.org/wiki/Graph_%28discrete_mathematics%29), well-studied mathematical constructs. You can find thousands of guides, tools, and academic papers that make use of graphs. This document will not replace a proper education or time spent working with graphs. But in this section we will touch on the most fundamental aspects of a graph you must understand in order to effectively get BloodHound to work with your nodes and edges.
+
+Every graph is constructed from two fundamental components: vertices (nodes) and edges (relationships):
+
+<img noZoom src="/assets/og-bp-1.png" alt="Node1 -- Edge1 --> Node2"/>
+
+The above graph has two nodes and one edge. The edge is **directed**. The source node of the edge is “Node 1”. The destination node of the edge is “Node 2”.
+
+**Every** edge in a BloodHound attack graph is **directed**, and is **one-way**. There are no bi-directional (“two-way”) edges in a BloodHound graph.
+
+In a BloodHound attack graph, the direction of the **edge** must match the direction of **access** or **attack**. Let’s look at an example with Active Directory group memberships.
+
+In the BloodHound attack graph, we model Active Directory security group memberships like this:
+
+<img noZoom src="/assets/og-bp-2.png" alt="User -- MemberOf --> Group"/>
+
+Think about the direction of the edge. Now think for a moment and try to figure out why we don’t model AD security group memberships like this instead:
+
+<img noZoom src="/assets/og-bp-3.png" alt="Group -- HasMember --> User"/>
+
+This seems perfectly reasonable at first glance, does it not? But remember that we are constructing an **attack graph** in order to discover **attack paths**. Edge directionality must serve attack path discovery.
+
+The direction of the edge going from the group to the user does not expose any attack path. Just because a user is a member of a group does not mean the group has any “control” of the user. But when the direction of the edge is from the user to the group, that DOES serve attack path discovery. 
+
+Why? Because in Windows and Active Directory, members of security groups gain the privileges held by those groups. Let’s extend the model a bit to make this easier to see:
+
+<img noZoom src="/assets/og-bp-4.png" alt="User -- MemberOf -> Group -- GenericAll --> Domain"/>
+
+The user is a member of a group, and the group has full control of the domain. When the user authenticates to Active Directory, their Kerberos ticket will include the SID of the group. When the user uses that ticket to perform some action against the domain object, the security reference monitor will inspect the ticket, see the group SID, and grant the user all the permissions against the domain that the group has.
+
+**In reality the process is much more involved than this, but work with me here, people.**
+
+The above diagram shows a **path** connecting two **non-adjacent** nodes. **Adjacent** nodes are those that are connected together by an edge. In the above diagram, the adjacent nodes are:
+
+1. “User” and “Group” via the “MemberOf” edge
+
+2. “Group” and “Domain” via the “GenericAll” edge
+
+The “User” and “Domain” nodes are non-adjacent, yet there is a **path** connecting the “User” node to the “Domain” node.
+
+When designing your attack graph model, you **must** be aware of the **patterns** that will emerge from your design. There are many examples out there of people who want to make a contribution to the BloodHound graph who do not seem to be aware of this. Instead of proposing nodes/edges that create multi-node patterns, they propose nodes/edges that result **only** in one-to-one patterns:
+
+<img noZoom src="/assets/og-bp-5.png" alt="Badly connected nodes"/>
+
+In the above graph there are two patterns:
+
+1. From the red (top left) to the pink (top right) node
+
+2. From the blue (bottom left) to the green (bottom right) node
+
+What’s wrong with this design?
+
+Think of the graph as a map of **one-way streets**. In the above graph we have two one-way streets. But this map kinda sucks, doesn’t it? You can only start in two places and you can only go to two places. You can’t go from the red (top left) node to the blue (bottom left) node because there is no **path** connecting those nodes.
+
+This is a much better map:
+
+<img noZoom src="/assets/og-bp-6.png" alt="Well connected nodes"/>
+
+Now is there a **path** from the red (top left) node to the blue (bottom left) node? Yes! It goes **through** the green (bottom right) node! 
+
+The difference in the two graphs is the level of **connectedness**, or how well-linked the nodes are to one another. 
+
+Let’s belabor the point a little more to make it even more clear. The top model would be analogous to having a node represent both a **person** and the **address** where they live, with the edge representing the fact that they live at that address:
+
+<img noZoom src="/assets/og-bp-7.png" alt="Badly connected nodes"/>
+
+While the bottom graph would be analogous to having the nodes represent the **addresses** and the edges represent **streets**:
+
+<img noZoom src="/assets/og-bp-8.png" alt="Well connected nodes"/>
+
+It should be obvious that for the sake of **path finding**, the **second** model is the **only** model that will work.
+
+**This is actually how Google Maps works under the hood – it is a graph where locations are nodes and streets are edges.**
+
+# BloodHound Attack Graph Model Requirements
+
+The second habit of highly effective people is:
+
+> **Habit 2: Begin With the End in Mind** means to start with a clear understanding of your destination. You need to know where you are going in order to better understand where you are now so that the steps you take are always in the right direction.
+
+You don’t want to pour your heart and soul into a data model only to find out that most BloodHound features don’t work with your model. Here are the non-negotiable requirements your model must comply with to work with BloodHound:
+
+## Requirement 1: Universally Unique Node Identifiers
+
+Every node in a BloodHound database must have a universally unique identifier to distinguish it from every other node. You must identify the source and format of that identifier.
+
+We used to use UPN-formatted names for identifiers in BloodHound (e.g.: “DOMAIN ADMINS@CONTOSO.COM”). Surprise surprise, UPNs are not guaranteed to be universally unique. We now use SIDs instead for universally unique identifiers for most Active Directory principals.
+
+One of the best universally unique identifiers is a GUID. Does the entity you are modeling have a GUID? If so, great! If not, you’re going to need to find something else.
+
+Examples of **bad** identifiers:
+
+- Usernames
+- Email addresses
+- Hostnames
+- IDs that start at “0” and increment from there
+
+Examples of **good** identifiers:
+- GUIDs
+- SIDs
+- Certificate thumbprints
+
+Think: how does the system itself differentiate between these objects? In many (but certainly not all) cases, you may do well to identify your nodes the same way the system uniquely identifies its objects.
+
+## Requirement 2: Distinct Node and Edge Classes
+
+If you are modeling a new system not currently modeled by BloodHound, your nodes and edges must have distinct classes that do not overlap with existing BloodHound node and edge classes. 
+
+Sorry, but “MemberOf” is already taken, so you will need to use a different edge class when modeling group memberships in Okta, Zoho, AWS, or whatever else. Same with all the other existing node and edge classes which can be found here:
+
+- [About BloodHound Nodes](https://bloodhound.specterops.io/resources/nodes/overview)
+- [About BloodHound Edges](https://bloodhound.specterops.io/resources/edges/overview)
+
+## Requirement 3: Your Model Must Connect Non-Adjacent Nodes with Paths
+
+If your graph model does not create **paths** connecting **non-adjacent** nodes, you should be using a **relational database**, not a **graph database**. You are using the **wrong** tool for the job!
