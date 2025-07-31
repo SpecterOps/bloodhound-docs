@@ -5,7 +5,7 @@ title: 'Bug: '
 labels:
   - bug
   - triage
-assignees: ''
+assignees: []
 ---
 
 ## Description
