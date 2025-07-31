@@ -2,7 +2,9 @@
 name: Bug Report
 about: Create a report to help us improve
 title: 'Bug: '
-labels: bug, triage
+labels:
+  - bug
+  - triage
 assignees: ''
 ---
 
@@ -12,8 +14,8 @@ assignees: ''
 
 ## Do you plan to fix this issue?
 
-[ ] Yes, I intend to submit a fix (PR)
-[ ] No, I’m just reporting the problem
+- [ ] Yes, I intend to submit a fix (PR)
+- [ ] No, I’m just reporting the problem
 
 ## Screenshots/Links
 
