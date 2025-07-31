@@ -25,7 +25,7 @@ assignees: ''
 
 ## Authors/Maintainers
 
-*Provide the name or names of the primary paintainers of the project. Please include relevant Twitter/contact links for the user and their organization (as appropriate).*
+*Provide the name or names of the primary maintainers of the project. Please include relevant Twitter/contact links for the user and their organization (as appropriate).*
 
 ## Repository Links
 

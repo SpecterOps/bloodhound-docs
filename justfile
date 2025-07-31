@@ -20,4 +20,4 @@ prune-my-branches nuclear='no':
 
 update-openapi VERSION:
     # Download openapi.json from BloodHound's stage branch
-    curl -L "https://raw.githubusercontent.com/SpecterOps/BloodHound/stage/{{VERSION}}/packages/go/openapi/doc/openapi.json" -o docs/openapi.json
+    curl -L --fail "https://raw.githubusercontent.com/SpecterOps/BloodHound/stage/{{VERSION}}/packages/go/openapi/doc/openapi.json" -o docs/openapi.json || (echo "Failed to download OpenAPI spec for version {{VERSION}}" && exit 1)
