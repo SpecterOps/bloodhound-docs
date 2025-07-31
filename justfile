@@ -17,3 +17,7 @@ prune-my-branches nuclear='no':
   fi
   echo "Remaining Git Branches:"
   git --no-pager branch
+
+update-openapi VERSION:
+    # Download openapi.json from BloodHound's stage branch
+    curl -L --fail "https://raw.githubusercontent.com/SpecterOps/BloodHound/stage/{{VERSION}}/packages/go/openapi/doc/openapi.json" -o docs/openapi.json || (echo "Failed to download OpenAPI spec for version {{VERSION}}" && exit 1)
