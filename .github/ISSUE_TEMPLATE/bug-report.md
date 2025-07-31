@@ -8,15 +8,16 @@ assignees: ''
 
 ## Description
 
-*A clear and concise description of the issue you're encountering.*
+*A clear and concise description of the issue you are encountering.*
 
 ## Do you plan to fix this issue?
 
-*Please indicate "yes" or "no".*
+[ ] Yes, I intend to submit a fix (PR)
+[ ] No, I’m just reporting the problem
 
 ## Screenshots/Links
 
-*Please be certain to link to the offending document or image, screenshots are greatly appreciated!*
+*Please link to the exact page or image. Screenshots are greatly appreciated!*
 
 ## Additional Information
 
