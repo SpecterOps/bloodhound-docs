@@ -9,7 +9,7 @@ description: The ProtectAdminGroups background task tattoos the AdminSDHolder se
   alt="Applies to BloodHound Enterprise and CE"
 />
 
-AdminSDHolder is both an object and an associated background task which runs on the domain controller holding the PDCe FSMO role. Any modifications made to the security descriptor of the AdminSDHolder container will be tattooed on the target node by the ProtectAdminGroups background task (not SDProp) every hour by default.
+AdminSDHolder is an Active Directory container which acts as a security descriptor template. The associated ProtectAdminGroups (not SDProp) background task runs on the domain controller holding the PDCe FSMO role. Any modifications made to the security descriptor of the AdminSDHolder container will be tattooed on the target node by the ProtectAdminGroups background task every hour, by default.
 
 ## Abuse Info
 
@@ -19,14 +19,13 @@ AdminSDHolder node at the next run of the ProtectAdminGroups background task on 
 
 The amount of time between ProtectAdminGroups run cycles defaults to 1 hour, but is controlled via a
 registry key setting on the PDCe and can be as little as 1 minute or as much as 120 minutes.
-This edge is not abuseable by itself. When combined with [GetChanges](/resources/edges/get-changes), BloodHound will create the abuseable edge [DCSync](/resources/edges/dc-sync).
 
 ## Opsec Considerations
 
 Modifications to the AdminSDHolder security descriptor can be detected via SACLs if configured and ingested,
 as can modifications to the security descriptor of any objects that AdminSDHolder protects.
 
-If auditing is properly configured in the environment, EID 4780 will be generated if the ProtectAdminGroups background task tattoos
+If auditing is properly configured in the environment, Event ID 4780 will be generated if the ProtectAdminGroups background task tattoos
 the AdminSDHolder security descriptor on a protected object.
 
 ## References
