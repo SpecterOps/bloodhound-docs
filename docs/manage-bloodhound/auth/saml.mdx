@@ -5,8 +5,6 @@ description: "BloodHound supports SAML 2.0 for Single Sign On to authenticate us
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-This integration provides authentication only, user creation and role management will still occur from within BloodHound's "Manage Users" interface.
-
 You may configure multiple SAML providers within your tenant if necessary.
 
 This page provides the overall steps to configure a SAML provider within BloodHound. We have provided walkthroughs for creating the configuration within the provider for your convenience.
@@ -23,8 +21,11 @@ Currently, BloodHound requires the configuration of SAML system in the following
     * [SAML: Entra ID Configuration](/manage-bloodhound/auth/saml-entra-id)
     * [SAML: Google IDP Configuration](/manage-bloodhound/auth/saml-google)
 3.  Create the SAML Configuration in BloodHound.
-4.  [Create new users or modify existing users](/manage-bloodhound/auth/users-and-roles) to utilize the newly created SAML provider.
-    * You must ensure SAML users do not share email with built-in users.
+4.  [Create new users or modify existing users](/manage-bloodhound/auth/users-and-roles) using the UI or via the newly created SAML provider.
+    #### You must ensure OIDC users do not share email with built-in or SAML users. Email requires a unique value so account creation will fail.
+    <Frame>
+    <img src="/images/sso/create_user_fail_email.png"/>
+    </Frame>
 
 ## SAML Attribute Quick Reference
 
@@ -46,43 +47,55 @@ If your IDP supports custom icons for configured applications, please feel free 
 
 Ensure you have configured an Identity Provider for BloodHound as described in Order of Operations before proceeding.
 
-1.  While logged in as an Administrator, click on the gear icon in the top right, then click "Administration."
+1.  While logged in as an Administrator, open the slider on the left, then click "Administration."
 <Frame>
-  <img src="/assets/image-2-17.png"/>
+  <img src="/images/sso/select_administration.png"/>
 </Frame>
-2.  Under the "Authentication" section, choose "SAML Configuration."
+2.  Under the "Authentication" section, choose "SSO Configuration."
 <Frame>
-  <img src="/assets/image-2-18.png"/>
+  <img src="/images/sso/select_sso.png"/>
 </Frame>
-3.  Click “Create SAML Provider.”
+3.  Click "Create Provider," then "SAML Provider."
 <Frame>
-  <img src="/assets/image-2-19.png"/>
+  <img src="/images/sso/create_provider.png"/>
 </Frame>
 4.  Give the SAML provider the name you used in the ACS URL (‘okta’ in this example) and upload the metadata.xml you created previously. Click "Submit."
 <Frame>
-  <img src="/assets/image-2-20.png"/>
+  <img src="/images/sso/create_saml_provider.png"/>
 </Frame>
-5.  BloodHound will provide the URLs related to this new SAML provider integration. Please take a moment to verify that the **ACS URL** matches the **Single sign on URL** specified in the SAML application integration page during setup of the Okta SAML integration.
+  ### Automatically create new users on login
+  Enabling this option will have Bloodhound create a new user on thie first login with SSO (Just In Time). The user will be granted the role slug passed in the role claim if included, else the default role will be assigned.
+
+  ### Allow SSO Provider to modify roles
+  Enabling this option allows the SSO provider to modify user roles. This is accomplished by updating the role claim associated with the user account. The role will be updated on the next login. 
+  To have this take effect immediately, disable then re-enable the user to invalidate current sessions and force a fresh login.
+
+5.  BloodHound will provide the URLs related to this new SAML provider integration. Please take a moment to verify that the **ACS URL** matches the **Single sign on URL** specified in the SAML application integration page during setup of the SAML integration.
 
 ## Configure Users for SAML Authentication
 
 By default, all users will utilize username and password via the built-in authentication service. When creating or modifying a user, you will be granted the option to change this setting. When creating a new SAML user, you must ensure the SAML user does not share email with any built-in users.
 
-1.  While logged in as an Administrator, click on the gear icon in the top right, then click "Administration."
+1.  While logged in as an Administrator, open the slider on the left, then click "Administration."
 <Frame>
-  <img src="/assets/image-2-21.png"/>
+  <img src="/images/sso/select_administration.png"/>
 </Frame>
-2.  Under the "Authentication" section, choose "SAML Configuration."
+2.  Under "Users" section, choose "Manage Users."
 <Frame>
-  <img src="/assets/image-2-22.png"/>
+  <img src="/images/sso/select_manage_users.png"/>
 </Frame>
-3.  Locate the user you wish to configure for SAML authentication, click the hamburger menu button on the right side of the row, then "Update User."
+3.  Locate the user you wish to configure for OIDC authentication, click the hamburger menu button on the right side of the row, then "Update User."
 <Frame>
-  <img src="/assets/image-2-23.png"/>
+  <img src="/images/sso/user_hamburger.png"/>
 </Frame>
-4.  In the following dialog, modify the Authentication Method to "SAML" then select the appropriate SAML provider you wish the user's account to authenticate against.
+4.  In the following dialog, modify the authentication method to "Single Sign-On," then select the appropriate SSO provider against which the user's account can authenticate.
 <Frame>
-  <img src="/assets/image-2-24.png"/>
+  <img src="/images/sso/update_user_no_provision.png"/>
+</Frame>
+ * When provisioning is enabled without the modify role option, a user's role may be updated manually after creation.
+  * If both provisioning and modify role are enabled, role updates must come through the SSO provider.
+<Frame>
+  <img src="/images/sso/update_user_with_provision.png"/>
 </Frame>
 5.  Click "Save."
 
