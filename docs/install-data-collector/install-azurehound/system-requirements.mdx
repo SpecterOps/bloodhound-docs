@@ -4,10 +4,10 @@ title: AzureHound Enterprise System Requirements and Deployment Process
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-The AzureHound Enterprise service is a critical element in your deployment that collects and uploads data about your Azure environment to your BloodHound Enterprise tenant for processing and analysis.
+The AzureHound Enterprise service is a critical element in your deployment that collects and uploads data about your Entra ID and Azure environments to your BloodHound Enterprise tenant for processing and analysis.
 
 
-AzureHound Enterprise is generally deployed as a service on a single Windows system per Azure tenant.  You need to create (at least) a single AzureHound server for all the tenants in scope and one Azure Enterprise Application service instance for each tenant.
+AzureHound Enterprise is generally deployed as a service on a single Windows system per Entra ID tenant.  You need to create (at least) a single AzureHound server for all the tenants in scope and one Entra ID Enterprise Application service instance for each tenant.
 
 
 Running multiple AzureHound collector instances on a single server requires the collectors to be installed as Scheduled Tasks instead of Windows Services. Installation instructions for such a configuration can be found at: [Setting up multiple AzureHound collectors on the same server with scheduled tasks](/install-data-collector/install-azurehound/multiple-collectors).
@@ -18,7 +18,7 @@ While it is possible to run both AzureHound and SharpHound on the same machine, 
 
 To deploy a new AzureHound collector service:
 
-1.  Configure Azure: [AzureHound Enterprise Azure Configuration](/install-data-collector/install-azurehound/azure-configuration)
+1.  Configure Entra ID and Azure: [AzureHound Enterprise Azure Configuration](/install-data-collector/install-azurehound/azure-configuration)
 2.  Create your AzureHound configuration: [Create an AzureHound Configuration](/install-data-collector/install-azurehound/create-configuration)
 3.  Deploy and maintain AzureHound: [Run and Upgrade AzureHound (Windows, Docker, or Kubernetes)](/install-data-collector/install-azurehound/installation-options)
 
@@ -33,7 +33,7 @@ To deploy a new AzureHound collector service:
 | **Memory** | 4GB RAM | 16GB RAM | 32GB RAM |
 | **Hard disk space** | 1GB for logging | 5GB for logging | 20GB for logging |
 
-**\*\*These recommendations should be considered a baseline that may need to be increased depending on the size and complexity of your Azure/Entra environment.\*\***
+**These recommendations should be considered a baseline that may need to be increased depending on the size and complexity of your Azure/Entra environment.**
 
 ### Software
 
@@ -53,24 +53,24 @@ OR
 ### Network
 
 * TLS on 443/TCP to your BloodHound Enterprise tenant URL (provided by your account team)
-* TLS on 443/TCP to your Azure tenant. Required domains are:
+* TLS on 443/TCP to your Azure environment. Required domains are:
     * login.microsoftonline.com
-        * Required for authentication to Azure.
+        * Required for authentication to Entra ID and Azure.
     * msidentity.com (CNAME of login.microsoftonline.com)
-        * Required for authentication to Azure.
+        * Required for authentication to Entra ID and Azure.
     * graph.microsoft.com
-        * Required for collection of attack path data from Microsoft Entra ID, etc.
+        * Required for collection of attack path data from Microsoft Entra ID.
     * management.azure.com
-        * Required for collection of attack path data from Microsoft Azure Resource Manager, etc.
+        * Required for collection of attack path data from Microsoft Azure Resource Manager.
 
 ## Service Principal Requirements
 
-The AzureHound Enterprise service will run as an Azure Application backed by a Service Principal with the following permissions:
+The AzureHound Enterprise service will run as an Entra ID Application backed by a Service Principal with the following permissions:
 
-* [Reader](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#reader) on all Azure Subscriptions
-* [Directory Reader](https://learn.microsoft.com/en-us/azure/active-directory/roles/permissions-reference#directory-readers) on Azure Tenant
-* [Directory.Read.All](https://learn.microsoft.com/en-us/graph/permissions-reference#directoryreadall) on Microsoft Graph
-* [RoleManagement.Read.All](https://learn.microsoft.com/en-us/graph/permissions-reference#rolemanagementreadall) on Microsoft Graph
+* Entra ID [Directory Reader](https://learn.microsoft.com/en-us/azure/active-directory/roles/permissions-reference#directory-readers) role permanent assignment.
+* Microsoft Graph [Directory.Read.All](https://learn.microsoft.com/en-us/graph/permissions-reference#directoryreadall) application permission.
+* Microsoft Graph [RoleManagement.Read.All](https://learn.microsoft.com/en-us/graph/permissions-reference#rolemanagementreadall) application permission.
+* Azure [Reader](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#reader) role on all Azure Subscriptions, ideally delegated at the [Tenant root group](https://learn.microsoft.com/en-us/azure/governance/management-groups/overview) scope.
 
 <Note>
 Both Directory Reader **and** Directory.Read.All are required; they may read as identical in the Microsoft Documentation above, but they are not. There is some overlap, but each has distinct permissions that AzureHound leverages to ensure attack path data collection coverage.
