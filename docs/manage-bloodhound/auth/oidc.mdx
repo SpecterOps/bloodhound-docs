@@ -2,6 +2,11 @@
 title: OIDC in BloodHound
 description: 'BloodHound supports OIDC for Single Sign On to authenticate users to your tenant environment.'
 ---
+import snip_icons from '/snippets/auth/icons_list.mdx';
+import snip_auth_users from '/snippets/auth/auth_configure_users.mdx';
+import snip_auth_config_1 from '/snippets/auth/auth_config_steps_1.mdx';
+import snip_auth_config_2 from '/snippets/auth/auth_config_steps_2.mdx';
+
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 You can configure multiple SSO providers within your tenant if you need to.
@@ -27,67 +32,14 @@ Currently, BloodHound requires the configuration of OIDC system in the following
 
 If your IDP supports custom icons for configured applications, please feel free to utilize the logos below:
 
-* [Enterprise Dark-colored icon](https://raw.githubusercontent.com/SpecterOps/BloodHound-docs/main/docs/logo/BHE_PurpleField.png)
-* [Enterprise Light-colored icon](https://raw.githubusercontent.com/SpecterOps/BloodHound-docs/main/docs/logo/BHE_WhiteField.png)
-* [BHCE Dark-colored icon](https://raw.githubusercontent.com/SpecterOps/BloodHound-docs/main/docs/logo/BHCE_RedField.png)
-* [BHCE Light-colored icon](https://raw.githubusercontent.com/SpecterOps/BloodHound-docs/main/docs/logo/BHCE_WhiteField.png)
+<snip_icons/>
 
-## Create the OIDC Configuration
+<snip_auth_config_1 auth_mode="OIDC"/>
 
-Before proceeding, please ensure you have set up an Identity Provider (IDP) for BloodHound as described in the Order of Operations section.
+<Frame>
+  <img src="/images/sso/create_OIDC_provider.png"/>
+</Frame>
 
-1.  While logged in as an Administrator, open the slider on the left, then click "Administration."
-<Frame>
-  <img src="/images/sso/select_administration.png"/>
-</Frame>
-2.  Under the "Authentication" section, choose "SSO Configuration."
-<Frame>
-  <img src="/images/sso/select_sso.png"/>
-</Frame>
-3.  Click "Create Provider," then "OIDC Provider."
-<Frame>
-  <img src="/images/sso/create_provider.png"/>
-</Frame>
-4.  Give the OIDC provider the name you used in the IDP (‘okta' in this example) and provide the Client ID and issuer from your IDP. Click "Submit."
-<Frame>
-  <img src="/images/sso/oidc_config.png"/>
-</Frame>
-### Automatically create new users on login
-Enabling this option will have BloodHound create a new user on thie first login with SSO (Just In Time). The user will be granted the role slug passed in the role claim if included, else the default role will be assigned.
+<snip_auth_config_2 auth_mode="OIDC"/>
 
-### Allow SSO Provider to modify roles
-Enabling this option allows the SSO provider to modify user roles. This is accomplished by updating the role claim associated with the user account. The role will be updated on the next login. 
-To have this take effect immediately, disable then re-enable the user to invalidate current sessions and force a fresh login.
-
-5. BloodHound will provide the URLs related to this new OIDC provider integration.
-<Frame>
-  <img src="/images/sso/oidc_details.png"/>
-</Frame>
-## Configure Users for OIDC Authentication
-
-By default, all users will use a username and password via the built-in authentication service. SSO may be set during user creation or edited for an existing user. 
-
-Ensure any built-in users will not have the same email address as potential SSO users as email must be unique and account creation will fail.
-
-1.  While logged in as an Administrator, open the slider on the left, then click "Administration."
-<Frame>
-  <img src="/images/sso/select_administration.png"/>
-</Frame>
-2.  Under "Users" section, choose "Manage Users."
-<Frame>
-  <img src="/images/sso/select_manage_users.png"/>
-</Frame>
-3.  Locate the user you wish to configure for OIDC authentication, click the hamburger menu button on the right side of the row, then "Update User."
-<Frame>
-  <img src="/images/sso/user_hamburger.png"/>
-</Frame>
-4.  In the following dialog, modify the authentication method to "Single Sign-On," then select the appropriate SSO provider against which the user's account can authenticate.
-<Frame>
-  <img src="/images/sso/update_user_no_provision.png"/>
-</Frame>
-  * When provisioning is enabled without the modify role option, a user's role may be updated manually after creation.
-  * If both provisioning and modify role are enabled, role updates must come through the SSO provider.
-<Frame>
-  <img src="/images/sso/update_user_with_provision.png"/>
-</Frame>
-5.  Click "Save."
+<snip_auth_users auth_mode="OIDC"/>
