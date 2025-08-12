@@ -16,122 +16,152 @@ Below are the currently supported openCypher query components translated by CySQ
 ## Pattern Matching
 ### Node Matching
 
-```
-  match (n) where n.name = 'my name' return n
+``` Cypher
+match (n) 
+where n.name = 'my name' 
+return n
 ```
 
 ### Inline Node Label Matchers
 
-```
-  match (n:User) return n
+``` Cypher
+match (n:User) 
+return n
 ```
 
 ### Inline Node Pattern Property Matchers
 
-```
-  match (n {prop: 'value'}) return n
+``` Cypher
+match (n {prop: 'value'}) 
+return n
 ```
 
 ### Relationship Matching
 
-```
-  match (:User)-[r]->() return r
+``` Cypher
+match (:User)-[r]->() 
+return r
 ```
 
-```
-  match (:User)-[r:MemberOf|GenericWrite]->() return r
+``` Cypher
+match (:User)-[r:MemberOf|GenericWrite]->() 
+return r
 ```
 
 ### Recursive Expansion
 
-```
-  match (:User)-[r:MemberOf*..]->(:Group) return r
+``` Cypher
+match (:User)-[r:MemberOf*..]->(:Group) 
+return r
 ```
 
 ### Ranges for Recursive Expansion
 
-```
-  match (:User)-[r:MemberOf*2..]->(:Group) return r
+``` Cypher
+match (:User)-[r:MemberOf*2..]->(:Group) 
+return r
 ```
 
-```
-  match (:User)-[r:MemberOf*2..4]->(:Group) return r
+``` Cypher
+match (:User)-[r:MemberOf*2..4]->(:Group) 
+return r
 ```
 
 ### Pattern Projections
 
-```
-  match p = (:Computer)-[:HasSession]->(:User) return p
+``` Cypher
+match p = (:Computer)-[:HasSession]->(:User) 
+return p
 ```
 
-```
-  match p = (:User)-[:MemberOf*..]->(:Group) return p
+``` Cypher
+match p = (:User)-[:MemberOf*..]->(:Group) 
+return p
 ```
 
 ### Multiple Reading Clauses
 
-```
-  match (u:User) where u.is_eligible
-  match p = (u)<-[:HasSession]-(c:Computer)
-  return p
+``` Cypher
+match (u:User) where u.is_eligible
+match p = (u)<-[:HasSession]-(c:Computer)
+return p
 ```
 
 ### Shortest Paths
 
-```
-  match p = shortestPath((u:User)-[*..]->(:Domain)) where u.objectid = 'UUID-1234-567890' return p
+``` Cypher
+match p = shortestPath((u:User)-[*..]->(:Domain)) 
+where u.objectid = 'UUID-1234-567890' 
+return p
 ```
 
 ### All Shortest Paths
 
-```
-  match p = allShortestPaths((u:User)-[*..]->(:Domain)) where u.objectid = 'UUID-1234-567890' return p
+``` Cypher
+match p = allShortestPaths((u:User)-[*..]->(:Domain)) 
+where u.objectid = 'UUID-1234-567890' 
+return p
 ```
 
 ## Return Options[](#return-options)
 
 ### Order
 
-```
-  match (n:User) where n.hasPassword return n order by n.name
+``` Cypher
+match (n:User) 
+where n.hasPassword 
+return n order by n.name
 ```
 
 ### Skip and Limit
 
-```
-  match (n:User) where n.hasPassword return n order by n.name skip 10 limit 100
+``` Cypher
+match (n:User) 
+where n.hasPassword 
+return n order by n.name skip 10 limit 100
 ```
 
 ## Entity Updates[](#entity-updates)
 
 ### Setting Properties and Labels
 
-```
-match (n:Base) where n.obviously_is_user set n.other = 1 set n:User return n
+``` Cypher
+match (n:Base) 
+where n.obviously_is_user 
+set n.other = 1 
+set n:User 
+return n
 ```
 
-```
-match ()-[r:HasSession]->(:User) set r.special_property = true
+``` Cypher
+match ()-[r:HasSession]->(:User) 
+set r.special_property = true
 ```
 
 ### Removing Properties and Labels
 
-```
-match (n:User) remove n.name remove n:User return n
+``` Cypher
+match (n:User) 
+remove n.name 
+remove n:User 
+return n
 ```
 
-```
-match ()-[r:HasSession]->(:User) remove r.special_property
+``` Cypher
+match ()-[r:HasSession]->(:User) 
+remove r.special_property
 ```
 
 ## Entity Deletion[](#entity-deletion)
 
-```
-match (s:User) detach delete s
+``` Cypher
+match (s:User) 
+detach delete s
 ```
 
-```
-match ()-[r:MemberOf]->() delete r
+``` Cypher
+match ()-[r:MemberOf]->() 
+delete r
 ```
 
 
@@ -157,14 +187,28 @@ For more information see the `Differences between Cypher and CySQL` subsection `
 
 Negation in query filters is supported with the `not` operator:
 
-* `match (n:User) where not(n.eligible) return n`
+``` Cypher
+match (n:User) 
+where not(n.eligible) 
+return n
+```
 
 ### Conjunction and Disjunction
 
 Conjunction `and` and disjunction `or` operators are both supported:
 
-* `match (n:User) where n.eligible and n.enabled return n`
-* `match (n:User) where n.eligible or n.seen_as_active return n`
+ 
+``` Cypher
+match (n:User) 
+where n.eligible and n.enabled 
+return n
+```
+
+``` Cypher
+match (n:User) 
+where n.eligible or n.seen_as_active 
+return n
+```
 
 ### String Searching
 
@@ -175,29 +219,49 @@ expansions.
 
 A string property may be filtered by prefix matching:
 
-* `match (n:User) where n.name starts with 'my prefix' return n`
+``` Cypher
+match (n:User) 
+where n.name starts with 'my prefix' 
+return n
+```
 
 #### String Contains Matching
 
 A string property may be filtered by contains matching:
 
-* `match (n:User) where n.details contains 'something interesting' return n`
+``` Cypher
+match (n:User) 
+where n.details contains 'something interesting' 
+return n
+```
 
 #### String Suffix Matching
 
 A string property may be filtered by suffix matching:
 
-* `match (n:User) where n.name ends with 'my suffix' return n`
+``` Cypher
+match (n:User) 
+where n.name ends with 'my suffix' 
+return n
+```
 
 ### Regular Expressions
 
-* `match (n:User) where n.name =~ 'userPrefix.*' return n`
+``` Cypher
+match (n:User) 
+where n.name =~ 'userPrefix.*' 
+return n
+```
 
 ### Pattern Predicates
 
 Query filters may also include pattern lookups. For example, searching for users with no active login sessions:
 
-* `match (n:User) where not((n)<-[:HasSession]-(:Computer)) return n`
+``` Cypher
+match (n:User) 
+where not((n)<-[:HasSession]-(:Computer)) 
+return n
+```
 
 ## Supported Subquery Expressions[](#supported-subquery-expressions)
 
@@ -215,48 +279,60 @@ Aggregates and counts the results of the given subquery as an integer.
 
 Parses a valid duration string into a time duration that can be used in conjunction with other duration or date types.
 
-```
-match (s) where s.created_at = date() - duration('P1D') return s
+``` Cypher
+match (s) 
+where s.created_at = date() - duration('P1D') 
+return s
 ```
 
 ### `id` Function
 
 Returns the entity identifier of the node or relationship.
 
-```
-match (s) where id(s) in [1, 2, 3, 4] return s
+``` Cypher
+match (s) 
+where id(s) in [1, 2, 3, 4] 
+return s
 ```
 
 ### `localtime`
 
 Returns the local time without timezone information.
 
-```
-match (s) where s.created_at <= localtime() return s
+``` Cypher
+match (s) 
+where s.created_at <= localtime() 
+return s
 ```
 
 ### `localdatetime`
 
 Returns the local datetime without timezone information.
 
-```
-match (s) where s.created_at > localdatetime() return s
+``` Cypher
+match (s) 
+where s.created_at > localdatetime() 
+return s
 ```
 
 ### `date`
 
 Returns the current date with timezone information.
 
-```
-match (s) where s.created_at = date() return s
+``` Cypher
+match (s) 
+where s.created_at = date() 
+return s
 ```
 
 ### `datetime`
 
 Returns the current datetime with timezone information.
 
-```
-match (s) where s.created_at < datetime() return s
+``` Cypher
+match (s) 
+where s.created_at < datetime() 
+return s
 ```
 
 ### `type`
@@ -264,8 +340,10 @@ match (s) where s.created_at < datetime() return s
 Returns the type of the given relationship reference. This function returns the relationship's type as a text value.
 Type checks utilizing this function will not be index accelerated and may exhibit poor performance.
 
-```
-match ()-[r]->() where type(r) = 'EdgeKind1' return r
+``` Cypher
+match ()-[r]->() 
+where type(r) = 'EdgeKind1' 
+return r
 ```
 
 ### `split`
@@ -273,8 +351,10 @@ match ()-[r]->() where type(r) = 'EdgeKind1' return r
 Takes a given expression and text delimiter and returns a text array containing split components, if any. If the
 given expression does not evaluate to a text value this function will raise an error.
 
-```
-match (u:User) where '255' in split(u.ip_addr, '.') return u
+``` Cypher
+match (u:User) 
+where '255' in split(u.ip_addr, '.') 
+return u
 ```
 
 ### `tolower`
@@ -282,8 +362,9 @@ match (u:User) where '255' in split(u.ip_addr, '.') return u
 Returns the localized lower-case variant of a given expression. If the given expression does not evaluate to a text
 value this function will raise an error.
 
-```
-match (u:User) return tolower(u.name)
+``` Cypher
+match (u:User) 
+return tolower(u.name)
 ```
 
 ### `toupper`
@@ -291,8 +372,9 @@ match (u:User) return tolower(u.name)
 Returns the localized upper-case variant of a given expression. If the given expression does not evaluate to a text
 value this function will raise an error.
 
-```
-match (u:User) return toupper(u.name)
+``` Cypher
+match (u:User) 
+return toupper(u.name)
 ```
 
 ### `tostring`
@@ -300,8 +382,9 @@ match (u:User) return toupper(u.name)
 Returns the text value of a given expression. If the given expression represents a type that can not be converted to
 text this function will raise an error.
 
-```
-match (u:User) return tostring(u.num_active_logins)
+``` Cypher
+match (u:User) 
+return tostring(u.num_active_logins)
 ```
 
 ### `toint`
@@ -309,8 +392,9 @@ match (u:User) return tostring(u.num_active_logins)
 Returns the integer value of a given expression. If the given expression represents a type that can not be converted or
 parsed to an integer this function will raise an error.
 
-```
-match (u:User) return toint(u.integer_in_text_property)
+``` Cypher
+match (u:User) 
+return toint(u.integer_in_text_property)
 ```
 
 ### `coalesce`
@@ -318,16 +402,20 @@ match (u:User) return toint(u.integer_in_text_property)
 Returns the first non-null value in a list of expressions. This is critically useful for navigating differences in
 `null` behavior between Cypher and CySQL.
 
-```
-match (n:NodeKind1) where n.target = coalesce(n.a, n.b, 'last_resort') return n
+``` Cypher
+match (n:NodeKind1) 
+where n.target = coalesce(n.a, n.b, 'last_resort') 
+return n
 ```
 
 ### `size`
 
 Returns the number of items in an expression that evaluates to any array type.
 
-```
-match (n:NodeKind1) where size(n.array_value) > 0 return n
+``` Cypher
+match (n:NodeKind1) 
+where size(n.array_value) > 0 
+return n
 ```
 
 #### Caveats
@@ -350,8 +438,10 @@ The `create` reserved Cypher keyword is currently unsupported. Future support of
 Returns the labels of the given node reference. This function returns the node's labels as a text array value. Label
 checks utilizing this function will not be index accelerated and may exhibit poor performance.
 
-```
-match (n) where 'User' in labels(n) return n
+``` Cypher
+match (n) 
+where 'User' in labels(n) 
+return n
 ```
 
 #### Caveats
@@ -370,7 +460,7 @@ Support for them is planned for a future version of CySQL.
 
 Arrays containing graph entities are not unpacked during comparisons:
 
-```
+``` Cypher
 match (n:User) where n.disabled
 with collect(n) as disabled
 match p = (:Computer)-[:HasSession]->(u:User)
@@ -385,7 +475,7 @@ Queries that contain similar constructs will result in the following translation
 
 Patterns that utilize a bound reference in the right-hand node pattern will not correctly author the required SQL joins:
 
-```
+``` Cypher
 match (e)
 match p = ()-[]->(e)
 return p
@@ -400,8 +490,10 @@ Queries that contain similar constructs will result in the following translation
 Untyped array references, including empty arrays, fail to pass type inference checks in CySQL. Support for additional
 type hinting and inference is required to better support these use-cases.
 
-```
-match (n:User) where n.auth_modes = [] return n
+``` Cypher
+match (n:User) 
+where n.auth_modes = [] 
+return n
 ```
 
 Queries that contain similar constructs will result in the following translation error:
@@ -448,14 +540,18 @@ In the future, CySQL translation will cover most of the strict typing requiremen
 Indexing in CySQL does not require a label specifier to be utilized. If the node property `name` is indexed in CySQL,
 both:
 
-```
-match (n:User) where n.name = '1234' return n
+``` Cypher
+match (n:User) 
+where n.name = '1234' 
+return n
 ```
 
 and
 
-```
-match (n) where n.name = '1234' return n
+``` Cypher
+match (n) 
+where n.name = '1234' 
+return n
 ```
 
 will use the `name` index regardless of node label.
@@ -469,15 +565,18 @@ similar.
 Ideally, entity properties should strive to remove `null` as a conditional case as much as possible. In cases where this
 is not possible, users are advised to exercise the `coalesce(...)` function:
 
-```
-match (n:User) where coalesce(n.name, '') contains '123' return n limit 1;
+``` Cypher
+match (n:User) 
+where coalesce(n.name, '') contains '123' 
+return n 
+limit 1
 ```
 
 #### Silent Query Failure
 
 `null` can taint result sets and also further complicate future comparisons in the query:
 
-```
+``` Cypher
 match (n:User)
 with n.name as n
 where n = '123'
