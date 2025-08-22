@@ -14,10 +14,10 @@ An attacker may perform this attack in the following steps:
 
 ### Step 1: Request enrollment in the affected template
 
-On Windows, use Certify to request enrollment in the affected template, specifying the affected certification authority:
+On Windows, use Certify (2.0) to request enrollment in the affected template, specifying the affected certification authority:
 
-```bash
-Certify.exe request /ca:rootdomaindc.forestroot.com\forestroot-RootDomainDC-CA /template:"ESC13"
+```cmd
+Certify.exe request --ca rootdomaindc.forestroot.com\forestroot-RootDomainDC-CA --template ESC13
 ```
 
 On Linux, use Certipy to request enrollment in the affected template, specifying the affected enterprise CA:
@@ -29,22 +29,14 @@ certipy req -u john@corp.local -p Passw0rd -ca corp-DC-CA -target ca.corp.local 
 
 If the enrollment fails with an error message stating that the Email or DNS name is unavailable and cannot be added to the Subject or Subject Alternate name, then it is because the enrollee principal does not have their 'mail' or 'dNSHostName' attribute set, which is required by the certificate template. The 'mail' attribute can be set on both user and computer objects but the 'dNSHostName' attribute can only be set on computer objects. Computers have validated write permission to their own 'dNSHostName' attribute by default, but neither users nor computers can write to their own 'mail' attribute by default.
 
-### Step 2: Create PFX format of certificate (Windows only)
+The certificate PFX is printed to the console in a base64-encoded format.
 
-Save the certificate as cert.pem and the private key as cert.key.
+### Step 2: Request a ticket granting ticket (TGT)
 
-Convert the emitted certificate to PFX format:
+On Windows, use Rubeus to request a TGT from the domain, specifying the attacker identity and the base64-encoded certificate from Step 1:
 
-```bash
-certutil.exe -MergePFX .\cert.pem .\cert.pfx
-```
-
-### Step 3: Request a ticket granting ticket (TGT)
-
-On Windows, use Rubeus to request a TGT from the domain, specifying the attacker identity, the PFX-formatted certificate created in Step 2, and the certificate password:
-
-```bash
-Rubeus asktgt /user:attacker /domain:forestroot.com /certificate:cert.pfx /password:asdf /ptt
+```cmd
+Rubeus asktgt /user:attacker /domain:forestroot.com /certificate:<cert base64> /ptt
 ```
 
 On Linux, use Certipy to request a TGT from the domain, specifying the certificate created in Step 1 and the IP of a domain controller:
