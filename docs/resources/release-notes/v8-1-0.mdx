@@ -1,5 +1,5 @@
 ---
-title: "2025-08-25 Release Notes (v8.1.0)"
+title: "2025-08-26 Release Notes (v8.1.0)"
 ---
 
 ## Announcements
@@ -7,12 +7,12 @@ title: "2025-08-25 Release Notes (v8.1.0)"
 ### State of Attack Path Management
 We recently released the inaugural issue of our State of Attack Path Management report, which draws from our unique blend of offensive security assessments and insights from both BloodHound Community Edition and Enterprise. The report introduces Attack Path Management as a fundamental practice requiring a paradigm shift from reactive defense to proactive adversarial thinking.
 
-On August 28, 2025 at 11AM PT, join Jared Atkinson, Elad Shamir, and Andrew Chiles as they break down some of the big points you can take away to better understand and address the attack paths that exist in your environment before they are exploited.
+On August 28, 2025, at 11 AM PT, join Jared Atkinson, Elad Shamir, and Andrew Chiles as they break down key takeaways to help you understand and address attack paths in your environment before they are exploited.
 
-[Register today](https://specterops.zoom.us/webinar/register/WN_OPlTCsc-SPOG94KElh4a-g#/registration).
+Register for this [fantastic webinar today](https://specterops.zoom.us/webinar/register/WN_OPlTCsc-SPOG94KElh4a-g#/registration)!
 
 ### So long APIv1, and thanks for all the fish
-Back in [April of this year](/resources/release-notes/v7-3-0), we announced our intention to deprecate our legacy API around BlackHat 2025. The time has finally arrived to say goodbye to APIv1 of BloodHound Enterprise. Our Technical Acount Managers have been reaching out to any customers who had still been utilizing these endpoints to make certain everyone had migrated successfully to APIv2.
+Back in [April of this year](/resources/release-notes/v7-3-0), we announced our intention to deprecate our legacy API around Black Hat 2025. The time has finally arrived to say goodbye to APIv1 of BloodHound Enterprise. Our Technical Account Managers have been reaching out to any customers who had still been utilizing these endpoints to make certain everyone had migrated successfully to APIv2.
 
 Thank you so much to our customers and Technical Account Managers for helping us sunset the use of this legacy code!
 
@@ -21,8 +21,9 @@ Thank you so much to our customers and Technical Account Managers for helping us
 - **BloodHound (v8.1.0)**
   - New and Improved Features
     - Cypher on PostgreSQL graph databases now supports quantifiers (ANY, SINGLE, NONE, ALL)!
-    - New "Analyze Now" button to kick of ad-hoc analysis of data.
-    - Improved handling of special identities in Active Directory (for example Guest accounts, and many default groups and objects).
+    - New "Analyze Now" button to kick off ad-hoc analysis of data.
+    - Improved linking of the Everyone and Authenticated Users groups across domain trusts.
+    - Added the `ClaimSpecialIdentity` Attack Path to indicate where special AD identities hold compromising permissions.
     - Improved performance and UX in Privilege Zone Management screens.
     - Improved performance and UX in the Explore table layout view.
     - Entity Panels may now be closed, deselecting a previously selected object or edge in the graph.
@@ -34,9 +35,10 @@ Thank you so much to our customers and Technical Account Managers for helping us
 
   - Bug Fixes
     - Clicking the Download button on the Explore table layout view will now consistently download a CSV export.
-    - The "All Global Administrators" pre-saved query will now consistently display all users with Global Administors role assignments.
+    - The "All Global Administrators" pre-saved query will now consistently display all users with Global Administrators role assignments.
     - Cypher queries on PostgreSQL graph databases now correctly return expected nodes and edges on directionless traversal between two nodes of the same kind.
     - Resolved an issue where AZRoleEligible edges would appear for non-directory scoped eligibility.
+    - _[BHE Only]_ Resolved an issue that resulted in inaccurate risk measurements involving the contains edge in Active Directory environments.
     - _[BHE Only]_ The impacted principals tables on remediation pages for Hygiene findings will once again display the list of principals.
     - _[BHE Only]_ Fixed an issue with sorting Finding details views, resulting in occasionally seeing the same finding twice.
     - _[BHE Only]_ CoerceAndRelayNTLMtoADCS edges will now resolve properly within BloodHound Enterprise after following recommended remediation steps.
@@ -53,32 +55,59 @@ Thank you so much to our customers and Technical Account Managers for helping us
 
 ### New and Improved Features
 
-- **Cypher quantifiers on PostgreSQL** - Support for Cypher on PostgreSQL graph databases continue! In this release, we're adding support for quantifiers (ANY, SINGLE, NONE, ALL) within Cypher queries. For more information, check out our [Cypher documentation](/analyze-data/cypher-supported#pattern-predicates)!
-- **"Analyze Now"** - BloodHound does a great job of only running analysis when necessary. Even still, there are occasions when kicking off a manual analysis can be quite helpful for certain troubleshooting scenarios. We've introduce a button under Administration -> BloodHound Configuration to kick off a fresh analysis.
+- **Cypher quantifiers on PostgreSQL** - Support for Cypher on PostgreSQL graph databases continues! In this release, we're adding support for quantifiers (ANY, SINGLE, NONE, ALL) within Cypher queries. For more information, check out our [Cypher documentation](/analyze-data/cypher-supported#pattern-predicates)!
+- **"Analyze Now"** - BloodHound does a great job of only running analysis when necessary. Even still, there are occasions when kicking off a manual analysis can be quite helpful for certain troubleshooting scenarios. We've introduced a button under Administration -> BloodHound Configuration to kick off a fresh analysis.
 <Frame>
   <img src="/assets/config_analyze_now.png" alt="Analyze Now in BloodHound v8.1.0"/>
 </Frame>
-- **Active Directory special identity updates** - .
-- **Privilege Zone Management UI updates** -
-- Improved performance and UX in the Explore table layout view.
-- Entity Panels may now be closed, deselecting a previously selected object or edge in the graph.
-- ADCS and GoldenCert abuse information now utilizes Certify 2.0 for all instructions.
+- **Updated linking for Everyone and Authenticated Users groups** - Both Everyone and Authenticated Users groups will now accurately link across domain trusts, resulting in more accurate representation of these paths. For example, ADCSESC1 Attack Paths crossing from child to root domains will now properly appear within BloodHound.
+- **Introducing the ClaimSpecialIdentity Attack Path:** - We've introduced a new Attack Path in the product that indicates where a principal can claim special identity SIDs (e.g. Network). These are now nodes in BloodHound, enabling paths where special identities hold compromising permissions. More details can be found in the Connecting the Special Identity Dots section of this blog post: [Good Fences Make Good Neighbors: New AD Trusts Attack Paths in BloodHound](https://specterops.io/blog/2025/06/25/good-fences-make-good-neighbors-new-ad-trusts-attack-paths-in-bloodhound/).
+- **Privilege Zone Management UI updates** - Enhancements to the Privilege Zone Management UI continue ahead of it nearly becoming generally available. In this release, we've significantly reduced the resources utilized by the page, and made several buttons more clear as to their intended functionaliy.
+<Frame>
+  <img src="/assets/pzm_update.png" alt="Update to Privilege Zone Management in BloodHound v8.1.0"/>
+</Frame>
+- **Explore table layout improvements** - We've continued to improve the table layout in the Explore page, including adding support for un-sorting a column with a third click, modifying the glyph used to indicate Tier Zero objects, and made copying cell values easier.
+<Frame>
+  <img src="/assets/8_1_table_view.png" alt="Updates to Explore table layout in BloodHound v8.1.0"/>
+</Frame>
+- **Deselect an object in Explore** - Entity Panels may now be closed, deselecting a previously selected object or edge in the graph.
+<Frame>
+  <img src="/assets/close_entity_panel.gif" alt="Updates to Explore table layout in BloodHound v8.1.0"/>
+</Frame>
+- **Certify 2.0 now in abuse instructions** - In case you missed it, our team recently released [Certify 2.0](https://specterops.io/blog/2025/08/11/certify-2-0/), introducing significant improvements and new capabilities over the original utility. We've updated abuse information across all ADCS and GoldenCert edges to instruct on the use of Certify 2.0 to take advantage of the improvements.
+<Frame>
+  <img src="/assets/certify_in_abuse.png" alt="Updates to Explore table layout in BloodHound v8.1.0"/>
+</Frame>
+- **_[BHE Only]_ Clarified the environment selector view** - We've added column headers to more clearly communicate the information displayed in the environment selector view on the Attack Paths page.
+<Frame>
+  <img src="/assets/env_selector_8_1.png" alt="Updates to Explore table layout in BloodHound v8.1.0"/>
+</Frame>
+- **_[BHE Only]_ Updated finding titles in Privilege Zones** - We've clarified the finding titles for additional privilege zones, making them more clear that those findings relate to additional zones outside of Tier Zero.
+<Frame>
+  <img src="/assets/addl_zone_findings.png" alt="Updates to Explore table layout in BloodHound v8.1.0"/>
+</Frame>
+- We have significantly improved the performance of the API Explorer page.
 - _[BHE Only]_ APIv1 has been removed from BloodHound Enterprise.
-- _[BHE Only]_ Clarified the columns displayed in the environment selector view.
-- _[BHE Only]_ Findings in non-Tier Zero zones now display zone-specific finding names.
-- Improved performance of the API Explorer page.
 
 ### Bug Fixes
 
-- Reverted the changes to `Contains` edges from v7.6.0 due to performance issues.
+- Clicking the Download button on the Explore table layout view will now consistently download a CSV export.
+- The "All Global Administrators" pre-saved query will now consistently display all users with Global Administrators role assignments.
+- Cypher queries on PostgreSQL graph databases now correctly return expected nodes and edges on directionless traversal between two nodes of the same kind.
+- Resolved an issue where AZRoleEligible edges would appear for non-directory scoped eligibility.
+- _[BHE Only]_ Resolved an issue that resulted in inaccurate risk measurements involving the contains edge in Active Directory environments.
+- _[BHE Only]_ The impacted principals tables on remediation pages for Hygiene findings will once again display the list of principals.
+- _[BHE Only]_ Fixed an issue with sorting Finding details views, resulting in occasionally seeing the same finding twice.
+- _[BHE Only]_ CoerceAndRelayNTLMtoADCS edges will now resolve properly within BloodHound Enterprise after following recommended remediation steps.
+- _[BHE Only]_ The new all findings details API endpoint will now properly include findings from all zones by default.
 
 ## SharpHound (v2.7.1)
 
 ### Bug Fixes
 
-- HasSIDHistory edges will once again be generated against User and Computer objects.
-- _[BHE Only]_ Resolves an issue where SharpHound Enterprise v2.6.7 added an additional entry in Programs and Features.
+- Resolved an issue where any timeouts during LDAP connection tests would result in excluding a domain entirely from any additional collection.
 
 ## AzureHound (v2.7.1)
 
-_No new release._
+### Bug Fixes
+- AzureHound will now properly track requests per connection and handle GOAWAY responses cleanly instead of failing the collection.
