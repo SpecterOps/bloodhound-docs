@@ -1,0 +1,102 @@
+---
+title: OpenGraph Custom Icons
+sidebarTitle: OpenGraph Custom Icons
+description: "How to set Custom Icons for your Custom Nodes"
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+# Introduction
+Since arbitrary nodes don’t have predefined types, there needs to be a way to specify custom icons. Here are a few possible approaches.
+
+# Icon Selection
+
+## Predefined icon set
+
+- Provide a set of icons (from Font Awesome) and allow users to specify an icon name 
+- Users can optionally specify a color per node kind. Acceptable values are #RGB or #RRGGBB
+- The entirety of the free, solid icons that font awesome offers are available. Supported icons can be viewed on the [official Font Awesome docs](https://fontawesome.com/search?o=r&ic=free&s=solid).
+- User must correctly specify the icon name using Font Awesome’s naming conventions. 
+    - A valid icon name will be something like “house” or “smile” without any fa-, fas-, etc. prefixes
+- Render a (?) icon on failed mappings. 
+- Provide a `PUT` endpoint for users to correct erroneous mappings (ie. feUser instead of faUser)
+
+### Example payload for custom icons 
+
+``` JSON
+{
+  "custom_types": {
+    "person": {
+      "icon": {
+        "type": "font-awesome",
+        "name": "user",
+        "color": "#FFF"
+      }
+    },
+    "device": {
+      "icon": {
+        "type": "font-awesome",
+        "name": "desktop"
+      }
+    },
+    "alert": {
+      "icon": {
+        "type": "font-awesome",
+        "name": "house"
+      }
+    }
+  }
+}
+```
+
+### Example with Python
+Here's a simple Python script to help you customize your icons.  
+You will need to generate a [Bearer Token](/reference/overview#jwt-bearer-token)
+
+**Note** Make sure to adjust the `url` and replace the `place holder token` in the script.
+
+``` Python
+import requests
+import json
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+url = "http://127.0.0.1:8080/api/v2/custom-nodes"
+
+headers = {
+    "Authorization": "Bearer ey<REDACTED>scduDoG7TmxU",
+    "Content-Type": "application/json"
+}
+
+def define_icon(icon_type, icon_name, icon_color):
+    payload = {
+        "custom_types": {
+            icon_type: {
+                "icon": {
+                    "type": "font-awesome",
+                    "name": icon_name,
+                    "color": icon_color
+                }
+            }
+        }
+    }
+
+    response = requests.post(
+        url,
+        headers=headers,
+        json=payload,
+        verify=False  # Disables SSL verification
+    )
+
+    print(f"🔹 Sent icon for: {icon_type}")
+    print("Status Code:", response.status_code)
+    print("Response Body:", response.text)
+    print("---")
+
+# Call function for each icon type you want to send
+define_icon("Node1", "burst", "#03CEFC")
+define_icon("Node2", "home", "#D67500")
+```
+
+You can call `define_icon` as many time as you need for each of your node type. 

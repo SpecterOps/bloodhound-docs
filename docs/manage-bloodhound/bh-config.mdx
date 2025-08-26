@@ -1,0 +1,339 @@
+---
+title: BloodHound Configuration Supplement
+description: "This page provides example configuration details for BloodHound and BloodHound Enterprise"
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+# Configuration Elements
+
+Configuration elements with a `.` in their name are part of a nested JSON configuration block:
+
+`tls.cert_file` translates to the following JSON structure:
+
+```json
+{
+  "tls": {
+    "cert_file": "/path/to/cert"
+  }
+}
+```
+
+## version
+
+Version of the configuration file. This is useful for detecting when new, breaking configuration changes occur.
+
+## bind_addr
+
+Bind address for the API.
+
+Example: `<host>:<port>`
+
+## slow_query_threshold
+
+Threshold in milliseconds for caching queries.
+
+## max_graphdb_cache_size
+
+Number of cache items for graph queries.
+
+## max_api_cache_size
+
+Number of cache items for API utilities.
+
+## metrics_port
+
+Bind address for the tool and metric API.
+
+**This port is sensitive and access must be guarded!**
+
+Example: `<host>:<port>`
+
+## root_url
+
+External facing HTTP URL that represents the root path for the application.
+
+Example: `http://localhost/`
+
+## work_dir
+
+Local directory for storing work files and temporary ingest artifacts.
+
+Example: `/opt/bhe/work`
+
+## log_level
+
+Default log level for the application. This parameter may be set to one of the following values:
+
+* `"DEBUG"`
+* `"INFO"`
+* `"ERROR"`
+
+## tls
+
+TLS configuration to start the BloodHound API using HTTPS.
+
+### tls.cert_file
+
+Path to the TLS certificate file.
+
+### tls.key_file
+
+Path to the TLS certificate signing key.
+
+## graph_driver
+
+Determines the driver to use when accessing the graph database. This parameter may be set to one of the following
+values:
+
+* `"neo4j"`
+* `"pg"`
+
+## database
+
+### database.connection
+
+Primary database connection URL. This URL must be specified in one of the following formats:
+
+* `"postgresql://user:password@host:port/db_name"`
+
+## neo4j
+
+### neo4j.connection
+
+Graph database connection URL when Neo4j is enabled. This URL must be specified in one of the following formats:
+
+* `"neo4j://user:password@host:port/db_name"`
+
+## crypto
+
+Cryptographic configuration settings.
+
+### crypto.jwt
+
+JWT configuration settings.
+
+### crypto.jwt.signing_key
+
+Base64 encoded byte array for signing key for user session JWTs. This value **must be 32 bytes** in length when decoded
+as the JWT signing method used by the API is `HMAC-SHA2-256`.
+
+### crypto.argon2
+
+Argon2 cryptographic settings for password enabled authentication.
+
+### crypto.argon2.memory_kibibytes
+
+Amount of memory the Argon2 password hash function should utilize. See the
+[recommended parameters](https://www.password-hashing.net/argon2-specs.pdf) section of the Argon2 specification for
+further information about this value.
+
+### crypto.argon2.num_iterations
+
+Number of iterations the Argon2 password hash function should execute. See the
+[recommended parameters](https://www.password-hashing.net/argon2-specs.pdf) section of the Argon2 specification for
+further information about this value.
+
+### crypto.argon2.num_threads
+
+Number of threads the Argon2 password hash function should utilize during digest. See the
+[recommended parameters](https://www.password-hashing.net/argon2-specs.pdf) section of the Argon2 specification for
+further information about this value.
+
+## saml
+
+### saml.sp_cert
+
+Certificate that the API instance should use when presenting as a SAML Service Provider.
+
+### saml.sp_key
+
+Private RSA key that the API instance should use when presenting as a SAML Service Provider.
+
+### saml.sp_ca_chain
+
+Certificate chain that contains the signing authority for the certificate and private key the API instance should use
+when presenting as a SAML Service Provider.
+
+## default_admin
+
+Default admin user configuration details. This configuration drives the creation of the first user that may log in and
+finish setting up the BloodHound instance.
+
+### default_admin.principal_name
+
+Principal name of the default admin user.
+
+`Deprecated`
+
+### default_admin.password
+
+Initial password for the default admin user.
+
+### default_admin.email_address
+
+Email address for the default admin user.
+
+### default_admin.first_name
+
+First name for the default admin user.
+
+### default_admin.last_name
+
+Last name for the default admin user.
+
+### default_admin.expire_now
+
+Expires the default admin user's initial password, requiring a password reset on first logon. This parameter may be set
+to one of the following values:
+
+* `true`
+* `false`
+
+## collectors_bucket_url
+
+Collector bucket URL for collectors sourced upstream.
+
+`For BloodHound Enterprise internal use only.`
+
+## collectors_base_path
+
+Collector base path for collectors sourced upstream.
+
+`For BloodHound Enterprise internal use only.`
+
+## datapipe_interval
+
+Interval in seconds that the service will wait before checking for new data.
+
+## enable_startup_wait_period
+
+Enables a startup wait period that defers ingest and analysis until a given amount of time. This parameter may be set to
+one of the following values:
+
+* `true`
+* `false`
+
+## enable_api_logging
+
+Enables API HTTP request logging. This parameter may be set to one of the following values:
+
+* `true`
+* `false`
+
+## enable_cypher_mutations
+
+Enables graph database mutations via the cypher search endpoint. This parameter may be set to one of the following
+values:
+
+* `true`
+* `false`
+
+## disable_analysis
+
+Disables graph data analysis. This parameter may be set to one of the following values:
+
+* `true`
+* `false`
+
+## disable_cypher_complexity_limit
+
+Disables cypher complexity limiting. This parameter may be set to one of the following values:
+
+* `true`
+* `false`
+
+## disable_ingest
+
+Disables graph data ingest. This parameter may be set to one of the following values:
+
+* `true`
+* `false`
+
+## disable_migrations
+
+Disables database migrations. This parameter may be set to one of the following values:
+
+* `true`
+* `false`
+
+## graph_query_memory_limit
+
+Graph query memory limit in gigabytes.
+
+## fedramp_eula_text
+
+Text to display for the alternative FedRAMP EULA acceptance page.
+
+## enable_text_logger
+
+Enables text output instead of JSON output for the API log. This parameter may be set to
+one of the following values:
+
+* `true`
+* `false`
+
+## recreate_default_admin
+
+Allow recreating the default admin account to help with lockouts/loading database dumps. This parameter may be set to
+one of the following values:
+
+* `true`
+* `false`
+
+# OS Environment Config Format
+
+An operator may set any option via an environment variable by prefixing it with `bhe_` and replacing dots (`.`) with underscores (`_`):
+
+```bash
+export bhe_bind_addr="192.168.100.100"
+export bhe_root_url="https://example.com"
+export bhe_database_connection="postgres://bhe:weneedbetterpasswords@localhost:5432/bhe"
+export bhe_neo4j_connection="neo4j://bhe:weneedbetterpasswords@localhost:7687/bhe"
+
+bhapi
+```
+
+# Example JSON Configuration
+
+An operator may use the below example to author a JSON configuration:
+
+```json
+{
+  "version": 1,
+  "bind_addr": "0.0.0.0:8080",
+  "root_url": "http://0.0.0.0:8080/",
+  "work_dir": "/opt/bhe_work",
+  "log_level": "INFO",
+  "tls": {
+    "cert_file": "",
+    "key_file": ""
+  },
+  "graph_driver": "pg",
+  "database": {
+    "connection": "postgresql://bhe:bhe4eva@localhost/bhe"
+  },
+  "default_admin": {
+    "principal_name": "admin",
+    "password": "admin",
+    "first_name": "Initial",
+    "last_name": "Admin",
+    "expire_now": true
+  },
+  "crypto": {
+    "jwt": {
+      "signing_key": "<BASE64_ENCODED_32_BYTE_KEY>"
+    },
+    "argon2": {
+      "memory_kibibytes": 1048576,
+      "num_iterations": 4,
+      "num_threads": 4
+    }
+  },
+  "saml": {
+    "sp_cert": "CERT CONTENT",
+    "sp_key": "-----BEGIN PRIVATE KEY-----\nKEY CONTENT\n-----END PRIVATE KEY-----"
+  },
+  "graph_query_memory_limit": 2
+}
+```

