@@ -1,20 +1,18 @@
 ---
 title: OpenGraph Requirements
 sidebarTitle: Requirements
-description: "Requirements for use of OpenGraph"
+description: "Requirements for using OpenGraph"
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 # Version Requirements
 
-Full support for BloodHound OpenGraph requires:
-- BloodHound Enterprise
+Full OpenGraph support requires a PostgreSQL graph backend and one of the following editions:
+- BloodHound Enterprise (uses PostgreSQL)
+- BloodHound CE v8.0.0+ with PostgreSQL
 
-OR
-
-- BloodHound CE v8.0.0+
-- A PostgreSQL graph backend database (to switch, set `"graph_driver": "pg"` in your BloodHound configuration)
+To switch backends, set `"graph_driver": "pg"` in `bloodhound.config.json` and re‑ingest.
 
 _Note: While many OpenGraph features may work on a Neo4j graph database, there are functional and performance limitations. For full support, migrate to a PostgreSQL graph database backend._
 
@@ -24,7 +22,7 @@ _Note: While many OpenGraph features may work on a Neo4j graph database, there a
 
 Every node in a BloodHound database must have a universally unique identifier to distinguish it from every other node. You must identify the source and format of that identifier.
 
-We used to use UPN-formatted names for identifiers in BloodHound (e.g.: “DOMAIN ADMINS@CONTOSO.COM”). Surprise surprise, UPNs are not guaranteed to be universally unique. We now use SIDs instead for universally unique identifiers for most Active Directory principals.
+We previously used UPN-formatted names for identifiers in BloodHound (e.g.: “DOMAIN ADMINS@CONTOSO.COM”). Surprise surprise, UPNs are not guaranteed to be universally unique. We now use SIDs instead for universally unique identifiers for most Active Directory principals.
 
 One of the best universally unique identifiers is a GUID. Does the entity you are modeling have a GUID? If so, great! If not, you’re going to need to find something else.
 
@@ -59,8 +57,4 @@ If your graph model does not create **paths** connecting **non-adjacent** nodes,
 
 Edge names may only contain alphanumeric characters and underscores (`_`).
 
-We recommend utilizing PascalCase, a naming convention where compound words are written without spaces and each word starts with an uppercase letter (e.g., `MemberOf`, `GenericAll`).
-
-<Note>
-This article is adapted from [Andy Robbins](https://www.linkedin.com/in/robbinsandy/)’ blog post, “[Attack Graph Model Design Requirements and Examples](https://specterops.io/blog/2025/08/01/attack-graph-model-design-requirements-and-examples/),” which goes beyond what’s described here.
-</Note>
+For readability, we recommend PascalCase, a naming convention where compound words are written without spaces and each word starts with an uppercase letter (e.g., `MemberOf`, `GenericAll`).
