@@ -13,19 +13,6 @@ However, while the process of adding nodes and edges to the product is greatly s
 
 An attack graph is a tool - a powerful force multiplier when wielded correctly, a frustrating and confusing hazard when not. This document aims to equip you with the knowledge and skills necessary to effectively wield this tool.
 
-## Requirements
-
-Full support for BloodHound OpenGraph requires:
-- BloodHound Enterprise
-
-OR
-
-- BloodHound CE v8.0.0+
-- A PostgreSQL graph backend database (to switch, set `"graph_driver": "pg"` in your BloodHound configuration)
-
-_Note: While many OpenGraph features may work on a Neo4j graph database, there are functional and performance limitations. For full support, migrate to a PostgreSQL graph database backend._
-
-## Limitations
 <Info>
 At this time, OpenGraph nodes and edges are not supported in the Search or Pathfinding tab, so the Cypher tab **must** be used to query the data manually.
 </Info>
@@ -101,59 +88,6 @@ While the bottom graph would be analogous to having the nodes represent the **ad
 
 <img noZoom src="/assets/og-bp-8.png" alt="Well connected nodes"/>
 
-It should be obvious that for the sake of **path finding**, the **second** model is the **only** model that will work.
+It should be obvious that for the sake of **pathfinding**, the **second** model is the **only** model that will work.
 
 **This is actually how Google Maps works under the hood – it is a graph where locations are nodes and streets are edges.**
-
-# BloodHound Attack Graph Model Requirements
-
-The second habit of highly effective people is:
-
-> **Habit 2: Begin With the End in Mind** means to start with a clear understanding of your destination. You need to know where you are going in order to better understand where you are now so that the steps you take are always in the right direction.
-
-You don’t want to pour your heart and soul into a data model only to find out that most BloodHound features don’t work with your model. Here are the non-negotiable requirements your model must comply with to work with BloodHound:
-
-## Requirement 1: Universally Unique Node Identifiers
-
-Every node in a BloodHound database must have a universally unique identifier to distinguish it from every other node. You must identify the source and format of that identifier.
-
-We used to use UPN-formatted names for identifiers in BloodHound (e.g.: “DOMAIN ADMINS@CONTOSO.COM”). Surprise surprise, UPNs are not guaranteed to be universally unique. We now use SIDs instead for universally unique identifiers for most Active Directory principals.
-
-One of the best universally unique identifiers is a GUID. Does the entity you are modeling have a GUID? If so, great! If not, you’re going to need to find something else.
-
-Examples of **bad** identifiers:
-
-- Usernames
-- Email addresses
-- Hostnames
-- IDs that start at “0” and increment from there
-
-Examples of **good** identifiers:
-- GUIDs
-- SIDs
-- Certificate thumbprints
-
-Think: how does the system itself differentiate between these objects? In many (but certainly not all) cases, you may do well to identify your nodes the same way the system uniquely identifies its objects.
-
-## Requirement 2: Distinct Node and Edge Classes
-
-If you are modeling a new system not currently modeled by BloodHound, your nodes and edges must have distinct classes that do not overlap with existing BloodHound node and edge classes.
-
-Sorry, but “MemberOf” is already taken, so you will need to use a different edge class when modeling group memberships in Okta, Zoho, AWS, or whatever else. Same with all the other existing node and edge classes which can be found here:
-
-- [About BloodHound Nodes](https://bloodhound.specterops.io/resources/nodes/overview)
-- [About BloodHound Edges](https://bloodhound.specterops.io/resources/edges/overview)
-
-## Requirement 3: Your Model Must Connect Non-Adjacent Nodes with Paths
-
-If your graph model does not create **paths** connecting **non-adjacent** nodes, you should be using a **relational database**, not a **graph database**. You are using the **wrong** tool for the job!
-
-## Requirement 4: Edges Names and Allowed Characters
-
-Edge names must not contain hyphens (`-`). Use PascalCase and avoid special characters.
-
-PascalCase is a naming convention where compound words are written without spaces and each word starts with an uppercase letter (e.g., `MemberOf`, `GenericAll`).
-
-<Note>
-This article is adapted from [Andy Robbins](https://www.linkedin.com/in/robbinsandy/)’ blog post, “[Attack Graph Model Design Requirements and Examples](https://specterops.io/blog/2025/08/01/attack-graph-model-design-requirements-and-examples/),” which goes beyond what’s described here.
-</Note>
