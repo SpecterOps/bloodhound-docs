@@ -27,7 +27,7 @@ Local Groups and Sessions can only be collected from domain-joined Windows syste
 
 ## AD Structure Data
 
-Information about the objects and relationships within your Active Directory environment makes up the basic information necessary to identify attack paths within your environment. 
+Information about the objects and relationships within your Active Directory environment makes up the basic information necessary to identify attack paths within your environment.
 
 This information includes:
 
@@ -65,7 +65,9 @@ Members of the following groups are enumerated:
 
 SharpHound collects this information utilizing [Remote SAM Enumeration](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-access-restrict-clients-allowed-to-make-remote-sam-calls).
 
-By default, computers beginning with Windows 10 version 1607 and Windows Server 2016 require Administrator access to perform RemoteSAM operations. Although this setting may be overridden with Group Policy, this is the only permission required by SharpHound for which Microsoft supports modification.
+<Note>[Least-Privileged Collection](/collect-data/enterprise-collection/least-privileged-collection) is possible for most BloodHound data types.</Note>
+
+By default, computers beginning with Windows 10 version 1607 and Windows Server 2016 require Administrator access to perform RemoteSAM operations. This setting may be overridden with Group Policy for least-privilege collection. This is the only permission required by SharpHound for which Microsoft supports modification.
 
 ## User Rights Assignments
 
@@ -85,7 +87,7 @@ SharpHound collects active session information to identify abusable sessions on 
 
 SharpHound collects this information utilizing the [NetWkstaUserEnum](https://learn.microsoft.com/en-us/windows/win32/api/lmwksta/nf-lmwksta-netwkstauserenum) function.
 
-Only members of the local Administrators group may call this function.
+Members of the local Administrators group may call this function. For least-privilege collection, members of the local Print Operators group may also call this function.
 
 ## Certificate Services
 
@@ -99,7 +101,7 @@ Information about the Active Directory Certificate Service hierarchy within your
 
 SharpHound collects this information utilizing signed LDAP queries against a domain controller in the domain.
 
-By default, all Authenticated Users can enumerate almost all Certificate Services data utilized by BloodHound Enterprise.
+By default, any Authenticated User can enumerate almost all Certificate Services data utilized by BloodHound Enterprise.
 
 Two additional types of data can enhance the findings - [DC Registry](/collect-data/permissions#dc-registry) and [CA Registry](/collect-data/permissions#ca-registry).
 
@@ -109,22 +111,22 @@ SharpHound collects the registry key values Kdc\\StrongCertificateBindingEnforce
 
 ### Collection and Permissions
 
-Collecting these registry key values requires membership of Administrators on the DCs by default.
+Collecting these registry key values requires membership of Administrators on the DCs by default. Least-privilege delegation is possible via Group Policy or registry modifications.
 
 ## CA Registry
 
 SharpHound collects the following registry key values on enterprise CAs stored under SYSTEM\\CurrentControlSet\\Services\\CertSvc\\Configuration\\&lt;CA Name&gt;:
 
-* **EnrollmentAgentRights
-    **Contains restrictions for enrollment agents. BloodHound will take the restrictions into account when calculating ADCS ESC3 edges, and assume no restrictions if not collected, as no restrictions are configured by default.
-* **Security
-    **Contains the security descriptor for the enterprise CA i.e. the permissions for Enroll, ManageCA, and ManageCertificates edges against the enterprise CA. This security descriptor is also stored in the AD object of the enterprise CA. SharpHound collects both. The CA registry security descriptor holds the effective permissions. Changes in the CA registry security descriptor are replicated to the AD copy, however, not the other way. Therefore, collecting the CA registry security descriptor may reveal permissions of the enterprise CA that are not present if only collecting the AD object.
-* **PolicyModules\\CertificateAuthority_MicrosoftDefault.Policy\\EditFlags
-    **SharpHound checks if the EDITF_ATTRIBUTESUBJECTALTNAME2 flag is present, required to calculate ADCS ESC6 edges.
+* **EnrollmentAgentRights**
+    Contains restrictions for enrollment agents. BloodHound will take the restrictions into account when calculating ADCS ESC3 edges, and assume no restrictions if not collected, as no restrictions are configured by default.
+* **Security**
+    Contains the security descriptor for the enterprise CA i.e. the permissions for Enroll, ManageCA, and ManageCertificates edges against the enterprise CA. This security descriptor is also stored in the AD object of the enterprise CA. SharpHound collects both. The CA registry security descriptor holds the effective permissions. Changes in the CA registry security descriptor are replicated to the AD copy, however, not the other way. Therefore, collecting the CA registry security descriptor may reveal permissions of the enterprise CA that are not present if only collecting the AD object.
+* **PolicyModules\\CertificateAuthority_MicrosoftDefault.Policy\\EditFlags**
+    SharpHound checks if the EDITF_ATTRIBUTESUBJECTALTNAME2 flag is present, required to calculate ADCS ESC6 edges.
 
 The registry key values are described in detail in the [Certified Pre-Owned whitepaper](https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf).
 
 ### Collection and Permissions
 
-Collecting these registry key values requires membership of Administrators on the enterprise CAs by default.
+Any Authenticated User may collect these registry key values by default.
 
