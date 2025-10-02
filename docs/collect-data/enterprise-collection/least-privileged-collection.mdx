@@ -1,0 +1,82 @@
+---
+title: Least-Privileged Collection in SharpHound
+description: "Learn how to collect more than AD Structure data without Domain Admin."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+Privileged collection allows BloodHound Enterprise to analyze Attack Paths based on non-centralized configurations using privileged administrative credentials, similar to performing a privileged vulnerability scan. Least-privileged collection accomplishes these goals without using default Administrative privileges to perform the collection. With some additional configuration SharpHound can collect the local groups, active sessions, and registry keys without adding any SharpHound collection service accounts to Domain Admins.
+
+<Warning>The SharpHound collection service account does not need Domain Admin rights, even for standard Privileged collection. Local Administrator group membership only.</Warning>
+
+## AD Structure Data
+
+By default, any Authenticated User may query data from Active Directory via LDAP. Unless modifications have been made to this default, administrative privilege is not required for SharpHound to collect AD Structure Data.
+
+If modifications exist that restrict the default read permissions, the SharpHound collector service account must be a member of an audit role group which is granted Read Property and Read Permissions on all collected AD objects.
+
+Permissions to read the Deleted Objects container (optional) may be delegated to a group and the SharpHound collector service account made a member of that group.
+
+## Local Group Membership
+
+SharpHound collects local group membership via [Remote SAM Enumeration](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-access-restrict-clients-allowed-to-make-remote-sam-calls).
+
+By default, on currently supported Windows operating systems, only Administrators on the device(s) being collected have this right on Windows clients and member servers.  For compatibility purposes, Everyone is granted this right on domain controllers by default.
+
+Microsoft supports delegating this permission via a properly scoped Group Policy Object with the [Network access: Restrict clients allowed to make remote calls to SAM](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/network-access-restrict-clients-allowed-to-make-remote-sam-calls) setting.
+
+For example, if our Tier Zero SharpHound collector gMSA is a member of the Allow_SamConnect_T0 group, a GPO configured like this and linked to the Tier Zero OU where all of the non-DC Tier Zero assets are located, SharpHound will be able to collect Local Group data from those hosts.
+
+<Frame>
+  <img src="/assets/least-priv-gpo-samr.png" alt=""/>
+</Frame>
+
+## User Rights Assignments
+
+Only Administrators can perform the `LSAOpenPolicy` and `LSAEnumerateAccountsWithUserRights` function calls necessary to collect User Rights Assignments directly from a remote host. There is no known way around this limitation.
+
+Not collecting User Rights Assignments, currently, may cause inaccurate CanRDP edges. In the future additional User Rights may be collected to determine additional attack paths.
+
+## Sessions
+
+By default, local Administrators have the rights necessary to perform the [NetWkstaUserEnum](https://learn.microsoft.com/en-us/windows/win32/api/lmwksta/nf-lmwksta-netwkstauserenum) function calls to collect session data.
+
+While not ideal, local Print Operators also have the rights necessary to collect session data.
+
+To collect session data from domain controllers, the collector service account can be added to the local builtin [Print Operators](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/understand-security-groups#print-operators) group for the domain. When doing this it is also important to lessen the capabilities of the Print Operators group by removing the default User Rights Assignments created by the Default Domain Controllers Policy linked to the Domain Controllers OU. The Print Operators group should no longer be granted rights to Allow log on locally: `SeInteractiveLogonRight`, Load and unload device drivers: `SeLoadDriverPrivilege`, and Shut down the system: `SeShutdownPrivilege`. Domain controllers should not be used as print servers and the builtin Print Operators group for the domain should be unused, except perhaps for this purpose.
+
+<Frame>
+  <img src="/assets/least-priv-gpo-defang-printop.png" alt=""/>
+</Frame>
+
+To collect session data from Windows workstations and member servers, the collector service account can be added to the local Print Operators group on each device. The best way to accomplish this is likely via Group Policy Preferences.
+
+For example, if our Tier One SharpHound collector gMSA is a member of the Allow_NetwkstaUserEnum_T1 group, a GPO configured like this and linked to any OUs where Tier One assets are located will grant the SharpHound collector session enumeration rights.
+
+<Frame>
+  <img src="/assets/least-priv-gpo-local-printop.png" alt=""/>
+</Frame>
+
+<Tip>Local group membership can also be managed via the Restricted Groups GPO setting category. This is a legacy setting. Group Policy Preferences is more robust and less likely to create security or denial of service (DoS) issues.</Tip>
+
+## Certificate Services
+
+Any Authenticated User, by default, may collect certificate services data from Active Directory via LDAP. The majority of certificate services data is in the Configuration NC for the forest and collected with the AD Structure data.
+
+The remainder of Certificate Services data may be collected from the Windows Registry.
+
+## Registry
+
+SharpHound collects registry data for both certificate services and NTLM relay edges. The certificate services registry paths are on certificate authorities and domain controllers. NTLM relay paths are located on all Windows hosts.
+
+When the AD CS role is installed in Windows, the `HKLM\SYSTEM\CurrentControlSet\Services\CertSvc` registry path is added to the `HKLM\SYSTEM\CurrentControlSet\Control\SecurePipeServers\winreg\AllowedPaths`. This creates a remote registry exception that allows Authenticated Users to query any keys and subkeys in this path, as long as they also are granted rights to read the key.
+
+By default, only Administrators may read the registry remotely on domain controllers. A similar exception can be created on DCs by adding the required DC registry paths to `HKLM\SYSTEM\CurrentControlSet\Control\SecurePipeServers\winreg\AllowedExactPaths` using the GPO setting [Network access: Remotely accessible registry paths](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/network-access-remotely-accessible-registry-paths). This will create an exception to the Remote Registry named pipe on the DC allowing Authenticated Users to read those exact key paths, as long as the user also is granted permissions on the registry key DACL as well.
+
+The registry paths for NTLM relay edges are also only accessible remotely by Administrators by default. Group Policy can be utilized to create AllowedExactPaths exceptions for these specific paths as well. This will grant Authenticated Users the ability to connect to the Remote Registry named pipe at those specific registry paths.
+
+<Frame>
+  <img src="/assets/least-priv-gpo-winreg.png" alt=""/>
+</Frame>
+
+Alternatively, if creating exceptions via `AllowedExactPaths` or `AllowedPaths` is not acceptable in your organization, it is also possible to modify the default security descriptor on the Remote Registry named pipe to grant explicit security principals to connect to the named pipe with read permissions to the entire registry collection.  Effective access is still governed via permissions configured on individual registry keys.
