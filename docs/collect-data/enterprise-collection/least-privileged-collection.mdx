@@ -5,7 +5,7 @@ description: "Learn how to collect more than AD Structure data without Domain Ad
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-Whereas Privileged collection allows BloodHound Enterprise to analyze Attack Paths based on non-centralized configurations using privileged administrative credentials, similar to performing a privileged vulnerability scan. Least-Privileged Collection is accomplishing these goals without using default Administrative privileges to perform the collection. With some additional configuration, the local groups, active sessions, and registry keys can be collected without adding any SharpHound collection service accounts to Domain Admins.
+Privileged collection allows BloodHound Enterprise to analyze Attack Paths based on non-centralized configurations using privileged administrative credentials, similar to performing a privileged vulnerability scan. Least-privileged collection accomplishes these goals without using default Administrative privileges to perform the collection. With some additional configuration SharpHound can collect the local groups, active sessions, and registry keys without adding any SharpHound collection service accounts to Domain Admins.
 
 <Warning>The SharpHound collection service account does not need Domain Admin rights, even for standard Privileged collection. Local Administrator group membership only.</Warning>
 
@@ -19,7 +19,7 @@ Permissions to read the Deleted Objects container (optional) may be delegated to
 
 ## Local Group Membership
 
-Local group membership is collected via [Remote SAM Enumeration](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-access-restrict-clients-allowed-to-make-remote-sam-calls).
+SharpHound collects local group membership via [Remote SAM Enumeration](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-access-restrict-clients-allowed-to-make-remote-sam-calls).
 
 By default, on currently supported Windows operating systems, only Administrators on the device(s) being collected have this right on Windows clients and member servers.  For compatibility purposes, Everyone is granted this right on domain controllers by default.
 
@@ -33,7 +33,7 @@ For example, if our Tier Zero SharpHound collector gMSA is a member of the Allow
 
 ## User Rights Assignments
 
-Only Administrators are able to perform the `LSAOpenPolicy` and `LSAEnumerateAccountsWithUserRights` function calls necessary to collect User Rights Assignments directly from a remote host. There is no known way around this limitation.
+Only Administrators can perform the `LSAOpenPolicy` and `LSAEnumerateAccountsWithUserRights` function calls necessary to collect User Rights Assignments directly from a remote host. There is no known way around this limitation.
 
 Not collecting User Rights Assignments, currently, may cause inaccurate CanRDP edges. In the future additional User Rights may be collected to determine additional attack paths.
 
@@ -57,7 +57,7 @@ For example, if our Tier One SharpHound collector gMSA is a member of the Allow_
   <img src="/assets/least-priv-gpo-local-printop.png" alt=""/>
 </Frame>
 
-<Tip>Local group membership can also be managed via the Restricted Groups GPO setting category. This is a legacy setting. Group Policy Preferences is more robust and less likely to create security or DoS issues.</Tip>
+<Tip>Local group membership can also be managed via the Restricted Groups GPO setting category. This is a legacy setting. Group Policy Preferences is more robust and less likely to create security or denial of service (DoS) issues.</Tip>
 
 ## Certificate Services
 
