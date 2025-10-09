@@ -49,7 +49,7 @@ To collect session data from domain controllers, the collector service account c
   <img src="/assets/least-priv-gpo-defang-printop.png" alt=""/>
 </Frame>
 
-To collect session data from Windows workstations and member servers, the collector service account can be added to the local Print Operators group on each device. The best way to accomplish this is likely via Group Policy Preferences.
+To collect session data from Windows member servers, the collector service account can be added to the local Print Operators group on each device. The best way to accomplish this is likely via Group Policy Preferences.
 
 For example, if our Tier One SharpHound collector gMSA is a member of the Allow_NetwkstaUserEnum_T1 group, a GPO configured like this and linked to any OUs where Tier One assets are located will grant the SharpHound collector session enumeration rights.
 
@@ -58,6 +58,10 @@ For example, if our Tier One SharpHound collector gMSA is a member of the Allow_
 </Frame>
 
 <Tip>Local group membership can also be managed via the Restricted Groups GPO setting category. This is a legacy setting. Group Policy Preferences is more robust and less likely to create security or denial of service (DoS) issues.</Tip>
+
+Collecting session data from domain-joined Windows desktops will require membership in the local Administrators group on each endpoint, which is best handled via Group Policy Preferences. Utilizing a service account that is a member of Domain Admins is strongly discouraged.
+
+There may be other options for collecting session data from the environment, such as parsing Windows event logs from all forest domain controllers, specifically Event ID 4624.
 
 ## Certificate Services
 
