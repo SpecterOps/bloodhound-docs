@@ -1,6 +1,6 @@
 ---
 title: Search With Cypher
-description: "This page explains how to get started with Cypher and how to access the 'Pre-built Searches' formerly known as 'Pre-built Queries'"
+description: This page explains how to get started with Cypher and how to access the 'Pre-built Searches' formerly known as 'Pre-built Queries'.
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
@@ -48,8 +48,9 @@ Together, edges and nodes create the paths we use in BloodHound to demonstrate h
 
 When building Cypher queries, it's important to note that you're generally trying to build a path using the relationships available to you. Let's look at an extremely basic query:
 
-```
-    MATCH (B)-[A]->(R) RETURN B
+```cql
+MATCH (B)-[A]->(R)
+RETURN B
 ```
 
 Let's break down how this Cypher query is constructed. When querying the database, we start our queries with the MATCH keyword. The MATCH clause lets you specify a pattern in the database.
@@ -63,16 +64,21 @@ The dashes between the nodes and relationships can be used to specify direction.
 In the above query, the **->** specifies that the query should return relationships that go from B to R. Removing the **>** will allow the query to search relationships in both directions. Finally, the RETURN statement instructs the database to return the item matched with the corresponding variable name B.
 
 Now, let's take our previous query and make it a bit more complex:
-```
-    MATCH (n:User),(m:Group) MATCH p=(n)-[r:MemberOf*1..3]->(m) RETURN p
+
+```cql
+MATCH (n:User),(m:Group)
+MATCH p=(n)-[r:MemberOf*1..3]->(m)
+RETURN p
 ```
 
 This query is a bit more refined than the previous one. By using labels on both nodes and edges, we can make our query a lot more specific. We also pre-assign the variables **n** and **m** and give them labels to make the query easier to read. In this particular case, we're asking BloodHound to find nodes with the labels User and Group, and then match those nodes using the _MemberOf_ relationship. We added a length modifier as well to the relationship. Adding ***1..3** limits the search to relationships that are between one and three links. In simple terms, give me any users that are a member of a group up to three links away. Additionally, we're assigning the result of the pattern to the variable **p** and returning that variable. When we get **p** back, it will contain the result of each path it can find that matches our pattern we asked for.
 
 Now that we've looked at the basic building blocks of queries, let's look at a more complicated one. As an example, here's the query we use to calculate shortest paths to Domain Admins, one of the most important queries in the BloodHound interface:
 
-```
-    MATCH p=shortestPath((n:User)-[*1..]->(m:Group))WHERE m.name = "DOMAIN ADMINS@INTERNAL.LOCAL"RETURN p
+```cql
+MATCH p=shortestPath((n:User)-[*1..]->(m:Group))
+WHERE m.name = "DOMAIN ADMINS@INTERNAL.LOCAL"
+RETURN p
 ```
 
 <Note>
@@ -84,8 +90,12 @@ In this query, we add a few more elements to our previous ones. We still use lab
 There is also an allShortestPaths function available, which, as the name implies, will find every shortest path from each node to your target. Note that this results in more data analysis to perform the query and could result in higher resource consumption.
 
 Another important part of Cypher to note is that wildcard matches are possible using regex, although the syntax for the query changes slightly. As an example, here's the query that's run each time you type a letter in the search bar:
-```
-    MATCH (n)WHERE n.name =~ "(?i).*searchterm.*"RETURN nLIMIT 10
+
+```cql
+MATCH (n)
+WHERE n.name =~ "(?i).*searchterm.*"
+RETURN n
+LIMIT 10
 ```
 
 In this query, we ask the graph to return any nodes of any type that match the search term given. The (**?i**) tells the graph this is a case-insensitive regex, with the **.**\* on each side indicating that we want to match anything on either side. We limit the number of items returned to the first ten using the **LIMIT** keyword.
@@ -96,18 +106,25 @@ As you build into more complicated queries, the **WITH** keyword will become imp
 
 The UI calculates the number of sessions for the group using two separate queries put together:
 
-```
-    MATCH p=shortestPath((m:User)-[r:MemberOf*1..]->(n:Group))WHERE n.name = "$name_of_group"WITH m MATCH q=((m)<-[:HasSession]-(o:Computer)) RETURN count(o)
+```cql
+MATCH p=shortestPath((m:User)-[r:MemberOf*1..]->(n:Group))
+WHERE n.name = "$name_of_group"
+WITH m
+MATCH q=((m)<-[:HasSession]-(o:Computer))
+RETURN count(o)
 ```
 
 This query looks more complicated than we had before, so let's break it down into two components.
-```
-    MATCH p=shortestPath((m:User)-[r:MemberOf*1..]->(n:Group))WHERE n.name = "$name_of_group"
+
+```cql
+MATCH p=shortestPath((m:User)-[r:MemberOf*1..]->(n:Group))
+WHERE n.name = "$name_of_group"
 ```
 This is the first query we run. We ask BloodHound to find the shortestPath possible from any user node to the group we specify. Note that we allow the _MemberOf_ relationship to span any number of hops, allowing us to include users inside nested groups. This first query gives us all the effective members of the group we ask for.
 
-```
-    MATCH q=((m)<-[:HasSession]-(o:Computer))RETURN count(o)
+```cql
+MATCH q=((m)<-[:HasSession]-(o:Computer))
+RETURN count(o)
 ```
 
 This is the second query that actually gives us the session data. The variable **m** is carried over from the previous query and contains all the users relevant to the group we're attempting to find sessions for. We ask BloodHound to find any computer where any of the users we found in the first step has a session using the _HasSession_ relationship. We're not interested in returning the relationships in this particular case, so we don't assign a variable. Finally, we return the count of the number of computers we have sessions on. The two queries we execute are joined together using the **WITH** keyword. When using the keyword, you specify any variables you want to carry over from the previous part of the query. These variables will be available with the data for the next query in your chain.
