@@ -14,7 +14,7 @@ This article describes how to use Cypher queries to extend the basic search func
 Cypher is a query language for graph databases (similar to SQL for relational databases). It uses an ASCII-art style syntax to describe nodes and relationships. If you can describe the path you're looking for, you can write it in Cypher.
 
 <Note>
-This article provides an introduction to Cypher queries in BloodHound, including how to access prebuilt queries and manage saved queries. You can find more advanced information about writing custom Cypher queries in [placeholder advanced cypher page](https://bloodhound.readthedocs.io/en/latest/analyze-data/cypher-advanced.html).
+This article provides an introduction to Cypher queries in BloodHound, including how to access prebuilt queries and manage saved queries. See [Write Custom Queries](#write-custom-queries) for more advanced information.
 </Note>
 
 ## Quickstart
@@ -48,31 +48,46 @@ When you're ready to explore prebuilt queries inside BloodHound, follow these st
   </Step>
 </Steps>
 
-## Use cases
+## Use Cases
 
 BloodHound provides several features to help you work with Cypher queries. These features enable you to search and manage your queries effectively.
 
-### Search and filter
+### Search and Filter
 
-To help you find the right query quickly, BloodHound offers the following search and filter options:
+BloodHound offers several search and filtering options to help you find the right query quickly.
+
+<Frame>
+  <img src="/assets/saved-queries-search-filter.png" alt="Search and filter queries" />
+</Frame>
 
 - **Search saved queries by name**: Quickly locate specific queries using the search text box.
 - **Filter queries**: Narrow down the list of queries by selecting one of the following options:
 
-   - Platform
-   - Category
-   - Source
+   - **Platforms**: Displays queries based on the platform that they target, such as Active Directory or Azure. The data collectors that you use influence this list. You can also filter to show only your saved queries.
+   - **Categories**: Displays queries based on logical groups, such as shortest path and dangerous privileges.
+   - **Source**: Displays queries based on their source, such as prebuilt, personal, and shared.
 
-### Manage queries
+### Create and Manage Queries
 
-As you create custom queries, BloodHound provides several features to help you manage them:
+BloodHound provides several features to help you create and manage custom queries.
 
-- **Save As**: Create a copy of an existing query with a new name and updated parameters.
-- **Save a query**: Store your custom queries for future use.
-- **Share a saved query**: Make your query public or share it with specific users for collaboration.
-- **Delete saved queries**: Remove saved queries that you no longer need.
+For example, you can:
 
-### Import and export
+- **Save a query**: Write a custom query and store it for future use.
+- **Save As**: Create a copy of an existing query with a new name, description, and updated parameters.
+- **Share a saved query**: Share your custom query with all users or specific users in your BloodHound environment.
+- **Edit a saved query**: Modify the Cypher syntax, metadata, and shared access of a custom query.
+- **Delete saved queries**: Remove custom queries that you no longer need.
+
+<Note>
+You can only edit, share, and delete queries that you have created. You cannot modify prebuilt queries directly, but you can use the **Save As** feature to create a copy that you can then edit.
+</Note>
+
+Creating a shared query enables collaboration with other users in your BloodHound environment. You can choose to make the query public or share it with specific users.
+
+Shared queries of type "Personal" enable additional functionality, such as editing the query.
+
+### Import and Export
 
 BloodHound allows you to import and export queries for easy sharing and backup.
 
@@ -83,7 +98,7 @@ BloodHound allows you to import and export queries for easy sharing and backup.
 - **Import queries from JSON files**: Easily add new queries by dragging and dropping JSON files or compressed JSON files into the UI. BloodHound validates the files for correct syntax and notifies you of any errors.
 - **Export a saved query to a JSON file**: Share or back up your queries by exporting them in JSON format. Export is available for saved queries only. You cannot export prebuilt queries directly.
 
-## Process
+## Write Custom Queries
 
 One of the most overlooked features of BloodHound is the ability to enter raw Cypher queries directly into the user interface. Likely, a lot of that has to do with the fact that it's not a very emphasized feature and requires learning Cypher. However, with some work, using raw Cypher queries can let you manipulate and examine BloodHound data in custom ways to help you further understand your network or identify interesting relationships.
 
@@ -97,7 +112,7 @@ Writing Cypher queries unlocks powerful, custom analyses — from simple lookups
   <img src="/assets/image1-25.png"/>
 </Frame>
 
-## Elements of the graph database
+### Elements of the graph database
 
 Everything in the graph database is represented using common terms from graph theory, particularly **edges,** and **nodes**.
 
@@ -107,7 +122,7 @@ Edges represent a relationship between two nodes and can be the action necessary
 
 Together, edges and nodes create the paths we use in BloodHound to demonstrate how different permissions in Active Directory and Azure can be executed to gain control over a given target.
 
-## Basic Cypher
+### Basic Cypher
 
 <CardGroup cols={1}>
   <Card title="Supported Cypher Syntax" icon="magnifying-glass" href="/analyze-data/cypher-supported" horizontal iconType="solid"/>
@@ -167,7 +182,7 @@ LIMIT 10
 
 In this query, we ask the graph to return any nodes of any type that match the search term given. The (**?i**) tells the graph this is a case-insensitive regex, with the **.**\* on each side indicating that we want to match anything on either side. We limit the number of items returned to the first ten using the **LIMIT** keyword.
 
-## Advanced Concepts
+### Advanced Concepts
 
 As you build into more complicated queries, the **WITH** keyword will become important. The **WITH** keyword allows you to use multiple queries and pass the results of each query to the next step. An example of this is in the BloodHound interface whenever you click on a group node. The "Session" section displays the number of places where users in this group (including its subgroups) currently have sessions.
 
