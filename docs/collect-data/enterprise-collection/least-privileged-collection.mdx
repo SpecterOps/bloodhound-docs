@@ -88,9 +88,9 @@ SharpHound collects registry data for both certificate services and NTLM relay e
 
 By default, only `Administrators` may read the registry remotely. There are two methods to delegate remote registry access for least-privileged collection:
 
-1. **AllowedPaths / AllowedExactPaths exceptions**: Create exceptions using the GPO setting [Network access: Remotely accessible registry paths](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/network-access-remotely-accessible-registry-paths) to allow `Authenticated Users` to connect to the Remote Registry named pipe at specific registry paths. Effective access is still governed by permissions on individual registry key.
+1. **AllowedPaths / AllowedExactPaths exceptions**: Create exceptions using the GPO setting [Network access: Remotely accessible registry paths](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/network-access-remotely-accessible-registry-paths) to allow `Authenticated Users` to connect to the Remote Registry named pipe at specific registry paths. Effective access is still governed by permissions on individual registry keys.
 
-2. **Modify Remote Registry named pipe security descriptor**: Alternatively, modify the default security descriptor on the Remote Registry named pipe to grant explicit security principals read permissions to the entire registry. Effective access is still governed via permissions configured on individual registry key.
+2. **Modify Remote Registry named pipe security descriptor**: Alternatively, modify the default security descriptor on the Remote Registry named pipe to grant explicit security principals read permissions to the entire registry. Permissions on individual registry keys still govern effective access.
 
 <Frame>
   <img src="/assets/least-priv-gpo-winreg.png" alt=""/>
@@ -106,4 +106,4 @@ For domain controllers, you can create exceptions by adding the required DC regi
 
 ### NTLM Relay Registry Paths
 
-The registry paths for NTLM relay edges are located on all Windows hosts and are only accessible remotely by `Administrators` by default. Group Policy can be utilized to create AllowedExactPaths exceptions for these specific paths using the same method described above.
+Registry paths for NTLM relay edges exist on all Windows hosts. By default, only `Administrators` can access these paths remotely. To enable least-privileged collection, use Group Policy to add these specific paths to AllowedExactPaths. This grants Authenticated Users remote read access, following the same method described above.
