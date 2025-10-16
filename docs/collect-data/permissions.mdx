@@ -23,7 +23,7 @@ The data types are:
 * [DC Registry](/collect-data/permissions#dc-registry)
 * [CA Registry](/collect-data/permissions#ca-registry)
 
-It is important to have as much visibility as possible, so collecting all data types is recommended. Local Group Memberships and Sessions are especially important as they enable understanding Attack Paths to individual systems based on non-centralized configurations. See [Why perform privileged collection in SharpHound](/collect-data/enterprise-collection/privileged-collection).
+It is important to have as much visibility as possible, so collecting all data types is recommended. Local Group Memberships and Sessions are especially important as they enable understanding Attack Paths to individual systems based on non-centralized configurations, see [Why perform privileged collection in SharpHound](/collect-data/enterprise-collection/privileged-collection).
 
 
 <Note>For detailed permission requirements and configurations for each data type, including least-privileged collection options, see [Least-Privileged Collection](/collect-data/enterprise-collection/least-privileged-collection).</Note>
@@ -46,9 +46,9 @@ Reference: [Current Object Properties collected by SharpHound](https://github.co
 
 **Collection Method:** SharpHound collects this information utilizing signed LDAP queries against a domain controller in the domain.
 
-**Default Permissions:** By default, all Authenticated Users can enumerate almost all AD Structure Data utilized by BloodHound Enterprise.
+**Default Permissions:** By default, all `Authenticated Users` can enumerate almost all AD Structure Data utilized by BloodHound Enterprise.
 
-**Additional Data Source (Optional - Deleted Objects Container):** SharpHound can also read the contents of the Deleted Objects container (also known as the AD Recycle Bin). By default, SharpHound cannot read the Deleted Objects container, but read access can be delegated. Collecting deleted objects affects data retention behavior in BloodHound Enterprise—see [Active Directory Recycle Bin](/collect-data/enterprise-collection/data-retention#active-directory-recycle-bin) for details. For delegation configuration, see [Least-Privileged Collection - AD Structure Data](/collect-data/enterprise-collection/least-privileged-collection#ad-structure-data).
+**Additional Data Source (Optional - Deleted Objects Container):** SharpHound can also read the contents of the Deleted Objects container (also known as the AD Recycle Bin). By default, SharpHound cannot read the Deleted Objects container, but read access can be delegated. Collecting deleted objects affects data retention behavior in BloodHound Enterprise, see [Active Directory Recycle Bin](/collect-data/enterprise-collection/data-retention#active-directory-recycle-bin) for details. For delegation configuration, see [Least-Privileged Collection - AD Structure Data](/collect-data/enterprise-collection/least-privileged-collection#ad-structure-data).
 
 ## Local Group Membership
 
@@ -75,9 +75,9 @@ User Rights Assignments (URAs) in Windows define what privileges and capabilitie
 
 **Collection Method:** SharpHound collects this information utilizing the [LsaOpenPolicy](https://learn.microsoft.com/en-us/windows/win32/api/ntsecapi/nf-ntsecapi-lsaopenpolicy) function.
 
-**Required Permissions:** Only Local Administrators may call the LsaOpenPolicy function.
+**Required Permissions:** Only local `Administrators` may call the LsaOpenPolicy function.
 
-**Least-Privileged Option:** There is no known way to delegate this permission for least-privileged collection. See [Least-Privileged Collection - User Rights Assignments](/collect-data/enterprise-collection/least-privileged-collection#user-rights-assignments) for more details on the implications.
+**Least-Privileged Option:** There is currently no known method to delegate this permission for least-privileged collection, see [Least-Privileged Collection - User Rights Assignments](/collect-data/enterprise-collection/least-privileged-collection#user-rights-assignments) for more details on the implications.
 
 ## Sessions
 
@@ -87,15 +87,15 @@ SharpHound collects active session information to identify abusable sessions on 
 
 **Collection Method:** SharpHound collects this information utilizing the [NetWkstaUserEnum](https://learn.microsoft.com/en-us/windows/win32/api/lmwksta/nf-lmwksta-netwkstauserenum) function.
 
-**Default Permissions:** Members of the local Administrators group may call this function.
+**Default Permissions:** Members of the local `Administrators` group may call this function.
 
 **Least-Privileged Options:**
-* On Windows Server operating systems, members of the local Print Operators group may also collect session data
-* Windows desktop operating systems do not have a local Print Operators group and require alternate approaches
+* On Windows Server operating systems, members of the local `Print Operators` group may also collect session data
+* Windows desktop operating systems do not have a local `Print Operators` group and require alternate approaches
 
-<Warning>When using Print Operators for collection, you should remove dangerous default User Rights Assignments (SeInteractiveLogonRight, SeLoadDriverPrivilege, SeShutdownPrivilege) from this group to prevent privilege escalation on DCs.</Warning>
+<Warning>When using `Print Operators` for collection, you should remove dangerous default User Rights Assignments (`SeInteractiveLogonRight`, `SeLoadDriverPrivilege`, `SeShutdownPrivilege`) from this group to prevent privilege escalation on DCs.</Warning>
 
-For detailed configuration instructions, including how to safely configure Print Operators, see [Least-Privileged Collection - Sessions](/collect-data/enterprise-collection/least-privileged-collection#sessions).
+For detailed configuration instructions, including how to safely configure `Print Operators`, see [Least-Privileged Collection - Sessions](/collect-data/enterprise-collection/least-privileged-collection#sessions).
 
 ## Certificate Services
 
@@ -109,7 +109,7 @@ Information about the Active Directory Certificate Service hierarchy within your
 
 **Collection Method:** SharpHound collects this information utilizing signed LDAP queries against a domain controller in the domain.
 
-**Default Permissions:** By default, any Authenticated User can enumerate almost all Certificate Services data utilized by BloodHound Enterprise.
+**Default Permissions:** By default, `Authenticated Users` can enumerate almost all Certificate Services data utilized by BloodHound Enterprise.
 
 **Additional Data Sources:** Two additional types of data can enhance the findings - [DC Registry](/collect-data/permissions#dc-registry) and [CA Registry](/collect-data/permissions#ca-registry).
 
@@ -121,7 +121,7 @@ SharpHound collects the registry key values `Kdc\\StrongCertificateBindingEnforc
 
 **Collection Method:** SharpHound collects these registry key values via remote registry access.
 
-**Default Permissions:** Collecting these registry key values requires membership of Administrators on the DCs by default.
+**Default Permissions:** Collecting these registry key values requires membership of `Administrators` on the DCs by default.
 
 **Least-Privileged Option:** Delegation is possible via Group Policy or registry modifications, see [Least-Privileged Collection - DC Registry](/collect-data/enterprise-collection/least-privileged-collection#dc-registry).
 
@@ -142,5 +142,5 @@ The registry key values are described in detail in the [Certified Pre-Owned whit
 
 **Collection Method:** SharpHound collects these registry key values via remote registry access on enterprise CAs.
 
-**Default Permissions:** Any Authenticated User may collect these registry key values by default, see [Least-Privileged Collection - CA Registry](/collect-data/enterprise-collection/least-privileged-collection#ca-registry) for an explanation of why this is accessible.
+**Default Permissions:** `Authenticated Users` may collect these registry key values by default, see [Least-Privileged Collection - CA Registry](/collect-data/enterprise-collection/least-privileged-collection#ca-registry) for an explanation of why this is accessible.
 
