@@ -13,6 +13,71 @@ Any changes made to a selector will take effect on the next analysis.
 
 <Note>See [Default Selectors](/analyze-data/privilege-zones/default-selectors) for a list of predefined selectors included with BloodHound.</Note>
 
+### Selectors
+
+Selectors are rules that automatically tag objects into zones or labels. Think of them as the "how" behind the tagging process.
+
+- **Object selectors** target specific objects and their related objects
+- **Cypher selectors** tag objects based on custom query results
+- **Default selectors** are system-managed and tag critical objects automatically (you can disable some defaults, but you cannot modify their criteria)
+
+## Selector Expansion
+
+Flag from Dillon: Need to be very clear on criteria here, particularly with limitations or exceptions. This could run into performance/limitation concerns in engineering. Ex) Can/should we provide a “expansion depth warning”?
+
+Selectors provide some ease-of-use behavior behind the scenes based on the type of objects selected. Selected objects of specific types should expand through relationships to tag additional objects (certain exceptions apply, see below).
+
+“Group-like” Expansion:
+
+Objects which behave like Groups in AD should include all contained members within the Tier/Label. These include the following Type (Edge) relationships:
+
+- Group (MemberOf)
+- AZRole (AZHasRole, AZRoleElligible)
+- AZGroup (AZMemberOf)
+
+“Structured” Expansion:
+
+Objects which provide structural organization should include all contained objects within the Tier/Label. These include the following Type (Edge) relationships.
+
+- Domain (Contains)
+  - Only for non-default selectors
+- OU (Contains)
+- AZSubscription (AZContains)
+- AZManagementGroup (AZContains)
+- AZAdministrativeUnit (AZContains)
+
+Tiered Object Control and Exceptions:
+
+During the tagging process for Tiers, the final step of tagging involves tagging all objects which contain and/or provide external control on the selected objects. In Active Directory, for example, this means that all OUs, Containers, and GPOs which apply to any Tier Zero object are also tagged to Tier Zero. During this process, any OUs or Containers tagged only by this final process should not also tag other contained objects.
+
+## How selectors expand
+
+Selectors automatically include related objects based on the type of object you select. This expansion saves you time by tagging entire groups or organizational units at once.
+
+**Group-like expansion**
+
+When you select group-like objects, BloodHound automatically includes all members:
+
+- **Groups** → includes all members (via MemberOf)
+- **Azure Roles** → includes all users with the role (via AZHasRole, AZRoleEligible)
+- **Azure Groups** → includes all members (via AZMemberOf)
+
+**Structured expansion**
+
+When you select organizational containers, BloodHound includes all contained objects:
+
+- **Organizational Units (OUs)** → includes all objects in the OU (via Contains)
+- **Azure Subscriptions** → includes all resources (via AZContains)
+- **Azure Management Groups** → includes all child resources (via AZContains)
+- **Azure Administrative Units** → includes all contained objects (via AZContains)
+- **Domains** → includes contained objects (only for custom selectors, not defaults)
+
+**Tier-specific tagging**
+
+When tagging objects into tiers, BloodHound also tags the containers and policies that control those objects. For example, in Active Directory, any OUs, Containers, or GPOs that apply to Tier Zero objects are also tagged as Tier Zero.
+
+**Important:** If a container is tagged only because it controls tier objects (not because you explicitly selected it), it won't expand to include its other contents. This prevents unintended scope creep.
+
 Defining a selector using Cypher
 
 <img

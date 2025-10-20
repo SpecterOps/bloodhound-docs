@@ -1,9 +1,46 @@
 ---
 title: Overview
-description: Discover how Privilege Zones help you organize and secure your environment.
+description: Discover how Privilege Zones help you organize and segment your environment based on sensitivity and access level.
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+Privilege Zones help you organize objects in your environment into logical groups based on their privilege and risk levels. Using Privilege Zones, you can monitor and maintain the security posture of tiered isolation models.
+
+## Key Concepts
+
+Before diving into Privilege Zones, let's define some key concepts:
+
+| Concept   | Description                                                                                                                                      | Used in Risk Analysis |
+|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------|----------------------|
+| **Zone**  | A group of objects that represent the hierarchy of control across all domains in an environment based on access level                            | Yes                  |
+| **Label** | A flexible way to categorize a group of objects in a single zone (or across multiple zones) for easier searching and filtering                   | No                   |
+| **Selector** | A rule that associates objects with zones and labels based on object types, object relationships (expansion), or Cypher queries               | Yes                  |
+
+Zones organize objects into a strict hierarchy. BloodHound analyzes how object privileges are assigned and where they can be escalated across your environment. If BloodHound detects an object in a lower-privileged zone controlling an object in a higher-privileged zone, it identifies it as a finding in the [Posture](/analyze-data/posture-page) page.
+
+This analysis helps you identify and remediate privilege escalation paths and misconfigurations that violate your security model. For example:
+
+### Expected control relationships
+
+The following diagram illustrates allowed control relationships between zones (tiers):
+
+```mermaid
+graph TD
+  T0["Tier Zero (highest privilege)"] -->|can control| T1["Tier One"]
+  T1 -->|can control| T2["Tier Two"]
+```
+
+### Violation relationships
+
+The following diagram illustrates violation relationships that result in findings:
+
+```mermaid
+graph TD
+  T2["Tier Two"] -. Violation .-> T0["Tier Zero"]
+```
+
+## Using Privilege Zones
 
 Privilege Zones has two tabs: Tiers (Zones) and Labels. Zones allow the logical separation of objects into three unique hierarchical groups according to the structure of your environment. Labels are a flexible tool to categorically bucket different objects. Together, these tools enable further risk mitigation in your environments by highlighting the violations and misconfigurations to your customized network model.
 
