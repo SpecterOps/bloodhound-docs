@@ -17,51 +17,29 @@ Before diving into Privilege Zones, let's define some key concepts:
 | **Label** | A flexible way to categorize a group of objects in a single zone (or across multiple zones) for easier searching and filtering                   | No                   |
 | **Selector** | A rule that associates objects with zones and labels based on object types, object relationships (expansion), or Cypher queries               | Yes                  |
 
-Zones organize objects into a strict hierarchy. BloodHound analyzes how object privileges are assigned and where they can be escalated across your environment. If BloodHound detects an object in a lower-privileged zone controlling an object in a higher-privileged zone, it identifies it as a finding in the [Posture](/analyze-data/posture-page) page.
+Zones organize objects into a strict hierarchy. BloodHound analyzes how object privileges are assigned and where they can be escalated across your environment.
 
-This analysis helps you identify and remediate privilege escalation paths and misconfigurations that violate your security model. For example:
+By default, BloodHound includes a Tier Zero zone that represents a set of objects with full control over an environment _and_ any objects with control over those objects. See [Tier Zero: Members and Modification](/get-started/security-boundaries/tier-zero-members) to learn more.
 
-### Expected control relationships
+<Note>You can [create up to two additional zones](/analyze-data/privilege-zones/zones-and-labels) to match your organization's security model.</Note>
 
-The following diagram illustrates allowed control relationships between zones (tiers):
+If BloodHound detects an object in a lower-privileged zone controlling an object in a higher-privileged zone, it identifies it as a finding in the **Attack Paths** and [Posture](/analyze-data/posture-page) pages. For example, if a Tier One user can control a Tier Zero server, BloodHound flags it as a violation of the privilege model.
 
-```mermaid
-graph TD
-  T0["Tier Zero (highest privilege)"] -->|can control| T1["Tier One"]
-  T1 -->|can control| T2["Tier Two"]
-```
+This analysis helps you identify and remediate privilege escalation paths and misconfigurations that violate your security model.
 
-### Violation relationships
+{/* TODO The following diagram illustrates the control relationships between a set of hypothetical zones: */}
 
-The following diagram illustrates violation relationships that result in findings:
+## Early Access
 
-```mermaid
-graph TD
-  T2["Tier Two"] -. Violation .-> T0["Tier Zero"]
-```
+The Privilege Zones feature is currently available under early access and is not enabled by default.
 
-## Using Privilege Zones
+To enable Privilege Zones:
 
-Privilege Zones has two tabs: Tiers (Zones) and Labels. Zones allow the logical separation of objects into three unique hierarchical groups according to the structure of your environment. Labels are a flexible tool to categorically bucket different objects. Together, these tools enable further risk mitigation in your environments by highlighting the violations and misconfigurations to your customized network model.
-
-Zones and Labels each offer two views: **Summary** and **Detail**. Use the view selector (drop-down) in the UI to toggle between them.
-- **Summary** shows the zone/label name, selector count, object count, and, for Zones, their hierarchy (the top zone is most critical).
-- **Detail** lists every selector and the objects that each selector pulls into the chosen zone or label.
-
-Summary View:
-
-<img
-  src="/images/privzones/summary_view.png"
-  alt="Privilege Zones summary view"
-  title="Privilege Zones summary view"
-  style={{ width:"52%" }}
-/>
-
-Detail View:
-
-<img
-  src="/images/privzones/detail_view.png"
-  alt="Privilege Zones detail view"
-  title="Privilege Zones detail view"
-  style={{ width:"52%" }}
-/>
+<Steps>
+  <Step title="Open the Early Access Features page">
+  In the left menu, click **Administration** > **Early Access Features**.
+  </Step>
+  <Step title="Enable the feature">
+  Click **Disabled** next to _Tier Management Engine_ to enable the feature.
+  </Step>
+</Steps>
