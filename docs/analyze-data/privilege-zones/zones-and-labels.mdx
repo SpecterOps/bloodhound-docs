@@ -5,19 +5,18 @@ description: Organize and categorize objects in your environment using Privilege
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-The _Privilege Zones_ page has two tabs:
+The **Privilege Zones** page provides the following tabs:
 
-- **Zones**—Zones allow the logical separation of objects into three unique hierarchical groups according to the structure of your environment.
-- **Labels**—Labels are a flexible tool to categorically bucket different objects.
+- **Zones**—A group of objects that represent the hierarchy of control across all domains in an environment based on access level
+- **Labels**—A flexible way to categorize a group of objects in a single zone (or across multiple zones) for easier searching and filtering
+- **History**—Tracks changes made to Zones and Labels over time
 
-Together, these tools enable further risk mitigation in your environments by highlighting the violations and misconfigurations to your customized network model.
+These tools enable further risk mitigation in your environments by highlighting the violations and misconfigurations to your tiered network model.
 
-The _Zones_ and _Labels_ pages each offer two views:
+The **Zones** and **Labels** tabs offer two views:
 
-- **Summary**—Shows the zone/label name, selector count, object count, and, for Zones, their hierarchy (the top zone is most critical).
-- **Detail**—Lists every selector and the objects that each selector pulls into the chosen zone or label.
-
-Use the view selector (drop-down) in the UI to toggle between them.
+- **Summary**—Shows zone/label names, selector counts, member count, and (for Zones) their hierarchy relative to other Zones (the top zone is most critical)
+- **Detail**—Lists every selector and member that each selector pulls into the associated Zone or Label
 
 <Tabs>
   <Tab title="Summary View">
@@ -38,52 +37,128 @@ Use the view selector (drop-down) in the UI to toggle between them.
   </Tab>
 </Tabs>
 
-## Zones define hierarchical privilege levels in your environment. The most common tiering model is [Microsoft's Enterprise Access Model](https://learn.microsoft.com/en-us/security/privileged-access-workstations/privileged-access-access-model). 
+## Zones
 
-- BloodHound uses zones to measure risk and detect violations
-- Each zone has a specific tier level (Tier Zero is the highest)
-- You can create multiple tiers (Tier One, Tier Two, etc.) to match your security model
+Zones define hierarchical privilege levels in your environment based on a tiered administration model. The most common tiering model is [Microsoft's Enterprise Access Model](https://learn.microsoft.com/en-us/security/privileged-access-workstations/privileged-access-access-model). 
+
+BloodHound uses zones to measure risk and detect violations. Each zone has a specific tier level (Tier Zero is the highest). You can create multiple zones (e.g., Tier One, Tier Two) to match your security model.
+
+### Create a zone
+
+Creating a zone involves configuring the zone details and defining one or more selectors.
+
+<Warning>See [Selectors](/analyze-data/privilege-zones/selectors) for more detailed information about defining selectors. The content in this section provides a high-level overview only.</Warning>
+
+<Steps>
+  <Step title="Open the Privilege Zones page">
+  In the left menu, click **Privilege Zones** > **Create Zone**.
+  </Step>
+
+  <Step title="Configure initial Zone details">
+  Enter all relevant information about the zone:
+
+  | Field                | Required?    | Description                                                                                   |
+  |----------------------|--------------|-----------------------------------------------------------------------------------------------|
+  | Name                 | Yes          | The name of the zone (e.g., Server Tier)                                                      |
+  | Description          | No           | A brief description of the zone's purpose and scope (e.g., PCI assets)                        |
+  | Require Certification| No           | Specify if certification is required for this zone                                            |
+  | Apply Custom Glyph   | No           | Select a custom glyph to help visually distinguish this zone in the **Explore** page          |
+
+    <img
+      src="/images/privzones/create-zone.png"
+      alt="Configure a new privilege zone"
+      title="Configure a new privilege zone"
+      style={{ width:"70%" }}
+    />
+
+  </Step>
+
+  <Step title="Define a selector">
+  Click **Define Selector** to save your new Privilege Zone and continue on to define the objects to include in the zone.
+
+  <Warning>See [Selectors](/analyze-data/privilege-zones/selectors) for more detailed information about defining selectors. The content in this section provides a high-level overview only.</Warning>
+
+  When defining a selector during the zone creation process, provide the following information:
+
+  | Field                  | Required?          | Description                                                                                   |
+  |------------------------|--------------------|-----------------------------------------------------------------------------------------------|
+  | Name                   | Yes                | The name of the selector (e.g., PCI Assets)                                                   |
+  | Description            | No                 | A brief description of the selector's purpose and scope (e.g., PCI assets)                    |
+  | Selector Type          | Yes                | The type of selector to use (e.g., Object ID or Cypher)                                       |
+  | Automatic Certification| No                 | Specify if certification is required for this selector                                        |
+
+    <img
+      src="/images/privzones/define-zone-selector.png"
+      alt="Define a selector for the privilege zone"
+      title="Define a selector for the privilege zone"
+      style={{ width:"100%" }}
+    />
+  </Step>
+    <Step title="Complete zone creation">
+    Click **Save** to finish creating the zone.
+    </Step>
+</Steps>
+
+### Edit or delete a zone
+
+To edit or delete an existing zone, follow these steps:
+
+<Note>You cannot delete the default Tier Zero zone, but you can modify its properties. See [Modify Tier Zero](/get-started/security-boundaries/modifying-tier-zero) for more information.</Note>
+
+<Steps>
+  <Step title="Select the zone">
+   Navigate to the **Privilege Zones** page, select the zone you want to edit or delete, and click **Edit**.
+  </Step>
+
+  <Step title="Edit or delete a zone">
+    Choose one of the following actions:
+
+    <Tabs>
+      <Tab title="Delete a zone" icon="trash-can">
+      To delete the zone:
+
+      1. Click <Icon icon="trash-can" /> **Delete Zone** at the bottom of the page
+      1. Confirm your action in the dialog.
+
+          <img
+            src="/images/privzones/confirm-zone-delete.png"
+            alt="Confirm deletion of a custom privilege zone"
+            title="Confirm deletion of a custom privilege zone"
+            style={{ width:"70%" }}
+           />
+
+      1. Click **Confirm** to delete the zone.
+      </Tab>
+    
+      <Tab title="Edit a zone" icon="edit">
+      To edit the zone:
+
+      1. Modify one of the available fields.
+
+         For example, you can modify the zone's name, description, certification requirements, and custom glyph.
+
+       1. With the exception of the default Tier Zero zone, you can also change the zone's hierarchical position by using the <Icon icon="grip-vertical" /> vertical grip control in the **Zone Order** panel to reorder it.
+
+          <img
+            src="/images/privzones/reorder-zone.png"
+            alt="Reorder privilege zones"
+            title="Reorder privilege zones"
+            style={{ width:"70%" }}
+           />
+
+       1. Click **Save Edits** to apply your changes.
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
 
 ## Labels
 
-Labels let you tag groups of objects for easier searching and filtering. Unlike zones, labels don't affect risk analysis—they simply help you organize and query your data.
+Labels let you tag groups of objects for easier searching and filtering. Use labels to mark objects with common characteristics (e.g., "PCI", "Owned", "Production"). You can filter views and queries based on labels. For example, label PCI-scoped systems to quickly identify attack paths from non-PCI to PCI environments.
 
-- Use labels to mark objects with common characteristics (e.g., "PCI", "Owned", "Production")
-- You can filter views and queries based on labels
-- Example: Tag PCI-scoped systems to quickly identify attack paths from non-PCI to PCI environments
+Unlike Zones, BloodHound does not use Labels in risk analysis—they're designed to help you organize and query your data.
 
-## Creating a Privilege Zone
-
-1. Navigate to "Privilege Zones" in the left menu
-
-<img
-  src="/images/privzones/nav_to_priv_zones.gif"
-  alt="Navigate to Priv Zones"
-  title="Navigate to Priv Zones"
-  style={{ width:"34%" }}
-/>
-
-2. Click "Create Tier"
-
-<img
-  src="/images/privzones/create_zone.png"
-  alt="Create a tier"
-  title="Create a tier"
-  style={{ width:"53%" }}
-/>
-
-3. Enter all relevant information about the zone
-
-<img
-  src="/images/privzones/configure_new_zone.png"
-  alt="Configure new zone"
-  title="Configure new zone"
-  style={{ width:"53%" }}
-/>
-
-4. Click "Define Selector" to save your new Privilege Zone and continue on to define the objects to include in the zone
-
-## Creating a Label
+### Create a label
 
 1. Select "Create Label"
 2. Add a name and an optional description
@@ -95,3 +170,11 @@ Labels let you tag groups of objects for easier searching and filtering. Unlike 
   title="Configure a new label"
   style={{ width:"38%" }}
 />
+
+## History
+
+The **History Log** provides a record of changes to your Zones and Labels, including the type of change that occurred, who made it, and when it happened. Use the log to audit and track changes to your Zones and Labels over time.
+
+<Note>BloodHound retains 90 days of history from the last successful analysis operation.</Note>
+
+### Search and filter
