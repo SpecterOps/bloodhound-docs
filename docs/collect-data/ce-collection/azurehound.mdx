@@ -10,8 +10,8 @@ AzureHound CE can be obtained in a few ways:
 
 * From the BloodHound CE interface as a pre-compiled binary
     * ⚙️ → **Download Collectors**, and click the button **Download AzureHound**
-* From the [AzureHound repository releases](https://github.com/BloodHoundAD/AzureHound/releases) as .ps1 and a pre-compiled binary
-* Build it from source with the source code on the [AzureHound repository](https://github.com/BloodHoundAD/AzureHound/)
+* From the [AzureHound releases](https://github.com/SpecterOps/AzureHound/releases/latest) as precompiled binaries for your OS/arch
+* Build it from source with the code on the [AzureHound repository](https://github.com/SpecterOps/AzureHound)
     1.  Clone the repository and \`cd\` into the directory
     2.  Run `go build .`
     3.  When built, you will have a binary called \`azurehound\` in the directory
@@ -21,18 +21,18 @@ AzureHound CE can be obtained in a few ways:
 AzureHound supports several authentication flows for collecting information from Azure. You can supply a username/password combo, a JWT, a refresh token, a service principal secret, or service principal certificate. You can combine these various authentication methods with several collection scoping options.
 
 For example, to authenticate with a username/password and list all groups in a tenant:
-```json
+```bash
 ./azurehound -u "MattNelson@contoso.onmicrosoft.com" -p "MyVeryStrongPassword" list groups --tenant "contoso.onmicrosoft.com"
 ```
 AzureHound will authenticate as that user and print all groups in the “Contoso” tenant.
 
 Or, you may want to supply a JWT and collect all users from the tenant instead. You do not need to supply a username or password when supplying a JWT:
-```json
+```bash
 ./azurehound -j "ey..." list users --tenant "contoso.onmicrosoft.com"
 ```
 When collecting data for import into BloodHound, you must use the -o switch to instruct AzureHound to output to a file. For example, to list all available data in both Entra ID and AzureRM, you can do this:
-```json
-./azurehound -u "MattNelson@contoso.onmicrosoft.com" -p "MyVeryStrongPassword" list groups --tenant "contoso.onmicrosoft.com" -o output.json
+```bash
+./azurehound -u "MattNelson@contoso.onmicrosoft.com" -p "MyVeryStrongPassword" list --tenant "contoso.onmicrosoft.com" -o output.json
 ```
 ## Dealing with Multi-Factor Auth and Conditional Access Policies
 
@@ -62,7 +62,7 @@ The output will contain a \`user\_code\` and \`device\_code\`. Now, open a brows
 Enter the code you generated from the above PowerShell script. Follow the steps in the browser to authenticate as the Entra ID user and approve the device code flow request. When done, the browser page should display a message similar to “You have signed in to the Microsoft Azure PowerShell application on your device. You may now close this window.”
 
 Now go back to your original PowerShell window and paste this:
-```json
+```powershell
 $body=@{
     "client_id" =  "1950a258-227b-4e31-a9cf-717495945fc2"
     "grant_type" = "urn:ietf:params:oauth:grant-type:device_code"
@@ -77,8 +77,7 @@ $Tokens = Invoke-RestMethod `
 $Tokens
 ```
 The output will include several tokens including a \`refresh_token\`. It will start with characters similar to “0.ARwA6Wg…”. Now you are ready to run AzureHound! Take the refresh token and supply it to AzureHound using the `-r` switch:
-```json
+```bash
 ./azurehound -r "0.ARwA6Wg..." list --tenant "contoso.onmicrosoft.com" -o output.json
 ```
 This will attempt to list all possible data from that particular tenant, but you can ALSO use that same refresh token to target any other tenant your user has access to!
-

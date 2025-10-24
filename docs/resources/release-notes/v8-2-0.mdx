@@ -1,0 +1,130 @@
+---
+title: "2025-09-23 Release Notes (v8.2.0)"
+---
+
+## Announcements
+
+### Introducing the _Know Your Adversary_ podcast from SpecterOps
+Know Your Adversary is a podcast from SpecterOps that explores identity security through the perspective of those trying to break it. Hosted by Jared Atkinson and Justin Kohler, the show dives into real-world breach stories, red team experiences, and the latest identity-based attack research with guests spanning offensive operators, detection engineers, and identity defenders.
+
+Listen now on your favorite platform!
+- [YouTube (Video/Audio)](https://youtube.com/playlist?list=PLJK0fZNGiFU_oFzYn4OTPMGrP26Z4zeKl&si=cuO_ymDKPZSxNE2M)
+- [Spotify (Audio only)](https://open.spotify.com/show/6yKaJCaPVEsX9YumJRPUCV?si=195440fd2b76491f)
+- [Amazon (Audio only)](https://music.amazon.com/podcasts/3d94f64a-ca75-4588-ac0d-b519bcc6ecd7/know-your-adversary)
+- [Apple (Audio only)](https://podcasts.apple.com/us/podcast/know-your-adversary/id1827529656)
+
+### A chill is in the air as Specter Bash approaches
+SpecterOps' annual spooktacularly themed training event is rapidly approaching and tickets are selling out! Come take one of our fantastic training courses from October 6 - 9, 2025, either in-person in Denver, CO or from anywhere in the world virtually, learning directly from SpecterOps operators.
+
+This year, we're offering four of our most popular courses:
+- [Red Team Operations](https://specterops.io/training/red-team-operations/)
+- [Identity-driven Offensive Tradecraft](https://specterops.io/training/identity-driven-offensive-tradecraft/)
+- [Tradecraft Analysis](https://specterops.io/training/tradecraft-analysis/)
+- [Adversary Tactics: Detection](https://specterops.io/training/adversary-tactics-detection/)
+
+[Learn more and sign up today](https://specterops.io/specter-bash/)!
+
+## Summary
+
+- **BloodHound (v8.2.0)**
+  - New and Improved Features
+    - Introducing a brand-new UI to view, save, and share Cypher queries:
+      - Added search and filter support for saved Cypher queries.
+      - Saved Cypher queries may now be shared with other users in your environment.
+      - Added import and export support for Cypher queries.
+      - Added an option to disable or enable auto-run on selected, saved Cypher queries.
+    - Privilege Zones updates:
+      - Detail view now supports searching for objects and selectors.
+      - Detail view now supports filtering by environment.
+      - Improved the clarity of Zones which have been disabled from analysis.
+      - Updated selector creation previews to more accurately present which objects are selected.
+      - Selectors are now sorted alphabetically by default.
+      - Clarified the requirement that Zone and Label tag names may only contain certain characters.
+      - Added a notice that utilizing Labels as Cypher filter criteria for a Zone may result in incomplete data.
+    - Added "Quick Upload" and "Drag-and-drop upload" functionality to make uploading data to BloodHound faster.
+    - `ManageCA` and `ManageCertificates` edges are now marked traversable, will appear in pathfinding filters, and impact risk in the Attack Paths views in BloodHound Enterprise.
+    - Added new Entity Panel sections to provide more context:
+      - PKI hierarchy relationships on AIACA, RootCA, and EnterpriseCA objects.
+      - Template tracking for EnterpriseCA and CertTemplate objects.
+      - Trusted CA relationships for NTAuthStore objects.
+      - ADCS escalation paths for Domain objects.
+    - Improved several pre-saved queries around ADCS, adding searches for ADCSESC5 and ADCSESC8, and clarifying the searches which return data for ADCSESC6, and ADCSESC7.
+    - Clarified that the "Search" button on the Explore view searches only currently displayed results.
+    - Updated layouts in Table view to make it more compact, showing more results in the same screen space.
+    - _[BHE Only]_ Large numbers in the Posture view will now have appropriate comma-separation for improved readability.
+    - Updated formatting for links in Entity Panels to make them more distinct.
+    - BloodHound and BloodHound Enterprise will now utilize the same logo.
+
+  - Bug Fixes
+    - Tier Zero zone description may now be modified as expected.
+    - _[BHE Only]_ Azure tenant objects should once again display significant impact in the Attack Paths view.
+    - _[BHE Only]_ Updated rounding logic between the Attack Paths and Posture pages to ensure exposure numbers appear consistently.
+    - Users with the "Upload Only" role can once again upload data via File Ingest.
+    - The `DCFor` edge will once again appear within Pathfinding in Explore, as expected.
+    - The `CoerceAndRelayNTLMToSMB` "Coercion Targets" list now consistently populates.
+    - The `serviceprincipalnames` property will appear as expected in Cypher autocomplete suggestions.
+    - _[BHE Only]_ The "Tier Zero Role Activation Does Not Require MFA" Attack Path finding type will now properly summarize the risk of the findings within the path.
+    - _[BHE Only]_ Remediation documentation will once again properly display bulleted and numbered list headings.
+
+- **SharpHound (v2.7.2)**
+  - Bug Fixes
+    - Resolved an issue where SharpHound did not properly collect ACEs from AD Domain objects.
+
+- **AzureHound (v2.7.1)**
+  - _No new release._
+
+## BloodHound (v8.2.0)
+
+### New and Improved Features
+
+- **Update to the Saved Queries UI, plus sharing support!** - The Saved Queries UI just got a massive upgrade and now supports sharing queries within your BloodHound environment! Additionally, this new UI supports searching and filtering, lets you enable auto-run support on click, and will let you import and export your saved queries for re-use!
+<Frame>
+  <img src="/images/release_notes/8_2_0/8_2_saved_queries.gif" alt="Saved Queries in BloodHound v8.2.0"/>
+</Frame>
+- **Privilege Zones Functional and Workflow Improvements** - Work on the Privilege Zones early access continues as we near general availability of the functionality. We've added searching and filtering support to the detail view to more rapidly find specific objects, selectors, or to see only things relating to a specific environment. Several areas of the UI got an uplift to make disabled elements more clear, made previews more accurate, added some default sorting, and clarified some workflows.
+<Frame>
+  <img src="/images/release_notes/8_2_0/8_2_pz_searchfilter.gif" alt="Search and Filter Privilege Zones in BloodHound v8.2.0"/>
+</Frame>
+- **Updates to traversable edges** - `ManageCA` and `ManageCertificates` edges are now marked traversable. With this change, these edges will appear in pathfinding filters, and will affect risk measurement in the Attack Paths page in BloodHound Enterprise, including the addition of several new Attack Path finding types.
+<Frame>
+  <img src="/images/release_notes/8_2_0/8_2_traverse_edges.png" alt="New traversable edges in BloodHound v8.2.0"/>
+</Frame>
+- **More context on ADCS Entity Panels** - ADCS and the Attack Paths which result from the improper configuration of the service are incredibly complex. Within BloodHound, our goal is to demystify this complexity and to help users better understand the risks created by these configurations. To that end, we've introduced several new Entity Panel accordions to help provide additional clarity.
+  - PKI hierarchy relationships on AIACA, RootCA, and EnterpriseCA objects.
+  - Template tracking for EnterpriseCA and CertTemplate objects.
+  - Trusted CA relationships for NTAuthStore objects.
+  - ADCS escalation paths for Domain objects.
+<Frame>
+  <img src="/images/release_notes/8_2_0/8_2_adcs_context.png" alt="New ADCS contextual accordions in BloodHound v8.2.0"/>
+</Frame>
+- **Improvements to ADCS pre-saved queries** - We've introduced new, pre-saved searches for ADCSESC5 and ADCSESC8 and clarified the searches that return data for ADCSESC6 and ADCSESC7. Although the queries for ESC6 and 7 previously existed, they were not explicit in identifying the relationship to the named escalation path.
+<Frame>
+  <img src="/images/release_notes/8_2_0/8_2_adcs_queries.png" alt="New ADCS queries shown in the new Saved Queries view in BloodHound v8.2.0"/>
+</Frame>
+- **Explore "Search" button clarified** - The "Search" button at the bottom of the Explore page searches only within the currently displayed results, making it quick to locate a specific object in your query output.
+<Frame>
+  <img src="/images/release_notes/8_2_0/8_2_node_search.png" alt="Clarified Explore Search button in BloodHound v8.2.0"/>
+</Frame>
+- **Table view, compacted** - The Table layout added in v8.0.0 was a bit sparse, so we've tightened it up to display more data within the same screen space.
+<Frame>
+  <img src="/images/release_notes/8_2_0/8_2_compact_table.png" alt="Compacted table view in BloodHound v8.2.0"/>
+</Frame>
+- **_[BHE Only]_ Improved readability in Posture** - Any numbers over 1,000 in the Posture view should now include appropriate comma-separation for improved readability.
+<Frame>
+  <img src="/images/release_notes/8_2_0/8_2_posture_commas.png" alt="Improved readability in the Posture view in BloodHound Enterprise v8.2.0"/>
+</Frame>
+- **Entity Panel links are more distinct** - Updated formatting for links in Entity Panels to make them more distinct.
+- **One logo to rule them all** - We love the BloodHound Enterprise dog-head logo, but the classic BloodHound dog is too good not to use across the entire product-line. For consistency of the BloodHound brand, we've moved both editions of BloodHound to consistently utilize the BloodHound dog.
+<Frame>
+  <img src="/images/release_notes/8_2_0/8_2_bh_logo.png" alt="Old but new BloodHound logo in BloodHound Enterprise v8.2.0"/>
+</Frame>
+
+## SharpHound (v2.7.2)
+
+### Bug Fixes
+
+- Resolved an issue where SharpHound did not properly collect ACEs from AD Domain objects.
+
+## AzureHound (v2.7.1)
+
+_No new release._

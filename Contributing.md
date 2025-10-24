@@ -39,7 +39,7 @@ Also, please ensure that you are branching off of the latest version of `main` f
 
 Lastly, we ask that you use brief, but detailed, commit messages when writing your code.
 
-Commit messages should be in conventional commit style as described in the [Conventional Commits Guide RFC](../blob/main/rfc/bh-rfc-2.md).
+Commit messages should be in conventional commit style as described in the [Conventional Commits Guide RFC](https://github.com/SpecterOps/BloodHound/blob/main/rfc/bh-rfc-2.md).
 Please take some time to review the guidelines in order to format your commits accordingly so that the work passes the associated pull request check. 
 
 Adding well formatted and detailed commit messages will help with the review process as it will be easier to see the reasoning and details included in a particular change. Another habit that will help the PR reviewer is authoring smaller, frequent commits as opposed to a giant single commit containing all of your changes.
