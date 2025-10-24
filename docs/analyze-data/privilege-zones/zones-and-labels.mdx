@@ -3,12 +3,15 @@ title: Zones and Labels
 description: Organize and categorize objects in your environment using Privilege Zones and Labels.
 ---
 
+import SelectorWarning from '/snippets/privilege-zones/selector-warning.mdx';
+
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 The **Privilege Zones** page provides the following tabs:
 
 - **Zones**: A group of objects that represent the hierarchy of control across all domains in an environment based on access level
 - **Labels**: A flexible way to categorize a group of objects in a single zone (or across multiple zones) for easier searching and filtering
+- **Certification**: An optional process to interrupt automatic inclusion of additional objects in a zone by requiring manual certification of the additional objects
 - **History**: An audit log of changes made to your zones and labels over time
 
 These tools enable further risk mitigation in your environments by highlighting the violations and misconfigurations to your tiered network model.
@@ -21,7 +24,6 @@ The **Zones** and **Labels** tabs offer two views:
     <img
       src="/images/privzones/summary-view.png"
       alt="Privilege Zones summary view"
-      title="Privilege Zones summary view"
       style={{ width:"100%" }}
     />
   </Tab>
@@ -30,7 +32,6 @@ The **Zones** and **Labels** tabs offer two views:
     <img
       src="/images/privzones/detail-view.png"
       alt="Privilege Zones detail view"
-      title="Privilege Zones detail view"
       style={{ width:"100%" }}
     />
   </Tab>
@@ -40,13 +41,13 @@ The **Zones** and **Labels** tabs offer two views:
 
 Zones define hierarchical privilege levels in your environment based on a tiered administration model. The most common tiering model is [Microsoft's Enterprise Access Model](https://learn.microsoft.com/en-us/security/privileged-access-workstations/privileged-access-access-model). 
 
-BloodHound uses zones to measure risk and detect violations. Each zone has a specific tier level (Tier Zero is the highest). You can create multiple zones (e.g., Tier One, Tier Two) to match your security model.
+BloodHound uses zones to measure risk and detect violations. Each zone has a specific tier level (**Tier Zero** is the default and highest). You can create multiple zones (e.g., Tier One, Tier Two) to match your security model.
 
 ### Create a zone
 
 Creating a zone involves configuring the zone details and defining a selector.
 
-<Warning>See [Selectors](/analyze-data/privilege-zones/selectors) for more detailed information about defining selectors before you create a zone or label. The content in this section provides a high-level overview only.</Warning>
+<SelectorWarning/>
 
 <Steps>
   <Step title="Open the Privilege Zones page">
@@ -56,17 +57,16 @@ Creating a zone involves configuring the zone details and defining a selector.
   <Step title="Configure initial zone details">
   Enter all relevant information about the zone:
 
-  | Field                | Required?    | Description                                                                                   |
-  |----------------------|--------------|-----------------------------------------------------------------------------------------------|
-  | Name                 | Yes          | Unique name of the zone (e.g., Server Tier)                                                      |
-  | Description          | No           | A brief description of the zone's purpose and scope (e.g., PCI assets)                        |
-  | Require Certification| No           | Specify if certification is required for this zone                                            |
-  | Apply Custom Glyph   | No           | **_[BHE Only]_** Select a custom glyph to help visually distinguish this zone in the **Explore** page          |
+  | Field                 | Required?    | Description                                                                                                          |
+  |-----------------------|:------------:|----------------------------------------------------------------------------------------------------------------------|
+  | Name                  | Yes          | A unique name for the zone (e.g., Server Tier)                                                                       |
+  | Description           | No           | A brief description of the zone's purpose and scope (e.g., PCI assets)                                               |
+  | Require Certification | No           | An option to mandate [certification](#certification) for all members within this zone                                                  |
+  | Apply Custom Glyph    | No           | **_[BHE Only]_** Option to apply a custom glyph to visually distinguish members of this zone in the **Explore** page |
 
     <img
       src="/images/privzones/create-zone.png"
       alt="Configure a new privilege zone"
-      title="Configure a new privilege zone"
       style={{ width:"70%" }}
     />
 
@@ -75,21 +75,20 @@ Creating a zone involves configuring the zone details and defining a selector.
   <Step title="Define a selector">
   Click **Define Selector** to save your new Privilege Zone and continue on to define the objects to include in the zone.
 
-  <Warning>See [Selectors](/analyze-data/privilege-zones/selectors) for more detailed information about defining selectors. The content in this section provides a high-level overview only.</Warning>
+  <SelectorWarning/>
 
   When defining a selector during the zone creation process, provide the following information:
 
   | Field                  | Required?          | Description                                                                                   |
-  |------------------------|--------------------|-----------------------------------------------------------------------------------------------|
-  | Name                   | Yes                | Unique name of the selector (e.g., PCI Assets)                                                   |
+  |------------------------|:------------------:|-----------------------------------------------------------------------------------------------|
+  | Name                   | Yes                | A unique name for the selector (e.g., PCI Assets).                                            |
   | Description            | No                 | A brief description of the selector's purpose and scope (e.g., PCI assets)                    |
   | Selector Type          | Yes                | The type of selector to use (e.g., Object ID or Cypher)                                       |
-  | Automatic Certification| No                 | Specify if certification is required for this selector                                        |
+  | Automatic Certification| No                 | An option to choose how BloodHound [certifies](#certification) new objects.                                     |
 
     <img
       src="/images/privzones/define-zone-selector.png"
       alt="Define a selector for the privilege zone"
-      title="Define a selector for the privilege zone"
       style={{ width:"100%" }}
     />
   </Step>
@@ -118,14 +117,13 @@ To edit or delete an existing zone, follow these steps:
 
       1. Modify one of the available fields.
 
-         For example, you can modify the zone's name, description, certification requirements, and custom glyph.
+         For example, you can modify the zone's name, description, [certification](#certification) requirements, and custom glyph.
 
        1. With the exception of the default **Tier Zero** zone, you can also change the zone's hierarchical position by using the vertical grip control (<Icon icon="grip-vertical" iconType="solid" />) in the **Zone Order** panel to reorder it.
 
           <img
             src="/images/privzones/reorder-zone.png"
             alt="Reorder privilege zones"
-            title="Reorder privilege zones"
             style={{ width:"70%" }}
            />
 
@@ -141,7 +139,6 @@ To edit or delete an existing zone, follow these steps:
           <img
             src="/images/privzones/confirm-zone-delete.png"
             alt="Confirm deletion of a custom privilege zone"
-            title="Confirm deletion of a custom privilege zone"
             style={{ width:"70%" }}
            />
 
@@ -172,14 +169,13 @@ Creating a label involves configuring the label details and defining a selector.
   Enter all relevant information about the label:
 
   | Field                | Required?    | Description                                                                                   |
-  |----------------------|--------------|-----------------------------------------------------------------------------------------------|
-  | Name                 | Yes          | Unique name of the label (e.g., PCI)                                                             |
-  | Description          | No           | A brief description of the label's purpose and scope (e.g., PCI assets)                        |
+  |----------------------|:------------:|-----------------------------------------------------------------------------------------------|
+  | Name                 | Yes          | A unique name for the label (e.g., PCI)                                                       |
+  | Description          | No           | A brief description of the label's purpose and scope (e.g., PCI assets)                       |
 
     <img
       src="/images/privzones/create-label.png"
       alt="Configure a new privilege zone label"
-      title="Configure a new privilege zone label"
       style={{ width:"70%" }}
     />
 
@@ -193,15 +189,14 @@ Creating a label involves configuring the label details and defining a selector.
   When defining a selector during the label creation process, provide the following information:
 
   | Field                  | Required?          | Description                                                                                   |
-  |------------------------|--------------------|-----------------------------------------------------------------------------------------------|
-  | Name                   | Yes                | Unique name of the selector (e.g., PCI)                                                          |
+  |------------------------|:------------------:|-----------------------------------------------------------------------------------------------|
+  | Name                   | Yes                | A unique name for the selector (e.g., PCI)                                                    |
   | Description            | No                 | A brief description of the selector's purpose and scope (e.g., PCI assets)                    |
   | Selector Type          | Yes                | The type of selector to use (e.g., Object ID or Cypher)                                       |
 
     <img
       src="/images/privzones/define-label-selector.png"
       alt="Define a selector for the privilege zone label"
-      title="Define a selector for the privilege zone label"
       style={{ width:"100%" }}
     />
   </Step>
@@ -240,7 +235,6 @@ To edit or delete an existing label, follow these steps:
           <img
             src="/images/privzones/confirm-label-delete.png"
             alt="Confirm deletion of a custom privilege zone"
-            title="Confirm deletion of a custom privilege zone"
             style={{ width:"70%" }}
            />
 
@@ -249,6 +243,101 @@ To edit or delete an existing label, follow these steps:
     </Tabs>
   </Step>
 </Steps>
+
+## Certification
+
+Certification is an optional process to interrupt automatic inclusion of additional objects in a zone based on [selector](/analyze-data/privilege-zones/selectors) expansion behavior by requiring manual certification of the additional objects. It allows administrators or power users to manually review and approve objects before they appear in privilege zones.
+
+This process gives you control over zone membership and helps prevent unexpected additions from triggering false findings.
+
+<img
+  src="/images/privzones/certification.png"
+  alt="Privilege Zones certification tab"
+  title="Privilege Zones certification tab"
+  style={{ width:"100%" }}
+/>
+
+### Why use certification?
+
+Without certification, BloodHound automatically includes objects in zones as soon as they match a selector's expansion criteria. This can create unexpected findings when objects are inadvertently added to privileged groups.
+
+For example, if a new user is added to the Domain Admins group, BloodHound immediately tags them to the **Tier Zero** zone and generates attack path findings for that user. 
+
+In the precediing example, certification solves this problem by requiring manual approval before objects are fully recognized within a zone. During the certification process, BloodHound still identifies the object's relationship to the zone but generates a "Non-Certified Principal with Tier Zero Privileges" finding instead of standard attack path findings. 
+
+This gives you time to review whether the object should remain in the zone or if its group membership was a mistake.
+
+<Note>BloodHound supports certification for zones only.</Note>
+
+### How certification works
+
+When you enable certification for a zone:
+
+1. Objects that match the zone's selectors enter a pending state
+2. BloodHound generates findings indicating the objects require certification
+3. Administrators or power users review pending objects in the **Certification** tab
+4. Once certified, objects are fully recognized in the zone and BloodHound generates standard findings
+5. Alternatively, you can remove objects from privileged groups to prevent zone membership
+
+You can configure certification requirements at the zone level (to affect all selectors) or at the individual [selector](/analyze-data/privilege-zones/selectors) level, giving you flexibility in managing object approvals.
+
+### Manage certifications
+
+The **Certification** tab in the **Privilege Zones** page allows administrators and power users to review, approve, or revoke certifications for objects in zones where manual certification has been configured.
+
+<Note>
+- You can certify or revoke certification only for objects in zones where certification is enabled.
+- Objects appear in the certification queue only when their [selectors](/analyze-data/privilege-zones/selectors) have **Automatic Certification** turned off.
+</Note>
+
+To manage certifications:
+
+<Steps>
+  <Step title="Open the Certification tab">
+    Navigate to the **Privilege Zones** > **Certification** tab.
+  </Step>
+  <Step title="Filter certifications">
+    Click the status drop-down menu and choose **Pending**, **User Certified**, or **Rejected** to view relevant certifications.
+
+    <Note>Actions are only available for certifications that require manual approval. You cannot approve or revoke **Automatic Certifications**.</Note>
+
+     <img
+       src="/images/privzones/certification-status.png"
+       alt="Privilege Zones certification status drop-down menu"
+       style={{ width:"100%" }}
+     />
+  </Step>
+  <Step title="Complete the certification action">
+    1. Use the checkboxes to select one or more objects.
+
+    1. Click **Approve Certification** or **Revoke Certification** as needed.
+
+    1. _(Optional)_ Add a note to document the reason for your action.
+
+       - Click **Skip Note** to complete the certification action without a note
+       - Click **Cancel** to exit without completing the certification action
+
+         <img
+           src="/images/privzones/certification-note.png"
+           alt="Privilege Zones certification note dialog"
+           style={{ width:"50%" }}
+         />
+
+        <Tip>Notes are visible to all BloodHound users in the [History Log](#history).<img
+             src="/images/privzones/certification-note-history.png"
+             alt="Show certification note in Privilege Zones history log"
+             style={{ width:"100%" }}
+           /></Tip>
+  </Step>
+</Steps>
+
+The **Certifications** tab also provides a search box and filters to help you identify specific certifications.
+
+<img
+  src="/images/privzones/certifications-filter.png"
+  alt="Privilege Zones certifications filter"
+  style={{ width:"50%" }}
+/>
 
 ## History
 
@@ -259,7 +348,6 @@ The **History Log** provides a record of changes to your Zones and Labels, inclu
 <img
   src="/images/privzones/history-log.png"
   alt="Privilege Zones history log"
-  title="Privilege Zones history log"
   style={{ width:"100%" }}
 />
 
@@ -269,7 +357,6 @@ The **History Log** provides a search box and filters to help you identify speci
 
 <img
   src="/images/privzones/history-log-filter.png"
-  alt="Privilege Zones history log search and filter"
-  title="Privilege Zones history log search and filter"
+  alt="Privilege Zones history log filter"
   style={{ width:"50%" }}
 />
