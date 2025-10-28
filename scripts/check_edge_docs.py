@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 Check docs coverage for edges by comparing documented edges in bloodhound-docs
-with EdgeInfoComponents defined in bloodhound-enterprise.
+with EdgeInfoComponents defined in the bloodhound code.
 
 Outputs two alphabetized manifests and prints a comparison summary.
 
 Usage:
-  python3 scripts/check_edge_docs.py [--bhe-root PATH] [--edges-dir PATH] [--output-dir PATH]
+  python3 scripts/check_edge_docs.py [--bh-root PATH] [--edges-dir PATH] [--output-dir PATH]
 
-Defaults assume this repo and the enterprise repo are siblings in the same parent directory.
+Defaults assume the docs repo and the code repo are siblings in the same parent directory.
 """
 from __future__ import annotations
 
@@ -20,8 +20,8 @@ from pathlib import Path
 from typing import Iterable, List, Set, Tuple
 
 DOCS_EDGES_REL = "docs/resources/edges"
-DEFAULT_BHE_REL = "../bloodhound-enterprise"
-HELP_TEXTS_INDEX_REL = "bhce/packages/javascript/bh-shared-ui/src/components/HelpTexts/index.tsx"
+DEFAULT_BH_REL = "../BloodHound"
+HELP_TEXTS_INDEX_REL = "packages/javascript/bh-shared-ui/src/components/HelpTexts/index.tsx"
 DEFAULT_OUTPUT_REL = "scripts/output"
 
 IGNORED_DOC_FILES = {"overview.mdx", "traversable-edges.mdx"}
@@ -103,7 +103,7 @@ def compare_lists(docs: List[str], code: List[str]) -> Tuple[Set[str], Set[str]]
 
 def main(argv: List[str]) -> int:
     parser = argparse.ArgumentParser(description="Check Edge docs coverage vs code registry")
-    parser.add_argument("--bhe-root", default=os.environ.get("BHE_REPO_ROOT", DEFAULT_BHE_REL), help="Path to bloodhound-enterprise repo root")
+    parser.add_argument("--bh-root", default=os.environ.get("BH_REPO_ROOT", DEFAULT_BH_REL), help="Path to bloodhound code repo root")
     parser.add_argument("--edges-dir", default=DOCS_EDGES_REL, help="Path to edges docs directory (relative or absolute)")
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_REL, help="Directory to write manifest files")
     parser.add_argument("--no-write", action="store_true", help="Do not write manifest files, only print results")
@@ -114,11 +114,11 @@ def main(argv: List[str]) -> int:
     if not edges_dir.is_absolute():
         edges_dir = repo_root / edges_dir
 
-    bhe_root = Path(args.bhe_root)
-    if not bhe_root.is_absolute():
-        bhe_root = (repo_root / args.bhe_root).resolve()
+    bh_root = Path(args.bh_root)
+    if not bh_root.is_absolute():
+        bh_root = (repo_root / args.bh_root).resolve()
 
-    index_path = bhe_root / HELP_TEXTS_INDEX_REL
+    index_path = bh_root / HELP_TEXTS_INDEX_REL
 
     if not edges_dir.exists():
         print(f"ERROR: edges directory not found: {edges_dir}", file=sys.stderr)
