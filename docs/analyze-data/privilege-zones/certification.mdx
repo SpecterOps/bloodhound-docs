@@ -1,0 +1,99 @@
+---
+title: Certification
+description: Understand the certification process for Privilege Zones and how to manage member approvals.
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise "/>
+
+Certification is an optional process to interrupt automatic inclusion of additional objects in a zone based on [selector](/analyze-data/privilege-zones/selectors) expansion behavior by requiring manual certification of the additional objects. It allows administrators or power users to manually review and approve objects before they appear in privilege zones.
+
+This process gives you control over zone membership and helps prevent unexpected additions from triggering false findings.
+
+<img
+  src="/images/privzones/certification.png"
+  alt="Privilege Zones certification tab"
+  title="Privilege Zones certification tab"
+  style={{ width:"100%" }}
+/>
+
+## Why use certification?
+
+Without certification, BloodHound automatically includes objects in zones as soon as they match a selector's expansion criteria. This can create unexpected findings when objects are inadvertently added to privileged groups.
+
+For example, if a new user is added to the Domain Admins group, BloodHound immediately tags them to the **Tier Zero** zone and generates attack path findings for that user. 
+
+In the preceding example, certification solves this problem by requiring manual approval before objects are fully recognized within a zone. During the certification process, BloodHound still identifies the object's relationship to the zone but generates a "Non-Certified Principal with Tier Zero Privileges" finding instead of standard attack path findings. 
+
+This gives you time to review whether the object should remain in the zone or if its group membership was a mistake.
+
+<Note>BloodHound supports certification for zones only.</Note>
+
+## How certification works
+
+When you enable certification for a zone:
+
+1. Objects that match the zone's selectors enter a pending state
+2. BloodHound generates findings indicating the objects require certification
+3. Administrators or power users review pending objects in the **Certification** tab
+4. Once certified, objects are fully recognized in the zone and BloodHound generates standard findings
+5. Alternatively, you can remove objects from privileged groups to prevent zone membership
+
+You can configure certification requirements at the zone level (to affect all selectors) or at the individual [selector](/analyze-data/privilege-zones/selectors) level, giving you flexibility in managing object approvals.
+
+## Manage certifications
+
+The **Certification** tab in the **Privilege Zones** page allows administrators and power users to review, approve, or revoke certifications for objects in zones where manual certification has been configured.
+
+<Note>
+- You can certify or revoke certification only for objects in zones where certification is enabled.
+- Objects appear in the certification queue only when their [selectors](/analyze-data/privilege-zones/selectors) have **Automatic Certification** turned off.
+</Note>
+
+To manage certifications:
+
+<Steps>
+  <Step title="Open the Certification tab">
+    Navigate to the **Privilege Zones** > **Certification** tab.
+  </Step>
+  <Step title="Filter certifications">
+    Click the status drop-down menu and choose **Pending**, **User Certified**, or **Rejected** to view relevant certifications.
+
+    <Note>Actions are only available for certifications that require manual approval. You cannot approve or revoke **Automatic Certifications**.</Note>
+
+     <img
+       src="/images/privzones/certification-status.png"
+       alt="Privilege Zones certification status drop-down menu"
+       style={{ width:"100%" }}
+     />
+  </Step>
+  <Step title="Complete the certification action">
+    1. Use the checkboxes to select one or more objects.
+
+    1. Click **Approve Certification** or **Revoke Certification** as needed.
+
+    1. _(Optional)_ Add a note to document the reason for your action.
+
+       - Click **Skip Note** to complete the certification action without a note
+       - Click **Cancel** to exit without completing the certification action
+
+         <img
+           src="/images/privzones/certification-note.png"
+           alt="Privilege Zones certification note dialog"
+           style={{ width:"50%" }}
+         />
+
+        <Tip>Notes are visible to all BloodHound users in the [History Log](/analyze-data/privilege-zones/history).<img
+             src="/images/privzones/certification-note-history.png"
+             alt="Show certification note in Privilege Zones history log"
+             style={{ width:"100%" }}
+           /></Tip>
+  </Step>
+</Steps>
+
+The **Certifications** tab also provides a search box and filters to help you identify specific certifications.
+
+<img
+  src="/images/privzones/certifications-filter.png"
+  alt="Privilege Zones certifications filter"
+  style={{ width:"50%" }}
+/>
