@@ -45,13 +45,13 @@ In cases where retention maintains visibility into an already resolved finding, 
 BHE's data retention period starts once an object has been permanently deleted from Active Directory, that is, after the object has left retention in the AD recycle bin. By default, the AD recycle bin has a retention (tombstone lifetime) of 180 days; thus, the default total retention for nodes will be 180 days + 7 days = 187 days.
 
 Check if the AD recycle bin has been enabled for the forest:
-```json
+```powershell
 # Returns 'True' if the AD recycle bin has been enabled
-\[bool\](Get-ADOptionalFeature -Identity 766ddcd8-acd0-445e-f3b9-a7f9b6744f2a | select -ExpandProperty EnabledScopes)
+[bool](Get-ADOptionalFeature -Identity 766ddcd8-acd0-445e-f3b9-a7f9b6744f2a | select -ExpandProperty EnabledScopes)
 ```
 Check the AD recycle bin's retention period (tombstone lifetime):
 
-```json
+```powershell
 # Returns the number of days the AD recycle bin retains deleted objects (tombstone lifetime)
 $ForestConfigurationNC = (Get-ADRootDSE).configurationNamingContext
 Get-ADObject -Identity "CN=Directory Service,CN=Windows NT,CN=Services,$ForestConfigurationNC" -Partition $ForestConfigurationNC -Properties tombstoneLifetime | select tombstoneLifetime

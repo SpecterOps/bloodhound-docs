@@ -14,7 +14,7 @@ Without a tiered strategy, an organization may violate this principle if a Tier 
 
 Be advised that this risk is considered lower because:
 
-* SharpHound Enterprise collects data through network logons, which will not cache credentials on target systems.
+* SharpHound Enterprise collects data through [network logons](https://learn.microsoft.com/en-us/windows-server/identity/securing-privileged-access/reference-tools-logon-types), which will not cache credentials on target systems.
 * SharpHound Enterprise does not use NTLM authentication by default, it uses Kerberos, which is less likely to be relayed.
 * SharpHound Enterprise **can** be hardened to mitigate the risk of Kerberos Delegation and NTLM authentication, see [SharpHound Enterprise Service Hardening](/manage-bloodhound/securing-bloodhound-and-collectors/sharphound-hardening).
 
@@ -27,7 +27,7 @@ Although this article uses the term "_tier_", it is mostly interchangeable with 
 * Creation of one BloodHound collector server for each tier, see [SharpHound Enterprise System Requirements](/install-data-collector/install-sharphound/system-requirements)
     * Tip: In BloodHound, mark the Tier Zero collector server as Tier Zero, see [Modifying Tier Zero](/get-started/security-boundaries/modifying-tier-zero)
 * Creation of one SharpHound Enterprise service account for each tier, see [Create a gMSA for use with SharpHound Enterprise](/install-data-collector/install-sharphound/create-gmsa)
-    * Each service account must be a member of the local Administrators group on all systems in the service account's tier.
+    * Each service account must have collection permission on all systems in the service account's tier - local `Administrators` group membership or [Least-Privileged Collection](/collect-data/enterprise-collection/least-privileged-collection) permissions.
     * Each service account is recommended to be hardened, see [SharpHound Enterprise Service Hardening](/manage-bloodhound/securing-bloodhound-and-collectors/sharphound-hardening).
     * Tip: In BloodHound, mark the Tier Zero service account as Tier Zero, see [Modifying Tier Zero](/get-started/security-boundaries/modifying-tier-zero)
 
@@ -62,7 +62,7 @@ For three tiers, the recommended schedule configuration is:
 
 * Tier Zero
     * Schedule 1
-        * **Active Directory Structure Structure Data**, frequency: 1 day
+        * **Active Directory Structure Data**, frequency: 1 day
     * Schedule 2
         * **Local Groups** and **Sessions**, frequency: 3-6 hours
 * Tier One

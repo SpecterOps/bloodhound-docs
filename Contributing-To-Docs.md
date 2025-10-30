@@ -42,7 +42,7 @@ To add a new page:
 
 4. Fill out the page.
 5. Add your new page to the doc sidebar.
-   1. Open docs/mint.json.
+   1. Open docs/docs.json.
    2. Add your page to the corresponding group under `navigation`.
 
 ## 2. Edit the Docs
