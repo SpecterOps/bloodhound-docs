@@ -1,0 +1,134 @@
+---
+title: "2025-10-30 Release Notes (v8.3.0)"
+---
+
+## Announcements
+
+### Privilege Zones Early Access Update
+
+For anyone who has not yet had the opportunity to try out our Privilege Zones early access, we're making it easier to make that change during this release! When we initially released the early access, we copied all of your existing selectors from Group Management into Privilege Zones. Of course, those objects tagged into Tier Zero change over time, so we're re-migrating all of your existing selectors to make it easier to try it out now. This will have no impact on any customers who have already enabled Privilege Zones.
+
+We are hugely grateful for everyone who has tested out Privilege Zones so far and offered feedback, we've already begun incorporating those changes and look forward to continuing to do so over the coming months.
+
+### Upcoming Events and Opportunities
+
+Mark your calendars for these upcoming events and opportunities:
+
+- **SO-CON 2026 Call for Papers** - The CFP for SO-CON 2026 is now open until November 15. Submit your talk proposals here: [SO-CON 2026 CFP](https://ghst.ly/socon26-cfp).
+
+- **October Webinar** - Join us on October 30 for our monthly webinar. Register here: [October Webinar Registration](https://specterops.zoom.us/webinar/register/WN_kKbaJbJXRBayoePEw4eawQ).
+
+- **GuidePoint Webinar** - We are hosting a special webinar with GuidePoint on November 6. Register here: [GuidePoint Webinar Registration](https://specterops.zoom.us/webinar/register/WN_zVrpSPK1QJOUTZyNzMlxPQ).
+
+- **November Webinar** - Our November webinar will be held on November 13. Register here: [November Webinar Registration](https://specterops.zoom.us/webinar/register/WN_dRIUDnOzRFG9EiSYSikMDg).
+
+## Summary
+
+- **BloodHound**
+  - New and Improved Features
+    - Added new `ProtectAdminGroups` edge for AdminSDHolder modeling _(requires SharpHound v2.8.0+)_.
+    - Privilege Zones updates:
+      - Added support for **Certifications** tab to allow Administrators the ability to interrupt automatic expansions in Privilege Zones.
+      - Added a new **History** tab to show changes to zones and labels.
+      - _[BHE Only]_ Added support for assigning custom glyphs to additional zones.
+      - Various UI improvements for readability and usability.
+      - Read-only users can now view selector sample results in the **Selector** details view.
+      - Selector names are now unique - any existing selectors with naming collisions will have a unique numeral appended.
+    - _[CE Only]_ Privilege Zones are now enabled by default on all new deployments.
+    - Finished Job Logs and File Ingest updates:
+      - Revised page layouts to improve usability.
+      - Added a new details panel and filtering.
+    - Updated the environment selector on the Data Quality page to support longer lists of active environments.
+    - _[BHE Only]_ Added the ability to scale charts on the Posture view by logarithmic scale to help with readability if needed.
+
+  - Bug Fixes
+    - _[BHE Only]_ Resolved an issue in specific environments that prevented data age-out reconciliation from running properly.
+    - Resolved an issue with the [`attack-paths/details`](/reference/attack-paths/get-all-attack-path-findings) API endpoint that was causing occasional inconsistent data return.
+    - `AZServicePrincipal` nodes now properly set `AZAddMembers` edges to `AZGroups` with an assigned `AZRole`.
+    - Resolved an issue preventing the **View in Explore** button on a Privilege Zone selector Cypher statement from properly redirecting users to the **Explore** view and executing the query.
+    - Updated pre-saved "Dangerous privileges for Domain users" to exclude `MemberOf` paths.
+    - Updated pre-saved Azure queries to include the Privileged Role Administrator role by default.
+    - Resolved an issue that prevented exporting multiple saved queries using the API.
+
+- **SharpHound (v2.8.0)**
+  - New and Improved Features
+    - Added collection support for:
+      - `AdminSDHolderProtected` status for users, groups, and computers to support new BloodHound v8.3.0 modeling of the [`AdminSDHolder`](/resources/edges/protect-admin-groups) system in Active Directory
+      - [GPO Status](/resources/nodes/gpo#node-properties) to exclude disabled GPOs (or those which do not apply computer configurations) during local group processing
+      - Domain controller registry key for the `Netlogon` service security descriptor
+    - _[CE Only]_ GPO Local Group processing will now exclude disabled GPOs or those which do not apply computer configurations.
+    - CompStats output will now include the SID of tested computers for easier correlation.
+    - Disabled adaptive timeouts for LDAP queries to improve reliability.
+
+- **AzureHound (v2.8.1)**
+  - New and Improved Features
+    - Added support for Azure Managed Identity authentication.
+  - Bug Fixes
+    - Resolved an issue preventing JWT authentication for AzureHound.
+
+## BloodHound (v8.3.0)
+
+### New and Improved Features
+
+- **New modeling for AdminSDHolder** - Gain deeper insights into privilege escalation paths involving Tier Zero groups in your environment. A new [`ProtectAdminGroups`](/resources/edges/protect-admin-groups) non-traversable edge connects the `AdminSDHolder` Active Directory container in each domain to all user, computer, and group nodes that it protects. The `ProtectAdminGroups` edge tracks the relationship between the `AdminSDHolder` security descriptor and protected nodes (requires SharpHound v2.8.0 or later).
+
+  <Note>See the [AdminSDHolder: Misconceptions and Myths](https://specterops.io/resources/adminsdholder) blog post to learn more.</Note>
+
+- **_[BHE Only]_ Privilege Zones Certification** - Interrupt automatic inclusion of additional objects into Privilege Zones by requiring manual certification of the additional objects. Requiring certification within a Zone will impact your findings in the Attack Paths page as you certify objects, as the paths to a Zone will change with your configurations. For example, a non-certified member of Domain Admins will generate a "Non-Certified Principal with Tier Zero Privileges" finding for the object until it has been removed from the group, or certified by an Administrator or Power User.
+
+  <Frame>
+    <img src="/images/release_notes/8_3_0/pzm-certifications-view.png" alt="Privilege Zones Certifications View"/>
+  </Frame>
+
+- **Privilege Zones History** - Audit and track changes to your Zones and Labels over time using the new **History** tab. This tab displays what type of change occurred, who made it, and when it happened. BloodHound retains 90 days of history from the last successful analysis operation.
+
+  <Frame>
+    <img src="/images/release_notes/8_3_0/pzm-history-view.png" alt="Privilege Zones History View" />
+  </Frame>
+
+- **_[BHE Only]_ Custom Glyphs for Privilege Zones** - Assign custom glyphs to your additional Privilege Zones to make different zones easier to distinguish on the **Explore** page.
+
+  <Columns cols={2} gap="large">
+    <img src="/images/release_notes/8_3_0/pzm-add-glyph.png" alt="Privilege Zones Custom Glyphs" style={{ width:"600%" }}/>
+    <img src="/images/release_notes/8_3_0/pzm-glyphs-on-graph.png" alt="Privilege Zones Custom Glyphs in Explore View" style={{ width:"57%" }} />
+  </Columns>
+
+- **Sample Results for Selectors** - As a read-only user, view sample results for selectors directly within the **Selector Details** view to better understand selector impacts.
+
+- **Selector Name Uniqueness** - To reduce the opportunity for confusion in the future, Selector names are now unique. Any existing selectors have been renamed with a numeral appended (i.e. `name_1`, `name_2`, etc) to support this new requirement.
+
+- **_[CE Only]_ Privilege Zones enabled by default** - Start organizing your environment right away! Privilege Zones are now enabled by default on all new deployments. This change includes an expanded default definition of Tier Zero to align with SpecterOps' definition of the concept as documented in our [blog](https://posts.specterops.io/what-is-tier-zero-part-1-e0da9b7cdfca) and [GitHub](https://specterops.github.io/TierZeroTable/).
+
+- **Finished Job Logs and File Ingest Details Panel** - Easily access detailed information about your data collection jobs and file ingests. Click on any job or ingest ID in the **Finished Jobs Log** or **File Ingest** pages to show detailed information, including status, status message, duration, user or client name, and more.
+
+- **Finished Job Logs and File Ingest Filter** - Filter through manual and scheduled data collection job logs. The **Finished Jobs Log** and **File Ingest** pages now provide filters to help you identify specific jobs or ingests quickly. Common filters include status, date range, and user or client name. The **Finished Jobs Log** also includes a filter for data collected.
+
+- **Improved Data Quality Environment Selector** - Find and select environments more easily. The environment selector on the **Data Quality** page now supports longer lists of active environments.
+
+- **_[BHE Only]_ Logarithmic Scale for Posture Charts** - Enhance your chart readability on the **Posture** page by switching from linear to logarithmic scale. Activate this option to better visualize various scenarios, including minimal fluctuations, significant deviations, outliers, and anomalous or discrepant data points.
+
+## SharpHound (v2.8.0)
+
+### New and Improved Features
+
+- **Added collection support:**
+
+  - `AdminSDHolderProtected` status for users, groups, and computers to support new BloodHound v8.3.0 modeling of the [`AdminSDHolder`](/resources/edges/protect-admin-groups) system in Active Directory
+  - [GPO Status](/resources/nodes/gpo#node-properties) to exclude disabled GPOs (or those which do not apply computer configurations) during local group processing
+  - Domain controller registry key for the `Netlogon` service security descriptor
+
+- **_[CE Only]_ GPO Local Group** - Processing now excludes disabled GPOs or those that do not apply computer configurations.
+
+- **Computer status log file** - The [`compstatus.csv`](/install-data-collector/install-sharphound/troubleshooting#computer-status-logfile) output now includes the SID of tested computers for easier correlation and troubleshooting.
+
+- **Timeout tuning** - Adaptive timeouts are now disabled for LDAP queries to improve reliability and prevent premature retry exhaustion.
+
+## AzureHound (v2.8.1)
+
+### New and Improved Features
+
+- Added support for Azure Managed Identity authentication.
+
+### Bug Fixes
+
+- Resolved an issue preventing JWT authentication for AzureHound.
