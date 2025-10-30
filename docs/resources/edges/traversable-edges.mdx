@@ -3,8 +3,11 @@ title: Traversable and Non-Traversable Edge Types
 description: Details on traversable and non-traversable edge types in BloodHound
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
-
+<img
+  noZoom
+  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise and CE"
+/>
 
 ## Traversable Edges
 
@@ -13,7 +16,7 @@ Most edges in BloodHound are traversable, representing a relationship between tw
 For example, consider the ForceChangePassword edge:
 
 <Frame>
-  <img src="/assets/image-2-74.png"/>
+  <img src="/assets/image-2-74.png" />
 </Frame>
 
 The Service Desk group has permission to force change the password of Bob without knowing Bob’s current password. An attacker can abuse this to change the password, log in as Bob, and exploit Bob’s privileges. Traversable edges like ForceChangePassword facilitate graph traversal and enable the pathfinding logic in BloodHound.
@@ -21,21 +24,21 @@ The Service Desk group has permission to force change the password of Bob withou
 These are the traversable AD edge types in BloodHound:
 
 |                      |                           |                          |
-|----------------------|---------------------------|--------------------------|
-| AbuseTGTDelegation   | CanRDP                    | HasTrustKeys             |
-| ADCSESC1             | ClaimSpecialIdentity      | ManageCA                 |
-| ADCSESC10a           | CoerceAndRelayNTLMToADCS  | ManageCertificates       |
-| ADCSESC10b           | CoerceAndRelayNTLMToLDAP  | MemberOf                 |
-| ADCSESC13            | CoerceAndRelayNTLMToLDAPS | Owns                     |
-| ADCSESC3             | CoerceAndRelayNTLMToSMB   | OwnsLimitedRights        |
-| ADCSESC4             | CoerceToTGT               | ReadGMSAPassword         |
-| ADCSESC6a            | Contains                  | ReadLAPSPassword         |
-| ADCSESC6b            | DCFor                     | SameForestTrust          |
-| ADCSESC9a            | DCSync                    | SpoofSIDHistory          |
-| ADCSESC9b            | DumpSMSAPassword          | SQLAdmin                 |
-| AddAllowedToAct      | ExecuteDCOM               | SyncedToEntraUser        |
-| AddKeyCredentialLink | ForceChangePassword       | SyncLAPSPassword         |
-| AddMember            | GPLink                    | WriteAccountRestrictions |
+| -------------------- | ------------------------- | ------------------------ |
+| AbuseTGTDelegation   | CanApplyGPO               | HasSession               |
+| ADCSESC1             | CanPSRemote               | HasTrustKeys             |
+| ADCSESC10a           | CanRDP                    | MemberOf                 |
+| ADCSESC10b           | CoerceAndRelayNTLMToADCS  | Owns                     |
+| ADCSESC13            | CoerceAndRelayNTLMToLDAP  | OwnsLimitedRights        |
+| ADCSESC3             | CoerceAndRelayNTLMToLDAPS | PropagatesACEsTo         |
+| ADCSESC4             | CoerceAndRelayNTLMToSMB   | ReadGMSAPassword         |
+| ADCSESC6a            | CoerceToTGT               | ReadLAPSPassword         |
+| ADCSESC6b            | ContainsIdentity          | SameForestTrust          |
+| ADCSESC9a            | DCFor                     | SpoofSIDHistory          |
+| ADCSESC9b            | DCSync                    | SQLAdmin                 |
+| AddAllowedToAct      | DumpSMSAPassword          | SyncedToEntraUser        |
+| AddKeyCredentialLink | ExecuteDCOM               | SyncLAPSPassword         |
+| AddMember            | ForceChangePassword       | WriteAccountRestrictions |
 | AddSelf              | GenericAll                | WriteDacl                |
 | AdminTo              | GenericWrite              | WriteGPLink              |
 | AllExtendedRights    | GoldenCert                | WriteOwner               |
@@ -46,7 +49,7 @@ These are the traversable AD edge types in BloodHound:
 These are the traversable Azure edge types in BloodHound:
 
 |                         |                       |                           |
-|-------------------------|-----------------------|---------------------------|
+| ----------------------- | --------------------- | ------------------------- |
 | AZAKSContributor        | AZGetSecrets          | AZNodeResourceGroup       |
 | AZAddMembers            | AZGlobalAdmin         | AZOwner                   |
 | AZAddOwner              | AZHasRole             | AZOwns                    |
@@ -68,34 +71,35 @@ If you cannot abuse a given relationship between two nodes to take control of th
 Pathfinding includes only traversable edges. As a result, you might get a DCSync edge in a path like this:
 
 <Frame>
-  <img src="/assets/image-2-75.png"/>
+  <img src="/assets/image-2-75.png" />
 </Frame>
 
 But you will not see any GetChanges or GetChangesAll edge. However, you can use Cypher to reveal the GetChanges and GetChangeAll edges that the DCSync edge relies on:
 
 <Frame>
-  <img src="/assets/image-2-76.png"/>
+  <img src="/assets/image-2-76.png" />
 </Frame>
-
 
 These are the non-traversable AD edge types in BloodHound:
 
-|                          |                         |                                 |
-|--------------------------|-------------------------|---------------------------------|
-| CrossForestTrust         | GetChangesInFilteredSet | PublishedTo                     |
-| DelegatedEnrollmentAgent | HostsCAService          | RemoteInteractiveLogonRight |
-| Enroll                   | IssuedSignedBy          | RootCAFor                       |
-| EnrollOnBehalfOf         | LocalToComputer         | TrustedForNTAuth                |
-| EnterpriseCAFor          | MemberOfLocalGroup      | WriteOwnerRaw                   |
-| ExtendedByPolicy         | NTAuthStoreFor          | WritePKIEnrollmentFlag          |
-| GetChanges               | OIDGroupLink            | WritePKINameFlag                |
-| GetChangesAll            | OwnsRaw                 |                                 |
+|                          |                    |                                 |
+| ------------------------ | ------------------ | ------------------------------- |
+| Contains                 | GPLink             | OwnsRaw                         |
+| CrossForestTrust         | HostsCAService     | ProtectAdminGroups              |
+| DelegatedEnrollmentAgent | IssuedSignedBy     | PublishedTo                     |
+| Enroll                   | LocalToComputer    | RemoteInteractiveLogonPrivilege |
+| EnrollOnBehalfOf         | ManageCA           | RootCAFor                       |
+| EnterpriseCAFor          | ManageCertificates | TrustedForNTAuth                |
+| ExtendedByPolicy         | MemberOfLocalGroup | WriteOwnerRaw                   |
+| GetChanges               | NTAuthStoreFor     | WritePKIEnrollmentFlag          |
+| GetChangesAll            | OIDGroupLink       | WritePKINameFlag                |
+| GetChangesInFilteredSet  |
 
 These are the non-traversable Azure edge types in BloodHound:
 
-|                                       |                                              |
-|---------------------------------------|----------------------------------------------|
-| AZMGAppRoleAssignment\_ReadWrite\_All | AZMGGroup\_ReadWrite\_All                    |
-| AZMGApplication\_ReadWrite\_All       | AZMGRoleManagement\_ReadWrite\_Directory     |
-| AZMGDirectory\_ReadWrite\_All         | AZMGServicePrincipalEndpoint\_ReadWrite\_All |
-| AZMGGroupMember\_ReadWrite\_All       |                                              |
+|                                     |                                            |
+| ----------------------------------- | ------------------------------------------ |
+| AZMGAppRoleAssignment_ReadWrite_All | AZMGGroup_ReadWrite_All                    |
+| AZMGApplication_ReadWrite_All       | AZMGRoleManagement_ReadWrite_Directory     |
+| AZMGDirectory_ReadWrite_All         | AZMGServicePrincipalEndpoint_ReadWrite_All |
+| AZMGGroupMember_ReadWrite_All       |                                            |
