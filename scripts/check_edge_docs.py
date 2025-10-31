@@ -13,6 +13,7 @@ Defaults assume the docs repo and the code repo are siblings in the same parent 
 from __future__ import annotations
 
 import argparse
+import code
 import os
 import re
 import sys
@@ -79,7 +80,8 @@ def extract_edge_keys_from_code(index_path: Path) -> List[str]:
             break
         # Strip inline comments and trailing commas
         # Match patterns like: "    KeyName: Value,"
-        m = re.match(r"\s*([A-Za-z0-9_]+)\s*:\s*[^,]+,?\s*$", line)
+        # Handle keys with hyphens, quotes, and more whitespace variations
+        m = re.match(r'\s*["\']?([A-Za-z0-9_-]+)["\']?\s*:\s*', line)
         if m:
             keys.append(m.group(1))
     keys = sorted(set(keys), key=str.casefold)
@@ -94,10 +96,17 @@ def write_manifest(path: Path, items: Iterable[str]) -> None:
 
 
 def compare_lists(docs: List[str], code: List[str]) -> Tuple[Set[str], Set[str]]:
-    s_docs = set(docs)
-    s_code = set(code)
-    missing_in_docs = s_code - s_docs
-    extra_in_docs = s_docs - s_code
+    # Create case-insensitive lookup maps
+    docs_lower = {item.lower(): item for item in docs}
+    code_lower = {item.lower(): item for item in code}
+    
+    missing_keys = set(code_lower.keys()) - set(docs_lower.keys())
+    extra_keys = set(docs_lower.keys()) - set(code_lower.keys())
+    
+    # Return original-case items for display
+    missing_in_docs = {code_lower[k] for k in missing_keys}
+    extra_in_docs = {docs_lower[k] for k in extra_keys}
+    
     return missing_in_docs, extra_in_docs
 
 
