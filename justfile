@@ -21,3 +21,9 @@ prune-my-branches nuclear='no':
 update-openapi VERSION:
     # Download openapi.json from BloodHound's stage branch
     curl -L --fail "https://raw.githubusercontent.com/SpecterOps/BloodHound/stage/{{VERSION}}/packages/go/openapi/doc/openapi.json" -o docs/openapi.json || (echo "Failed to download OpenAPI spec for version {{VERSION}}" && exit 1)
+
+# Check docs coverage for edge help texts vs code registry
+check-edges bh_root="../BloodHound":
+  #!/usr/bin/env bash
+  set -euo pipefail
+  python3 scripts/check_edge_docs.py --bh-root "{{bh_root}}"
