@@ -13,7 +13,6 @@ Defaults assume the docs repo and the code repo are siblings in the same parent 
 from __future__ import annotations
 
 import argparse
-import code
 import os
 import re
 import sys
