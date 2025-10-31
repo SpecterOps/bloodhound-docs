@@ -5,29 +5,27 @@ mode: wide
 description: "Learn how to collect data."
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE" />
 
 SharpHound data collection utilizes the open-source [SharpHound Common](https://github.com/SpecterOps/SharpHoundCommon) library, maintained by the BloodHound Enterprise Engineering team.
 
-In BloodHound Enterprise you can start scans for different data types via a [collection schedule](/collect-data/enterprise-collection/collection-schedule) or an [on-demand scan](/collect-data/enterprise-collection/on-demand-scan).
-With BloodHound Community Edition, you run scans by [running the executable itself](/collect-data/ce-collection/sharphound).
+In BloodHound Enterprise you can start scans for different data types via a [collection schedule](/collect-data/operations/collection-schedule) or an [on-demand scan](/collect-data/operations/on-demand-scan).
+With BloodHound Community Edition, you run scans by [running the executable itself](/collect-data/community/sharphound).
 
 The data types are:
 
 * [Active Directory Structure Data](/collect-data/permissions#ad-structure-data)
-* _Local Groups_, collecting:
-    * [Local Group Membership](/collect-data/permissions#local-group-membership)
-    * [User Rights Assignments](/collect-data/permissions#user-rights-assignments)
+* *Local Groups*, collecting:
+  * [Local Group Membership](/collect-data/permissions#local-group-membership)
+  * [User Rights Assignments](/collect-data/permissions#user-rights-assignments)
 * [Sessions](/collect-data/permissions#sessions)
 * [Certificate Services](/collect-data/permissions#certificate-services)
 * [DC Registry](/collect-data/permissions#dc-registry)
 * [CA Registry](/collect-data/permissions#ca-registry)
 
-SpecterOps recommends collecting all data types because it provides maximum visibility into your environment. Local Group Memberships and Sessions are especially important, as they reveal Attack Paths to individual systems based on non-centralized configurations, see [Why perform privileged collection in SharpHound](/collect-data/enterprise-collection/privileged-collection).
+SpecterOps recommends collecting all data types because it provides maximum visibility into your environment. Local Group Memberships and Sessions are especially important, as they reveal Attack Paths to individual systems based on non-centralized configurations, see [Why perform privileged collection in SharpHound](/collect-data/operations/privileged-collection).
 
-
-<Warning>The SharpHound collection service account does not require `Domain Admin` membership. While adding the account to local `Administrators` groups on domain computers will work, we recommend following the articles [Least-Privileged Collection](/collect-data/enterprise-collection/least-privileged-collection) and [SharpHound Enterprise Service Hardening](/manage-bloodhound/securing-bloodhound-and-collectors/sharphound-hardening).</Warning>
-
+<Warning>The SharpHound collection service account does not require `Domain Admin` membership. While adding the account to local `Administrators` groups on domain computers will work, we recommend following the articles [Least-Privileged Collection](/collect-data/operations/least-privileged-collection) and [SharpHound Enterprise Service Hardening](/manage-bloodhound/securing-bloodhound-and-collectors/sharphound-hardening).</Warning>
 
 ## AD Structure Data
 
@@ -91,6 +89,7 @@ SharpHound collects active session information to identify abusable sessions on 
 **Default Permissions:** Members of the local `Administrators` group may call this function.
 
 **Least-Privileged Options:**
+
 * On Windows Server operating systems, members of the local `Print Operators` group may also collect session data
 * Windows desktop operating systems do not have a local `Print Operators` group and require alternate approaches
 
@@ -134,7 +133,7 @@ SharpHound collects the following registry key values on enterprise CAs stored u
 
 * **EnrollmentAgentRights**: Contains restrictions for enrollment agents. BloodHound will take the restrictions into account when calculating ADCS ESC3 edges, and assume no restrictions if not collected, as no restrictions are configured by default.
 * **Security**: Contains the security descriptor for the enterprise CA (i.e., the permissions for Enroll, ManageCA, and ManageCertificates edges against the enterprise CA). This security descriptor is also stored in the AD object of the enterprise CA. SharpHound collects both. The CA registry security descriptor holds the effective permissions. Changes in the CA registry security descriptor are replicated to the AD copy, however, not the other way. Therefore, collecting the CA registry security descriptor may reveal permissions of the enterprise CA that are not present if only collecting the AD object.
-* **PolicyModules\\&lt;Active Policy&gt;\\EditFlags**: SharpHound checks if the `EDITF_ATTRIBUTESUBJECTALTNAME2` flag is present, which is required to calculate ADCS ESC6 edges.
+* **PolicyModules\\\<Active Policy>\EditFlags**: SharpHound checks if the `EDITF_ATTRIBUTESUBJECTALTNAME2` flag is present, which is required to calculate ADCS ESC6 edges.
 * **RoleSeparationEnabled**: SharpHound checks whether role separation is enforced (a user cannot be both CA Administrator and Certificate Manager).
 
 The registry key values are described in detail in the [Certified Pre-Owned whitepaper](https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf).
@@ -144,4 +143,3 @@ The registry key values are described in detail in the [Certified Pre-Owned whit
 **Collection Method:** SharpHound collects these registry key values via remote registry access on enterprise CAs.
 
 **Default Permissions:** `Authenticated Users` may collect these registry key values by default, see [Least-Privileged Collection - CA Registry](/collect-data/enterprise-collection/least-privileged-collection#ca-registry) for an explanation of why this is accessible.
-
