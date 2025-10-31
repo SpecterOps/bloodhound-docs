@@ -3,7 +3,7 @@ title: SharpHound Enterprise Service Hardening
 description: "The BloodHound team recommends the hardening actions described on this page to protect the SharpHound service account. The hardening recommendations are focused on the remediation of the attack techniques targeting service accounts."
 ---
 
-<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
 Many of the attacks involve privileged collection, in which the SharpHound service account gathers data from domain-joined Windows computers. During privileged collection, an attacker with administrative access to a computer in the domain could attempt to compromise the SharpHound service account, as the account will log in on the computer during the collection.
 
@@ -15,7 +15,7 @@ This page will describe the attacks we want to prevent and the remediations that
 
 We recommend using a [Group Managed Service Account](https://learn.microsoft.com/en-us/windows-server/security/group-managed-service-accounts/group-managed-service-accounts-overview) (gMSA) for the SharpHound service account rather than a regular AD user.
 
-Follow the article: [Create a gMSA for SharpHound](/install-data-collector/install-sharphound/create-gmsa).
+Follow the article: [Create a gMSA for SharpHound](/collect-data/sharphound/install/configure-gmsa).
 
 A gMSA is a type of service account where the password is managed by Active Directory, eliminating the need for manual password management. This will ensure the service account password is:
 
@@ -39,7 +39,7 @@ Our testing has shown that adding the SharpHound service account to Protected Us
 
 We recommend tiering the SharpHound service account to follow the principle of "[elevated user accounts should not be used to log on to lower Tier assets](https://techcommunity.microsoft.com/t5/core-infrastructure-and-security/protecting-domain-administrative-credentials/ba-p/259210)".
 
-Follow the article: [Tiered SharpHound Strategy](/install-data-collector/install-sharphound/tiered-collector-strategy).
+Follow the article: [Tiered SharpHound Strategy](/collect-data/sharphound/install/tiered-collector-strategy).
 
 This recommendation is especially for organizations seeking to implement the [Active Directory Tier Model](https://learn.microsoft.com/en-us/microsoft-identity-manager/pam/tier-model-for-partitioning-administrative-privileges) or [Enterprise Access Model](https://learn.microsoft.com/en-us/security/privileged-access-workstations/privileged-access-access-model)
 
@@ -72,14 +72,16 @@ Members of the Protected Users group cannot be delegated, as described by Micros
 It is possible to prevent an AD principal from using Kerberos delegation services by enabling the account option "Account is sensitive and cannot be delegated":
 
 <Frame>
-  <img src="/assets/image-2-69.png"/>
+  <img src="/assets/image-2-69.png" />
 </Frame>
+
 On a Group Manages Service Account (gMSA), this account option is not visible in the GUI, but you can set the account option through PowerShell:
 
 <Frame>
-  <img src="/assets/image-2-70.png"/>
+  <img src="/assets/image-2-70.png" />
 </Frame>
-The value should be _True_ for the account to be protected.
+
+The value should be *True* for the account to be protected.
 
 ### Attack 3: Authentication relaying
 
@@ -93,10 +95,10 @@ Members of the Protected Users group cannot authenticate with NTLM, as described
 
 #### Alternative remediation: Block outgoing NTLM
 
-Outgoing NTLM can be denied entirely from the SharpHound server by configuring the security option [Network security: Restrict NTLM: Outgoing NTLM traffic to remote servers](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-security-restrict-ntlm-outgoing-ntlm-traffic-to-remote-servers) to _Deny All:_
+Outgoing NTLM can be denied entirely from the SharpHound server by configuring the security option [Network security: Restrict NTLM: Outgoing NTLM traffic to remote servers](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-security-restrict-ntlm-outgoing-ntlm-traffic-to-remote-servers) to *Deny All:*
 
 <Frame>
-  <img src="/assets/image-2-71.png"/>
+  <img src="/assets/image-2-71.png" />
 </Frame>
 
 This prevents the attacker from downgrading the Kerberos authentication to NTLM and remediates NTLM attacks.
@@ -107,7 +109,7 @@ As mentioned in the previous attack (Authentication relaying), an attacker with 
 
 #### Remediation
 
-_See the remediation of the previous attack (Authentication relaying)._
+*See the remediation of the previous attack (Authentication relaying).*
 
 ### Attack 5: Reusable credentials in LSASS
 
