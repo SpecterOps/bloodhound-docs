@@ -243,6 +243,59 @@ See Neo4j [Naming and Conventions](https://neo4j.com/docs/cypher-manual/current/
 }
 ```
 
+### Post-processing
+
+Post-processing in BloodHound refers to the analysis phase where the system creates certain edges after ingesting data to identify attack paths.
+
+After ingesting data, BloodHound analyzes the graph state and adds edges it considers useful. BloodHound regenerates "post-processed" edges after it builds a complete graph. Before regenerating post-processed edges, BloodHound deletes any existing ones. As a result, BloodHound removes any post-processed edges that you add directly to an OpenGraph payload.
+
+See the following list of edges that BloodHound creates during post-processing:
+
+- [`AdminTo`](/resources/edges/admin-to)
+- [`AZAddOwner`](/resources/edges/az-add-owner)
+- [`AZMGAddMember`](/resources/edges/az-mg-add-member)
+- [`AZMGAddOwner`](/resources/edges/az-mg-add-owner)
+- [`AZMGAddSecret`](/resources/edges/az-mg-add-secret)
+- [`AZMGGrantAppRoles`](/resources/edges/az-mg-grant-app-roles)
+- [`AZMGGrantRole`](/resources/edges/az-mg-grant-role)
+
+You can work around this behavior by including the supporting edges that cause the post-processing step to generate the edge that you want.
+
+For example, if you include an `AdminTo` edge directly in your OpenGraph payload, BloodHound removes it during post-processing and the edge does not persist in the final graph as expected. Instead of adding `AdminTo` edges directly, include the supporting edges that cause the post-processor to generate the `AdminTo` edge. The common pattern that triggers the creation of the `AdminTo` edge is:
+
+```mermaid
+graph LR
+  Entity -->|MemberOfLocalGroup| LocalGroup -->|LocalToComputer| Computer
+```
+
+See the following example OpenGraph payload that produces the effect:
+
+```json
+{
+    "graph": {
+        "nodes": [
+            {
+                "id": "TESTNODE",
+                "kinds": ["User"]
+            }
+        ],
+        "edges": [
+            {
+                "start": {
+                    "match_by": "id",
+                    "value": "TESTNODE"
+                },
+                "end": {
+                    "match_by": "id",
+                    "value": "S-1-5-21-2697957641-2271029196-387917394-2171-544"
+                },
+                "kind": "MemberOfLocalGroup"
+            }
+        ]
+    }
+}
+```
+
 ## Optional Metadata Field
 
 You can optionally include a metadata object at the top level of your JSON payload. This metadata currently supports a single field:
