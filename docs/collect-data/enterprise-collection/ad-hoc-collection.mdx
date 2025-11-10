@@ -6,67 +6,119 @@ title: Ad-hoc BHE Data Collection with SharpHound CE
 
 ## Purpose
 
-This guide explains how to collect data ad-hoc for BloodHound Enterprise (BHE) using the BloodHound Community Edition (BHCE) collector: SharpHound CE.
+This guide explains how to perform ad-hoc data collection for BloodHound Enterprise (BHE) using the SharpHound Community Edition (CE) collector.
 
-It should be used by BloodHound Enterprise users who cannot deploy [SharpHound Enterprise](/install-data-collector/install-sharphound/system-requirements), for example in:
+Use SharpHound CE when you cannot deploy [SharpHound Enterprise](/install-data-collector/install-sharphound/system-requirements). Examples include:
 
-* Environments with no internet access, such as SCADA or OT environments
-* Merger and acquisition scenarios, to assess risk before integration or consolidation of IT infrastructure
-* Quick deployment scenarios, to get an initial assessment before a full SharpHound Enterprise deployment
+* Environments with no internet access (such as SCADA or OT environments)
+* Merger and acquisition scenarios to assess risk before integration or consolidation of IT infrastructure
+* Quick deployment scenarios to do an initial assessment before a full SharpHound Enterprise deployment
 
-Note that SharpHound CE may require allow-listing in endpoint protection solutions, as it is unsigned and will likely be flagged as malicious.
+<Note>SharpHound CE may require allow-listing in endpoint protection solutions, as it is unsigned and will likely be flagged as malicious.</Note>
 
-SharpHound CE collects the same data as SharpHound Enterprise since they both use the same collection library. However, SharpHound CE does not support integration with the SaaS portal for a status overview and easily configurable schedules for continuous automatic collection and upload.
+SharpHound CE uses the same collection library as SharpHound Enterprise and therefore collects the same data. However, CE does not integrate with the SaaS portal, so it cannot provide portal status monitoring or configurable scheduled automatic collection and upload.
 
 ## Prerequisites
 
-* Logged in as a user role, which is authorized to perform file ingest, see [Administering users and roles](/manage-bloodhound/auth/users-and-roles)
+The following prerequisites are required to perform ad-hoc data collection with SharpHound CE:
+
+* Logged in as a user with the **Administrator**, **Power User**, or **Upload-only** [role](/manage-bloodhound/auth/users-and-roles)
 * Access to an account and computer in the in-scope domain or a domain trusted by the in-scope domain
 
 ## Process
 
+The ad-hoc data collection process consists of two main steps: performing the data collection with SharpHound CE and uploading the collected data to BloodHound Enterprise.
+
 ### Perform SharpHound CE data collection
 
-1. Download the latest version of SharpHound CE from [GitHub releases](https://github.com/SpecterOps/SharpHound/releases/latest)
-2. Choose a data collection method
-    * `DCOnly` is the recommended starting method and is equivalent to BHE's Active Directory Structure Data + Certificate Services
-    * `All` performs all collection methods
-    * Learn about collection methods and flags:
-        * [SharpHound Community Edition](/collect-data/ce-collection/sharphound)
-        * [All SharpHound Community Edition Flags, Explained](/collect-data/ce-collection/sharphound-flags)
-        * [SharpHound Data Collection and Permissions](/collect-data/permissions)
-3. Start the collection
-```
-    .\SharpHound.exe -c DCOnly
-```
-4. Once the collection finishes, the output will be a .zip archive containing JSON files
+This section outlines how to use SharpHound CE to collect data from the target environment.
+
+<Steps>
+  <Step title="Download SharpHound CE">
+    Download the latest version of SharpHound CE from [GitHub](https://github.com/SpecterOps/SharpHound/releases/latest).
+  </Step>
+
+  <Step title="Extract SharpHound CE">
+    Extract the contents of the downloaded ZIP archive to a working directory on the system where you plan to collect data.
+  </Step>
+
+  <Step title="Collect data">
+    1. Choose a [collection](/collect-data/ce-collection/sharphound-flags#collectionmethods-or-'c') method that meets your requirements.
+
+        <TIP>DCOnly is the recommended starting method and is equivalent to BHE's Active Directory + Certificate Services.</TIP>
+
+    1. Open a PowerShell or Command Prompt window.
+
+    1. Navigate to the directory where you extracted SharpHound CE.
+
+    1. Start collection with the chosen method.
+
+        For example, to perform a **DCOnly** collection:
+
+        ```ps
+        C:\> SharpHound.exe --CollectionMethods DCOnly
+        ```
+  </Step>
+  <Step title="Locate collected data">
+    After the collection completes, locate the output .zip file in the same directory where you ran SharpHound CE. The file name is in the format `SharpHound-<timestamp>.zip`.
+  </Step>
+</Steps>
 
 ### Upload data to BloodHound Enterprise
 
-1. Log in to BloodHound Enterprise
-2. Navigate to the File Ingest page
-    * From the Main Screen, click on the cog wheel in the upper right hand corner
-    * From the drop down menu, select 'Administration'
-    <Frame>
-      <img src="/assets/image-60.png" alt=""/>
-    </Frame>
-    * In the left margin, select 'File Ingest' under the 'Data Collection' heading
-    <Frame>
-      <img src="/assets/image-61.png" alt=""/>
-    </Frame>
-3. Select "Upload File(s)" and in the pop-up window, drag and drop the output .zip file and select "Upload"
-    <Frame>
-      <img src="/assets/image-62.png" alt=""/>
-    </Frame>
-4. BloodHound Enterprise will parse and process the data, making it available for analysis
+This section outlines how to upload the collected data to BloodHound Enterprise for analysis.
 
-### Analyzing Data and Using BloodHound Enterprise Features
+<Steps>
+  <Step title="Open the File Ingest page">
+  In the left menu, click **Administration** > **File Ingest**.
+  </Step>
+
+  <Step title="Upload collected data">
+    1. Click **Upload File(s)**.
+
+        <Frame>
+          <img
+            src="/images/data_collectors/file-ingest-page.png" 
+            alt="File Ingest screen showing the Upload File(s) button"
+          />
+        </Frame>
+
+    1. Click the modal or drag and drop the output .zip file onto it and click **Upload**.
+
+        <Frame>
+          <img
+            src="/images/data_collectors/file-ingest-modal.png"
+            alt="File Ingest screen showing the upload modal"
+            style={{ width: "50%" }}
+          />
+        </Frame>
+  </Step>
+
+  <Step title="Review upload details">
+    After the upload completes, you can verify the status in the **Details** panel.
+
+    Click the file ingest **ID** in the table to open the **Details** panel on the right side of the screen.
+
+    It shows the file name and ingestion status of each file, which can be helpful for viewing data upload history or troubleshooting data upload issues.
+
+      <Frame>
+        <img
+          src="/images/data_collectors/view-file-ingest-details.png"
+          alt="File Ingest screen showing the upload details panel"
+        />
+      </Frame>
+
+      You can also click the <Icon icon="filter" /> icon to filter by status, data range, and user.
+  </Step>
+</Steps>
+
+## Analyze Data and Use BloodHound Enterprise Features
 
 * **Dashboard and Visualization:** Review key insights and summaries.
 * **Running Queries:** Explore specific security aspects and visualize attack paths.
 * **Posture Reporting:** Visualize and track exposure within your Enterprise
 
-### Best Practices for Secure Environments
+## Best Practices for Secure Environments
 
 * **Minimize Data Collection Scope:** Focus on necessary data to limit exposure.
 * **Secure Data Handling:** Ensure secure storage and handling of collected data.
@@ -74,5 +126,4 @@ SharpHound CE collects the same data as SharpHound Enterprise since they both us
 
 ## Outcome
 
-Once ingest and analysis is completed, BloodHound Enterprise will present a comprehensive report with actionable recommendations on the Attack Paths page.
-
+After ingest and analysis is complete, BloodHound Enterprise presents a comprehensive report with actionable recommendations on the [**Attack Paths**](/analyze-data/accept-findings) page.
