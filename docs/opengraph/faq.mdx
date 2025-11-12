@@ -45,4 +45,54 @@ Slow ingestion speeds are commonly seen when using a Neo4j graph database and ar
 
 To switch to a PostgreSQL graph database, set `"graph_driver": "pg"` in your `bloodhound.config.json` file and restart the BloodHound services/containers. You will need to re-ingest any data into the new database.
 </Accordion>
+<Accordion title="Why do OpenGraph nodes sometimes disappear after ingestion?">
+There is a reconciliation step in BloodHound that prunes orphaned nodes (nodes that have no edge relationships) shortly after ingestion. This is distinct from the edge [post-processing](/opengraph/schema#post-processing) behavior and is intended to reduce stale or unconnected objects in the graph.
+
+What this means:
+
+- If you ingest nodes without edges, BloodHound Enterprise Edition (BHE) may remove them during reconciliation and they will appear to "vanish" after ingestion.
+- This behavior can differ from the BloodHound Community Edition (BHCE) because BHE applies additional reconciliation logic.
+
+Recommended workarounds:
+
+1. Ensure each node has at least one relationship in the same payload. Including an edge that links the node to an existing object is the simplest fix.
+
+1. Anchor your OpenGraph data to a lightweight root node. For example, create a single root like `(:OGRoot)` and add a containment edge such as `(:OGRoot)-[:OGContains]->(:YourNode)` to keep nodes from being pruned. Use an edge kind that you exclude from your path queries if you don't want it to affect pathfinding.
+
+1. Use a registered `source_kind` (e.g., `Base`, `AZBase`, `Okta`) or include an appropriate kind in the node's `kinds` array when applicable. Nodes that resemble existing SharpHound/AzureHound/Okta data are treated as managed data by the database management tools.
+
+### Example: root node + containment edge
+The following minimal OpenGraph JSON shows a lightweight root node that anchors a user node with a containment edge. Anchoring like this prevents the node from being pruned as an orphan.
+
+```json
+{
+    "$schema": "https://raw.githubusercontent.com/SpecterOps/bloodhound-opengraph/main/bloodhound-opengraph.schema.json",
+    "metadata": {
+        "source_kind": "Base"
+    },
+    "graph": {
+        "nodes": [
+            {
+                "id": "og-root",
+                "properties": { "name": "OG Root", "label": "OGRoot" },
+                "kinds": [ "OGRoot" ]
+            },
+            {
+                "id": "S-1-5-21-2697957641-2271029196-387917395-2244",
+                "properties": { "name": "test@example.com", "label": "User" },
+                "kinds": [ "User", "Base" ]
+            }
+        ],
+        "edges": [
+            {
+                "start": { "value": "og-root", "match_by": "id", "kind": "OGRoot" },
+                "kind": "OGContains",
+                "end": { "value": "S-1-5-21-2697957641-2271029196-387917395-2244", "match_by": "id", "kind": "User" }
+            }
+        ]
+    }
+}
+```
+
+</Accordion>
 </AccordionGroup>
