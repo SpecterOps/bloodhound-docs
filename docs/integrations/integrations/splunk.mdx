@@ -8,463 +8,298 @@ The [BloodHound Enterprise Splunk app](https://splunkbase.splunk.com/app/7818) i
 
 * Use the dashboards to track the Active Directory and Azure attack paths of your environment
 * Create alerts to detect when new attack paths emerge or exposure increases
-* Enrich your SIEM data with information about the attack paths to and from principals
-
-<Note>Version 2.0+ introduces ingest of BHE Audit Log data. To successfully ingest this data the BHE API user must be assigned the 'Administrator' role in BHE.</Note>
+* Enrich your SIEM data with information about the attack paths to and from principals in your environment
 
 ## Prerequisites
 
 Before installing and configuring the BloodHound Enterprise Splunk app, ensure that you have the following:
 
-* Splunk instance (version 9.0.1 or later)
+* Splunk instance (version 9.0.1 or later) and an admin account
 * BloodHound Enterprise tenant
 * BloodHound Enterprise [non-personal API key/ID pair](/integrations/bloodhound-api/working-with-api#create-a-personal-api-key-and-id-pair)
 
   <Note>At minimum, the user account associated with the API key/ID pair must have the **Read-only** role. The **Administrator** role is required to collect BloodHound Enterprise audit logs.</Note>
 
-## Install
+## Install the Splunk app
 
-You can install the BloodHound Enterprise Splunk app using one of the following methods:
+Installing the BloodHound Enterprise Splunk app involves the following steps:
 
-<Tabs>
-  <Tab title="Splunkbase" icon="server">
-  Install directly from Splunkbase by following these steps:
-
-    1. Log in to Splunk Enterprise.
+<Steps>
+  <Step title="Navigate to Splunk app management">
+    1. Log in to Splunk Enterprise as an admin.
     1. Click **Apps** > **Manage apps**.
-    1. Click **Browse More Apps**.
-    1. Search for _BloodHound Enterprise_.
-    1. Click **Install**
-    1. Enter your Splunkbase credentials to authorize the download when prompted.
-    1. Restart Splunk.
+  </Step>
 
-        <Tip>See [Splunk's documentation](https://help.splunk.com/en/splunk-enterprise/administer/admin-manual/9.0/welcome-to-splunk-enterprise-administration/start-splunk-enterprise-and-perform-initial-tasks/start-and-stop-splunk-enterprise) for more information.</Tip>
-  </Tab>
+  <Step title="Install the BloodHound Enterprise Splunk app">
+    Use one of the following methods to install the BloodHound Enterprise Splunk app:
+
+      <Tabs>
+        <Tab title="Splunkbase" icon="server">
+        Install directly from Splunkbase:
+
+          1. Click **Browse More Apps**.
+          1. Search for _BloodHound Enterprise_.
+          1. Click **Install**
+          1. Enter your Splunkbase credentials to authorize the download when prompted.
+        </Tab>
+
+        <Tab title="Downloaded package" icon="download">
+        Install from a downloaded package:
+
+          1. Download the BloodHound Enterprise Splunk app package from [Splunkbase](https://splunkbase.splunk.com/app/7818).
+          1. Click **Install App from File**.
+          1. Select the downloaded package and click **Upload**.
+        </Tab>
+      </Tabs>
+  </Step>
+
+  <Step title="Restart Splunk">
+    After installing the app, restart your Splunk instance to apply the changes.
+
+    <Tip>See [Splunk's documentation](https://help.splunk.com/en/splunk-enterprise/administer/admin-manual/9.0/welcome-to-splunk-enterprise-administration/start-splunk-enterprise-and-perform-initial-tasks/start-and-stop-splunk-enterprise) for more information.</Tip>
+  </Step>
+</Steps>
+
+## Configure the Splunk app (required)
+
+This section describes the minimum required configuration steps to get the BloodHound Enterprise Splunk app up and running. It involves the following steps:
+
+1. Configure a Splunk index
+1. Configure Splunk app API credentials
+1. Configure Splunk data inputs
+
+<Note>Optional configurations are available in the [Configure the Splunk app (optional)](#configure-the-splunk-app-optional) section.</Note>
+
+<Steps>
+  <Step title="Configure a Splunk index">
+    Create a dedicated index for the BloodHound Enterprise Splunk app data:
+
+    1. Click **Settings** > **Indexes** > **New Index**.
+    1. In the **Index Name** field, enter `bhe-splunk-app`.
+    1. In the **Data Integrity Check** field, select **Enabled**.
+    1. In the **App** field, select **BloodHound Enterprise**.
+    1. Click **Save**.
+
+        <Frame>
+          <img
+            src="/images/integrations/splunk/new-index-config.png"
+            style={{ width:"70%" }}
+            alt="A view of the Splunk 'New Index' configuration page showing the fields filled out for creating the 'bhe-splunk-app' index."
+          />
+        </Frame>
+  </Step>
+
+  <Step title="Configure Splunk app API credentials">
+    Configure the BloodHound Enterprise Splunk app with your BloodHound Enterprise API credentials.
+    
+    <Note>
+      - We recommend a [non-personal API key/ID pair](/integrations/bloodhound-api/working-with-api#create-a-personal-api-key-and-id-pair) for API integrations.
+      - At minimum, the user account associated with the API key/ID pair must have the **Read-only** role. The **Administrator** role is required to collect BloodHound Enterprise audit logs.
+    </Note>
+
+    1. Click **Apps** > **Manage Apps**.
+    1. Filter for the BloodHound Enterprise Splunk app and click on it.
+    1. Click the **Administration** drop-down menu and select **Configuration**.
+    1. Click **Add** to open the **Add Account** screen.
+    1. Complete the configuration fields:
+
+        | Field                 | Description                                              |
+        |-----------------------|----------------------------------------------------------|
+        | **Account Name**      | Unique name to identify the BloodHound Enterprise account in Splunk    |
+        | **Tenant Domain**     | Your BloodHound Enterprise tenant (e.g., `https://mydomain.bloodhoundenterprise.io`) |
+        | **Token ID**          | Token ID associated with the BloodHound Enterprise account |
+        | **Token key**         | Token key associated with the BloodHound Enterprise account |
+
+    1. Click **Save** to apply the configuration.
+
+        <Frame>
+          <img
+            src="/images/integrations/splunk/add-account.png"
+            style={{ width:"70%" }}
+            alt="A view of the Splunk 'Add Account' page showing the fields configuring the app's API credentials."
+          />
+        </Frame>
+  </Step>
+
+  <Step title="Configure Splunk data inputs">
+    Data inputs define what data the BloodHound Enterprise Splunk app collects from the BloodHound Enterprise API. 
+
+    <Tip>You can create multiple inputs of the same type, each with different configurations (e.g., different BloodHound Enterprise accounts, indices, and collection intervals).</Tip>
+
+    1. Click **Apps** > **Manage Apps**.
+    1. Filter for the BloodHound Enterprise Splunk app and click on it.
+    1. Click the **Administration** drop-down menu and select **Inputs**.
+    1. Click **Create New Input**.
+    1. Select an input type from the drop-down menu.
+
+        The BloodHound Enterprise Splunk app supports the following input types:
+
+          <table style={{ tableLayout: 'auto' }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left' }}>Input type</th>
+                <th style={{ textAlign: 'left' }}>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Attack Paths</strong></td>
+                <td>Retrieves a list of attack paths from the BloodHound Enterprise API and a list of various findings across a given time range.</td>
+              </tr>
+              <tr>
+                <td><strong>Audit Logs</strong></td>
+                <td>
+                  Retrieves a list of audit logs from the BloodHound Enterprise API.
+                  <ul>
+                    <li>Requires the API user to have the <strong>Administrator</strong> role in BHE.</li>
+                    <li>You can set the "Historical Polling Days" field to retrieve logs from the past N days, starting from the current date.</li>
+                    <li>After the app fetches all logs for the specified period, the input continues polling only the latest audit logs.</li>
+                    <li>If you need logs from a different time range, you can create a new input and fetch them separately.</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Tier Zero Assets</strong></td>
+                <td>Ingests data for all asset members that belong to the Tier Zero privilege zone.</td>
+              </tr>
+              <tr>
+                <td><strong>Posture Statistics</strong></td>
+                <td>Retrieves a history of statistics stored in the database using the BloodHound Enterprise API.</td>
+              </tr>
+            </tbody>
+          </table>
   
-  <Tab title="Downloaded package" icon="download">
-  Install using a downloaded package by following these steps:
+    1. Complete the configuration fields for the selected input type.
 
-    1. Download the BloodHound Enterprise Splunk app package from [Splunkbase](https://splunkbase.splunk.com/app/7818).
-    1. Log in to Splunk Enterprise.
-    1. Click **Apps** > **Manage apps**.
-    1. Click  **Install App from File**.
-    1. Select the downloaded package and click **Upload**.
-    1. Restart Splunk.
+        The following table describes fields that are common across all input types:
 
-        <Tip>See [Splunk's documentation](https://help.splunk.com/en/splunk-enterprise/administer/admin-manual/9.0/welcome-to-splunk-enterprise-administration/start-splunk-enterprise-and-perform-initial-tasks/start-and-stop-splunk-enterprise) for more information.</Tip>
-  </Tab>
-</Tabs>
+        | Field                          | Description                                                             |
+        |--------------------------------|-------------------------------------------------------------------------|
+        | **Name**                       | Unique name identifying the input                                       |
+        | **Interval**                   | Interval (in seconds) at which the input runs                           |
+        | **Index**                      | Index where the BloodHound Enterprise data is stored (`bhe-splunk-app`). You must clear the `default` value and search for the correct index. |
+        | **Bloodhound Account**         | Bloodhound Enterprise account ([configured in Splunk](#configure-bloodhound-splunk-app)) that will be used to fetch the data      |
 
-## Configure Splunk index
+    1. Click **Add** to create the input.
 
-1. Click **Settings** > **Indexes** > **New Index**.
-1. In the **Index Name** field, enter `bhe-splunk-app`.
-1. In the **Data Integrity Check** field, select **Enabled**.
-1. In the **App** field, select **BloodHound Enterprise**.
-1. Click **Save**.
+        <Frame>
+          <img
+            src="/images/integrations/splunk/input-config.png"
+            style={{ width:"70%" }}
+            alt="A view of the Splunk 'Create New Input' configuration page showing the fields filled out for creating a new input."
+          />
+        </Frame>
+
+        Repeat the above steps to create additional inputs as needed.
+
+        Data will now begin flowing into the environment. You can monitor this progress through Splunk itself with the following query:
+
+        ```spl
+        index=_internal source="*splunkd.log" "BHE "
+        ```
+  </Step>
+</Steps>
+
+## Configure the Splunk app (optional)
+
+This section describes optional configuration options for the BloodHound Enterprise Splunk app,  including:
+
+- Configure a Splunk search macro
+- Configure a Splunk proxy
+- Configure Splunk logging
+
+<Steps>
+  <Step title="Configure Splunk search macro">
+    The BloodHound Enterprise Splunk app includes a [search macro](https://help.splunk.com/en/splunk-enterprise/manage-knowledge-objects/knowledge-management-manual/9.4/search-macros/use-search-macros-in-searches) (`bhe_index`) that points to the default index where Splunk stores BloodHound Enterprise data (`bhe-splunk-app`).
 
     <Frame>
       <img
-        src="/images/integrations/splunk/new-index-config.png"
-        style={{ width:"70%" }}
-        alt="A view of the Splunk 'New Index' configuration page showing the fields filled out for creating the 'bhe-splunk-app' index."
+        src="/images/integrations/splunk/search-macro.png"
+        alt="A view of the Splunk 'Search Macros' page showing the default 'bhe_index' macro."
       />
     </Frame>
 
-## Configure Splunk search macro (optional)
+    To view or modify the search macro:
 
-The BloodHound Enterprise Splunk app includes a [search macro](https://help.splunk.com/en/splunk-enterprise/manage-knowledge-objects/knowledge-management-manual/9.4/search-macros/use-search-macros-in-searches) (`bhe_index`) that points to the default index where Splunk stores BloodHound Enterprise data (`bhe-splunk-app`).
+    1. Click **Settings** > **Advanced search**.
+    1. Click **Search macros**.
+    1. Filter for `bhe_index`.
 
-<Frame>
-  <img
-    src="/images/integrations/splunk/search-macro.png"
-    alt="A view of the Splunk 'Search Macros' page showing the default 'bhe_index' macro."
-  />
-</Frame>
+        If you used a different index name, edit the macro **Definition** field to match that name.
 
-To view or modify the search macro:
+        ```spl
+        index=my_custom_bhe_index
+        ```
 
-1. Click **Settings** > **Advanced search**.
-1. Click **Search macros**.
-1. Filter for `bhe_index`.
+        If you maintain separate indexes per [input type](#configure-inputs), modify the macro definition accordingly. For example:
 
-    If you used a different index name, edit the macro **Definition** field to match that name.
+        ```spl
+        index=attack_path_index
+        index=audit_log_index
+        index=posture_stats_index
+        ```
+  </Step>
 
-    ```spl
-    index=my_custom_bhe_index
+  <Step title="Configure Splunk proxy">
+    Splunk allows you to configure a proxy to route traffic through an intermediary server. This might be useful for network security and compliance requirements.
+
+    1. Click **Apps** > **Manage Apps**.
+    1. Filter for the BloodHound Enterprise Splunk app and click on it.
+    1. Click the **Administration** drop-down menu and select **Configuration**.
+    1. Click the **Proxy Settings** tab.
+    1. Complete the configuration fields:
+
+        | Field                    | Description                                             |
+        |--------------------------|---------------------------------------------------------|
+        | **Enable**               | Checkbox to enable or disable the proxy configuration   |
+        | **Proxy Type**           | Drop-down to choose the type of proxy (http, socks4, socks5)|
+        | **Host**                 | Enter the proxy hostname or IP address                  |
+        | **Port**                 | Specify the port number (e.g., 8080)                    |
+        | **Username**             | If authentication is required, enter the username       |
+        | **Password**             | If authentication is required, enter the corresponding password |
+
+    1. Click **Save** to apply the proxy settings.
+    1. Restart Splunk.
+
+        <Tip>See [Splunk's documentation](https://help.splunk.com/en/splunk-enterprise/administer/admin-manual/9.0/welcome-to-splunk-enterprise-administration/start-splunk-enterprise-and-perform-initial-tasks/start-and-stop-splunk-enterprise) for more information.</Tip>
+    </Step>
+
+  <Step title="Configure Splunk logging">
+    You can configure logging settings for the BloodHound Enterprise Splunk app to help with troubleshooting and monitoring.
+
+    1. Click **Apps** > **Manage Apps**.
+    1. Filter for the BloodHound Enterprise Splunk app and click on it.
+    1. Click the **Administration** drop-down menu and select **Configuration**.
+    1. Click the **Logging** tab.
+    1. Select one of the following options from the **Log level** drop-down menu:
+
+        | Log level | Description |
+        |-----------|-------------|
+        | **DEBUG** | Most verbose; use for troubleshooting |
+        | **INFO** | Standard logs (default) |
+        | **WARNING** | Warnings only |
+        | **ERROR** | Errors only |
+
+    1. Click **Save** to apply the changes.
+
+    Where to find logs
+
+    The BloodHound Enterprise Splunk app writes logs to:
+
+    ```text
+    $SPLUNK_HOME/var/log/splunk/ta_bloodhound_enterprise_<input-name>.log
     ```
 
-    If you maintain separate indexes per [input type](#configure-inputs), modify the macro definition accordingly. For example:
+    You can search logs in Splunk using:
 
     ```spl
-    index=attack_path_index
-    index=audit_log_index
-    index=posture_stats_index
+    index="_internal" sourcetype="tabloodhoundenterprise:log"
     ```
 
-## Configure Splunk proxy (optional)
-
-Splunk allows you to configure a proxy to route traffic through an intermediary server. This might be useful for network security and compliance requirements.
-
-1. Click **Apps** > **Manage Apps**.
-1. Filter for the BloodHound Enterprise Splunk app and click on it.
-1. Click the **Administration** drop-down menu and select **Configuration**.
-1. Click the **Proxy Settings** tab.
-1. Complete the configuration fields:
-
-    | Field                    | Description                                             |
-    |--------------------------|---------------------------------------------------------|
-    | **Enable**               | Checkbox to enable or disable the proxy configuration   |
-    | **Proxy Type**           | Drop-down to choose the type of proxy (http, socks4, socks5)|
-    | **Host**                 | Enter the proxy hostname or IP address                  |
-    | **Port**                 | Specify the port number (e.g., 8080)                    |
-    | **Username**             | If authentication is required, enter the username       |
-    | **Password**             | If authentication is required, enter the corresponding password |
-
-1. Click **Save** to apply the proxy settings.
-1. Restart Splunk.
-
-    <Tip>See [Splunk's documentation](https://help.splunk.com/en/splunk-enterprise/administer/admin-manual/9.0/welcome-to-splunk-enterprise-administration/start-splunk-enterprise-and-perform-initial-tasks/start-and-stop-splunk-enterprise) for more information.</Tip>
-
-## Configure Splunk logging (optional)
-
-You can configure logging settings for the BloodHound Enterprise Splunk app to help with troubleshooting and monitoring.
-
-1. Click **Apps** > **Manage Apps**.
-1. Filter for the BloodHound Enterprise Splunk app and click on it.
-1. Click the **Administration** drop-down menu and select **Configuration**.
-1. Click the **Logging** tab.
-1. Select one of the following options from the **Log level** drop-down menu:
-
-    | Log level | Description |
-    |-----------|-------------|
-    | **DEBUG** | Most verbose; use for troubleshooting |
-    | **INFO** | Standard logs (default) |
-    | **WARNING** | Warnings only |
-    | **ERROR** | Errors only |
-
-1. Click **Save** to apply the changes.
-
-### Where to find logs
-
-The BloodHound Enterprise Splunk app writes logs to:
-
-```text
-$SPLUNK_HOME/var/log/splunk/ta_bloodhound_enterprise_<input-name>.log
-```
-
-You can search logs in Splunk using:
-
-```spl
-index="_internal" sourcetype="tabloodhoundenterprise:log"
-```
-
-Use the `tail` command to monitor logs in real-time:
-
-```bash
-tail -f $SPLUNK_HOME/var/log/splunk/ta_bloodhound_enterprise_<input-name>.log
-```
-
-## Configure BloodHound Splunk app
-
-Steps to configure the BloodHound Enterprise account credentials:
-
-1. Click **Apps** > **Manage Apps**.
-1. Filter for the BloodHound Enterprise Splunk app and click on it.
-1. Click the **Administration** drop-down menu and select **Configuration**.
-1. Click **Add** to open the **Add Account** screen.
-1. Complete the configuration fields:
-
-    | Field                 | Description                                              |
-    |-----------------------|----------------------------------------------------------|
-    | **Account Name**      | Unique name to identify the BloodHound Enterprise account in Splunk    |
-    | **Tenant Domain**     | Your BloodHound Enterprise tenant (e.g., `https://mydomain.bloodhoundenterprise.io`) |
-    | **Token ID**          | Token ID associated with the BloodHound Enterprise account |
-    | **Token key**         | Token key associated with the BloodHound Enterprise account |
-
-## Configure inputs
-
-Steps to configure the BloodHound Enterprise Splunk app inputs:
-
-1. Click **Apps** > **Manage Apps**.
-1. Filter for the BloodHound Enterprise Splunk app and click on it.
-1. Click the **Administration** drop-down menu and select **Inputs**.
-1. Click **Create New Input**.
-1. Select an input type from the drop-down menu.
-
-    The BloodHound Enterprise Splunk app supports the following input types:
-
-    <table style={{ tableLayout: 'auto' }}>
-      <thead>
-        <tr>
-          <th style={{ textAlign: 'left' }}>Input type</th>
-          <th style={{ textAlign: 'left' }}>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>Attack Paths</strong></td>
-          <td>Retrieves a list of attack paths from the BloodHound Enterprise API and a list of various findings across a given time range.</td>
-        </tr>
-        <tr>
-          <td><strong>Audit Logs</strong></td>
-          <td>
-            Retrieves a list of audit logs from the BloodHound Enterprise API.
-            <ul>
-              <li>Requires the API user to have the <strong>Administrator</strong> role in BHE.</li>
-              <li>You can set the "Historical Polling Days" field to retrieve logs from the past N days, starting from the current date.</li>
-              <li>After the app fetches all logs for the specified period, the input continues polling only the latest audit logs.</li>
-              <li>If you need logs from a different time range, you can create a new input and fetch them separately.</li>
-            </ul>
-          </td>
-        </tr>
-        <tr>
-          <td><strong>Tier Zero Assets</strong></td>
-          <td>Ingests data for all asset members that belong to the Tier Zero privilege zone.</td>
-        </tr>
-        <tr>
-          <td><strong>Posture Statistics</strong></td>
-          <td>Retrieves a history of statistics stored in the database using the BloodHound Enterprise API.</td>
-        </tr>
-      </tbody>
-    </table>
-  
-1. Complete the configuration fields for the selected input type.
-
-    The following table describes fields that are common across all input types:
-
-    | Field                          | Description                                                             |
-    |--------------------------------|-------------------------------------------------------------------------|
-    | **Name**                       | Name given to the input.                                                |
-    | **Interval**                   | The interval to run the input on.                                       |
-    | **Index**                      | The index at which to store the data.                                   |
-    | **Bloodhound Account**         | The Bloodhound account credentials that will be used to fetch the data. |
-
-## Dashboards
-
-### Attack Paths
-
-There are two Dashboard options for Attack Paths viz. Attack Path Overview and Attack Path Details.
-
-#### Attack Path Overview
-
-The below snapshot depicts the Attack path overview dashboard. This displays data ingested from attack path data input this dashboard lists all possible attack paths which are present in the domain provided during configuration. User can filter data using provided multiselect filters with respect to a BHE Tenant and Domain which belong to that particular Tenant. This Dashboard has 5 panels namely. Total Attack Paths Findings per Domain, Severity Breakdown, Top 5 Non-Tier Zero Principals Involved in Findings, Top 5 Most Common Findings,All attack paths.
-
-Total Attack Paths Findings per Domain.
-
-This panel displays total Attack Paths Findings for each available Domain.
-
-Severity Breakdown
-
-This panel displays a pie chart for the severity of all existing attack paths after filtering.
-
-Top 5 Non-Tier Zero Principals Involved in Findings
-
-This panel displays a bar graph for Top 5 Non-Tier Zero Principals involved in Findings.
-
-Top 5 Most Common Findings
-
-This panel displays the top 5 most common findings
-
-All attack paths.
-
-This panel displays details of all attack paths found post filtering. This panel has 5 columns namely Domain, Attack Path, Severity, Exposure, Remediation URL.
-
-p.s. - links in the remediation column are not clickable. Please try to open them in a different tab.
-
-#### Attack Path Details
-
-The below snapshot depicts the Attack path details dashboard. This displays data ingested by attack path data input this dashboard facilitates filtering of attack paths on the basis of domain, attack path title, and time. This dashboard has 3 panels: Principals, Maximum Exposure Percentage and Total Number of Findings. Users can filter out the data on the basis of BHE Tenant, Domains, path titles and time range.
-
-Principals
-
-This panel has 15 columns namely Non Tier Zero Principal, Tier Zero Principal, Display Name, Finding Name, Distinguished Name, Severity Level, Impact Percentage, Impact Count, SAM Account Name,Sensitive, Last Logon, Last Logon Timestamp, Created Timestamp, First Seen and Last Updated.
-
-Maximum Exposure Percentage
-
-This panel displays maximum exposure for a particular attack path over a certain time period.
-
-Total Number of Findings
-
-This panel displays the total number of findings for a particular selected attack path.
-
-### Audit Logs
-
-This particular dashboard displays audit logs from audit log data input. This dashboard also allows users to filter data on the basis of BHE Tenant, event type, actor name and time range.
-
-### Tier Zero Assets
-
-This Dashboard displays data for tier zero assets. You can filter assets on three parameters namely BHE Tenant, Domain and Types. The filters provided are multiselect filters to facilitate filtering assets on various possible combinations of filtering parameters.
-
-### Posture Statistics
-
-This particular dashboard displays data ingested by posture statistics data input type. You can filter out your posture statistics using a time based filter and also a BHE Tenant based filter, both these filters are multiselect hence you can filter out different combinations for BHE Tenants and Time range . Posture dashboard has three panels namely domain exposure, critical attack paths, tier zero count. Each Panel groups posture statistics on the basis of Domain.
-
-Domain Exposure
-
-Critical Attack paths
-
-Tier Zero Count
-
-## Troubleshooting
-
-The BHE Health Check Dashboard is designed to help users monitor and troubleshoot errors related to the BHE application. It retrieves and displays error logs from: `index=main sourcetype=BHE:error`.
-
-This dashboard provides real-time insights into system failures, helping users quickly diagnose and resolve issues.
-
-1. Accessing the Dashboard
-
-    - Open Splunk and navigate to your BHE App.
-    - Click on BHE Health Check Dashboard.
-    - Use the Time Picker to adjust the time range for error logs.
-
-1. Understanding the Dashboard Panels
-
-    - Error Summary Panel: Provides a high-level overview of error occurrences over time.
-    - Top Error Functions Panel: Displays the functions where errors occur most frequently.
-    - Detailed Error Logs Table: Lists individual error events, including timestamps, function names, and error messages.
-
-Common Errors and Troubleshooting Steps
-1. “listindex out of range” Error
-a. Possible Causes:
-i. The API response does not contain the expected data structure.
-ii. An empty list is being accessed without validation.
-b. Troubleshooting Steps
-i. Check the function name in the error log.
-ii. Look for recent API changes that might affect the expected response.
-iii. Modify the script to handle empty lists safely before accessing indices.
-
-2. API Authentication Errors (401 Unauthorized)
-a. Possible Causes:
-i. Expired or invalid API tokens.
-ii. Incorrect API credentials in the BHE App configuration.
-b. Troubleshooting Steps:
-i. Verify that the API token is correct and has not expired.
-ii. Check the BHE App settings to confirm the right credentials are used.
-iii. If using OAuth-based authentication, refresh the access token and restart the app.
-
-3. API Authentication Errors (401 Unauthorized)
-a. Possible Causes:
-i. Expired or invalid API tokens
-ii. Incorrect API credentials in the BHE App configuration.
-b. Troubleshooting Steps:
-i. Verify that the API token is correct and has not expired.
-ii. Check the BHE App settings to confirm the right credentials are used.
-iii. If using OAuth-based authentication, refresh the access token and restart the app.
-
-4. Connectivity Issues (Timeout/ 500 Errors)
-a. Possible Causes:
-i. Network connectivity problems between Splunk and the BHE API.
-ii. The API service might be down or experiencing high latency.
-b. Troubleshooting Steps:
-i. Check network connectivity using ping or curl commands.
-ii. Verify if the BHE API endpointis reachable from the Splunk instance.
-iii. Check for maintenance or downtime notifications from the BHE API provider
-
-5. Proxy Errors
-
-```log
-HTTPSConnectionPool(host='demo.bloodhoundenterprise.io', port=443):
-
-Max retries exceeded with url: /api/v2/posture-stats
-
-(Caused by ProxyError('Cannot connect to proxy.',
-
-NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f7c8b2b4a60>:
-
-Failed to establish a new connection: [Errno 113] No route to host')))
-```
-
-a. Possible Cause:
-i. Incorrect proxy settings in Splunk.
-ii. The proxy server is unreachable or incorrectly configured.
-b. Troubleshooting guide:
-i. Verify the proxy settings in Splunk and ensure they match your network
-configuration.
-ii. Check if the proxy server is online and reachable from Splunk.
-iii. Test connectivity with:
-
-How to Use This Dashboard for Troubleshooting?
-1. Identify the function causing the error (from the error log table).
-2. Look for recurring errors to detect patterns.
-3. Apply the relevanttroubleshooting steps based on the error type.
-4. If issues persist, check Splunk internal logs using:
-
-## Installation
-
-1.  Log into your Splunk installation and click on the **Find More Apps** button.
-<Frame>
-  <img src="/assets/image1-9.png"/>
-</Frame>
-2.  Search for "BloodHound Enterprise" and hit Enter. The first result should be the app.
-<Frame>
-  <img src="/assets/image1-10.png"/>
-</Frame>
-3.  Click **Install**. If not already logged in, you will be prompted for your Splunk.com username and password.
-<Frame>
-  <img src="/assets/image1-11.png"/>
-</Frame>
-4.  After installation completes, click **Open the App**.
-<Frame>
-  <img src="/assets/image1-12.png"/>
-</Frame>
-5.  The App will prompt you to configure itself. Click **Continue to the app setup page**.
-<Frame>
-  <img src="/assets/image1-13.png"/>
-</Frame>
-6.  If you have not already, create an API key/ID pair, following [Create a non-personal API Key/ID pair](/integrations/bloodhound-api/working-with-api#create-a-non-personal-api-key-id-pair)
-    * The API user must at least have the **_read-only_** role. The **_Administrator_** role is required to collect BloodHound Enterprise audit logs.
-7.  In the setup screen, enter your BloodHound Enterprise domain name (`CODENAME.bloodhoundenterprise.io`), the API key/ID pair you created and click **Submit**
-
-    **Please note the warning—the initial collection can take some time, particularly for longer-term BloodHound Enterprise customers.**
-<Frame>
-  <img src="/assets/image1-14.png"/>
-</Frame>
-
-## Create Index (Splunk cloud only)
-
-The index "bhe-splunk-app" will be created automatically if running Splunk on-prem.
-
-1.  In Splunk Web, go to **Settings > Indexes**.
-2.  On the Indexes page, click **New Index**.
-3.  On the New Index page, in the **Index Name** field, enter "bhe-splunk-app".
-4.  Click **Save**.
-
-## Enable Data Input
-
-1.  In Splunk Web, go to **Settings > Data inputs**.
-<Frame>
-  <img src="/assets/image1-15.png"/>
-</Frame>
-2.  Scroll down, locate, and click on **BloodHound Enterprise**.
-<Frame>
-  <img src="/assets/image1-16.png"/>
-</Frame>
-3.  Click **Enable** to enable the data input.
-<Frame>
-  <img src="/assets/image1-17.png"/>
-</Frame>
-
-Data will now begin flowing into the environment. You can monitor this progress through Splunk itself with the following query:
-
-```
-index=_internal source="*splunkd.log" "BHE "
-```
-
-## Customize Index
-
-1.  Update Data Input
-    1.  In Splunk Web, go to Settings -> Data Inputs
-    2.  Click BloodHound Enterprise
-    3.  Click Input
-    4.  Click More Settings & select preferred index from the drop-down.
-    5.  Click Save
-
-2.  Update Search Macro
-    1.  In Splunk Web, go to Settings -> Advanced Search
-    2.  Click Search Macros
-    3.  For App, Select BloodHound Enterprise
-    4.  Click bhe_index
-    5.  Update the Definition to match the custom index name.
-        Example: index=&lt;custom index name&gt;
-    6.  Click Save
+    Use the `tail` command to monitor logs in real-time:
+
+    ```bash
+    tail -f $SPLUNK_HOME/var/log/splunk/ta_bloodhound_enterprise_<input-name>.log
+    ```
+  </Step>
+</Steps>
