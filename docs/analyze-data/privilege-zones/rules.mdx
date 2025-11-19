@@ -1,0 +1,188 @@
+---
+title: Rules
+description: Learn how to create, manage, and optimize rules in Privilege Zones to enhance BloodHound's analysis.
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE" />
+
+Rules are instructions that associate objects with zones and labels based on object ID, object relationships (expansion), and Cypher queries. BloodHound applies any rule changes during the next analysis operation.
+
+**Zone** rules provide a logical method of ensuring objects appear in the appropriate zone using either a Cypher query or by searching for an object ID. If an object has been added to multiple zones, the most critical zone in your defined hierarchy takes precedence.
+
+**Label** rules provide a flexible method of tagging objects in an environment. Objects can have multiple labels and you can use those labels to search and filter using Cypher in the **Explore** page.
+
+### Types
+
+Rules are instructions that automatically tag objects into zones or labels. Think of them as the "how" behind the tagging process.
+
+* **Object rules** target specific objects and their related objects through "expansion"
+* **Cypher rules** tag objects based on custom query results
+* [**Default rules**](/analyze-data/privilege-zones/default-rules) are system-managed and tag critical objects automatically
+
+## Rule expansion
+
+Rules automatically include related objects based on the type of object that you select, expanding through relationships to tag additional objects ([*some exceptions apply*](#tiered-object-control-and-exceptions)).
+
+This "expansion" saves you time by tagging entire groups or organizational units at once. The following sections describe how different object types expand during the tagging process.
+
+<Tip>You can interrupt automatic inclusion of additional objects into Privilege Zones by requiring manual certification of the additional objects. See [Certification](/analyze-data/privilege-zones/certification) to learn more.</Tip>
+
+### Group-like expansion
+
+Objects that behave like groups in Active Directory include all contained members within the zone/label. These include the following type (edge) relationships:
+
+* Group ([`MemberOf`](/resources/edges/member-of))
+* AZRole ([`AZHasRole`](/resources/edges/az-has-role), `AZRoleElligible`)
+* AZGroup ([`AZMemberOf`](/resources/edges/az-member-of))
+
+### Structured expansion
+
+Objects that provide structural organization include all contained objects within the zone/label. These include the following type (edge) relationships:
+
+* Domain ([`Contains`](/resources/edges/contains))
+  <Note>For non-default rules only.</Note>
+* OU ([`Contains`](/resources/edges/contains)
+* AZSubscription ([`AZContains`](/resources/edges/az-contains))
+* AZManagementGroup ([`AZContains`](/resources/edges/az-contains))
+* AZAdministrativeUnit ([`AZContains`](/resources/edges/az-contains))
+
+### Tiered object control and exceptions
+
+During the tagging process for zones, the final step involves tagging all objects that contain (or provide external control of) the selected objects.
+
+For example, in Active Directory this means that all OUs, Containers, and GPOs that apply to any Tier Zero object are *also* tagged to the Tier Zero zone.
+
+If any OUs or Containers are tagged in the last step of the tagging process only (not because you explicitly selected them), the process won't expand to tag other contained objects.
+
+## Define a rule
+
+The process and screens for creating and editing rules is nearly the same for zones and labels. The primary difference is that [certification](/analyze-data/privilege-zones/certification) is a BHE feature available for zones only.
+
+Unless you're defining a rule as part of the zone or label creation process, be sure to specify a specific zone or label first.
+
+<Steps>
+  <Step title="Open the Privilege Zones page">
+    <Tip>If you're defining a rule as part of the [zone or label](/analyze-data/privilege-zones/zones) creation process, skip to **Configure rule details** below.</Tip>
+
+    1. In the left menu, click **Privilege Zones**.
+
+    2. Click the **Zones** or **Labels** tab and select a specific zone or label.
+
+       If you don't select a zone or label first, the new rule will be associated with the default zone or label selection when you open the page (top position in the **Zones** or **Labels** summary and detail view).
+  </Step>
+
+  <Step title="Configure rule details">
+    1. Click **Create Rule**.
+
+    2. Enter all relevant information for the rule:
+
+        <Warning>Review [rule expansion](/analyze-data/privilege-zones/rules#rule-expansion) for more information about rule behavior.</Warning>
+
+        | Field                   | Required? | Description                                                                                                             |
+        | ----------------------- | :-------: | ----------------------------------------------------------------------------------------------------------------------- |
+        | Name                    |    Yes    | A unique name for the rule (e.g., PCI Assets)                                                                           |
+        | Description             |     No    | A brief description of the rule's purpose and scope (e.g., PCI assets)                                                  |
+        | Rule Type               |    Yes    | The type of rule to use (e.g., Object ID or Cypher)                                                                     |
+        | Automatic Certification |     No    | ***\[BHE Only]*** An option to choose how BloodHound [certifies](#certification) new objects (available for zones only) |
+
+    **Automatic Certification options**
+
+    <Note>See [Certification](/analyze-data/privilege-zones/certification) to learn more.</Note>
+
+    * **Initial members**: Only the first set of objects in the rule are certified automatically
+    * **All members**: Every object, including those tied to initial members, is certified automatically
+    * **Off**: All certification is manual
+
+      <img src="/images/privzones/define-zone-rule.png" alt="Define a rule" title="Define a rule" style={{ width:"100%" }} />
+
+      **Rule type configuration details**
+
+      <Tabs>
+        <Tab title="Object ID">
+          1. In the **Object Rule** panel, type to search for an object by name or ID.
+
+          2. Click the object to add it to the list of targeted objects.
+
+             <img src="/images/privzones/objectid-rule-config.png" alt="Object ID rule configuration" title="Object ID rule configuration" style={{ width:"100%" }} />
+
+             The **Sample Results** panel displays up to 200 sample results based on the selected object and [expansion](#rule-expansion) rules.
+        </Tab>
+
+        <Tab title="Cypher">
+          1. Enter a Cypher query into the **Cypher Search** box.
+
+          2. *(Optional)* To see sample results, click **Update Sample Results** above the Cypher query box. The first 200 results display in the **Sample Results** panel.
+
+          3. *(Optional)* Click **View in Explore** to pivot to the **Explore** page and see results in the graph view.
+
+             <img src="/images/privzones/cypher-rule-config.png" alt="Cypher rule configuration" title="Cypher rule configuration" style={{ width:"100%" }} />
+        </Tab>
+      </Tabs>
+
+      Adding the following object types will automatically include (→) more objects according to the definition below
+
+      * `OU/Container` → All objects contained in the OU/container
+      * `Group` → All objects with membership in the Group
+      * `AZResourceGroup`/`AZSubscription` → All objects contained in the RG/Sub
+      * `AZGroup` → All objects with membership in the group
+      * `AZRole` → All objects with role assignments (or eligibility)
+  </Step>
+
+  <Step title="Complete rule creation">
+    Click **Save** to finish creating the rule.
+  </Step>
+</Steps>
+
+## Edit or delete a rule
+
+To edit or delete a rule, follow these steps:
+
+<Note>Only users with the appropriate [permissions](/manage-bloodhound/auth/users-and-roles) can make changes. You cannot delete [default rules](/analyze-data/privilege-zones/default-rules).</Note>
+
+<Steps>
+  <Step title="Locate a rule">
+    1. In the left menu, click **Privilege Zones**.
+
+    2. Click the **Zones** or **Labels** tab and open the **Detail View**.
+
+    3. Select the zone or label that contains the rule that you want to edit or delete and select it.
+
+       <Tip>Alternatively, you can use the search bar to quickly find rule if you know the name.</Tip>
+  </Step>
+
+  <Step title="Edit or delete a rule">
+    Choose one of the following options:
+
+    <Tabs>
+      <Tab title="Edit a rule" icon="edit">
+        To edit a rule:
+
+        <Note>Only users with the appropriate [permissions](/manage-bloodhound/auth/users-and-roles) can make changes. You cannot disable some [default rules](/analyze-data/privilege-zones/default-rules).</Note>
+
+        1. Click **Edit** to open the rule details.
+
+        2. Make any necessary changes to the rule configuration.
+
+           For example, you can modify the rule's name, description, rule type, and certification settings (available for zones only).
+
+           You can also disable or enable a rule by toggling the **Enabled** switch under the **Rule Status** section.
+
+           <img src="/images/privzones/edit-rule.png" alt="Edit a rule" title="Edit a rule" style={{ width:"50%" }} />
+
+        3. Click **Save Edits** to apply your changes.
+      </Tab>
+
+      <Tab title="Delete a rule" icon="trash-can">
+        To delete a rule:
+
+        1. Click <Icon icon="trash-can" /> **Delete Rule** at the bottom of the page
+
+        2. Confirm your action in the dialog.
+
+           <img src="/images/privzones/delete-rule-confirm.png" alt="Confirm deletion of a custom rule" title="Confirm deletion of a custom rule" style={{ width:"70%" }} />
+
+        3. Click **Confirm** to delete the rule.
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
