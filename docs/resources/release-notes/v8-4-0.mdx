@@ -57,17 +57,13 @@ TBD
       - {/*BED-5574*/} Fixed an issue preventing users with the Admin role from deleting users who have uploaded data on the **File Ingest** page.
       - {/*BED-6664*/} Corrected inaccurate description of the `asset_group_tag_id` query parameter for the `GET /api/v2/posture-history/{data_type}` API operation.
 
-- **SharpHound (v2.8.1)**
+- **SharpHound**
 
-  - New and Improved Features
+  - No new release.
 
-  - Bug Fixes
+- **AzureHound**
 
-- **AzureHound (v2.8.2)**
-
-  - New and Improved Features
-  
-  - Bug Fixes
+  - No new release.
 
 ## BloodHound (v8.4.0)
 
@@ -77,46 +73,78 @@ TBD
 
   Based on user feedback, we found "Selectors" caused confusion about defining zone membership. The new name better reflects that rules define the criteria that determine which objects belong to a zone.
 
+  <img
+    src="/images/release_notes/8_4_0/rules.png"
+    alt="A view of the Privilege Zone Management page showing the renamed Rules section"
+  />
+
 - {/*BED-6624*/} **Context-Aware Edit Button** - Avoid accidentally editing the wrong component. The **Edit** button on the **Privilege Zone Management** page now dynamically updates to show exactly what you're editing. When you click the **Zones** and **Labels** tabs, you'll see **Edit Zone** and **Edit Label** respectively. If you select a rule in the detail view, the button changes to **Edit Rule**.
 
 - {/*BED-6625*/} **Improved Selection Highlighting** - Know exactly what you're working on in the **Privilege Zone Management** page with clearer visual feedback. When you select a zone, label, or rule in the detail view, a vertical blue highlight bar now appears beside your selected item, making it immediately obvious which component is active.
 
 - {/*BED-6698*/} **Smarter Certification Defaults** - Automatically tag objects by default after creating a new rule. New rules now default to **Initial Members** certification instead of **Off**, making zone management more intuitive and aligned with user expectations.
 
-- {/*BED-6709*/} **Default Glyphs for Built-in Labels** - Quickly identify critical assets and compromised objects with default icons. The **Tier Zero** label now displays with a gem icon (<Icon icon="gem" />) and the **Owned** label shows a skull icon (<Icon icon="skull" iconType="solid"/>) by default.
+- {/*BED-6709*/} **Default Glyphs for Built-in Zones and Labels** - Quickly identify critical assets and compromised objects with default icons. Objects tagged to the built-in **Tier Zero** zone and **Owned** label now display gem (<Icon icon="gem" />) or skull (<Icon icon="skull" iconType="solid"/>) icons by default.
+
+  <img
+    src="/images/release_notes/8_4_0/default-glyphs.png"
+    alt="A view of the graph showing objects with default gem and skull glyphs"
+  />
 
 - {/*BED-6630*/} **Visual Object Type Indicators** - Scan and understand the composition of your zones at a glance. The **Total Count** panel on the **Privilege Zone Management** page now displays icons next to each object type, helping you quickly identify what types of objects (e.g., users, groups, computers) are included in each zone.
 
+  <img
+    src="/images/release_notes/8_4_0/total-count-icons.png"
+    alt="A view of the Privilege Zone Management page showing the Total Count panel with object type icons"
+  />
+
 - {/*BED-6629*/} **Clearer System Attribution** - Distinguish between system defaults and user modifications. System-created rules and automatic certifications now show **BloodHound** as the creator instead of **SYSTEM**. This makes it clearer throughout the interface, including the **History** tab and rule details, which actions BloodHHound automatically performed versus those made by your team members.
+
+  <img
+    src="/images/release_notes/8_4_0/system-attribution.png"
+    alt="A view of the History tab showing BloodHound as the creator of a system action"
+  />
 
 - {/*BED-6158*/} **Consistent Zone Terminology** - Navigate Privilege Zones with confidence using the new "zone" terminology instead of "tier". We've updated terminology across Privilege Zones to consistently use "zone" instead of "tier". This includes changing references like "multi-tier" to "multi-zone" throughout the interface. 
 
 - {/*BED-6704*/} **Better Guidance for Zone Configuration** - Get in-product guidance about Privilege Zone configuration options. The **Enable Analysis** option when editing a zone now includes a helpful tooltip explaining what it does: "Enables Analysis to produce Attack Path Findings for the Zone." We've also refined field labels throughout the zone details panel to be clearer and more consistent.
 
+  <img
+    src="/images/release_notes/8_4_0/enable-analysis.png"
+    alt="A view of the Edit Zone page showing the Enable Analysis tooltip"
+    style={{ width:"60%" }}
+  />
+
 - {/*BED-6674*/} **New Auditor Role** - Grant appropriate access to users who need visibility without modification permissions. The new **Auditor** role provides read-only access to all application settings, configurations, findings, audit logs, and integration service accounts (like the BloodHound Enterprise Splunk App).
 
   This eliminates the need to grant full **Administrator** permissions just to access audit logs or view system configurations.
 
-- {/*BED-6418*/} **More Accurate Completeness Metrics** - Trust your [completeness metrics](/analyze-data/posture-page#completeness-graphs) to reflect real-world coverage. We've refined how BloodHound calculates **Session Completeness** so it now reflects only truly active computers (enabled and logged in within the last 14 days).
+  <img
+    src="/images/release_notes/8_4_0/auditor-role.png"
+    alt="A view of the Create User page showing the Auditor role"
+    style={{ width:"60%" }}
+  />
 
-  Check the updated tooltips for both Session Completeness and Local Group Completeness to understand what "active" means and prioritize expanding collection where you see gaps.
+- {/*BED-6418*/} **More Accurate Completeness Metrics** - Trust your [completeness metrics](/analyze-data/posture-page#completeness-graphs) to reflect real-world coverage. We've refined how BloodHound calculates session and local group completeness so it now reflects only truly active computers (enabled and logged in within the last 14 days).
+
+  Check the updated tooltips on the **Posture** and **Data Quality** pages to understand what "active" means and prioritize expanding collection where you see gaps.
+
+  <Columns cols={2} gap="large">
+    <img src="/images/release_notes/8_4_0/group-completeness.png" alt="A view of the Local Group Completeness graph on the Posture page" style={{ width:"100%" }}/>
+    <img src="/images/release_notes/8_4_0/session-completeness.png" alt="A view of the Session Completeness graph on the Posture page" style={{ width:"100%" }} />
+  </Columns>
 
 - {/*BED-6744*/} _[BHE only]_ **Revised Kerberos Delegation Risk Finding** - Protect Tier Zero from Kerberos delegation abuse. We renamed and re-wrote the legacy "Kerberos Delegation on Tier Zero Objects" finding to "Tier Zero Objects Lack Kerberos Delegation Protection" to more accurately communicate the risk presented by the finding. Additionally, this finding only applies to Tier Zero going forward."
 
   <img
     src="/images/release_notes/8_4_0/kerberos-delegation.png"
     alt="A view of the revised Tier Zero Objects Lack Kerberos Delegation Protection finding"
-    style={{ width:"70%" }}
   />
 
-## SharpHound (v2.8.1)
+## SharpHound
 
-### New and Improved Features
+No new release.
 
-### Bug Fixes
+## AzureHound
 
-## AzureHound (v2.8.2)
-
-### New and Improved Features
-
-### Bug Fixes
+No new release.
