@@ -6,8 +6,7 @@ set positional-arguments
 # run git pruning on merged branches to clean up local workspace (run with `nuclear` to clean up orphaned branches)
 prune-my-branches nuclear='no':
   #!/usr/bin/env bash
-  git branch --merged | grep -E -v "(^\*|master|main|dev)" | xargs -r git branch -d
-  git reflog expire --expire=now --all && git gc --prune=now --aggressive
+  git branch --merged| egrep -v "(^\*|master|main|dev)" | xargs git branch -d
   git remote prune origin
   if [ "{{nuclear}}" == 'nuclear' ]; then
     echo Switching to main to remove orphans
