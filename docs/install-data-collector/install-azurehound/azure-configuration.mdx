@@ -186,21 +186,57 @@ This section describes how to configure authentication methods for the AzureHoun
 - Client Secret
 - Username and Password
 
-<Note>This section provides instructions for configuring the **Azure Managed Identity** and **Certificate** authentication methods. For information on other methods, see the [Microsoft documentation](https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-credentials).</Note>
+<Note>This section provides instructions for configuring the **Azure Managed Identity** and **Certificate** authentication methods. For information on other methods, see the Microsoft [documentation](https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-credentials).</Note>
 
 ### Managed identity (recommended)
 
+Managed identities provide the most secure authentication method by eliminating credential management entirely. Microsoft Entra ID automatically manages the identity lifecycle, but you must properly configure the identity-to-host assignment and federated trust.
+
+This section describes how to configure Azure Managed Identity authentication for the AzureHound Enterprise application registration.
+
+<Tip>You will need the managed identity **Client ID** to complete [AzureHound configuration](/install-data-collector/install-azurehound/create-configuration) later.</Tip>
+
+
 <ManagedIdentityRecommendation />
 
-1. Create a [user-assigned managed identity](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/manage-user-assigned-managed-identities-azure-portal) in the Azure portal.
+<Steps>
+  <Step title="Navigate to Azure Managed Identities">
 
-1. [Assign](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/how-to-configure-managed-identities#user-assigned-managed-identity) the managed identity to the host where AzureHound Enterprise will run.
+    Sign in to the [Azure portal](https://portal.azure.com/) and search for **Managed Identities** in the top search bar.
 
-1. [Configure](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-config-app-trust-managed-identity) the app registration to use the managed identity.
+  </Step>
+  <Step title="Create a user-assigned managed identity">
+
+    Click **Create** and enter the required information to create a new user-assigned managed identity.
+
+    <Note>See the Microsoft [documentation](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/manage-user-assigned-managed-identities-azure-portal) for more information.</Note>
+
+  </Step>
+  <Step title="Configure the app registration to use the managed identity">
+
+    1. Sign in to the [Microsoft Entra admin center](https://entra.microsoft.com/) and navigate to the previously created AzureHound Enterprise application registration.
+
+    1. In the left menu, click **Certificates & secrets** > **Federated credentials** > **Add credential**.
+
+    1. From the **Federated credential scenario** drop-down menu, select **Managed Identity** and enter the required information.
+
+        <Note>See the Microsoft [documentation](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-config-app-trust-managed-identity) for more information.</Note>
+    
+    1. Click **Add**.
+
+  </Step>  
+  {/* <Step title="Assign the managed identity to the host">
+
+    [Assign](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/how-to-configure-managed-identities#user-assigned-managed-identity) the managed identity to the host where AzureHound Enterprise will run.
+
+  </Step> */}
+</Steps>
 
 ### Certificate
 
-This section requires you have authentication material.
+Certificates provide stronger authentication than client secrets or username and password combinations, but you must manage and rotate them properly.
+
+This section describes how to add an authentication certificate to the AzureHound Enterprise application registration.
 
 <Note>If you have not already created a certificate, see [Create an AzureHound Configuration](/install-data-collector/install-azurehound/create-configuration) before proceeding.</Note>
 
@@ -245,6 +281,8 @@ This section requires you have authentication material.
 This section describes how to assign the required access roles to the AzureHound Enterprise application registration for data collection.
 
 ### Assign Directory Readers role on the Entra ID tenant
+
+The AzureHound Enterprise application registration requires the **Directory Readers** role to read Entra ID data. Follow the steps below to assign this role.
 
 <Steps>
   <Step title="Navigate to Entra ID Roles & admins">
