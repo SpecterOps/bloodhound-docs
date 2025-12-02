@@ -3,6 +3,8 @@ title: AzureHound Enterprise Azure Configuration
 description: Follow this guide to configure Microsoft Entra ID for AzureHound Enterprise data collection.
 ---
 
+import ManagedIdentityRecommendation from '/snippets/hounds/manged-id-recommendation.mdx';
+
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
 Creating a Microsoft Entra ID application registration is a prerequisite for AzureHound Enterprise data collection and involves the following steps:
@@ -188,9 +190,7 @@ This section describes how to configure authentication methods for the AzureHoun
 
 ### Managed identity (recommended)
 
-This section requires you have authentication material.
-
-We highly recommend using managed-identity-based authentication.
+<ManagedIdentityRecommendation />
 
 1. Create a [user-assigned managed identity](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/manage-user-assigned-managed-identities-azure-portal) in the Azure portal.
 
@@ -202,150 +202,201 @@ We highly recommend using managed-identity-based authentication.
 
 This section requires you have authentication material.
 
-If you do not already have a certificate created, follow the article [AzureHound Enterprise Local Configuration](/install-data-collector/install-azurehound/create-configuration) and then return back here.
+<Note>If you have not already created a certificate, see [Create an AzureHound Configuration](/install-data-collector/install-azurehound/create-configuration) before proceeding.</Note>
 
-1.  Select the **Certificates & secrets** section on the left.
-    <Frame>
-      <img src="/assets/image-138.png" alt=""/>
-    </Frame>
+<Steps>
+  <Step title="Navigate to Entra ID Certificates & secrets">
 
-2.  Click on **Certificates**.
-    <Frame>
-      <img src="/assets/image-139.png" alt=""/>
-    </Frame>
+  1. On the **Overview** page of the app registration, click **Certificates & secrets**.
 
-3.  Click **Upload certificate**.
-    <Frame>
-      <img src="/assets/image-140.png" alt=""/>
-    </Frame>
+      <Frame>
+        <img src="/assets/image-138.png" alt=""/>
+      </Frame>
 
-4.  Locate the **cert.pem** file created during AzureHound setup (either on your own, or utilizing the instructions at [AzureHound Enterprise Local Configuration](/install-data-collector/install-azurehound/create-configuration)).
+  1. Click **Certificates**.
 
-5.  Click the folder icon and locate the "cert.pem" file. Add a description if desired.
-    <Frame>
-      <img src="/assets/image-141.png" alt=""/>
-    </Frame>
+      <Frame>
+         <img src="/assets/image-139.png" alt=""/>
+      </Frame>
 
-6. In the bottom of the window, select **Add**.
+  </Step>
+  <Step title="Upload certificate">
+
+  1.  Click **Upload certificate**.
+
+       <Frame>
+        <img src="/assets/image-140.png" alt=""/>
+       </Frame>
+  
+  1. Locate the `cert.pem` file that you created during [AzureHound configuration](/install-data-collector/install-azurehound/create-configuration).
+
+  1. Click the folder icon, select the `cert.pem` file, and add a description (optional).
+
+      <Frame>
+        <img src="/assets/image-141.png" alt=""/>
+      </Frame>
+
+  1. Click **Add**.
+  </Step>
+</Steps>
 
 ## Assign required access roles
 
+This section describes how to assign the required access roles to the AzureHound Enterprise application registration for data collection.
+
 ### Assign Directory Readers role on the Entra ID tenant
 
-1.   In the left menu, select **Roles & admins**.
-    <Frame>
-      <img src="/assets/azurehound-install-entra-id-roles.png" alt=""/>
-    </Frame>
+<Steps>
+  <Step title="Navigate to Entra ID Roles & admins">
 
-2.  Search for the role **Directory Readers** and click the role name or description.
-    _Note: Clicking the checkbox sometimes prevents clicking on the role itself._
-    <Frame>
-      <img src="/assets/image-117.png" alt=""/>
-    </Frame>
+    In the left menu, click **Entra ID** > **Roles & admins**.
 
-3.  In the "Directory Readers" role, select **Add assignments**.
-    <Frame>
-      <img src="/assets/image-118.png" alt=""/>
-    </Frame>
+  </Step>
+  <Step title="Assign Directory Readers role">
 
-4.  Click **No member selected** to open the search window.
-    <Frame>
-      <img src="/assets/image-119.png" alt=""/>
-    </Frame>
+    1. Search for the **Directory Readers** role and click the role name or description.
 
-5.  Search for the previously created service principal with either its name, application ID, or object ID. Select it by clicking on it.
-    <Frame>
-      <img src="/assets/image-120.png" alt=""/>
-    </Frame>
+        <Note>Clicking the checkbox sometimes prevents clicking on the role itself.</Note>
 
-6.  Click **Select**.
-    <Frame>
-      <img src="/assets/image-121.png" alt=""/>
-    </Frame>
+        <Frame>
+          <img src="/assets/image-117.png" alt=""/>
+        </Frame>
 
-7.  Validate that your principal is displayed and click **Next**.
-    <Frame>
-      <img src="/assets/image-122.png" alt=""/>
-    </Frame>
+    1. Click **Add assignments**.
 
-8.  Ensure that the Assignment type is **Active** and the **Permanently assigned** box is checked. Provide a justification and click **Assign**.
-    <Frame>
-      <img src="/assets/image-123.png" alt=""/>
-    </Frame>
+        <Frame>
+          <img src="/assets/image-118.png" alt=""/>
+        </Frame>
 
-9. Confirm the service principal is a Directory Reader by refreshing this view.
+    1. Click **No member selected** to open the search window.
 
-10. Continue to the next section to assign the Reader role on your Azure subscriptions.
+        <Frame>
+          <img src="/assets/image-119.png" alt=""/>
+        </Frame>
+
+    1. Search for the previously created service principal with either its name, application ID, or object ID. Select it by clicking on it.
+
+        <Frame>
+          <img src="/assets/image-120.png" alt=""/>
+        </Frame>
+
+    1. Click **Select**.
+
+        <Frame>
+          <img src="/assets/image-121.png" alt=""/>
+        </Frame>
+
+    1. Validate that your principal is displayed and click **Next**.
+
+        <Frame>
+          <img src="/assets/image-122.png" alt=""/>
+        </Frame>
+
+    1. Ensure that the Assignment type is **Active** and the **Permanently assigned** box is checked. Enter a justification and click **Assign**.
+
+        <Frame>
+          <img src="/assets/image-123.png" alt=""/>
+        </Frame>
+
+    1. Confirm that the service principal is a **Directory Reader** by refreshing the view.
+
+  </Step>
+</Steps>
 
 ### Grant Reader role on all Azure subscriptions
 
-_Note: If you do not have any management groups, you may either create your Tenant Root Group following the prompts in the middle of the screen to ensure future visibility if another administrator begins use of subscriptions, or you may skip this section altogether. If you skip this section, you will see a warning in the logs for each collection indicating the lack of ability to collect this data accordingly._
+If you do not have any management groups, you may either create your Tenant Root Group following the prompts in the middle of the screen to ensure future visibility if another administrator begins use of subscriptions, or you may skip this section altogether.
 
-1.  Log into the [Azure portal](https://portal.azure.com/) as a user with the [User Access Administrator](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/privileged#user-access-administrator) role.
+<Note>If you skip this section, you will see a warning in the logs for each collection indicating the lack of ability to collect this data accordingly.</Note>
 
-2.  Search for and select the **Management groups** item in the top search bar.
-    <Frame>
-      <img src="/assets/image-124.png" alt=""/>
-    </Frame>
+<Steps>
+  <Step title="Navigate to Management Groups">
 
-3.  Select **Tenant Root Group**.
-    <Frame>
-      <img src="/assets/image-125.png" alt=""/>
-    </Frame>
+    1. Log into the [Azure portal](https://portal.azure.com/) as a user with the [User Access Administrator](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/privileged#user-access-administrator) role.
 
-4.  Select **Access control (IAM)**.
-    <Frame>
-      <img src="/assets/image-126.png" alt=""/>
-    </Frame>
+    1. Search for and select the **Management groups** item in the top search bar.
 
-5.  Select **Role assignments**.
-    <Frame>
-      <img src="/assets/image-127.png" alt=""/>
-    </Frame>
+        <Frame>
+          <img src="/assets/image-124.png" alt=""/>
+        </Frame>
+    
+    1. Select **Tenant Root Group**.
 
-6.  Click **Add**, then **Add role assignment**.
-    <Frame>
-      <img src="/assets/image-128.png" alt=""/>
-    </Frame>
+        <Frame>
+          <img src="/assets/image-125.png" alt=""/>
+        </Frame>
 
-7.  Find the **Reader** role and select it.
-    <Frame>
-      <img src="/assets/image-129.png" alt=""/>
-    </Frame>
+  </Step>
+  <Step title="Add the Reader role assignment">
 
-8.  Click **Members**.
-    <Frame>
-      <img src="/assets/image-130.png" alt=""/>
-    </Frame>
+    1. Select **Access control (IAM)**.
 
-9.  Click **Select members**.
-    <Frame>
-      <img src="/assets/image-131.png" alt=""/>
-    </Frame>
+        <Frame>
+          <img src="/assets/image-126.png" alt=""/>
+        </Frame>
 
-10.  Search for and click on your previously created service principal.
-    <Frame>
-      <img src="/assets/image-132.png" alt=""/>
-    </Frame>
+    1. Select **Role assignments**.
 
-11. Validate the principal selected, then click **Select**.
-    <Frame>
-      <img src="/assets/image-133.png" alt=""/>
-    </Frame>
+        <Frame>
+          <img src="/assets/image-127.png" alt=""/>
+        </Frame>
 
-12. Click the tab **Review + Assign**.
-    <Frame>
-      <img src="/assets/image-134.png" alt=""/>
-    </Frame>
+    1. Click **Add**, then **Add role assignment**.
 
-13. Click **Review + Assign** at the bottom of the page.
-    <Frame>
-      <img src="/assets/image-135.png" alt=""/>
-    </Frame>
+        <Frame>
+          <img src="/assets/image-128.png" alt=""/>
+        </Frame>
 
-14. Confirm the role is present by refreshing this view. You may need to alter the filter to see this role.
+    1. Find the **Reader** role and select it.
 
-15. Continue to [Run and Upgrade AzureHound (Windows, Docker, or Kubernetes)](/install-data-collector/install-azurehound/installation-options)
+        <Frame>
+          <img src="/assets/image-129.png" alt=""/>
+        </Frame>
+
+    1. Click **Members**.
+
+        <Frame>
+          <img src="/assets/image-130.png" alt=""/>
+        </Frame>
+
+    1. Click **Select members**.
+
+        <Frame>
+          <img src="/assets/image-131.png" alt=""/>
+        </Frame>
+
+    1. Search for and click on your previously created service principal.
+
+        <Frame>
+          <img src="/assets/image-132.png" alt=""/>
+        </Frame>
+
+    1. Validate the principal selected, then click **Select**.
+
+        <Frame>
+          <img src="/assets/image-133.png" alt=""/>
+        </Frame>
+
+  </Step>
+  <Step title="Review role assignment">
+
+    1. Click the tab **Review + Assign**.
+
+        <Frame>
+          <img src="/assets/image-134.png" alt=""/>
+        </Frame>
+
+    1. Click **Review + Assign** at the bottom of the page.
+
+        <Frame>
+          <img src="/assets/image-135.png" alt=""/>
+        </Frame>
+
+    1. Confirm the role is present by refreshing this view. You may need to alter the filter to see this role.
+
+    1. Continue to [Run and Upgrade AzureHound (Windows, Docker, or Kubernetes)](/install-data-collector/install-azurehound/installation-options)
+  </Step>
+</Steps>
 
 ## Scripted app registration
 
