@@ -1,7 +1,193 @@
 ---
 title: Use the BloodHound Enterprise Splunk app
 description: Learn how to use the BloodHound Enterprise Splunk app to visualize and analyze BloodHound Enterprise data within Splunk.
-sidebarTitle: Use
+sidebarTitle: Visualize and analyze
 ---
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+The BloodHound Enterprise Splunk app provides several dashboards that allow you to gain insights into your environments. These dashboards visualize data ingested from various BloodHound Enterprise data inputs, including posture statistics, attack paths, audit logs, and tier zero assets.
+
+<Tip>You [configure the data inputs](/integrations/splunk/install#configure-the-splunk-app-required) for these dashboards during the installation and configuration of the BloodHound Enterprise Splunk app.</Tip>
+
+Each dashboard offers filtering options to help you analyze the data based on different parameters such as BloodHound Enterprise tenant, domain, and time range.
+
+## Dashboard Summary
+
+| Dashboard | Purpose | Key Panels | Filters | Data Source |
+| --- | --- | --- | --- | --- |
+| Posture History | Track posture trends over time by domain. | Domain Exposure, Critical Attack Paths, Tier Zero Count. | BHE Tenant, Time range. | Posture statistics input. |
+| Attack Paths — Overview | Summarize all attack path findings across domains. | Total Findings per Domain, Severity Breakdown, Top 5 Non‑Tier Zero Principals, Top 5 Most Common Findings, All Attack Paths. | BHE Tenant, Domain. | Attack path input. |
+| Attack Paths — Details | Investigate a specific attack path’s impact. | Principals, Maximum Exposure Percentage, Total Number of Findings. | BHE Tenant, Domain, Path title, Time range. | Attack path input. |
+| Audit Logs | Review administrative and system audit events. | Error/Activity tables and timelines (per app configuration). | BHE Tenant, Event type, Actor, Time range. | Audit logs input. |
+| Tier Zero Assets | Inventory and filter Tier Zero assets. | Asset listings by domain and type. | BHE Tenant, Domain, Type. | Tier zero assets input. |
+| BHE Health Check | Monitor app health and error signals. | Error Summary, Top Error Functions, Detailed Error Logs. | Time range (error logs). | App logs (internal BHE App). |
+
+## Posture History
+
+Visualize posture trends over time per domain.
+
+- Filters: BHE Tenant, Time range (multiselect)
+- Key panels: Domain Exposure, Critical Attack Paths, Tier Zero Count
+- Data source: Posture statistics input
+
+Related: [Posture page](/analyze-data/posture-page), [Overview of analysis](/analyze-data/overview).
+
+screenshot
+
+## Attack Paths
+
+Access two dashboards for attack path analysis: Overview and Details.
+
+### Overview
+
+Summarize all attack path findings across configured domains.
+
+- Filters: BHE Tenant, Domain (multiselect)
+- Key panels: Total Findings per Domain, Severity Breakdown, Top 5 Non‑Tier Zero Principals, Top 5 Most Common Findings, All Attack Paths
+- Data source: Attack path input
+
+Related: [Attack path concepts](/analyze-data/overview), [Accept findings](/analyze-data/accept-findings).
+
+screenshot
+
+### Details
+
+Investigate a specific attack path and its impact.
+
+- Filters: BHE Tenant, Domain, Path title, Time range
+- Key panels: Principals, Maximum Exposure Percentage, Total Number of Findings
+- Data source: Attack path input
+
+Related: [Cypher search basics](/analyze-data/cypher-search) for deeper queries.
+
+### Principals
+
+Columns include Non‑Tier Zero Principal, Tier Zero Principal, Display Name, Finding Name, Distinguished Name, Severity Level, Impact Percentage, Impact Count, SAM Account Name, Sensitive, Last Logon, Last Logon Timestamp, Created Timestamp, First Seen, Last Updated.
+
+screenshot
+
+### Maximum Exposure Percentage
+
+Shows the highest exposure percentage for the selected attack path over the chosen time range.
+
+screenshot
+
+### Total Number of Findings
+
+Displays the total number of findings for the selected attack path.
+
+screenshot
+
+### Finding Trends
+
+Trend view of findings over time for selected filters.
+
+screenshot
+
+## Audit Logs
+
+Review administrative and system audit events.
+
+- Filters: BHE Tenant, Event type, Actor, Time range
+- Panels: Error summary and detailed tables (per app configuration)
+- Data source: Audit logs input
+
+Related: [Install and configure the app](/integrations/splunk/install#configure-the-splunk-app-required).
+
+screenshot
+
+## Tier Zero Assets
+
+Inventory and filter Tier Zero assets.
+
+- Filters: BHE Tenant, Domain, Type (multiselect)
+- Panels: Asset listings by domain and type
+- Data source: Tier zero assets input
+
+Related: [Explore objects](/analyze-data/explore-objects) and [Tier Zero guidance](/analyze-data/overview).
+
+screenshot
+
+## Search
+
+## Administration
+
+See [install and configure](/integrations/splunk/install) the BloodHound Enterprise Splunk app for details on configuring data inputs and other administrative tasks.
+
+### Inputs
+
+### Configuration
+
+### BHE Health Check Dashboard
+
+Monitor BHE App health signals and error patterns.
+
+- Access: Open Splunk → BHE App → BHE Health Check Dashboard
+- Filters: Time range (error logs)
+- Key panels: Error Summary, Top Error Functions, Detailed Error Logs
+
+Related: [Install and configure the app](/integrations/splunk/install) and Troubleshooting below.
+
+screenshot
+
+## Troubleshooting
+
+Use the BHE Health Check dashboard to identify issues quickly. Start by filtering to the relevant time window, then use the panels to locate errors and affected functions.
+
+### "list index out of range"
+
+- Causes:
+	- API response does not contain the expected structure.
+	- Code accesses an empty list without validation.
+- Steps:
+	- Identify the function in the error log table.
+	- Review recent API changes that could affect response shape.
+	- Add safe checks before indexing lists (e.g., verify length > 0).
+
+### API authentication (401 Unauthorized)
+
+- Causes:
+	- Expired or invalid API token.
+	- Incorrect credentials in the BHE App configuration.
+- Steps:
+	- Verify the API token value and expiry.
+	- Confirm correct credentials in the BHE App settings.
+	- If using OAuth, refresh the access token and restart the app.
+
+### Connectivity issues (Timeout/500)
+
+- Causes:
+	- Network problems between Splunk and the BHE API.
+	- API service downtime or high latency.
+- Steps:
+	- Test connectivity with `ping` or `curl` from the Splunk host.
+	- Verify the BHE API endpoint is reachable from Splunk.
+	- Check provider status or maintenance notices.
+
+### Proxy errors
+
+Example error:
+
+```
+HTTPSConnectionPool(host='demo.bloodhoundenterprise.io', port=443):
+Max retries exceeded with url: /api/v2/posture-stats
+(Caused by ProxyError('Cannot connect to proxy.',
+NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f7c8b2b4a60>:
+Failed to establish a new connection: [Errno 113] No route to host')))
+```
+
+- Causes:
+	- Incorrect proxy settings in Splunk.
+	- Proxy server unreachable or misconfigured.
+- Steps:
+	- Verify Splunk proxy settings match your network configuration.
+	- Check the proxy server status and reachability from Splunk.
+	- Test connectivity with `curl -x <proxy> https://demo.bloodhoundenterprise.io`.
+
+### Using the Health Check for troubleshooting
+
+- Identify the function causing the error in the Detailed Error Logs table.
+- Look for recurring errors in Error Summary and Top Error Functions.
+- Apply the relevant steps above based on the error type.
+- If issues persist, inspect Splunk internal logs.
