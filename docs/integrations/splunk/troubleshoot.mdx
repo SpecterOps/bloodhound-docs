@@ -1,0 +1,68 @@
+---
+title: Troubleshoot the BloodHound Enterprise Splunk app
+description: Learn how to troubleshoot common issues with the BloodHound Enterprise Splunk app using the BHE Health Check dashboard.
+sidebarTitle: Troubleshoot
+---
+
+Use the BHE Health Check dashboard to identify issues quickly. Start by filtering to the relevant time window, then use the panels to locate errors and affected functions.
+
+## List index out of range
+
+- Causes:
+  - API response does not contain the expected structure
+  - Code accesses an empty list without validation
+
+- Steps:
+  - Identify the function in the error log table
+  - Review recent API changes that could affect response shape
+  - Add safe checks before indexing lists (e.g., verify length > 0)
+
+## API authentication (401 Unauthorized)
+
+- Causes:
+  - Expired or invalid API token
+  - Incorrect credentials in the BHE App configuration
+
+- Steps:
+  - Verify the API token value and expiry
+  - Confirm correct credentials in the BHE App settings
+  - If using OAuth, refresh the access token and restart the app
+
+## Connectivity issues (Timeout/500)
+
+- Causes:
+  - Network problems between Splunk and the BHE API
+  - API service downtime or high latency
+
+- Steps:
+  - Test connectivity with `ping` or `curl` from the Splunk host
+  - Verify the BHE API endpoint is reachable from Splunk
+  - Check provider status or maintenance notices
+
+## Proxy errors
+
+Example error:
+
+```
+HTTPSConnectionPool(host='demo.bloodhoundenterprise.io', port=443):
+Max retries exceeded with url: /api/v2/posture-stats
+(Caused by ProxyError('Cannot connect to proxy.',
+NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f7c8b2b4a60>:
+Failed to establish a new connection: [Errno 113] No route to host')))
+```
+
+- Causes:
+  - Incorrect proxy settings in Splunk
+  - Proxy server unreachable or misconfigured
+
+- Steps:
+  - Verify Splunk proxy settings match your network configuration
+  - Check the proxy server status and reachability from Splunk
+  - Test connectivity with `curl -x <proxy> https://demo.bloodhoundenterprise.io`
+
+## Using the Health Check for troubleshooting
+
+- Identify the function causing the error in the Detailed Error Logs table
+- Look for recurring errors in Error Summary and Top Error Functions
+- Apply the relevant steps above based on the error type
+- If issues persist, inspect Splunk internal logs
