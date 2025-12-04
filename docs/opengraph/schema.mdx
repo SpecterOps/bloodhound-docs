@@ -28,7 +28,7 @@ The standard BloodHound UI upload screen now accepts files in a generic format. 
 
 At minimum, your JSON file should have these elements:
 
-``` JSON
+```json
 {
   "graph": {
     "nodes": [],
@@ -57,7 +57,10 @@ Arrays must be homogeneous (e.g. all strings or all numbers)
 An array of kind labels for the node. The first element is treated as the node's primary kind and is used to determine which icon to display in the graph UI. This primary kind is only used for visual representation and has no semantic significance for data processing.
 
 ### Node JSON
-``` JSON
+
+The following is an example that you can use as a starting point to build your own OpenGraph. Copy and paste the following sample into a new `.json` file or [download this sample file](/download/opengraph-node.json).
+
+```json
 {
     "title": "Generic Ingest Node",
     "description": "A node used in a generic graph ingestion system. Each node must have a unique identifier (`id`) and at least one kind describing its role or type. Nodes may also include a `properties` object containing custom attributes.",
@@ -109,8 +112,6 @@ An array of kind labels for the node. The first element is treated as the node's
 }
 ```
 
-
-
 ## Edges
 
 Edges names cannot contain dash `-`. It is highly recommended to use Pascal Case and no special characters.
@@ -120,7 +121,10 @@ From [tuple.nl](https://www.tuple.nl/en/knowledge-base/pascal-case): Pascal Case
 See Neo4j [Naming and Conventions](https://neo4j.com/docs/cypher-manual/current/syntax/naming/) for more details. 
 
 ### Edge JSON
-``` JSON
+
+The following is an example that you can use as a starting point to build your own OpenGraph. Copy and paste the following sample into a new `.json` file or [download this sample file](/download/opengraph-edge.json).
+
+```json
 {
     "title": "Generic Ingest Edge",
     "description": "Defines an edge between two nodes in a generic graph ingestion system. Each edge specifies a start and end node using either a unique identifier (id) or a name-based lookup. A kind is required to indicate the relationship type. Optional properties may include custom attributes. You may optionally constrain the start or end node to a specific kind using the kind field inside each reference.",
@@ -339,7 +343,8 @@ You can optionally include a metadata object at the top level of your JSON paylo
     - `source_kind`: a string that applies to all nodes in the file, used to attribute a source to ingested nodes (e.g.  Github, Snowflake, MSSQL). This is useful for tracking where a node originated. We internally use this concept already for AD/Azure, using the labels “Base” and “AZBase” respectively.
 
 Example:
-``` JSON
+
+```json
 {
   "metadata": {
     "source_kind": "GHBase"
@@ -350,12 +355,16 @@ Example:
   }
 }
 ```
+
 If present, the `source_kind` will be added to the `kinds` list of all nodes in the file during ingest. This feature is optional.
 
 ## Minimal Working JSON
-The following is the most simple JSON file we could come up with. You can use it as a starting point to build your own Open Graph.
 
-``` JSON
+The following is an example that you can use as a starting point to build your own OpenGraph. Copy and paste the following sample into a new `.json` file or [download this sample file](/download/opengraph-minimal.json).
+
+<Tip>When working with JSON files, use a plain text editor and UTF-8 encoding. Some text editors may introduce unexpected, non-standard characters that can cause parsing errors. It's always a good idea to validate your JSON with a [linter](https://jsonlint.com/) before uploading it to BloodHound.</Tip>
+
+```json
 {
   "graph": {
     "nodes": [
@@ -405,7 +414,7 @@ The following is the most simple JSON file we could come up with. You can use it
 
 To test the ingestion in your BloodHound instance, navigate to **Explore** → **Cypher**. Enter the following query and hit `Run`:
 
-``` Cypher
+```cypher
 match p=()-[:Knows]-()
 return p
 ```
