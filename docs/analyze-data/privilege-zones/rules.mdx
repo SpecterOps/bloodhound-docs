@@ -206,3 +206,13 @@ When an object matches rules in multiple zones, only the highest-priority zone i
 For example, if an object is tagged by both a Tier Zero rule and a Tier One rule, it will only appear in the Tier Zero zone.
 
 **Solution**: Review your **Zone Order** and check whether objects are being claimed by higher-priority zones. You can verify this by checking the higher-priority zones for the missing objects.
+
+### Object deleted from graph
+
+Objects are automatically deleted from the graph if they haven't been observed within the configured retention period. BloodHound stores a timestamp on every object that updates whenever a collection includes that object or references to it. This ensures your data remains fresh and accurate over time.
+
+By default, objects are retained for 7 days after they were last seen. For Active Directory environments with the AD recycle bin enabled, objects are retained in BloodHound until they've been permanently deleted from AD (after the tombstone lifetime, which defaults to 180 days) plus the configured retention period.
+
+If an object has been deleted due to retention, it won't appear in any zone or label, even if a rule targets it.
+
+**Solution**: Check when the object was last seen by viewing the "Last Seen by BloodHound" attribute in the object's entity panel on the **Explore** page. Review your [data retention](/collect-data/enterprise-collection/data-retention) settings to understand the configured retention period. If the object reappears in the graph during a future data collection, the rule will automatically capture it (assuming the rule is still enabled).
