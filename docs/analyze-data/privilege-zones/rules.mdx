@@ -11,6 +11,8 @@ Rules are instructions that associate objects with zones and labels based on obj
 
 **Label** rules provide a flexible method of tagging objects in an environment. Objects can have multiple labels and you can use those labels to search and filter using Cypher in the **Explore** page.
 
+<Note>If your rules don't show expected objects, see [Troubleshoot missing objects](#troubleshoot-missing-objects).</Note>
+
 ### Types
 
 Rules are instructions that automatically tag objects into zones or labels. Think of them as the "how" behind the tagging process.
@@ -186,3 +188,31 @@ To edit or delete a rule, follow these steps:
     </Tabs>
   </Step>
 </Steps>
+
+## Troubleshoot missing objects
+
+If a rule doesn't show expected objects or appears empty, consider the following common causes:
+
+### Domain filter mismatch
+
+The **Domain** selector filters which objects are visible in the zone or label view. If the selected domain doesn't contain objects that match your rule criteria, the zone or label may appear empty or incomplete.
+
+**Solution**: Check the domain selector and ensure you've selected the correct domain(s) that contain the expected objects.
+
+### Zone precedence conflicts
+
+When an object matches rules in multiple zones, only the highest-priority zone in your [**Zone Order**](/analyze-data/privilege-zones/zones) tags that object. Lower-priority zones won't tag the object, even if their rules match.
+
+For example, if an object is tagged by both a Tier Zero rule and a Tier One rule, it will only appear in the Tier Zero zone.
+
+**Solution**: Review your **Zone Order** and check whether objects are being tagged by higher-priority zones. You can verify this by checking the higher-priority zones for the missing objects.
+
+### Object deleted from graph
+
+Objects are automatically deleted from the graph if they haven't been observed within the configured retention period. BloodHound stores a timestamp on every object that updates whenever a collection includes that object or references to it. This ensures your data remains fresh and accurate over time.
+
+By default, objects are retained for 7 days after they were last seen. For Active Directory environments with the AD recycle bin enabled, objects are retained in BloodHound until they've been permanently deleted from AD (after the tombstone lifetime, which defaults to 180 days) plus the configured retention period.
+
+If an object has been deleted due to retention, it won't appear in any zone or label, even if a rule targets it.
+
+**Solution**: Check when the object was last seen by viewing the "Last Seen by BloodHound" attribute in the object's entity panel on the **Explore** page. Review your [data retention](/collect-data/enterprise-collection/data-retention) settings to understand the configured retention period. If the object reappears in the graph during a future data collection, the rule will automatically capture it (assuming the rule is still enabled).
