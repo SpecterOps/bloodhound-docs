@@ -45,4 +45,20 @@ Slow ingestion speeds are commonly seen when using a Neo4j graph database and ar
 
 To switch to a PostgreSQL graph database, set `"graph_driver": "pg"` in your `bloodhound.config.json` file and restart the BloodHound services/containers. You will need to re-ingest any data into the new database.
 </Accordion>
+<Accordion title="Why do OpenGraph nodes disappear after ingestion?">
+There is a reconciliation step in BloodHound Enterprise Edition (BHE) that deletes orphaned nodes (nodes that have no edge relationships) shortly after ingestion. This is distinct from the edge [post-processing](/opengraph/schema#post-processing) behavior and is intended to reduce stale or unconnected objects in the graph.
+
+**What this means:**
+
+- Ingesting nodes without edges in BloodHound Community Edition (BHCE) successfully creates and displays all of the nodes, including orphaned nodes.
+- For the same data uploaded to BloodHound Enterprise Edition (BHE), the nodes without edges are ingested and immediately deleted during the reconciliation step.
+
+**Recommended workaround:**
+
+Use a two-step upload when building hybrid paths.
+
+- **First payload (isolated subgraph)**: Upload only your OpenGraph nodes and relationships and set `source_kind` in `metadata`. Ensure that every node has at least one relationship within this payload (for example, connect nodes to each other or to a root and add a containment edge such as `(:OGRoot)-[:OGContains]->(:YourNode)`). Do not link to AD/AZ objects in this payload.
+
+- **Second payload (linking AD/AZ nodes)**: Link the isolated subgraph's nodes to the AD/AZ nodes that connect your subgraph to existing AD/AZ entities. This avoids cross-source side effects when `source_kind` is present.
+</Accordion>
 </AccordionGroup>
