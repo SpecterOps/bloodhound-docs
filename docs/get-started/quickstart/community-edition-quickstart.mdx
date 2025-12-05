@@ -1,5 +1,6 @@
 ---
 title: BloodHound Community Edition Quickstart
+description: Set up a local instance of BloodHound Community Edition and start identifying and visualizing security risks in your environment.
 ---
 
 import SampleData from '/snippets/sample-data.mdx';
@@ -7,7 +8,9 @@ import OpengraphLibrary from '/snippets/opengraph-library.mdx';
 
 <img noZoom src="/assets/community-edition-pill-tag.svg" alt="Applies to BloodHound CE only" />
 
-Set up BloodHound Community Edition (BloodHound CE) with Docker Compose and start identifying and visualizing security risks.
+This quickstart guide walks you through installing BloodHound Community Edition (BloodHound CE) using the BloodHound CLI (BH-CLI), which is a wrapper around Docker Compose.
+
+After installation, you'll learn how to ingest data into BloodHound CE and explore attack paths in your environment.
 
 <Info>Are you a blue team member looking to remediate identity risks? [Request a demo of BloodHound Enterprise](https://specterops.io/get-a-demo/).</Info>
 
@@ -23,13 +26,29 @@ To complete the quickstart, ensure you meet the following system requirements:
 | 4 processor cores      | 12 processor cores                  |
 | 10GB hard disk space   | 50GB hard disk space                |
 
-<Warning>BloodHound Community Edition is a security auditing tool that was written to test the resilience of networks against attackers. Because this tool can equally be used for evil, some anti-malware and EDR solutions flag BloodHound and its components as **malware**. If you encounter issues with downloads being blocked and files being prohibited from execution, you may have to shut off these protections. We recommend that you set up BloodHound on a dedicated machine so that your regular work environment remains protected. If you are planning to use BloodHound on a corporate network, please notify your Security Operations Center (SOC) ahead of time and ensure you have the required permissions to audit the network. For legal and ethical reasons, you must never use BloodHound on systems you do not own or lack explicit permission to audit. </Warning>
+<Warning>
+BloodHound Community Edition is a security auditing tool that was written to test the resilience of networks against attackers. Because this tool can equally be used for evil, some anti-malware and endpoint detection and response (EDR) solutions flag BloodHound and its components as **malware**.
+
+If you encounter issues with downloads being blocked and files being prohibited from execution, you may have to shut off these protections. We recommend that you set up BloodHound on a dedicated machine so that your regular work environment remains protected. If you are planning to use BloodHound on a corporate network, please notify your Security Operations Center (SOC) ahead of time and ensure you have the required permissions to audit the network.
+
+For legal and ethical reasons, you must never use BloodHound on systems you do not own or lack explicit permission to audit.
+</Warning>
 
 # Install BloodHound CE
 
-1. Install [Docker Desktop](https://www.docker.com/get-started). This gives you access to Docker Compose.
+Installing BloodHound CE with the BloodHound CLI is the easiest way to get started. The CLI handles downloading the necessary Docker images and creating the `docker-compose.yml` file with standard defaults.
 
-1. Download the latest release of **[BloodHound CLI](https://github.com/SpecterOps/bloodhound-cli/releases)** for your operating system and architecture (AMD or ARM) and unpack the file. BloodHound CLI is a utility that makes it easy to install BloodHound Community Edition in containers on your machine. To avoid the software getting blocked as malware in the browser, we recommend downloading it via command line using the following commands ([substitute your architecture as appropriate](https://github.com/SpecterOps/bloodhound-cli/releases/latest)):
+<Steps>
+  <Step title="Install Docker Desktop">
+    For ease and convenience, we recommend installing [Docker Desktop](https://www.docker.com/get-started) to run BloodHound CE containers on your local machine.
+  </Step>
+
+  <Step title="Download BloodHound CLI">
+    Download the latest release of **[BloodHound CLI](https://github.com/SpecterOps/bloodhound-cli/releases)** for your operating system and architecture (AMD or ARM).
+
+    BloodHound CLI is a utility that makes it easy to install BloodHound CE in containers on your machine.
+    
+    <Tip>To avoid the software getting blocked as malware in the browser, we recommend downloading it using the command line.</Tip>
 
     <CodeGroup>
       ```bash Linux
@@ -44,10 +63,13 @@ To complete the quickstart, ensure you meet the following system requirements:
       curl -L -o bloodhound-cli-darwin-arm64.tar.gz https://github.com/SpecterOps/bloodhound-cli/releases/latest/download/bloodhound-cli-darwin-arm64.tar.gz
       ```
     </CodeGroup>
+  </Step>
 
-1. Next, unpack the file:
+  <Step title="Unpack the file">
 
-    <CodeGroup>
+      Change to the directory where you downloaded the file and unpack it.
+
+      <CodeGroup>
       ```bash Linux
       tar -xvzf bloodhound-cli-linux-amd64.tar.gz
       ```
@@ -59,10 +81,12 @@ To complete the quickstart, ensure you meet the following system requirements:
       ```bash Mac
       tar -xvzf bloodhound-cli-darwin-arm64.tar.gz
       ```
-    </CodeGroup>
+      </CodeGroup>
+  </Step>
 
-1. In your terminal, enter the following command to install BloodHound Community Edition via BloodHound CLI:
+  <Step title="Run the install command">
 
+    In your terminal or PowerShell, navigate to the directory where you unpacked the BloodHound CLI and install BloodHound CE:
     <CodeGroup>
       ```bash Linux
       ./bloodhound-cli install
@@ -77,7 +101,7 @@ To complete the quickstart, ensure you meet the following system requirements:
       ```
     </CodeGroup>
 
-    <Note>
+      <Note>
       **If you encounter Mac Error: “bloodhound-cli” Not Opened. Apple could not verify “bloodhound-cli” is free of malware that may harm your mac or compromise your privacy.**
       In case you get this error message, you need to allow bloodhound-cli to be executed.
 
@@ -99,7 +123,7 @@ To complete the quickstart, ensure you meet the following system requirements:
     </Note>
 
     <Note>
-      **If you encounter Mac Error: Malware Blocked - “com.docker.vmnetd” was not opened because it contains malware. This action did not harm your Mac.**
+      **If you encounter Mac Error: Malware Blocked – “com.docker.vmnetd” was not opened because it contains malware. This action did not harm your Mac.**
       In case you get the error message, you need to uninstall and re-install Docker.
 
       1. Follow the [Docker uninstall instructions](https://docs.docker.com/desktop/uninstall/) (click tab for your operating system).
@@ -113,46 +137,18 @@ To complete the quickstart, ensure you meet the following system requirements:
 
       1. Simply **launch Docker Desktop** and proceed.
     </Note>
+  </Step>
 
-1. The installation will now proceed. You'll know it's complete when you see the randomly generated password displayed on your screen. Make sure to keep your terminal open until you have changed your password in a future step.
+  <Step title="Wait for installation to complete">
+
+    Keep your terminal open until you see the randomly generated password displayed. Save this password for the next step.
 
     ```bash
-    [+] Checking the status of Docker and the Compose plugin...
-    [+] Starting BloodHound environment installation
-    [+] Downloading the production YAML file from https://raw.githubusercontent.com/SpecterOps/BloodHound_CLI/refs/heads/main/docker-compose.yml...
-    [+] Downloading the development YAML file from https://raw.githubusercontent.com/SpecterOps/BloodHound_CLI/refs/heads/main/docker-compose.dev.yml...
-
-    [… downloading lots of files …]
-
-    Network root_default  Creating
-    Network root_default  Created
-    Volume "root_postgres-data"  Creating
-    Volume "root_postgres-data"  Created
-    Volume "root_neo4j-data"  Creating
-    Volume "root_neo4j-data"  Created
-    Container root-graph-db-1  Creating
-    Container root-app-db-1  Creating
-    Container root-app-db-1  Created
-    Container root-graph-db-1  Created
-    Container root-bloodhound-1  Creating
-    Container root-bloodhound-1  Created
-    Container root-app-db-1  Starting
-    Container root-graph-db-1  Starting
-    Container root-app-db-1  Started
-    Container root-graph-db-1  Started
-    Container root-app-db-1  Waiting
-    Container root-graph-db-1  Waiting
-    Container root-app-db-1  Healthy
-    Container root-graph-db-1  Healthy
-    Container root-bloodhound-1  Starting
-    Container root-bloodhound-1  Started
     [+] BloodHound is ready to go!
     [+] You can log in as `admin` with this password: 1WBhSFbPTurX1xBrUPUky5eqxv4wtZ26
-    [+] You can get your admin password by running: bloodhound-cli config get default_password
-    [+] You can access the BloodHound UI at: http://127.0.0.1:8080/ui/login
     ```
 
-    If you lose the password, you can reset it locally using BloodHound CLI:
+    If you lose the password, reset it with:
 
     <CodeGroup>
       ```bash Linux
@@ -167,16 +163,20 @@ To complete the quickstart, ensure you meet the following system requirements:
       ./bloodhound-cli resetpwd
       ```
     </CodeGroup>
+  </Step>
 
-1. Go to [http://localhost:8080/ui/login](http://localhost:8080/ui/login), and log in with `admin` and the randomly generated password from the last installation step.
+  <Step title="Log in to BloodHound">
+    In a browser, go to [http://localhost:8080/ui/login](http://localhost:8080/ui/login) and log in with the `admin` username and the randomly generated password.
 
     <Note>
-      The default `docker-compose.yml` example binds only to localhost (127.0.0.1). To access BloodHound outside of localhost, follow the instructions in [examples/docker-compose/README.md](https://github.com/SpecterOps/BloodHound/blob/main/examples/docker-compose/README.md) to configure host binding for the container.
+      The default `docker-compose.yml` file binds only to localhost (127.0.0.1). To access BloodHound outside localhost, follow the instructions in [examples/docker-compose/README.md](https://github.com/SpecterOps/BloodHound/blob/main/examples/docker-compose/README.md).
     </Note>
+  </Step>
 
-7. Reset the password as prompted.
-
-You're now logged in to a locally hosted BloodHound CE tenant running with Docker Compose.
+  <Step title="Reset your password">
+    Reset your password as prompted on first login.
+  </Step>
+</Steps>
 
 # Get data into BloodHound
 
@@ -184,6 +184,8 @@ To get data into BloodHound, ingest sample data or run a data collector.
 
 <Tabs>
   <Tab title="Option 1: Sample data (faster)" icon="file-zipper">
+
+    Use sample data to quickly explore BloodHound CE without setting up a SharpHound or AzureHound data collector.
     <SampleData />
   </Tab>
   <Tab title="Option 2 : Data collectors (more realistic)" icon="microchip">
@@ -193,44 +195,71 @@ To get data into BloodHound, ingest sample data or run a data collector.
     * Entra ID (formerly Azure AD), collected by AzureHound CE
 
     <OpengraphLibrary />
+
+    <Steps>
+      <Step title="Download a collector">
+
+        Each collector is a standalone binary. Download collectors using one of the following methods:
+
+        <Tabs>
+          <Tab title="BloodHound CE UI" icon="download">
+          Download the collectors directly from the BloodHound CE UI:
+
+            1. Log in to the BloodHound CE UI.
+            1. In the left menu, click **Download Collectors**.
+            1. Click one of the links in the **Community Collectors** section to download the SharpHound or AzureHound binary.
+          </Tab>
+          <Tab title="GitHub" icon="github">
+            Download the latest releases from GitHub:
+            - [SharpHound releases](https://github.com/SpecterOps/SharpHound/releases/latest)
+            - [AzureHound releases](https://github.com/SpecterOps/AzureHound/releases/latest)
+          </Tab>
+          <Tab title="Source" icon="code">
+            Build the collector from the data collector source code
+
+            - [SharpHound](/collect-data/ce-collection/sharphound)
+            - [AzureHound](/collect-data/ce-collection/azurehound)
+          </Tab>
+        </Tabs>
+      </Step>
+
+      <Step title="Run a collector">
+
+        Start the collector to generate and compress JSON files into a ZIP archive.
+
+        <CodeGroup>
+
+        ```powershell SharpHound CE
+        # Run SharpHound CE from a domain-joined Windows system
+        C:\> SharpHound.exe
+        ```
+
+        ```powershell AzureHound CE
+        # Provide your credentials and tenant information to run AzureHound CE
+        C:\> AzureHound.exe --username "MattNelson@contoso.onmicrosoft.com" --password "MyVeryStrongPassword" --tenant "contoso.onmicrosoft.com" list
+        ```
+        </CodeGroup>
+
+        <Tip>
+        For optional command flags, see:
+
+        - [SharpHound Community Edition Flags](/collect-data/ce-collection/sharphound-flags)
+        - [AzureHound Community Edition Flags](/collect-data/ce-collection/azurehound-flags)
+        </Tip>
+      </Step>
+
+      <Step title="Ingest data into BloodHound">
+      Use the BloodHound CE API or the BloodHound CE UI to ingest collected data into BloodHound.
+
+      To ingest collected data with the API, use the BloodHound CE endpoint `/api/v2/file-upload/`. See the [BloodHound API documentation](/integrations/bloodhound-api/working-with-api) for details.
+
+      To ingest collected data with the BloodHound CE UI, go to **Administration** > **Data Collection** > **File Ingest** and click **Upload File(s)** to upload your files.
+
+      <Note>BloodHound CE accepts .zip archives or JSON files, with no size limit. Your browser's ability to package the uploaded file is a limiting factor in uploading large datasets directly through the UI.</Note>
+      </Step>
+    </Steps>
   </Tab>
 </Tabs>
-
-### Download collectors
-
-Each collector is a standalone binary. Download collectors using one of these methods:
-
-* From BloodHound CE, click ⚙️ → **Download Collectors** → the download button for **SHARPHOUND** or **AZUREHOUND**.
-* Download from GitHub releases: [SharpHound releases](https://github.com/SpecterOps/SharpHound/releases/latest) or [AzureHound releases](https://github.com/SpecterOps/AzureHound/releases/latest).
-* Build the collector from source with the source code for [SharpHound](/collect-data/ce-collection/sharphound) or [AzureHound](/collect-data/ce-collection/azurehound).
-
-### Run a collector
-
-Run the SharpHound or AzureHound collector. During collection, JSON files are generated and compressed into a ZIP file.
-
-<CodeGroup>
-  ```bash Run SharpHound from a domain-joined Windows system
-  # Run SharpHound CE
-  C:\> SharpHound.exe
-  ```
-
-  ```bash Run AzureHound
-  # Run AzureHound CE
-  C:\> AzureHound.exe --username "MattNelson@contoso.onmicrosoft.com" --password "MyVeryStrongPassword" --tenant "contoso.onmicrosoft.com" list
-  ```
-</CodeGroup>
-
-For Azure argument definitions, see [All AzureHound Community Edition Flags, Explained](/collect-data/ce-collection/azurehound-flags).
-
-### Ingest data into BloodHound
-
-Use the BloodHound CE API or the BloodHound CE UI to ingest collected data into BloodHound.
-
-To ingest collected data with the API, use the BloodHound CE endpoint `/api/v2/file-upload/`. See the [BloodHound API documentation](/integrations/bloodhound-api/working-with-api) for details.
-
-To ingest collected data with the BloodHound CE UI, go to settings (⚙️) → **Administration → Data Collection →** select **File Ingest →** click **UPLOAD FILES** and upload your files.
-
-BloodHound CE accepts .zip archives or JSON files, with no size limit. Your browser's ability to package the uploaded file is a limiting factor in uploading large datasets directly through the UI.
 
 # Explore attack paths
 
