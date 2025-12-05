@@ -9,12 +9,13 @@ import OpengraphLibrary from '/snippets/opengraph-library.mdx';
 
 Set up BloodHound Community Edition (BloodHound CE) with Docker Compose and start identifying and visualizing security risks.
 
-<Info> Are you a blue team member looking to remediate identity risks? [Request a demo of BloodHound Enterprise](https://specterops.io/get-a-demo/).</Info>
+<Info>Are you a blue team member looking to remediate identity risks? [Request a demo of BloodHound Enterprise](https://specterops.io/get-a-demo/).</Info>
 
 # Prerequisites
 
-To complete the quickstart, ensure you meet these system requirements.
-BloodHound CE deploys in a traditional multi-tier container architecture consisting of databases, application, and UI layers.
+BloodHound CE deploys in a traditional multi-tier container architecture consisting of database, application, and UI layers.
+
+To complete the quickstart, ensure you meet the following system requirements:
 
 | Minimum specifications | For large environments (>50K users) |
 | ---------------------- | ----------------------------------- |
@@ -28,150 +29,150 @@ BloodHound CE deploys in a traditional multi-tier container architecture consist
 
 1. Install [Docker Desktop](https://www.docker.com/get-started). This gives you access to Docker Compose.
 
-2. Download the latest release of **[BloodHound CLI](https://github.com/SpecterOps/bloodhound-cli/releases)** for your operating system and architecture (AMD or ARM) and unpack the file. BloodHound CLI is a utility that makes it easy to install BloodHound Community Edition in containers on your machine. To avoid the software getting blocked as malware in the browser, we recommend downloading it via command line using the following commands ([substitute your architecture as appropriate](https://github.com/SpecterOps/bloodhound-cli/releases/latest)):
+1. Download the latest release of **[BloodHound CLI](https://github.com/SpecterOps/bloodhound-cli/releases)** for your operating system and architecture (AMD or ARM) and unpack the file. BloodHound CLI is a utility that makes it easy to install BloodHound Community Edition in containers on your machine. To avoid the software getting blocked as malware in the browser, we recommend downloading it via command line using the following commands ([substitute your architecture as appropriate](https://github.com/SpecterOps/bloodhound-cli/releases/latest)):
 
-<CodeGroup>
-  ```bash Linux
-  wget https://github.com/SpecterOps/bloodhound-cli/releases/latest/download/bloodhound-cli-linux-amd64.tar.gz
-  ```
+    <CodeGroup>
+      ```bash Linux
+      wget https://github.com/SpecterOps/bloodhound-cli/releases/latest/download/bloodhound-cli-linux-amd64.tar.gz
+      ```
 
-  ```powershell Windows PowerShell
-  curl.exe -L -o "$env:USERPROFILE\Downloads\bloodhound-cli-windows-amd64.zip" https://github.com/SpecterOps/bloodhound-cli/releases/latest/download/bloodhound-cli-windows-amd64.zip
-  ```
+      ```powershell Windows PowerShell
+      curl.exe -L -o "$env:USERPROFILE\Downloads\bloodhound-cli-windows-amd64.zip" https://github.com/SpecterOps/bloodhound-cli/releases/latest/download/bloodhound-cli-windows-amd64.zip
+      ```
 
-  ```bash Mac
-  curl -L -o bloodhound-cli-darwin-arm64.tar.gz https://github.com/SpecterOps/bloodhound-cli/releases/latest/download/bloodhound-cli-darwin-arm64.tar.gz
-  ```
-</CodeGroup>
+      ```bash Mac
+      curl -L -o bloodhound-cli-darwin-arm64.tar.gz https://github.com/SpecterOps/bloodhound-cli/releases/latest/download/bloodhound-cli-darwin-arm64.tar.gz
+      ```
+    </CodeGroup>
 
-3. Next, unpack the file:
+1. Next, unpack the file:
 
-<CodeGroup>
-  ```bash Linux
-  tar -xvzf bloodhound-cli-linux-amd64.tar.gz
-  ```
+    <CodeGroup>
+      ```bash Linux
+      tar -xvzf bloodhound-cli-linux-amd64.tar.gz
+      ```
 
-  ```powershell Windows PowerShell
-  cd "$env:USERPROFILE\Downloads"; tar -xf bloodhound-cli-windows-amd64.zip
-  ```
+      ```powershell Windows PowerShell
+      cd "$env:USERPROFILE\Downloads"; tar -xf bloodhound-cli-windows-amd64.zip
+      ```
 
-  ```bash Mac
-  tar -xvzf bloodhound-cli-darwin-arm64.tar.gz
-  ```
-</CodeGroup>
+      ```bash Mac
+      tar -xvzf bloodhound-cli-darwin-arm64.tar.gz
+      ```
+    </CodeGroup>
 
-4. In your terminal, enter the following command to install BloodHound Community Edition via BloodHound CLI:
+1. In your terminal, enter the following command to install BloodHound Community Edition via BloodHound CLI:
 
-<CodeGroup>
-  ```bash Linux
-  ./bloodhound-cli install
-  ```
+    <CodeGroup>
+      ```bash Linux
+      ./bloodhound-cli install
+      ```
 
-  ```powershell Windows PowerShell
-  .\bloodhound-cli install
-  ```
+      ```powershell Windows PowerShell
+      .\bloodhound-cli install
+      ```
 
-  ```bash Mac
-  ./bloodhound-cli install
-  ```
-</CodeGroup>
+      ```bash Mac
+      ./bloodhound-cli install
+      ```
+    </CodeGroup>
 
-<Note>
-  **If you encounter Mac Error: “bloodhound-cli” Not Opened. Apple could not verify “bloodhound-cli” is free of malware that may harm your mac or compromise your privacy.**
-  In case you get this error message, you need to allow bloodhound-cli to be executed.
+    <Note>
+      **If you encounter Mac Error: “bloodhound-cli” Not Opened. Apple could not verify “bloodhound-cli” is free of malware that may harm your mac or compromise your privacy.**
+      In case you get this error message, you need to allow bloodhound-cli to be executed.
 
-  Option 1: In the terminal
+      Option 1: In the terminal
 
-  1. Clear the quarantine flag by typing `xattr -d com.apple.quarantine ./bloodhound-cli` in the CLI
-  2. Repeat the CLI command `./bloodhound-cli install`
+      1. Clear the quarantine flag by typing `xattr -d com.apple.quarantine ./bloodhound-cli` in the CLI
+      2. Repeat the CLI command `./bloodhound-cli install`
 
-  Option 2: In the GUI
+      Option 2: In the GUI
 
-  1. Go to **System Settings** (or System Preferences on older macOS versions)
-  2. Navigate to **Privacy & Security**
-  3. Scroll down to the **Security** section
-  4. You should see a message stating that bloodhound-cli was blocked
-  5. Click **Allow Anyway**
-  6. Repeat the CLI command `./bloodhound-cli install`
-  7. Click **Open Anyway**
-  8. Enter your password or use your fingerprint to confirm
-</Note>
+      1. Go to **System Settings** (or System Preferences on older macOS versions)
+      2. Navigate to **Privacy & Security**
+      3. Scroll down to the **Security** section
+      4. You should see a message stating that bloodhound-cli was blocked
+      5. Click **Allow Anyway**
+      6. Repeat the CLI command `./bloodhound-cli install`
+      7. Click **Open Anyway**
+      8. Enter your password or use your fingerprint to confirm
+    </Note>
 
-<Note>
-  **If you encounter Mac Error: Malware Blocked – “com.docker.vmnetd” was not opened because it contains malware. This action did not harm your Mac.**
-  In case you get the error message, you need to uninstall and re-install Docker.
+    <Note>
+      **If you encounter Mac Error: Malware Blocked - “com.docker.vmnetd” was not opened because it contains malware. This action did not harm your Mac.**
+      In case you get the error message, you need to uninstall and re-install Docker.
 
-  1. Follow the [Docker uninstall instructions](https://docs.docker.com/desktop/uninstall/) (click tab for your operating system).
-  2. Re-install [Docker Desktop](https://www.docker.com/get-started/).
-  3. Repeat the CLI command `./bloodhound-cli install`
-</Note>
+      1. Follow the [Docker uninstall instructions](https://docs.docker.com/desktop/uninstall/) (click tab for your operating system).
+      2. Re-install [Docker Desktop](https://www.docker.com/get-started/).
+      3. Repeat the CLI command `./bloodhound-cli install`
+    </Note>
 
-<Note>
-  **If you encounter Mac Error: “Docker is installed on this system, but the daemon is not running”**
-  In case you get the error message, you need to uninstall and re-install Docker.
+    <Note>
+      **If you encounter Mac Error: “Docker is installed on this system, but the daemon is not running”**
+      In case you get the error message, you need to uninstall and re-install Docker.
 
-  1. Simply **launch Docker Desktop** and proceed.
-</Note>
+      1. Simply **launch Docker Desktop** and proceed.
+    </Note>
 
-5. The installation will now proceed. You’ll know it’s complete when you see the randomly generated password displayed on your screen. Make sure to keep your terminal open until you have changed your password in a future step.
+1. The installation will now proceed. You'll know it's complete when you see the randomly generated password displayed on your screen. Make sure to keep your terminal open until you have changed your password in a future step.
 
-   ```
-   [+] Checking the status of Docker and the Compose plugin...
-   [+] Starting BloodHound environment installation
-   [+] Downloading the production YAML file from https://raw.githubusercontent.com/SpecterOps/BloodHound_CLI/refs/heads/main/docker-compose.yml...
-   [+] Downloading the development YAML file from https://raw.githubusercontent.com/SpecterOps/BloodHound_CLI/refs/heads/main/docker-compose.dev.yml...
+    ```bash
+    [+] Checking the status of Docker and the Compose plugin...
+    [+] Starting BloodHound environment installation
+    [+] Downloading the production YAML file from https://raw.githubusercontent.com/SpecterOps/BloodHound_CLI/refs/heads/main/docker-compose.yml...
+    [+] Downloading the development YAML file from https://raw.githubusercontent.com/SpecterOps/BloodHound_CLI/refs/heads/main/docker-compose.dev.yml...
 
-   [… downloading lots of files …]
+    [… downloading lots of files …]
 
-   Network root_default  Creating
-   Network root_default  Created
-   Volume "root_postgres-data"  Creating
-   Volume "root_postgres-data"  Created
-   Volume "root_neo4j-data"  Creating
-   Volume "root_neo4j-data"  Created
-   Container root-graph-db-1  Creating
-   Container root-app-db-1  Creating
-   Container root-app-db-1  Created
-   Container root-graph-db-1  Created
-   Container root-bloodhound-1  Creating
-   Container root-bloodhound-1  Created
-   Container root-app-db-1  Starting
-   Container root-graph-db-1  Starting
-   Container root-app-db-1  Started
-   Container root-graph-db-1  Started
-   Container root-app-db-1  Waiting
-   Container root-graph-db-1  Waiting
-   Container root-app-db-1  Healthy
-   Container root-graph-db-1  Healthy
-   Container root-bloodhound-1  Starting
-   Container root-bloodhound-1  Started
-   [+] BloodHound is ready to go!
-   [+] You can log in as `admin` with this password: 1WBhSFbPTurX1xBrUPUky5eqxv4wtZ26
-   [+] You can get your admin password by running: bloodhound-cli config get default_password
-   [+] You can access the BloodHound UI at: http://127.0.0.1:8080/ui/login
-   ```
+    Network root_default  Creating
+    Network root_default  Created
+    Volume "root_postgres-data"  Creating
+    Volume "root_postgres-data"  Created
+    Volume "root_neo4j-data"  Creating
+    Volume "root_neo4j-data"  Created
+    Container root-graph-db-1  Creating
+    Container root-app-db-1  Creating
+    Container root-app-db-1  Created
+    Container root-graph-db-1  Created
+    Container root-bloodhound-1  Creating
+    Container root-bloodhound-1  Created
+    Container root-app-db-1  Starting
+    Container root-graph-db-1  Starting
+    Container root-app-db-1  Started
+    Container root-graph-db-1  Started
+    Container root-app-db-1  Waiting
+    Container root-graph-db-1  Waiting
+    Container root-app-db-1  Healthy
+    Container root-graph-db-1  Healthy
+    Container root-bloodhound-1  Starting
+    Container root-bloodhound-1  Started
+    [+] BloodHound is ready to go!
+    [+] You can log in as `admin` with this password: 1WBhSFbPTurX1xBrUPUky5eqxv4wtZ26
+    [+] You can get your admin password by running: bloodhound-cli config get default_password
+    [+] You can access the BloodHound UI at: http://127.0.0.1:8080/ui/login
+    ```
 
-   If you lose the password, you can reset it locally using BloodHound CLI:
+    If you lose the password, you can reset it locally using BloodHound CLI:
 
-   <CodeGroup>
-     ```bash Linux
-     ./bloodhound-cli resetpwd
-     ```
+    <CodeGroup>
+      ```bash Linux
+      ./bloodhound-cli resetpwd
+      ```
 
-     ```powershell Windows PowerShell
-     .\bloodhound-cli resetpwd
-     ```
+      ```powershell Windows PowerShell
+      .\bloodhound-cli resetpwd
+      ```
 
-     ```bash Mac
-     ./bloodhound-cli resetpwd
-     ```
-   </CodeGroup>
+      ```bash Mac
+      ./bloodhound-cli resetpwd
+      ```
+    </CodeGroup>
 
-6. Go to [http://localhost:8080/ui/login](http://localhost:8080/ui/login), and log in with `admin` and the randomly generated password from the last installation step.
+1. Go to [http://localhost:8080/ui/login](http://localhost:8080/ui/login), and log in with `admin` and the randomly generated password from the last installation step.
 
-   <Note>
-     The default `docker-compose.yml` example binds only to localhost (127.0.0.1). To access BloodHound outside of localhost, follow the instructions in [examples/docker-compose/README.md](https://github.com/SpecterOps/BloodHound/blob/main/examples/docker-compose/README.md) to configure host binding for the container.
-   </Note>
+    <Note>
+      The default `docker-compose.yml` example binds only to localhost (127.0.0.1). To access BloodHound outside of localhost, follow the instructions in [examples/docker-compose/README.md](https://github.com/SpecterOps/BloodHound/blob/main/examples/docker-compose/README.md) to configure host binding for the container.
+    </Note>
 
 7. Reset the password as prompted.
 
