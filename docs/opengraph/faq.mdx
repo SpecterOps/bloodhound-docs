@@ -55,9 +55,27 @@ There is a reconciliation step in BloodHound Enterprise Edition (BHE) that delet
 
 **Recommended workaround:**
 
+Every node must be linked to another node. Use one of the following strategies to link your OpenGraph nodes:
+
+- Ensure each node has at least one relationship in the same payload. Including an edge that links the node to an existing object is the simplest fix.
+- Anchor your OpenGraph data to a lightweight root node (an arbitrary node that orphaned nodes can be connected to without impacting the rest of the graph design).
+
+   For example, create a single root node (such as `(:OGRoot)`) and add a containment edge (such as `(:OGRoot)-[:OGContains]->(:YourNode)`) to keep nodes from being orphaned and pruned. Use an edge kind that you exclude from your path queries if you don't want it to affect pathfinding.
+</Accordion>
+<Accordion title="Why do AD/AZ nodes disappear after I delete OpenGraph data?">
+When building hybrid paths that connect OpenGraph nodes to Active Directory (AD) or Azure (AZ) nodes, the `source_kind` metadata field is currently applied to all nodes defined and referenced in the payload. If you reference an AD/AZ node in a hybrid path, your OpenGraph `source_kind` will be applied to those non-OpenGraph nodes.
+
+<Note>A more comprehensive solution is currently being designed to prevent this issue. The process described below is a workaround until the new design is implemented.</Note>
+
+**What this means:**
+
+When you delete OpenGraph data that references AD/AZ nodes with an OpenGraph `source_kind`, those AD/AZ nodes may also be deleted even though they are part of the core AD/AZ graph.
+
+**Recommended workaround:**
+
 Use a two-step upload when building hybrid paths.
 
-- **First payload (isolated subgraph)**: Upload only your OpenGraph nodes and relationships and set `source_kind` in `metadata`. Ensure that every node has at least one relationship within this payload (for example, connect nodes to each other or to a root and add a containment edge such as `(:OGRoot)-[:OGContains]->(:YourNode)`). Do not link to AD/AZ objects in this payload.
+- **First payload (isolated subgraph)**: Upload only your OpenGraph nodes and relationships and set `source_kind` in `metadata`. Ensure that every node has at least one relationship within this payload (for example, connect nodes to each other or to a root node and add a containment edge, such as `(:OGRoot)-[:OGContains]->(:YourNode)`). Do not link to AD/AZ objects in this payload.
 
 - **Second payload (linking AD/AZ nodes)**: Link the isolated subgraph's nodes to the AD/AZ nodes that connect your subgraph to existing AD/AZ entities. This avoids cross-source side effects when `source_kind` is present.
 </Accordion>
