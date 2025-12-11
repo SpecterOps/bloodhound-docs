@@ -46,7 +46,11 @@ Slow ingestion speeds are commonly seen when using a Neo4j graph database and ar
 To switch to a PostgreSQL graph database, set `"graph_driver": "pg"` in your `bloodhound.config.json` file and restart the BloodHound services/containers. You will need to re-ingest any data into the new database.
 </Accordion>
 <Accordion title="Why do OpenGraph nodes disappear after ingestion?">
-There is a reconciliation step in BloodHound Enterprise Edition (BHE) that deletes orphaned nodes (nodes that have no edge relationships) shortly after ingestion. This is distinct from the edge [post-processing](/opengraph/schema#post-processing) behavior and is intended to reduce stale or unconnected objects in the graph.
+<Note>
+This behavior **only applies to BloodHound Enterprise Edition (BHE)**. BloodHound Community Edition (BHCE) does not perform reconciliation.
+</Note>
+
+One of the benefits of BloodHound Enterprise Edition is active management of the data in the graph to ensure freshness and accuracy. As part of this data management, there is a reconciliation step that runs shortly after ingestion and deletes orphaned nodes (nodes that have no edge relationships). This is distinct from the edge [post-processing](/opengraph/schema#post-processing) behavior and is intended to reduce stale or unconnected objects in the graph.
 
 **What this means:**
 
@@ -57,13 +61,15 @@ There is a reconciliation step in BloodHound Enterprise Edition (BHE) that delet
 
 Every node must be linked to another node. Use one of the following strategies to link your OpenGraph nodes:
 
-- Ensure each node has at least one relationship in the same payload. Including an edge that links the node to an existing object is the simplest fix.
+- Ensure each node defined in the payload has at least one relationship connecting it to another node (either predefined or otherwise defined in the payload). Including an edge that links the node to an existing object is the simplest fix.
 - Anchor your OpenGraph data to a lightweight root node (an arbitrary node that orphaned nodes can be connected to without impacting the rest of the graph design).
 
    For example, create a single root node (such as `(:OGRoot)`) and add a containment edge (such as `(:OGRoot)-[:OGContains]->(:YourNode)`) to keep nodes from being orphaned and pruned. Use an edge kind that you exclude from your path queries if you don't want it to affect pathfinding.
 </Accordion>
 <Accordion title="Why do AD/AZ nodes disappear after I delete OpenGraph data?">
-When building hybrid paths that connect OpenGraph nodes to Active Directory (AD) or Azure (AZ) nodes, the `source_kind` metadata field is currently applied to all nodes defined and referenced in the payload. If you reference an AD/AZ node in a hybrid path, your OpenGraph `source_kind` will be applied to those non-OpenGraph nodes.
+The initial OpenGraph implementation introduced the `source_kind` metadata field to let you create a source and quickly apply it to all nodes in the payload. This preliminary process applies the `source_kind` to all nodes in the payload—whether you define or reference them—which can create unintended side-effects when building hybrid paths that connect OpenGraph nodes to Active Directory (AD) or Azure (AZ) nodes.
+
+If you reference an AD/AZ node when defining a relationship in an OpenGraph payload that uses this metadata field, the system inadvertently applies the `source_kind` to those non-OpenGraph nodes. When you delete the OpenGraph data, you also delete those AD/AZ nodes.
 
 <Note>A more comprehensive solution is currently being designed to prevent this issue. The process described below is a workaround until the new design is implemented.</Note>
 
@@ -73,7 +79,7 @@ When you delete OpenGraph data that references AD/AZ nodes with an OpenGraph `so
 
 **Recommended workaround:**
 
-Use a two-step upload when building hybrid paths.
+Use a two-step upload process when building hybrid paths.
 
 - **First payload (isolated subgraph)**: Upload only your OpenGraph nodes and relationships and set `source_kind` in `metadata`. Ensure that every node has at least one relationship within this payload (for example, connect nodes to each other or to a root node and add a containment edge, such as `(:OGRoot)-[:OGContains]->(:YourNode)`). Do not link to AD/AZ objects in this payload.
 
