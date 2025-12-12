@@ -54,14 +54,14 @@ One of the benefits of BloodHound Enterprise Edition is active management of the
 
 **What this means:**
 
-- Ingesting nodes without edges in BloodHound Community Edition (BHCE) successfully creates and displays all of the nodes, including orphaned nodes.
+- Ingesting nodes without edges in BloodHound Community Edition (BHCE) successfully creates and displays all nodes, including orphaned nodes.
 - For the same data uploaded to BloodHound Enterprise Edition (BHE), the nodes without edges are ingested and immediately deleted during the reconciliation step.
 
 **Recommended workaround:**
 
-Every node must be linked to another node. Use one of the following strategies to link your OpenGraph nodes:
+Every node must be linked to another node. Use one of the following methods to link your OpenGraph nodes:
 
-- Ensure each node defined in the payload has at least one edge connecting it to another node (either predefined or otherwise defined in the payload). Including an edge that links the node to an existing object is the simplest fix.
+- Ensure each node defined in the payload has at least one edge connecting it to another node (either predefined or otherwise defined in the payload). Including an edge that links the node to an existing object is the simplest method.
 - Anchor your OpenGraph data to a lightweight root node (an arbitrary node that orphaned nodes can be connected to without impacting the rest of the graph design).
 
    For example, create a single root node (such as `(:OGRoot)`) and add a containment edge (such as `(:OGRoot)-[:OGContains]->(:YourNode)`) to keep nodes from being orphaned and pruned. Use an edge kind that you exclude from your path queries if you don't want it to affect pathfinding.
@@ -69,7 +69,7 @@ Every node must be linked to another node. Use one of the following strategies t
 <Accordion title="Why do AD/AZ nodes disappear after I delete OpenGraph data?">
 The initial OpenGraph implementation introduced the `source_kind` metadata field to let you create a source and quickly apply it to all nodes in the payload. This preliminary process applies the `source_kind` to all nodes in the payload—whether you define or reference them—which can create unintended side-effects when building hybrid paths that connect OpenGraph nodes to Active Directory (AD) or Azure (AZ) nodes.
 
-If you reference an AD/AZ node when defining an edge in an OpenGraph payload that uses this metadata field, the system inadvertently applies the `source_kind` to those non-OpenGraph nodes. When you delete the OpenGraph data, you also delete those AD/AZ nodes.
+If you reference AD/AZ nodes when defining an edge in an OpenGraph payload that uses this metadata field, the system inadvertently applies the `source_kind` to those non-OpenGraph nodes. If you delete this source and its OpenGraph data, then those AD/AZ nodes are also deleted.
 
 <Note>A more comprehensive solution is currently being designed to prevent this issue. The process described below is a workaround until the new design is implemented.</Note>
 
