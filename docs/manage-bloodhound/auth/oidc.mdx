@@ -1,46 +1,120 @@
 ---
 title: OIDC in BloodHound
-description: 'BloodHound supports OIDC for Single Sign On to authenticate users to your tenant environment.'
+description: BloodHound supports OIDC for Single Sign On to authenticate users to your tenant environment.
 ---
-import snip_icons from '/snippets/auth/icons_list.mdx';
-import snip_auth_users from '/snippets/auth/auth_configure_users.mdx';
+
 import snip_auth_config_1 from '/snippets/auth/auth_config_steps_1.mdx';
 import snip_auth_config_2 from '/snippets/auth/auth_config_steps_2.mdx';
-import snip_unique_email from '/snippets/auth/auth_unique_email.mdx';
+import snip_auth_users from '/snippets/auth/auth_configure_users.mdx';
+import snip_auth_unique_email from '/snippets/auth/auth_unique_email.mdx';
 import snip_role_mapping from '/snippets/auth/auth_role_mapping.mdx';
+import snip_icons from '/snippets/auth/icons_list.mdx';
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-You can configure multiple SSO providers within your tenant if you need to.
+You can configure multiple SSO providers within your tenant if necessary.
 
-This page provides the overall steps to configure an OIDC provider within BloodHound.
+This page provides the overall steps to configure an OIDC provider within BloodHound. The examples on this page use Okta as the OIDC provider for demonstration purposes.
+
+<Note>
+Entra ID is not currently supported with BloodHound's OIDC implementation. Use the [SAML configuration](/manage-bloodhound/auth/saml-entra-id) instead.
+</Note>
 
 ## Order of Operations
 
-Currently, BloodHound requires the configuration of OIDC system in the following order:
+You must configure OIDC in BloodHound in the following order:
 
-1.  Determine the Provider Name you will utilize for the OIDC configuration.
-    * The exact value must be configured in both the Identity Provider and BloodHound.
-2.  Configure Identity Provider for BloodHound.
-    * You will need the Client ID and Issuer (URL) provided by your IDP to move forward.
-3.  Create the OIDC Configuration in BloodHound.
+1.  Determine the Identity Provider (IDP) name you will use for the OIDC configuration.
 
-<snip_auth_unique_email auth_mode="OIDC"/>
+    The same value must be configured in both the IDP and BloodHound.
+
+1.  Configure the IDP for BloodHound.
+
+    See the [Configure Okta](#configure-okta) section below for configuring Okta as your OIDC provider.
+
+1.  Create the OIDC configuration in BloodHound.
+
+1.  Create new users or modify existing users using the UI or via the newly created OIDC provider.
+
+    <snip_auth_unique_email auth_mode="OIDC"/>
 
 <snip_role_mapping auth_mode="OIDC"/>
 
-## BloodHound Icons
-
-If your IDP supports custom icons for configured applications, please feel free to utilize the logos below:
-
 <snip_icons/>
 
-<snip_auth_config_1 auth_mode="OIDC"/>
+## Configure Okta
 
-<Frame>
-  <img src="/images/sso/create_OIDC_provider.png"/>
-</Frame>
+To configure Okta as your OIDC provider:
 
-<snip_auth_config_2 auth_mode="OIDC"/>
+1. Follow the [Okta documentation](https://help.okta.com/oie/en-us/content/topics/apps/apps_app_integration_wizard_oidc.htm) to create a new application.
+
+    <Note>Set your application type to **SPA** (Single Page Application) or **Native**.</Note>
+
+1. From your Okta application, note the following values:
+
+    - **Client ID**
+    - **Issuer URL**
+
+    <Tip>You'll use the **Client ID** from the Okta _Client Credentials_ and the **Issuer URL** from the Okta _Authorization Server_ when you [configure BloodHound](/manage-bloodhound/auth/oidc#configure-bloodhound).</Tip>
+
+1. Add the BloodHound callback URL to your Okta application configuration using the following format:
+
+    ```
+    https://{domainname}/api/v2/sso/{chosenProviderName}/callback
+    ```
+  
+    **Example**: `https://test.bloodhoundenterprise.io/api/v2/sso/bhestandard/callback`
+
+### Custom claims
+
+You may need to [configure custom claims](https://help.okta.com/oie/en-us/content/topics/apps/federated-claims-overview.htm) to ensure that BloodHound properly populates users' first and last names and the correct role.
+
+To create the required custom claims in Okta:
+
+1. Log in to your Okta Admin Console.
+1. Navigate to **Security** > **API** > **Authorization Servers**.
+1. Select your authorization server.
+1. Go to the **Claims** tab.
+1. Add the following custom claims:
+
+    <Tabs>
+      <Tab title="First name">
+
+      | Field | Setting |
+      |-----------|---------|
+      | **Name** | First_Name |
+      | **Include in token type** | ID Token → Always |
+      | **Value type** | Expression |
+      | **Value** | `user.firstName` |
+      | **Include in** | Any scope (or Profile) |
+        
+      </Tab>
+      <Tab title="Last name">
+
+      | Field | Setting |
+      |-----------|---------|
+      | **Name** | Last_Name |
+      | **Include in token type** | ID Token → Always |
+      | **Value type** | Expression |
+      | **Value** | `user.lastName` |
+      | **Include in** | Any scope (or Profile) |
+          
+      </Tab>
+
+      <Tab title="Role">
+
+      | Field | Setting |
+      |-----------|---------|
+      | **Name** | Role |
+      | **Include in token type** | ID Token → Always |
+      | **Value type** | Groups |
+      | **Filter** | Starts with --> `bh-` |
+      | **Include in** | Any scope (or Profile) |
+      </Tab>
+    </Tabs>
+
+<snip_auth_config_1 auth_mode="OIDC" endpoint="callback"/>
+
+<snip_auth_config_2 auth_mode="OIDC" endpoint="callback"/>
 
 <snip_auth_users auth_mode="OIDC"/>
