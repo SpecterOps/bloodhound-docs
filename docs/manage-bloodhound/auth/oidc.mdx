@@ -26,7 +26,7 @@ You must configure OIDC in BloodHound in the following order:
 
 1.  Determine the Identity Provider (IDP) name you will use for the OIDC configuration.
 
-    The same value must be configured in both the IDP and BloodHound.
+    The same value must be configured in both the IDP and BloodHound. The BloodHound callback URL will include this value.
 
 1.  Configure the IDP for BloodHound.
 
@@ -46,37 +46,36 @@ You must configure OIDC in BloodHound in the following order:
 
 To configure Okta as your OIDC provider:
 
-1. Follow the [Okta documentation](https://help.okta.com/oie/en-us/content/topics/apps/apps_app_integration_wizard_oidc.htm) to create a new application.
+<Steps>
+  <Step title="Create a new Okta application">
+
+    Follow the [Okta documentation](https://help.okta.com/oie/en-us/content/topics/apps/apps_app_integration_wizard_oidc.htm) to create a new application.
 
     <Note>Set your application type to **SPA** (Single Page Application) or **Native**.</Note>
 
-1. From your Okta application, note the following values:
+  </Step>
+  <Step title="Configure the Okta application">
+
+    When configuring the Okta application, use the following settings:
+
+    | Field | Value |
+    |-------|-------|
+    | **Login redirect** | `https://{domainname}/api/v2/sso/{chosenProviderName}/callback`<br/><br/>**Example**: `https://test.bloodhoundenterprise.io/api/v2/sso/bhestandard/callback` |
+    | **Logout redirect** | `https://{domainname}/`<br/><br/>**Example**: `https://test.bloodhoundenterprise.io/` |
+    
+    <Tip>
+    Note the following values:
 
     - **Client ID**
     - **Issuer URL**
 
-    <Tip>You'll use the **Client ID** from the Okta _Client Credentials_ and the **Issuer URL** from the Okta _Authorization Server_ when you [configure BloodHound](/manage-bloodhound/auth/oidc#configure-bloodhound).</Tip>
-
-1. Add the BloodHound callback URL to your Okta application configuration using the following format:
-
-    ```
-    https://{domainname}/api/v2/sso/{chosenProviderName}/callback
-    ```
-  
-    **Example**: `https://test.bloodhoundenterprise.io/api/v2/sso/bhestandard/callback`
-
-### Custom claims
-
-You may need to [configure custom claims](https://help.okta.com/oie/en-us/content/topics/apps/federated-claims-overview.htm) to ensure that BloodHound properly populates users' first and last names and the correct role.
-
-To create the required custom claims in Okta:
-
-1. Log in to your Okta Admin Console.
-1. Navigate to **Security** > **API** > **Authorization Servers**.
-1. Select your authorization server.
-1. Go to the **Claims** tab.
-1. Add the following custom claims:
-
+    You'll use the **Client ID** from the Okta _Client Credentials_ and the **Issuer URL** from the Okta _Authorization Server_ when you [configure BloodHound](/manage-bloodhound/auth/oidc#configure-bloodhound).
+    </Tip>
+  </Step>
+  <Step title="Create custom claims">  
+    You may need to [configure custom claims](https://help.okta.com/oie/en-us/content/topics/apps/federated-claims-overview.htm) to ensure that BloodHound properly populates users' first and last names and the correct role.
+    
+    Go to **Security** > **API** > **Authorization Servers** > **Claims** and create the following claims:
     <Tabs>
       <Tab title="First name">
 
@@ -112,6 +111,8 @@ To create the required custom claims in Okta:
       | **Include in** | Any scope (or Profile) |
       </Tab>
     </Tabs>
+  </Step>
+</Steps>
 
 <snip_auth_config_1 auth_mode="OIDC" endpoint="callback"/>
 
