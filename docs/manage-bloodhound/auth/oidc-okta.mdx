@@ -1,0 +1,82 @@
+---
+title: "OIDC: Okta Configuration"
+description: This document provides instructions for creating an application within Okta for compatibility with BloodHound Enterprise.
+---
+
+import { IDPIntro } from '/snippets/auth/idp_intro.jsx';
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+<IDPIntro auth_mode="OIDC" />
+
+## Create an Okta application
+
+To create an Okta application for BloodHound, complete the following steps:
+
+<Steps>
+  <Step title="Create a new Okta application">
+
+    Follow the [Okta documentation](https://help.okta.com/oie/en-us/content/topics/apps/apps_app_integration_wizard_oidc.htm) to create a new application.
+
+    <Note>Set your application type to **Native**.</Note>
+
+  </Step>
+  <Step title="Configure the Okta application">
+
+    When configuring the Okta application, use the following settings:
+
+    | Field | Value |
+    |-------|-------|
+    | **Login redirect** | `https://{domainname}/api/v2/sso/{chosenProviderName}/callback`<br/><br/>**Example**: `https://test.bloodhoundenterprise.io/api/v2/sso/bhestandard/callback` |
+    | **Logout redirect** | `https://{domainname}/`<br/><br/>**Example**: `https://test.bloodhoundenterprise.io/` |
+    
+    <Tip>
+    Note the following values:
+
+    - **Client ID**
+    - **Issuer URL**
+
+    You'll use the **Client ID** from the Okta _Client Credentials_ and the **Issuer URL** from the Okta _Authorization Server_ when you [configure BloodHound](/manage-bloodhound/auth/oidc#configure-bloodhound).
+    </Tip>
+  </Step>
+  <Step title="Create custom claims">  
+    If you want to map additional user attributes (first name, last name, role) from Okta to BloodHound, you must create [custom claims](https://help.okta.com/oie/en-us/content/topics/apps/federated-claims-overview.htm) in Okta.
+    
+    Go to **Security** > **API** > **Authorization Servers** > **Claims** and create the following claims:
+    <Tabs>
+      <Tab title="First name">
+
+      | Field | Setting |
+      |-----------|---------|
+      | **Name** | first_name |
+      | **Include in token type** | ID Token → Always |
+      | **Value type** | Expression |
+      | **Value** | `user.firstName` |
+      | **Include in** | Any scope (or Profile) |
+        
+      </Tab>
+      <Tab title="Last name">
+
+      | Field | Setting |
+      |-----------|---------|
+      | **Name** | last_name |
+      | **Include in token type** | ID Token → Always |
+      | **Value type** | Expression |
+      | **Value** | `user.lastName` |
+      | **Include in** | Any scope (or Profile) |
+          
+      </Tab>
+
+      <Tab title="Role">
+
+      | Field | Setting |
+      |-----------|---------|
+      | **Name** | roles |
+      | **Include in token type** | ID Token → Always |
+      | **Value type** | Groups |
+      | **Filter** | Starts with --> `bh-` |
+      | **Include in** | Any scope (or Profile) |
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
