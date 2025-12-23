@@ -21,9 +21,47 @@ Use cases for custom installation include:
 
 This installation method provides more control over each configuration file and works well for running multiple BHCE instances on a single machine. See the [Customizations](#customizations) section below for details.
 
-1. Create a directory to store the configuration files for your custom BHCE installation.
+<Steps>
+  
+  <Step title="Install Docker Desktop">
+  
+    Follow the instructions on the [Docker Desktop](https://docs.docker.com/get-started/get-docker/) website to install Docker Desktop for your operating system.
+  
+  </Step>
 
-1. Download the <a href="https://github.com/SpecterOps/BloodHound/blob/main/examples/docker-compose/docker-compose.yml" download><code>docker-compose.yml</code></a> and <a href="https://github.com/SpecterOps/BloodHound/blob/main/examples/docker-compose/bloodhound.config.json" download><code>bloodhound.config.json</code></a> files and copy them into the directory you created.
+  <Step title="Create installation directory">
+
+    Create a new directory on your machine to hold the BHCE configuration files.
+
+    ```bash
+    mkdir bhce-custom-install
+    cd bhce-custom-install
+    ```
+  
+  </Step>
+
+  <Step title="Download configuration files">
+
+    Download the following configuration files:
+
+    - [`docker-compose.yml`](https://github.com/SpecterOps/BloodHound/blob/main/examples/docker-compose/docker-compose.yml)
+    - [`bloodhound.config.json`](https://github.com/SpecterOps/BloodHound/blob/main/examples/docker-compose/bloodhound.config.json)
+  
+  </Step>
+
+  <Step title="Add configuration files">
+
+    Copy the configuration files into the directory you created in the first step.
+
+    ```bash
+    cp /path/to/downloaded/files/* .
+    ```
+
+    <Tip>Continue to the [Customizations](/get-started/custom-installation#customizations) section below to modify your installation as needed.</Tip>
+
+  </Step>
+
+</Steps>
 
 ## Build from source
 
@@ -31,7 +69,7 @@ You can also build the BHCE code from source if you want to contribute to the pr
 
 ### Prerequisite
 
-The following table lists the minimum requirements to build BloodHound CE from source:
+The following table lists the minimum requirements to build BHCE from source:
 
 <Note>These requirements are higher than the minimum specifications needed to run BHCE.</Note>
 
@@ -39,42 +77,68 @@ The following table lists the minimum requirements to build BloodHound CE from s
 | --- | --- |
 | RAM | 16GB |
 | Processor cores | 8 |
-| Go | 1.24 |
-| Node.js | 22 |
-| Yarn | 3.6 |
-| Runtime | Docker Desktop |
+| [Just](https://github.com/casey/just) | --- |
+| [Python](https://www.python.org/downloads/) | 3.10 |
+| [Go](https://go.dev/dl/) | 1.24 |
+| [Node.js](https://nodejs.dev/en/download/) | 22 |
+| [Yarn](https://yarnpkg.com/getting-started/install) | 3.6 |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | --- |
 
 ### Set up your environment
 
-The code repository contains all the necessary files to build BloodHound CE. Follow these steps to set up your development environment:
+The code repository contains all the necessary files to build BHCE. Follow these steps to set up your development environment:
 
-1. Clone the BloodHound repository from GitHub:
+<Steps>
+
+  <Step title="Clone the repository">
+
+    Clone the BloodHound repository from GitHub:
 
     ```bash
     git clone https://github.com/SpecterOps/BloodHound.git
     ```
 
-1. Start Docker Desktop and ensure it is running.
+  </Step>
 
-1. Navigate to the cloned repository directory:
+  <Step title="Start Docker Desktop">
+
+    Docker Desktop must be running to build and test BHCE. Start Docker Desktop on your machine.
+
+  </Step>
+
+  <Step title="Navigate to repository directory">
+
+    Change to the cloned BloodHound repository directory:
 
     ```bash
     cd BloodHound
     ```
 
-1. Install the required Go dependencies:
+  </Step>
+
+  <Step title="Install dependencies">
+
+    Use the following command to install project dependencies and initialize the environment:
 
     ```bash
     just init
     ```
+  
+  </Step>
 
-1. Start the development environment:
+  <Step title="Start development environment">
+
+    Use the following command to start the development environment:
 
     ```bash
     just bh-dev
     ```
 
-See the source code [wiki](https://github.com/SpecterOps/BloodHound/wiki/Development#quick-start) on GitHub for more details.
+    <Tip>See the source code [wiki](https://github.com/SpecterOps/BloodHound/wiki/Development#quick-start) on GitHub for more details about testing and debugging.</Tip>
+
+  </Step>
+
+</Steps>
 
 ### Compile BHCE
 
@@ -88,13 +152,19 @@ This section describes common customizations you can make to your BHCE installat
 
 ### Change backend database
 
-PostgreSQL provides significant advantages over Neo4j as a backend, particularly in terms of speed. However, it has some drawbacks, the most notable being limited support for certain `Cypher` verbs and syntax. For the latest information on supported Cypher syntax in PostgreSQL, see [Supported Cypher Syntax](/analyze-data/cypher-supported).
+PostgreSQL provides significant advantages over Neo4j as a backend, particularly in terms of speed. However, it has some drawbacks, the most notable being limited support for certain `Cypher` verbs and syntax.
+
+For the latest information on supported Cypher syntax in PostgreSQL, see [Supported Cypher Syntax](/analyze-data/cypher-supported).
 
 #### PostgreSQL
 
 If you are currently using a Neo4j backend database and want to change to PostgreSQL, follow these steps.
 
-1. Edit the `bloodhound.config.json` file and add a line in the main section to use PostgreSQL as the graph driver:
+<Steps>
+
+  <Step title="Add the PostgreSQL graph driver">
+
+    Modify the `bloodhound.config.json` file and add a line in the main section to use PostgreSQL as the graph driver:
 
     ```json
     ...
@@ -102,7 +172,7 @@ If you are currently using a Neo4j backend database and want to change to Postgr
     ...
     ```
 
-    This is an example of adding the line between `default_password` and `log_level`, but it can be anywhere at that "level".
+    This is an example of adding the line between `default_password` and `log_level`, but it can be anywhere at the top level.
 
     ```json
     {
@@ -128,12 +198,212 @@ If you are currently using a Neo4j backend database and want to change to Postgr
     }                        
     ```
 
-1. Clean up the `docker-compose.yml` file.
+  </Step>
 
-    - Delete the whole section about `graph_db`
+  <Step title="Remove the Neo4j service">
+
+    Modify the `docker-compose.yml` file to remove the Neo4j service and its dependencies.
+
+      - Delete the `graph_db` section:
+
+        ```yaml
+          graph-db: # [!code --:23]
+            labels:
+              name: "bhce_neo4j"
+            image: docker.io/library/neo4j:4.4
+            environment:
+              - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_SECRET:-bloodhoundcommunityedition}
+              - NEO4J_dbms_allow__upgrade=${NEO4J_ALLOW_UPGRADE:-true}
+            # Database ports are disabled by default. Please change your database password to something secure before uncommenting
+            ports:
+              - 127.0.0.1:${NEO4J_DB_PORT:-7687}:7687
+              - 0.0.0.0:${NEO4J_WEB_PORT:-7474}:7474
+            volumes:
+              - ${NEO4J_DATA_MOUNT:-neo4j-data}:/data
+            healthcheck:
+              test:
+                [
+                  "CMD-SHELL",
+                  "wget -O /dev/null -q http://localhost:7474 || exit 1"
+                ]
+              interval: 10s
+              timeout: 5s
+              retries: 5
+              start_period: 30s
+        ```
+
+      - Delete the two lines at the end of the `bloodhound` section:
+
+        ```yaml
+              graph-db: # [!code --:2]
+                condition: service_healthy
+        ```
+
+      - Delete the following line from the `volumes` section:
+
+        ```yaml
+          neo4j-data: # [!code --]
+        ```
+
+        The following is the complete modified `docker-compose.yml` file for PostgreSQL:
+
+        <Expandable title="full file example diff">
+
+        ```yaml
+        # Copyright 2023 Specter Ops, Inc.
+        #
+        # Licensed under the Apache License, Version 2.0
+        # you may not use this file except in compliance with the License.
+        # You may obtain a copy of the License at
+        #
+        #     http://www.apache.org/licenses/LICENSE-2.0
+        #
+        # Unless required by applicable law or agreed to in writing, software
+        # distributed under the License is distributed on an "AS IS" BASIS,
+        # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        # See the License for the specific language governing permissions and
+        # limitations under the License.
+        #
+        # SPDX-License-Identifier: Apache-2.0
+
+        services:
+          app-db:
+            image: docker.io/library/postgres:16
+            environment:
+              - PGUSER=${POSTGRES_USER:-bloodhound}
+              - POSTGRES_USER=${POSTGRES_USER:-bloodhound}
+              - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-bloodhoundcommunityedition}
+              - POSTGRES_DB=${POSTGRES_DB:-bloodhound}
+            # Database ports are disabled by default. Please change your database password to something secure before uncommenting
+            # ports:
+            #   - 127.0.0.1:${POSTGRES_PORT:-5432}:5432
+            volumes:
+              - postgres-data:/var/lib/postgresql/data
+            healthcheck:
+              test:
+                [
+                  "CMD-SHELL",
+                  "pg_isready -U ${POSTGRES_USER:-bloodhound} -d ${POSTGRES_DB:-bloodhound} -h 127.0.0.1 -p 5432"
+                ]
+              interval: 10s
+              timeout: 5s
+              retries: 5
+              start_period: 30s
+
+          graph-db: # [!code --:21]
+            image: docker.io/library/neo4j:4.4.42
+            environment:
+              - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_SECRET:-bloodhoundcommunityedition}
+              - NEO4J_dbms_allow__upgrade=${NEO4J_ALLOW_UPGRADE:-true}
+            # Database ports are disabled by default. Please change your database password to something secure before uncommenting
+            ports:
+              - 127.0.0.1:${NEO4J_DB_PORT:-7687}:7687
+              - 127.0.0.1:${NEO4J_WEB_PORT:-7474}:7474
+            volumes:
+              - ${NEO4J_DATA_MOUNT:-neo4j-data}:/data
+            healthcheck:
+              test:
+                [
+                  "CMD-SHELL",
+                  "wget -O /dev/null -q http://localhost:7474 || exit 1"
+                ]
+              interval: 10s
+              timeout: 5s
+              retries: 5
+              start_period: 30s
+
+          bloodhound:
+            image: docker.io/specterops/bloodhound:${BLOODHOUND_TAG:-latest}
+            environment:
+              - bhe_disable_cypher_complexity_limit=${bhe_disable_cypher_complexity_limit:-false}
+              - bhe_enable_cypher_mutations=${bhe_enable_cypher_mutations:-false}
+              - bhe_graph_query_memory_limit=${bhe_graph_query_memory_limit:-2}
+              - bhe_database_connection=user=${POSTGRES_USER:-bloodhound} password=${POSTGRES_PASSWORD:-bloodhoundcommunityedition} dbname=${POSTGRES_DB:-bloodhound} host=app-db
+              - bhe_neo4j_connection=neo4j://${NEO4J_USER:-neo4j}:${NEO4J_SECRET:-bloodhoundcommunityedition}@graph-db:7687/
+              - bhe_recreate_default_admin=${bhe_recreate_default_admin:-false}
+              - bhe_graph_driver=${GRAPH_DRIVER:-neo4j}
+              ### Add additional environment variables you wish to use here.
+              ### For common configuration options that you might want to use environment variables for, see `.env.example`
+              ### example: bhe_database_connection=${bhe_database_connection}
+              ### The left side is the environment variable you're setting for bloodhound, the variable on the right in `${}`
+              ### is the variable available outside of Docker
+            ports:
+              ### Default to localhost to prevent accidental publishing of the service to your outer networks
+              ### These can be modified by your .env file or by setting the environment variables in your Docker host OS
+              - ${BLOODHOUND_HOST:-127.0.0.1}:${BLOODHOUND_PORT:-8080}:8080
+            ### Uncomment to use your own bloodhound.config.json to configure the application
+            # volumes:
+            #   - ./bloodhound.config.json:/bloodhound.config.json:ro
+            depends_on:
+              app-db:
+                condition: service_healthy
+              graph-db: # [!code --:2]
+                condition: service_healthy
+
+        volumes:
+          neo4j-data: # [!code --]
+          postgres-data:
+        ```
+        </Expandable>
+
+  </Step>
+
+</Steps>
+
+#### Neo4j
+
+If you are currently using a PostgreSQL backend database and want to change to Neo4j, follow these steps.
+
+<Steps>
+
+  <Step title="Add the Neo4j service">
+
+    Replace your `docker-compose.yml` file with the following:
 
       ```yaml
-        graph-db: # [!code --:23]
+      # Copyright 2023 Specter Ops, Inc.
+      #
+      # Licensed under the Apache License, Version 2.0
+      # you may not use this file except in compliance with the License.
+      # You may obtain a copy of the License at
+      #
+      #     http://www.apache.org/licenses/LICENSE-2.0
+      #
+      # Unless required by applicable law or agreed to in writing, software
+      # distributed under the License is distributed on an "AS IS" BASIS,
+      # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+      # See the License for the specific language governing permissions and
+      # limitations under the License.
+      #
+      # SPDX-License-Identifier: Apache-2.0
+
+      services:
+        app-db:
+          labels:
+            name: "bhce_postgres"
+          image: docker.io/library/postgres:16
+          environment:
+            - PGUSER=${POSTGRES_USER:-bloodhound}
+            - POSTGRES_USER=${POSTGRES_USER:-bloodhound}
+            - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-bloodhoundcommunityedition}
+            - POSTGRES_DB=${POSTGRES_DB:-bloodhound}
+          # Database ports are disabled by default. Please change your database password to something secure before uncommenting
+          # ports:
+          #   - 127.0.0.1:${POSTGRES_PORT:-5432}:5432
+          volumes:
+            - postgres-data:/var/lib/postgresql/data
+          healthcheck:
+            test:
+              [
+                "CMD-SHELL",
+                "pg_isready -U ${POSTGRES_USER:-bloodhound} -d ${POSTGRES_DB:-bloodhound} -h 127.0.0.1 -p 5432"
+              ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+
+        graph-db:
           labels:
             name: "bhce_neo4j"
           image: docker.io/library/neo4j:4.4
@@ -156,266 +426,102 @@ If you are currently using a Neo4j backend database and want to change to Postgr
             timeout: 5s
             retries: 5
             start_period: 30s
-      ```
 
-    - Delete the 2 lines at the end of the `bloodhound` section:
-
-      ```yaml
-            graph-db: # [!code --:2]
+        bloodhound:
+          labels:
+            name: bhce_bloodhound
+          image: docker.io/specterops/bloodhound:${BLOODHOUND_TAG:-latest}
+          environment:
+            - bhe_disable_cypher_complexity_limit=${bhe_disable_cypher_complexity_limit:-false}
+            - bhe_enable_cypher_mutations=${bhe_enable_cypher_mutations:-true}
+            - bhe_graph_query_memory_limit=${bhe_graph_query_memory_limit:-2}
+            - bhe_database_connection=user=${POSTGRES_USER:-bloodhound} password=${POSTGRES_PASSWORD:-bloodhoundcommunityedition} dbname=${POSTGRES_DB:-bloodhound} host=app-db
+            - bhe_neo4j_connection=neo4j://${NEO4J_USER:-neo4j}:${NEO4J_SECRET:-bloodhoundcommunityedition}@graph-db:7687/
+            - bhe_recreate_default_admin=${bhe_recreate_default_admin:-false}
+            - bhe_enable_text_logger=${bhe_enable_text_logger:-true}
+            ### Add additional environment variables you wish to use here.
+            ### For common configuration options that you might want to use environment variables for, see `.env.example`
+            ### example: bhe_database_connection=${bhe_database_connection}
+            ### The left side is the environment variable you're setting for bloodhound, the variable on the right in `${}`
+            ### is the variable available outside of Docker
+          ports:
+            ### Default to localhost to prevent accidental publishing of the service to your outer networks
+            ### These can be modified by your .env file or by setting the environment variables in your Docker host OS
+            - ${BLOODHOUND_HOST:-127.0.0.1}:${BLOODHOUND_PORT:-8080}:8080
+          ### Uncomment to use your own bloodhound.config.json to configure the application
+          volumes:
+            - ./bloodhound.config.json:/bloodhound.config.json:ro
+          depends_on:
+            app-db:
               condition: service_healthy
+            graph-db:
+              condition: service_healthy
+
+      volumes:
+        neo4j-data:
+        postgres-data:
       ```
 
-    - Delete the following line from the `volumes` section:
+  </Step>
 
-      ```yaml
-        neo4j-data: # [!code --]
+  <Step title="Remove the PostgreSQL graph driver">
+
+    Delete the following line from the `bloodhound.config.json` file:
+
+      ```json
+      "graph_driver": "pg", // [!code --]
       ```
 
-    <Expandable title="full file example diff">
+      <Note>If PostgreSQL becomes the default database in future versions of BHCE, you may need to add `"graph_driver": "Neo4j"` to your configuration file.</Note>
 
-    ```yaml
-    # Copyright 2023 Specter Ops, Inc.
-    #
-    # Licensed under the Apache License, Version 2.0
-    # you may not use this file except in compliance with the License.
-    # You may obtain a copy of the License at
-    #
-    #     http://www.apache.org/licenses/LICENSE-2.0
-    #
-    # Unless required by applicable law or agreed to in writing, software
-    # distributed under the License is distributed on an "AS IS" BASIS,
-    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    # See the License for the specific language governing permissions and
-    # limitations under the License.
-    #
-    # SPDX-License-Identifier: Apache-2.0
+  </Step>
 
-    services:
-      app-db:
-        image: docker.io/library/postgres:16
-        environment:
-          - PGUSER=${POSTGRES_USER:-bloodhound}
-          - POSTGRES_USER=${POSTGRES_USER:-bloodhound}
-          - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-bloodhoundcommunityedition}
-          - POSTGRES_DB=${POSTGRES_DB:-bloodhound}
-        # Database ports are disabled by default. Please change your database password to something secure before uncommenting
-        # ports:
-        #   - 127.0.0.1:${POSTGRES_PORT:-5432}:5432
-        volumes:
-          - postgres-data:/var/lib/postgresql/data
-        healthcheck:
-          test:
-            [
-              "CMD-SHELL",
-              "pg_isready -U ${POSTGRES_USER:-bloodhound} -d ${POSTGRES_DB:-bloodhound} -h 127.0.0.1 -p 5432"
-            ]
-          interval: 10s
-          timeout: 5s
-          retries: 5
-          start_period: 30s
-
-      graph-db: # [!code --:21]
-        image: docker.io/library/neo4j:4.4.42
-        environment:
-          - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_SECRET:-bloodhoundcommunityedition}
-          - NEO4J_dbms_allow__upgrade=${NEO4J_ALLOW_UPGRADE:-true}
-        # Database ports are disabled by default. Please change your database password to something secure before uncommenting
-        ports:
-          - 127.0.0.1:${NEO4J_DB_PORT:-7687}:7687
-          - 127.0.0.1:${NEO4J_WEB_PORT:-7474}:7474
-        volumes:
-          - ${NEO4J_DATA_MOUNT:-neo4j-data}:/data
-        healthcheck:
-          test:
-            [
-              "CMD-SHELL",
-              "wget -O /dev/null -q http://localhost:7474 || exit 1"
-            ]
-          interval: 10s
-          timeout: 5s
-          retries: 5
-          start_period: 30s
-
-      bloodhound:
-        image: docker.io/specterops/bloodhound:${BLOODHOUND_TAG:-latest}
-        environment:
-          - bhe_disable_cypher_complexity_limit=${bhe_disable_cypher_complexity_limit:-false}
-          - bhe_enable_cypher_mutations=${bhe_enable_cypher_mutations:-false}
-          - bhe_graph_query_memory_limit=${bhe_graph_query_memory_limit:-2}
-          - bhe_database_connection=user=${POSTGRES_USER:-bloodhound} password=${POSTGRES_PASSWORD:-bloodhoundcommunityedition} dbname=${POSTGRES_DB:-bloodhound} host=app-db
-          - bhe_neo4j_connection=neo4j://${NEO4J_USER:-neo4j}:${NEO4J_SECRET:-bloodhoundcommunityedition}@graph-db:7687/
-          - bhe_recreate_default_admin=${bhe_recreate_default_admin:-false}
-          - bhe_graph_driver=${GRAPH_DRIVER:-neo4j}
-          ### Add additional environment variables you wish to use here.
-          ### For common configuration options that you might want to use environment variables for, see `.env.example`
-          ### example: bhe_database_connection=${bhe_database_connection}
-          ### The left side is the environment variable you're setting for bloodhound, the variable on the right in `${}`
-          ### is the variable available outside of Docker
-        ports:
-          ### Default to localhost to prevent accidental publishing of the service to your outer networks
-          ### These can be modified by your .env file or by setting the environment variables in your Docker host OS
-          - ${BLOODHOUND_HOST:-127.0.0.1}:${BLOODHOUND_PORT:-8080}:8080
-        ### Uncomment to use your own bloodhound.config.json to configure the application
-        # volumes:
-        #   - ./bloodhound.config.json:/bloodhound.config.json:ro
-        depends_on:
-          app-db:
-            condition: service_healthy
-          graph-db: # [!code --:2]
-            condition: service_healthy
-
-    volumes:
-      neo4j-data: # [!code --]
-      postgres-data:
-    ```
-    </Expandable>
-
-#### Neo4j
-
-If you are currently using a PostgreSQL backend database and want to change to Neo4j, follow these steps.
-
-1. Replace your `docker-compose.yml` file with the following:
-
-    ```yaml
-    # Copyright 2023 Specter Ops, Inc.
-    #
-    # Licensed under the Apache License, Version 2.0
-    # you may not use this file except in compliance with the License.
-    # You may obtain a copy of the License at
-    #
-    #     http://www.apache.org/licenses/LICENSE-2.0
-    #
-    # Unless required by applicable law or agreed to in writing, software
-    # distributed under the License is distributed on an "AS IS" BASIS,
-    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    # See the License for the specific language governing permissions and
-    # limitations under the License.
-    #
-    # SPDX-License-Identifier: Apache-2.0
-
-    services:
-      app-db:
-        labels:
-          name: "bhce_postgres"
-        image: docker.io/library/postgres:16
-        environment:
-          - PGUSER=${POSTGRES_USER:-bloodhound}
-          - POSTGRES_USER=${POSTGRES_USER:-bloodhound}
-          - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-bloodhoundcommunityedition}
-          - POSTGRES_DB=${POSTGRES_DB:-bloodhound}
-        # Database ports are disabled by default. Please change your database password to something secure before uncommenting
-        # ports:
-        #   - 127.0.0.1:${POSTGRES_PORT:-5432}:5432
-        volumes:
-          - postgres-data:/var/lib/postgresql/data
-        healthcheck:
-          test:
-            [
-              "CMD-SHELL",
-              "pg_isready -U ${POSTGRES_USER:-bloodhound} -d ${POSTGRES_DB:-bloodhound} -h 127.0.0.1 -p 5432"
-            ]
-          interval: 10s
-          timeout: 5s
-          retries: 5
-          start_period: 30s
-
-      graph-db:
-        labels:
-          name: "bhce_neo4j"
-        image: docker.io/library/neo4j:4.4
-        environment:
-          - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_SECRET:-bloodhoundcommunityedition}
-          - NEO4J_dbms_allow__upgrade=${NEO4J_ALLOW_UPGRADE:-true}
-        # Database ports are disabled by default. Please change your database password to something secure before uncommenting
-        ports:
-          - 127.0.0.1:${NEO4J_DB_PORT:-7687}:7687
-          - 0.0.0.0:${NEO4J_WEB_PORT:-7474}:7474
-        volumes:
-          - ${NEO4J_DATA_MOUNT:-neo4j-data}:/data
-        healthcheck:
-          test:
-            [
-              "CMD-SHELL",
-              "wget -O /dev/null -q http://localhost:7474 || exit 1"
-            ]
-          interval: 10s
-          timeout: 5s
-          retries: 5
-          start_period: 30s
-
-      bloodhound:
-        labels:
-          name: bhce_bloodhound
-        image: docker.io/specterops/bloodhound:${BLOODHOUND_TAG:-latest}
-        environment:
-          - bhe_disable_cypher_complexity_limit=${bhe_disable_cypher_complexity_limit:-false}
-          - bhe_enable_cypher_mutations=${bhe_enable_cypher_mutations:-true}
-          - bhe_graph_query_memory_limit=${bhe_graph_query_memory_limit:-2}
-          - bhe_database_connection=user=${POSTGRES_USER:-bloodhound} password=${POSTGRES_PASSWORD:-bloodhoundcommunityedition} dbname=${POSTGRES_DB:-bloodhound} host=app-db
-          - bhe_neo4j_connection=neo4j://${NEO4J_USER:-neo4j}:${NEO4J_SECRET:-bloodhoundcommunityedition}@graph-db:7687/
-          - bhe_recreate_default_admin=${bhe_recreate_default_admin:-false}
-          - bhe_enable_text_logger=${bhe_enable_text_logger:-true}
-          ### Add additional environment variables you wish to use here.
-          ### For common configuration options that you might want to use environment variables for, see `.env.example`
-          ### example: bhe_database_connection=${bhe_database_connection}
-          ### The left side is the environment variable you're setting for bloodhound, the variable on the right in `${}`
-          ### is the variable available outside of Docker
-        ports:
-          ### Default to localhost to prevent accidental publishing of the service to your outer networks
-          ### These can be modified by your .env file or by setting the environment variables in your Docker host OS
-          - ${BLOODHOUND_HOST:-127.0.0.1}:${BLOODHOUND_PORT:-8080}:8080
-        ### Uncomment to use your own bloodhound.config.json to configure the application
-        volumes:
-          - ./bloodhound.config.json:/bloodhound.config.json:ro
-        depends_on:
-          app-db:
-            condition: service_healthy
-          graph-db:
-            condition: service_healthy
-
-    volumes:
-      neo4j-data:
-      postgres-data:
-    ```
-
-1. Delete the following line from `bloodhound.config.json`:
-
-    ```json
-    "graph_driver": "pg",
-    ```
-
-    <Note>If PostgreSQL becomes the default database in future versions, you may need to add `"graph_driver": "Neo4j"` to your configuration file.</Note>
+</Steps>
 
 ### Run multiple instances simultaneously
 
-You might want to run multiple instances to:
+You might want to run multiple BHCE instances to:
 
 - Test a Neo4j backend alongside a PostgreSQL backend
-- Evaluate a newer version without affecting your current installation
+- Evaluate a new version of BHCE without affecting your current installation
 - Isolate data for different engagements
 
 <Note>You must bind each instance to a different port on your machine. The steps below show you which settings to edit.</Note>
 
 Follow these steps to run multiple BHCE instances on a single machine.
 
-1. Change the web portal port in `docker-compose.yml`
+<Steps>
 
-    Update the BloodHound service port binding to use a different port. In this example, we'll use port `8585` instead of the default `8080`:
+  <Step title="Change default BHCE port">
+
+    In the `docker-compose.yml` file, update the BloodHound service port binding to use a different port.
+    
+    The following example uses port `8585` instead of the default `8080` port:
 
     ```yaml
     - ${BLOODHOUND_HOST:-127.0.0.1}:${BLOODHOUND_PORT:-8585}:8080
     ```
 
-1. If you are running multiple Neo4j databases, update the Neo4j Web Console port in the `docker-compose.yml` file. Change the port binding and health check to use a different port. In this example, we use port `7575` instead of the default `7474`:
+  </Step>
+
+  <Step title="Change Neo4j web console port">
+
+    If you are running multiple Neo4j databases, update the Neo4j web console port binding in the `docker-compose.yml` file to use a different port.
+
+    The following example uses port `7575` instead of the default `7474` port:
 
     ```yaml
     - 0.0.0.0:${NEO4J_WEB_PORT:-7575}:7474
     ```
 
-    Also update the health check to use the new port:
+    You must also update the health check to use the new port:
 
     ```yaml
     "wget -O /dev/null -q http://localhost:7575 || exit 1"
     ```
 
     <Note>The Neo4j database port `7687` runs only inside the Docker container, so you do not need to change it.</Note>
+
+  </Step>
+
+</Steps>
