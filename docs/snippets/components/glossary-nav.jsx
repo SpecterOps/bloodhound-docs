@@ -1,20 +1,81 @@
 export const GlossaryNav = () => {
   const [activeFilter, setActiveFilter] = React.useState(null);
+  const [letters, setLetters] = React.useState([]);
+
+  // Extract unique letters from H2 elements on mount
+  React.useEffect(() => {
+    const extractLetters = () => {
+      const h2Elements = document.querySelectorAll('h2');
+      const uniqueLetters = new Set();
+      
+      h2Elements.forEach((h2) => {
+        const termName = h2.textContent.trim();
+        if (termName && termName.length > 0) {
+          // Find first alphabetic character (skip zero-width spaces and other non-letter chars)
+          const match = termName.match(/[A-Z]/i);
+          if (match) {
+            const firstLetter = match[0].toUpperCase();
+            uniqueLetters.add(firstLetter);
+          }
+        }
+      });
+      
+      const sortedLetters = Array.from(uniqueLetters).sort();
+      if (sortedLetters.length > 0) {
+        setLetters(sortedLetters);
+      }
+    };
+
+    // Initial extraction with delay for MDX rendering
+    const timer = setTimeout(extractLetters, 100);
+    
+    // Watch for DOM changes in case content loads later
+    const observer = new MutationObserver(() => {
+      extractLetters();
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+    
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, []);
 
   React.useEffect(() => {
+    const h2Elements = document.querySelectorAll('h2');
+    
     if (!activeFilter) {
       // Show all terms
-      document.querySelectorAll('[data-glossary-term]').forEach((el) => {
-        el.style.display = 'block';
+      h2Elements.forEach((h2) => {
+        h2.style.display = 'block';
+        // Show all siblings until next H2
+        let sibling = h2.nextElementSibling;
+        while (sibling && sibling.tagName !== 'H2') {
+          sibling.style.display = 'block';
+          sibling = sibling.nextElementSibling;
+        }
       });
       return;
     }
 
     // Filter terms by letter
-    document.querySelectorAll('[data-glossary-term]').forEach((el) => {
-      const termName = el.getAttribute('data-glossary-term');
-      const startsWithFilter = termName[0].toUpperCase() === activeFilter;
-      el.style.display = startsWithFilter ? 'block' : 'none';
+    h2Elements.forEach((h2) => {
+      const termName = h2.textContent.trim();
+      // Find first alphabetic character (skip zero-width spaces and other non-letter chars)
+      const match = termName.match(/[A-Z]/i);
+      const startsWithFilter = match && match[0].toUpperCase() === activeFilter;
+      
+      // Show/hide H2 and all siblings until next H2
+      h2.style.display = startsWithFilter ? 'block' : 'none';
+      let sibling = h2.nextElementSibling;
+      while (sibling && sibling.tagName !== 'H2') {
+        sibling.style.display = startsWithFilter ? 'block' : 'none';
+        sibling = sibling.nextElementSibling;
+      }
     });
   }, [activeFilter]);
 
