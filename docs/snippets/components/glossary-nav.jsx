@@ -96,7 +96,7 @@ export const GlossaryNav = () => {
   return (
     <div
       style={{
-        backgroundColor: 'var(--glossary-nav-bg))',
+        backgroundColor: 'var(--glossary-nav-bg)',
         borderRadius: '8px',
         padding: '1rem',
         position: 'sticky',
