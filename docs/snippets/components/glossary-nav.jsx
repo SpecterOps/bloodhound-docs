@@ -7,7 +7,9 @@ export const GlossaryNav = () => {
     let debounceTimer;
     
     const setupGlossary = () => {
-      const elements = Array.from(document.querySelectorAll('h2'));
+      const contentArea = document.querySelector('main') || document.body;
+
+      const elements = Array.from(contentArea.querySelectorAll('h2'));
       
       if (elements.length === 0) return;
       
@@ -102,7 +104,7 @@ export const GlossaryNav = () => {
         position: 'sticky',
         top: '7rem',
         // Ensure sticky nav stays above other content
-        zIndex: 9999,
+        zIndex: 100,
       }}
     >
       <p
