@@ -1,14 +1,20 @@
 export const GlossaryNav = () => {
   const [activeFilter, setActiveFilter] = React.useState(null);
   const [letters, setLetters] = React.useState([]);
+  const [h2Elements, setH2Elements] = React.useState([]);
 
-  // Extract unique letters from H2 elements on mount
+  // Extract H2 elements and letters on mount
   React.useEffect(() => {
+    let debounceTimer;
+    
     const extractLetters = () => {
-      const h2Elements = document.querySelectorAll('h2');
+      const elements = Array.from(document.querySelectorAll('h2'));
+      
+      if (elements.length === 0) return;
+      
       const uniqueLetters = new Set();
       
-      h2Elements.forEach((h2) => {
+      elements.forEach((h2) => {
         const termName = h2.textContent.trim();
         if (termName && termName.length > 0) {
           // Find first alphabetic character (skip zero-width spaces and other non-letter chars)
@@ -23,30 +29,36 @@ export const GlossaryNav = () => {
       const sortedLetters = Array.from(uniqueLetters).sort();
       if (sortedLetters.length > 0) {
         setLetters(sortedLetters);
+        setH2Elements(elements);
       }
     };
 
     // Initial extraction with delay for MDX rendering
     const timer = setTimeout(extractLetters, 100);
     
-    // Watch for DOM changes in case content loads later
+    // Watch for DOM changes with debouncing
     const observer = new MutationObserver(() => {
-      extractLetters();
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(extractLetters, 300);
     });
     
-    observer.observe(document.body, {
+    // Observe only the main content area, not entire document
+    const contentArea = document.querySelector('main') || document.body;
+    observer.observe(contentArea, {
       childList: true,
       subtree: true,
     });
     
     return () => {
       clearTimeout(timer);
+      clearTimeout(debounceTimer);
       observer.disconnect();
     };
   }, []);
 
+  // Filter terms based on active letter using cached elements
   React.useEffect(() => {
-    const h2Elements = document.querySelectorAll('h2');
+    if (h2Elements.length === 0) return;
     
     if (!activeFilter) {
       // Show all terms
@@ -77,7 +89,7 @@ export const GlossaryNav = () => {
         sibling = sibling.nextElementSibling;
       }
     });
-  }, [activeFilter]);
+  }, [activeFilter, h2Elements]);
 
   // Toggle filter on/off for selected letter
   const handleLetterClick = (letter) => {
@@ -97,7 +109,7 @@ export const GlossaryNav = () => {
         borderRadius: '8px',
         padding: '1rem',
         position: 'sticky',
-        top: '8rem',
+        top: '7rem',
         // Ensure sticky nav stays above other content
         zIndex: 9999,
       }}
