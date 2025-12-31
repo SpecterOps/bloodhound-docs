@@ -1,13 +1,12 @@
 export const GlossaryNav = () => {
   const [activeFilter, setActiveFilter] = React.useState(null);
   const [letters, setLetters] = React.useState([]);
-  const [h2Elements, setH2Elements] = React.useState([]);
 
-  // Extract H2 elements and letters on mount
+  // Extract H2 elements, add data attributes and classes
   React.useEffect(() => {
     let debounceTimer;
     
-    const extractLetters = () => {
+    const setupGlossary = () => {
       const elements = Array.from(document.querySelectorAll('h2'));
       
       if (elements.length === 0) return;
@@ -22,6 +21,21 @@ export const GlossaryNav = () => {
           if (match) {
             const firstLetter = match[0].toUpperCase();
             uniqueLetters.add(firstLetter);
+            
+            // Add data attribute and class to H2 and its siblings (one-time setup)
+            if (!h2.dataset.glossaryLetter) {
+              h2.dataset.glossaryLetter = firstLetter;
+              h2.classList.add('glossary-term');
+              h2.classList.add(`glossary-letter-${firstLetter}`);
+              
+              let sibling = h2.nextElementSibling;
+              while (sibling && sibling.tagName !== 'H2') {
+                sibling.dataset.glossaryLetter = firstLetter;
+                sibling.classList.add('glossary-term');
+                sibling.classList.add(`glossary-letter-${firstLetter}`);
+                sibling = sibling.nextElementSibling;
+              }
+            }
           }
         }
       });
@@ -29,17 +43,16 @@ export const GlossaryNav = () => {
       const sortedLetters = Array.from(uniqueLetters).sort();
       if (sortedLetters.length > 0) {
         setLetters(sortedLetters);
-        setH2Elements(elements);
       }
     };
 
-    // Initial extraction with delay for MDX rendering
-    const timer = setTimeout(extractLetters, 100);
+    // Initial setup with delay for MDX rendering
+    const timer = setTimeout(setupGlossary, 100);
     
     // Watch for DOM changes with debouncing
     const observer = new MutationObserver(() => {
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(extractLetters, 300);
+      debounceTimer = setTimeout(setupGlossary, 300);
     });
     
     // Observe only the main content area, not entire document
@@ -56,40 +69,18 @@ export const GlossaryNav = () => {
     };
   }, []);
 
-  // Filter terms based on active letter using cached elements
+  // Apply filter class to content area
   React.useEffect(() => {
-    if (h2Elements.length === 0) return;
+    const contentArea = document.querySelector('main') || document.body;
     
     if (!activeFilter) {
-      // Show all terms
-      h2Elements.forEach((h2) => {
-        h2.style.display = 'block';
-        // Show all siblings until next H2
-        let sibling = h2.nextElementSibling;
-        while (sibling && sibling.tagName !== 'H2') {
-          sibling.style.display = 'block';
-          sibling = sibling.nextElementSibling;
-        }
-      });
-      return;
+      contentArea.classList.remove('glossary-filtered');
+      contentArea.removeAttribute('data-active-letter');
+    } else {
+      contentArea.classList.add('glossary-filtered');
+      contentArea.setAttribute('data-active-letter', activeFilter);
     }
-
-    // Filter terms by letter
-    h2Elements.forEach((h2) => {
-      const termName = h2.textContent.trim();
-      // Find first alphabetic character (skip zero-width spaces and other non-letter chars)
-      const match = termName.match(/[A-Z]/i);
-      const startsWithFilter = match && match[0].toUpperCase() === activeFilter;
-      
-      // Show/hide H2 and all siblings until next H2
-      h2.style.display = startsWithFilter ? 'block' : 'none';
-      let sibling = h2.nextElementSibling;
-      while (sibling && sibling.tagName !== 'H2') {
-        sibling.style.display = startsWithFilter ? 'block' : 'none';
-        sibling = sibling.nextElementSibling;
-      }
-    });
-  }, [activeFilter, h2Elements]);
+  }, [activeFilter]);
 
   // Toggle filter on/off for selected letter
   const handleLetterClick = (letter) => {
@@ -105,7 +96,7 @@ export const GlossaryNav = () => {
   return (
     <div
       style={{
-        backgroundColor: 'var(--glossary-nav-bg)',
+        backgroundColor: 'var(--glossary-nav-bg))',
         borderRadius: '8px',
         padding: '1rem',
         position: 'sticky',
@@ -118,7 +109,7 @@ export const GlossaryNav = () => {
         style={{
           margin: '0 0 1rem 0',
           fontSize: '.875rem',
-          color: 'rgb(var(--text-primary)',
+          color: 'rgb(var(--text-primary))',
         }}
       >
         Filter by letter:
@@ -130,8 +121,8 @@ export const GlossaryNav = () => {
             padding: '0.5rem 1rem',
             color:
               activeFilter === null
-                ? 'rgb(var(--primary-light)'
-                : 'rgb(var(--text-primary)',
+                ? 'rgb(var(--primary-light))'
+                : 'rgb(var(--text-primary))',
             borderRadius: '4px',
             cursor: 'pointer',
             fontSize: '0.875rem',
@@ -154,8 +145,8 @@ export const GlossaryNav = () => {
               padding: '0.5rem 0.75rem',
               color:
                 activeFilter === letter
-                  ? 'rgb(var(--primary-light)'
-                  : 'rgb(var(--text-primary)',
+                  ? 'rgb(var(--primary-light))'
+                  : 'rgb(var(--text-primary))',
               borderRadius: '4px',
               cursor: 'pointer',
               fontSize: '0.875rem',
