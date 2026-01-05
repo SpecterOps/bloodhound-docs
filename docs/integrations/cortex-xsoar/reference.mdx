@@ -1,0 +1,281 @@
+---
+title: BloodHound Enterprise Cortex XSOAR integration design
+description: Technical reference and design details for the BloodHound Enterprise Cortex XSOAR integration.
+sidebarTitle: Design reference
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+This document provides technical design details and API reference information for the BloodHound Enterprise integration with Cortex XSOAR. For configuration instructions, see [Configure the integration](/integrations/cortex-xsoar/configure).
+
+## Integration type
+
+The SpecterOps BloodHound Enterprise integration is a **vulnerability management** integration that enables automated retrieval of attack path findings from BloodHound Enterprise into Cortex XSOAR. This streamlines incident creation and investigation for Active Directory and Microsoft Azure environments.
+
+## Use cases
+
+<AccordionGroup>
+  <Accordion title="Automated attack path detection and incident creation">
+    - Automatically fetch new attack paths from BloodHound Enterprise
+    - Create incidents in XSOAR for each detected attack path
+    - Filter incidents by domain and finding type
+    - Track attack paths with granular timestamp-based deduplication
+  </Accordion>
+  
+  <Accordion title="Asset information retrieval">
+    - Retrieve detailed information about Active Directory and Azure assets
+    - Enrich incident data with asset details including object IDs, names, and properties
+    - Support for both directory types (User, Computer, Group, Container, Domain, GPO, etc.) and Azure types (AZApp, AZGroup, AZUser, AZRole, AZTenant, AZServicePrincipal, etc.)
+  </Accordion>
+  
+  <Accordion title="Path analysis and investigation">
+    - Check if attack paths exist between two principals in the environment
+    - Search for objects by name to retrieve their object IDs
+    - Analyze relationships between principals and assets
+  </Accordion>
+  
+  <Accordion title="Multi-domain and multi-finding type support">
+    - Support for multiple Active Directory domains
+    - Filter by specific domains or finding types
+    - Track attack paths per domain and finding type combination
+  </Accordion>
+</AccordionGroup>
+
+## Authentication
+
+The integration uses HMAC-based signature authentication with the following process:
+
+1. Generate HMAC signature using SHA-256 with the token key
+2. Include token ID, request date, and signature in request headers
+3. Format: `Authorization: bhesignature {token_id}`
+4. Include `RequestDate` header in ISO format
+5. Include `Signature` header as base64-encoded HMAC digest
+
+## Configuration parameters
+
+| Parameter | Display Name | Type | Required | Description |
+|-----------|--------------|------|----------|-------------|
+| `url` | Server URL | String | Yes | The BloodHound Enterprise server URL (e.g., `bhe.example.com` or `https://bhe.example.com`) |
+| `token_id` | Token ID | String | Yes | The API token ID for authentication |
+| `token_key` | Token Key | Password | Yes | The API token key for HMAC signature authentication |
+| `finding_domain` | Selected Environments | String | No | Comma-separated list of domain names to monitor, or "all" for all domains. Default: "all" |
+| `finding_category` | Selected Finding Types | String | No | Comma-separated list of finding types to monitor, or "all" for all types. Default: "all" |
+| `incidentFetchInterval` | Incident Fetch Interval (minutes) | Number | No | The interval in minutes between incident fetches. Default: 10 minutes |
+| `isFetch` | Fetch incidents | Boolean | No | Enable automatic incident fetching. Default: false |
+| `proxy_url` | Custom Proxy URL | String | No | Custom proxy server URL (optional) |
+| `proxy_username` | Proxy Username | String | No | Username for proxy authentication (if required) |
+| `proxy_password` | Proxy Password | Password | No | Password for proxy authentication (if required) |
+| `insecure` | Trust any certificate (not secure) | Boolean | No | Skip SSL certificate verification. Default: false |
+| `proxy` | Use system proxy settings | Boolean | No | Use system proxy settings. Default: false |
+
+## Commands and outputs
+
+### test-module
+
+Tests the connection to the BloodHound Enterprise API.
+
+**Arguments**: None
+
+**Context outputs**: None
+
+**Human readable output**:
+
+- Success: "ok"
+- Failure: Error message indicating the specific failure reason (Unauthorized, Bad Request, Forbidden, Server Error, DNS resolution error, etc.)
+
+### bhe-get-object-id
+
+Retrieves object IDs for one or more objects by their names.
+
+**Arguments**:
+
+| Argument | Type | Description | Required |
+|----------|------|-------------|----------|
+| `object_names` | String | Comma-separated list of object names to search for | Yes |
+
+**Context outputs**:
+
+| Path | Type | Description |
+|------|------|-------------|
+| `SpecterOpsBHE.Object.Name` | String | The object name that was searched |
+| `SpecterOpsBHE.Object.Status` | String | Status of the search ("success" or "error") |
+| `SpecterOpsBHE.Object.Message` | String | Status message |
+| `SpecterOpsBHE.Object.Data` | Array | Array of matching objects with id, name, and type |
+
+**Human readable output**:
+
+Object ID Search Results
+
+| Object Name | Status | Object ID | Type |
+|---|---|---|---|
+| `user@example.com` | success | S-1-5-21-... | User |
+| `COMPUTER01` | success | S-1-5-21-... | Computer |
+
+### bhe-fetch-asset-info
+
+Retrieves detailed information about one or more assets by their object IDs.
+
+**Arguments**:
+
+| Argument | Type | Description | Required |
+|----------|------|-------------|----------|
+| `object_ids` | String | Comma-separated list of object IDs to fetch information for | Yes |
+
+**Context outputs**:
+
+| Path | Type | Description |
+|------|------|-------------|
+| `SpecterOpsBHE.Asset.ObjectId` | String | The object ID |
+| `SpecterOpsBHE.Asset.Name` | String | Asset name |
+| `SpecterOpsBHE.Asset.Type` | String | Asset type (User, Computer, AZUser, AZApp, etc.) |
+| `SpecterOpsBHE.Asset.Status` | String | Status of the fetch operation |
+| `SpecterOpsBHE.Asset.Data` | Object | Complete asset data including properties and related entity counts |
+
+**Human readable output**:
+
+Asset Information
+
+| Object ID | Name | Type | Status |
+|---|---|---|---|
+| S-1-5-21-... | `user@example.com` | User | success |
+
+<Note>For Azure objects, the response includes additional related entity counts such as group membership counts, role assignments, inbound/outbound control counts, and abusable app role assignments (for service principals).</Note>
+
+### bhe-does-path-exist
+
+Checks if an attack path exists between two principals in the BloodHound Enterprise graph.
+
+**Arguments**:
+
+| Argument | Type | Description | Required |
+|----------|------|-------------|----------|
+| `FromPrincipal` | String | Object ID of the source principal | Yes |
+| `ToPrincipal` | String | Object ID of the target principal | Yes |
+
+**Context outputs**:
+
+| Path | Type | Description |
+|------|------|-------------|
+| `SpecterOpsBHE.Path.Exists` | Boolean | Whether a path exists between the principals |
+| `SpecterOpsBHE.Path.FromPrincipal` | String | Source principal object ID |
+| `SpecterOpsBHE.Path.ToPrincipal` | String | Target principal object ID |
+| `SpecterOpsBHE.Path.Status` | String | Status of the path check operation |
+
+**Human readable output**:
+
+Path Existence Check
+
+| From Principal | To Principal | Path Exists | Status |
+|---|---|---|---|
+| S-1-5-21-... | S-1-5-21-... | true | success |
+
+### fetch-incidents
+
+Fetches attack path findings from BloodHound Enterprise and creates incidents in XSOAR (automatically executed when `isFetch` is enabled).
+
+**Arguments**: None
+
+**Context outputs**:
+
+| Path | Type | Description |
+|------|------|-------------|
+| `SpecterOpsBHE.Incident.Name` | String | Incident name (format: `{INSTANCE} - {DOMAIN} - {PATH_TITLE}`) |
+| `SpecterOpsBHE.Incident.Type` | String | Incident type: "SpecterOpsBHE Attack Path" |
+| `SpecterOpsBHE.Incident.Severity` | Number | Severity level (1=Low, 2=Medium, 3=High, 4=Critical) |
+| `SpecterOpsBHE.Incident.AttackId` | String | Unique attack path ID |
+| `SpecterOpsBHE.Incident.Domain` | String | Domain name where the attack path was detected |
+| `SpecterOpsBHE.Incident.PathTitle` | String | Human-readable title of the attack path |
+| `SpecterOpsBHE.Incident.FindingType` | String | Finding type identifier |
+| `SpecterOpsBHE.Incident.ImpactPercentage` | Number | Impact percentage (0-100) |
+| `SpecterOpsBHE.Incident.ImpactCount` | Number | Number of impacted principals |
+| `SpecterOpsBHE.Incident.ExposurePercentage` | Number | Exposure percentage (0-100) |
+| `SpecterOpsBHE.Incident.ExposureCount` | Number | Number of exposed principals |
+| `SpecterOpsBHE.Incident.ImpactedPrincipal` | String | Object ID of the impacted principal |
+| `SpecterOpsBHE.Incident.ImpactedPrincipalName` | String | Name of the impacted principal |
+| `SpecterOpsBHE.Incident.ImpactedPrincipalKind` | String | Type of the impacted principal |
+| `SpecterOpsBHE.Incident.ImpactedPrincipalObjectId` | String | Object ID of the impacted principal |
+| `SpecterOpsBHE.Incident.NonTierZeroPrincipal` | String | Object ID of the non-tier-zero principal (if applicable) |
+| `SpecterOpsBHE.Incident.NonTierZeroPrincipalName` | String | Name of the non-tier-zero principal (if applicable) |
+| `SpecterOpsBHE.Incident.ObjectIds` | String | Comma-separated list of object IDs involved |
+| `SpecterOpsBHE.Incident.ObjectNames` | String | Comma-separated list of object names involved |
+| `SpecterOpsBHE.Incident.ShortDescription` | String | Short description of the attack path |
+| `SpecterOpsBHE.Incident.ShortRemediation` | String | Short remediation guidance |
+| `SpecterOpsBHE.Incident.LongRemediation` | String | Detailed remediation guidance |
+| `SpecterOpsBHE.Incident.CreatedAt` | String | Timestamp when the attack path was created |
+| `SpecterOpsBHE.Incident.UpdatedAt` | String | Timestamp when the attack path was last updated |
+| `SpecterOpsBHE.Incident.Accepted` | Boolean | Whether the attack path has been accepted |
+| `SpecterOpsBHE.Incident.AcceptedUntil` | String | Date until which the attack path is accepted (if applicable) |
+
+**Fetch logic**:
+
+1. **Lock Mechanism**: Uses integration context to prevent concurrent fetch operations
+2. **Domain Filtering**: Fetches available domains and filters by `finding_domain` parameter
+3. **Finding Type Collection**: Collects available finding types for each domain
+4. **Finding Type Filtering**: Filters finding types by `finding_category` parameter
+5. **Path Metadata Fetching**: Retrieves titles, descriptions, and remediation guidance for each finding type
+6. **Incremental Fetching**: Uses timestamp-based filtering to only fetch new attack paths since last run
+7. **Granular Tracking**: Tracks timestamps per `{domain_name}:{finding_type}` combination for precise deduplication
+8. **Pagination**: Handles pagination for large result sets (up to 1000 results per page)
+9. **Incident Creation**: Creates one incident per attack path with all relevant metadata
+
+## API endpoints
+
+The integration uses the following BloodHound Enterprise API v2 endpoints:
+
+| Endpoint | Path | Description |
+|----------|------|-------------|
+| `available_domain` | `/api/v2/available-domains` | Get list of available domains |
+| `search` | `/api/v2/search?q={query}` | Search for objects by name |
+| `dictionary_types` | `/api/v2/{obj_type}s/{object_id}` | Get directory object details |
+
+## Supported object types
+
+### Active Directory types
+
+- User
+- Computer
+- Group
+- Container
+- Domain
+- GPO (Group Policy Object)
+- Aiaca
+- Rootca
+- Enterpriseca
+- Ntauthstore
+- Certtemplate
+- OU (Organizational Unit)
+
+### Azure types
+
+- AZApp (Azure Application)
+- AZGroup (Azure Group)
+- AZUser (Azure User)
+- AZRole (Azure Role)
+- AZTenant (Azure Tenant)
+- AZServicePrincipal (Azure Service Principal)
+- AZAutomationAccount (Azure Automation Account)
+
+## Error handling
+
+The integration implements comprehensive error handling with specific exception types:
+
+| Exception Type | HTTP Status | Description |
+|---|---|---|
+| `BloodHoundBadRequestException` | 400 | Invalid request parameters |
+| `BloodHoundUnauthorizedException` | 401 | Authentication failure |
+| `BloodHoundForbiddenException` | 403 | Insufficient permissions |
+| `BloodHoundNotFoundException` | 404 | Resource not found |
+| `BloodHoundRateLimitException` | 429 | Rate limit exceeded |
+| `BloodHoundServerErrorException` | 500+ | Server errors |
+
+### Retry logic
+
+- Automatic retry for rate limit (429) and server errors (500, 502, 503, 504)
+- Maximum of 3 retry attempts
+- Immediate retry without exponential backoff
+
+### Memory limitation handling
+
+- Gracefully handles memory limitation errors for large queries (especially for AZTenant)
+- Returns appropriate error messages when memory limits are encountered
+- Sets related entity counts to 0 when memory limitations occur
