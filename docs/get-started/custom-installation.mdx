@@ -36,8 +36,8 @@ This installation method provides more control over each configuration file and 
     Create a new directory on your machine to hold the BHCE configuration files.
 
     ```bash
-    mkdir bhce-custom-install
-    cd bhce-custom-install
+    mkdir bhce
+    cd bhce
     ```
   
   </Step>
@@ -53,10 +53,10 @@ This installation method provides more control over each configuration file and 
 
   <Step title="Add configuration files">
 
-    Copy the configuration files into the directory you created.
+    Move the configuration files into the directory you created.
 
     ```bash
-    cp /path/to/downloaded/files/* .
+    mv /path/to/downloaded/files/* .
     ```
 
     <Tip>Continue to the [Customizations](/get-started/custom-installation#customizations) section below to modify your installation as needed.</Tip>
@@ -263,7 +263,7 @@ If you are currently using a Neo4j backend database and want to change to Postgr
 
         The following is the complete modified `docker-compose.yml` file for PostgreSQL:
 
-        <Expandable title="full file example diff">
+        <Expandable title="full file example">
 
         ```yaml
         # Copyright 2023 Specter Ops, Inc.
@@ -306,28 +306,6 @@ If you are currently using a Neo4j backend database and want to change to Postgr
               retries: 5
               start_period: 30s
 
-          graph-db: # [!code --:21]
-            image: docker.io/library/neo4j:4.4.42
-            environment:
-              - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_SECRET:-bloodhoundcommunityedition}
-              - NEO4J_dbms_allow__upgrade=${NEO4J_ALLOW_UPGRADE:-true}
-            # Database ports are disabled by default. Please change your database password to something secure before uncommenting
-            ports:
-              - 127.0.0.1:${NEO4J_DB_PORT:-7687}:7687
-              - 127.0.0.1:${NEO4J_WEB_PORT:-7474}:7474
-            volumes:
-              - ${NEO4J_DATA_MOUNT:-neo4j-data}:/data
-            healthcheck:
-              test:
-                [
-                  "CMD-SHELL",
-                  "wget -O /dev/null -q http://localhost:7474 || exit 1"
-                ]
-              interval: 10s
-              timeout: 5s
-              retries: 5
-              start_period: 30s
-
           bloodhound:
             image: docker.io/specterops/bloodhound:${BLOODHOUND_TAG:-latest}
             environment:
@@ -353,11 +331,8 @@ If you are currently using a Neo4j backend database and want to change to Postgr
             depends_on:
               app-db:
                 condition: service_healthy
-              graph-db: # [!code --:2]
-                condition: service_healthy
 
         volumes:
-          neo4j-data: # [!code --]
           postgres-data:
         ```
         </Expandable>
@@ -487,8 +462,6 @@ If you are currently using a PostgreSQL backend database and want to change to N
       ```json
       "graph_driver": "pg", // [!code --]
       ```
-
-      <Note>If PostgreSQL becomes the default database in future versions of BHCE, you may need to add `"graph_driver": "Neo4j"` to your configuration file.</Note>
 
   </Step>
 
