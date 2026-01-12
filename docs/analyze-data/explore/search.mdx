@@ -7,11 +7,9 @@ description: Search for objects and visualize relationships between them in the 
 
 After [uploading data](/get-started/quickstart/community-edition-quickstart#get-data-into-bloodhound) to BloodHound, use the **Explore** page to search for objects and visualize their relationships. The graph displays <Tooltip headline="nodes" tip="Part of the graph construct and refers to an entity in the network, such as a user, computer, group, or domain. Two nodes can be connected by an edge." cta="See the docs" href="/resources/nodes/overview">nodes</Tooltip> and <Tooltip headline="edges" tip="Part of the graph construct and refers to a relationship between two nodes, such as group membership or session information." cta="See the docs" href="/resources/edges/overview">edges</Tooltip>, helping you understand your environment and identify potential attack paths.
 
-BloodHound supports multiple data sources, including Active Directory, Azure (Entra ID), and other identity services through [OpenGraph](/opengraph/overview). The search methods and graph visualization options are consistent across all data sources, allowing you to explore your data in a way that best suits your needs.
+BloodHound supports multiple data sources, including Active Directory, Azure (Entra ID), and other identity services through [OpenGraph](/opengraph/overview). The search methods return results for all data sources. The graph visualization options remain consistent regardless of which search method you use, allowing you to explore your data in a way that best suits your needs.
 
 The **Explore** page provides the following methods for searching for objects and visualizing their relationships:
-
-<Note>BloodHound currently supports the **Search** and **Cypher** search methods for OpenGraph data. Pathfinding is not yet supported.</Note>
 
 <CardGroup cols={3}>
   <Card title="Search" icon="magnifying-glass" href="/analyze-data/explore-objects#search">
@@ -27,13 +25,15 @@ The **Explore** page provides the following methods for searching for objects an
   </Card>
 </CardGroup>
 
+<Note>BloodHound currently supports the **Search** and **Cypher** search methods for OpenGraph data, with support for Pathfinding coming soon.</Note>
+
 Which method you choose depends on your specific use case and what you're trying to accomplish. This page describes each of the search methods in more detail and provides guidance on when to use each one.
 
 <Tip>You can interact with objects in the [graph](#graph-view) and customize the view to explore the data more effectively, regardless of which search method you use.</Tip>
 
 ## Search
 
-The **Search** tab allows you to quickly find specific nodes in the graph by name or type. As you type in the search text box, BloodHound automatically suggests nodes that match your search query. You can click on any of the suggestions to render that node in the graph.
+The **Search** tab allows you to quickly find specific nodes in the graph by name or object ID. As you type in the search text box, BloodHound automatically suggests nodes that match your search query. You can click on any of the suggestions to display that node in the graph.
 
 <Note>Search supports partial matches, so you don't need to type the full name of an object to find it.</Note>
 
@@ -43,18 +43,24 @@ Use cases for the search method include:
 * **Investigation prep:** Find starting points for deeper exploration using Pathfinding or Cypher queries
 * **Data validation:** Verify specific objects are present in your environment after data ingestion
 
-For example, if you want to find a user named "bob", type "bob" in the search box and click the appropriate node from the suggestions:
+For example, if you want to find a user named "bob", type "bob" in the search box and click the appropriate node from the suggestions.
+
+<Tip>The suggestions display the node type next to each match, making it easy to identify the correct object when multiple objects share similar or identical names. OpenGraph data also displays custom icons configured for node types in this dropdown, which can further help you identify the intended object.</Tip>
 
 <img src="/images/explore/search-bob.gif" alt="An animated view showing how to search for a user named bob in the Explore page" />
 
-You can also constrain your search to particular node types by prepending your search with the appropriate node label. For example, use the following search query to find group nodes that contain the word "admin":
+You can also constrain your search to particular _built-in_ node types (AZ/AD) by prepending your search with the appropriate node label.
+
+<Note>Support for OpenGraph data coming soon.</Note>
+
+For example, use the following search query to find group nodes that contain the word "admin":
 
 ```text
 group:admin
 ```
 
 <Note>
-  Note that all suggestions for the `group:admin` search query include the group icon:
+  Note that all suggestions for the `group:admin` search query include the group node type icon:
 
   <img src="/images/explore/search-group.png" alt="A view showing how to search for group nodes containing the word admin in the Explore page" style={{ width:"50%" }} />
 </Note>
@@ -63,7 +69,7 @@ group:admin
 
 The **Pathfinding** tab allows you to discover relationships between objects by finding paths between them. This is particularly useful for investigating potential attack paths in an environment.
 
-<Note>BloodHound currently supports the **Search** and **Cypher** search methods for OpenGraph data. Pathfinding is not yet supported.</Note>
+<Note>BloodHound currently supports the **Search** and **Cypher** search methods for OpenGraph data, with support for Pathfinding coming soon.</Note>
 
 Use cases for the pathfinding search method include:
 
@@ -71,7 +77,7 @@ Use cases for the pathfinding search method include:
 * **Relationship mapping:** Understand how objects are connected within your environment
 * **Filtered exploration:** Focus on relevant relationships by excluding edge types or reversing path direction
 
-For example, you can find all paths from a user named "bob" to a group containing the name "domain admins" using the previously described [search](/analyze-data/explore-objects#search) method for the start and end points:
+For example, you can find all paths from a user named "bob" to a group containing the name "domain admins" using the previously described [search](/analyze-data/explore/search#search) method for the start and end points:
 
 <Tip>Like the search method, you can use partial matches and node labels to find your start and end points.</Tip>
 
@@ -81,7 +87,7 @@ Pathfinding also includes options to customize your search:
 
 * **Reverse path** <Icon icon="up-down" iconType="solid" />—Swap your start and end points to explore paths in the opposite direction without re-entering your search queries. This is useful for finding how high-value targets connect back to entry points.
 
-* **Filter edges** <Icon icon="filter" iconType="solid" />—Exclude specific edge types to focus on relevant relationships. Select which edge types to include or exclude in your results to tailor the search results to your needs.
+* **Filter edges** <Icon icon="filter" iconType="solid" />—Select which edge types to include in the results. By default, all edge types are selected; deselect any you don't want included in the paths to focus on relevant relationships.
 
 ## Cypher
 
@@ -107,20 +113,20 @@ Use the graph visualization options at the bottom of the **Explore** page to cus
 
 1. **Reset graph view**—Restore the graph view to its default layout and zoom level
 
-2. **Hide Labels**—Toggle the visibility of labels on nodes and edges to reduce clutter and focus on the structure of the graph
+1. **Hide Labels**—Toggle the visibility of labels on nodes and edges to reduce clutter and focus on the structure of the graph (also useful for obfuscating sensitive information before sharing graph images)
 
-3. **Layout**—Choose from the following layout options to organize the graph visually:
+1. **Layout**—Choose from the following layout options to organize the graph visually:
    * Organic
    * Stacked
    * Sequential
    * Standard
    * Table
 
-4. **Export**—Download the current graph view as a JSON file for further analysis or sharing
+1. **Export**—Download the current graph view as a JSON file for further analysis or sharing
 
-5. **Search**—Quickly identify specific objects among the nodes displayed in the graph
+1. **Search**—Quickly identify specific objects among the nodes displayed in the graph
 
-<Note>The same graph visualization options are available across all search methods.</Note>
+<Note>Graph visualization options are available across all search methods. The **Table** layout is available for Cypher searches only.</Note>
 
 ### Object interaction
 
@@ -130,8 +136,8 @@ You can interact with nodes and edges in the graph to view detailed information 
 
 Right-click on any node in the graph to access the context menu. Options in the context menu include:
 
-* **Set as starting node**—Copy the node's name and object ID to the starting point field in the **Pathfinding** tab to find paths between that node and the ending node in the graph
-* **Set as ending node**—Copy the node's name and object ID to the ending point field in the **Pathfinding** tab to find paths between that node and the starting node in the graph
+* **Set as starting node**—Set the node as the starting point in the **Pathfinding** tab and immediately draw a new graph showing paths between that node and the current ending node
+* **Set as ending node**—Set the node as the ending point in the **Pathfinding** tab and immediately draw a new graph showing paths between the current starting node and that node
 * **Add to/Remove from Tier Zero**—Mark or unmark the node as a member of the Tier Zero privilege zones. Adding is immediate; removing requires manually editing the zone rule to remove the object.
 * **Add to/Remove from Owned**—Mark or unmark the node as compromised in the Privilege Zones page. Adding is immediate; removing requires manually editing the label rule to remove the object.
 * **Copy**—Copy the node's name, object ID, or a Cypher query to your clipboard for use in other searches or documentation
@@ -140,7 +146,7 @@ Right-click on any node in the graph to access the context menu. Options in the 
 
 The **Entity** panel on the **Explore** page displays detailed object properties and relationships. The information is displayed in an accordion format based on the selected node or edge, which can vary depending on your data source.
 
-<Note>For OpenGraph data, BloodHound displays values from the [`properties`](/opengraph/schema) object only.</Note>
+<Note>For built-in node and edge types (AD/AZ), BloodHound displays structured data organized into the accordions described below. For OpenGraph data, BloodHound displays all values from the [`properties`](/opengraph/schema) object as a flat list, without the structured accordions.</Note>
 
 For nodes, expanding each accordion reveals more detail and dynamically updates the graph. For example, expanding the **Sessions** accordion shows all computers where the node has active sessions and updates the graph.
 
@@ -168,32 +174,3 @@ BloodHound displays the following information in the **Entity** panel when you c
 | **References** | Links to publicly available resources used to create the above information |
 
 <Tip>This information is also available for each edge in the [reference](/resources/edges/overview) documentation.</Tip>
-
-{/* Questions to answer in this section:
-
-  - What do I do next after I find an object?
-  - How is searching for objects different in OpenGraph data vs AD/AZ data?
-  - What's the relationship between searching for objects and attack paths?
-  - How is what I learn from searching for objects in the graph useful for understanding attack paths?
-  - How is this related to other areas of the product, like the Attack Paths, Posture, and Privilege Zones pages?
-
-  ## Attack paths
-
-  This might not be the right place to go into detail about attack paths, but here are some resources if you want to learn more about them:
-
-  - https://specterops.io/blog/2021/05/25/the-attack-path-management-manifesto/
-  - https://specterops.io/blog/2024/08/02/hybrid-attack-paths-new-views-and-your-favorite-dog-learns-an-old-trick/
-
-  Attack path types include:
-
-  - AD
-  - AZ
-  - Hybrid (AD + AZ)
-  - OpenGraph
-
-  Maybe we use this for a future project to beef up attack path docs. For the Explore page, we should just mention that there are different attack path views available, and link to the blog post for more information. More importantly, we need to speak to how users can search for objects in OpenGraph data and how they can use the different graph visualization options to explore the data.
-
-  See these blog posts for inspiration:
-
-  - https://specterops.io/blog/2025/07/29/bloodhound-v8-usability-extensibility-and-opengraph/
-  - https://specterops.io/blog/2025/09/04/bloodhound-operator-the-six-degrees-of-master-yoda/ */}
