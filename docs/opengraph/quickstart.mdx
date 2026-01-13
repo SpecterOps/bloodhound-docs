@@ -1,0 +1,315 @@
+---
+title: OpenGraph Quickstart
+description: Learn how to create and test OpenGraph data in BloodHound.
+sidebarTitle: Quickstart
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+This guide walks you through creating and testing OpenGraph data using a simple example JSON file. By following these steps, you'll learn how to:
+
+- Create a properly structured OpenGraph JSON file and upload it to BloodHound
+- Define custom icons and colors for your node types to enhance visualization
+- Validate the data using search and Cypher queries in the **Explore** page
+- Remove the example data in the **Administration** > **Database Management** page when finished
+
+Use this guide to get hands-on experience with the OpenGraph structure and validate custom nodes and edges in BloodHound.
+
+## Create example data
+
+This example defines two `Person` <Tooltip headline="node" tip="Part of the graph construct and refers to an entity in the network, such as a user, computer, group, or domain. Two nodes can be connected by an edge." cta="See the docs" href="/resources/nodes/overview">nodes</Tooltip> connected by a `Knows` <Tooltip headline="edge" tip="Part of the graph construct and refers to a relationship between two nodes, such as group membership or session information." cta="See the docs" href="/resources/edges/overview">edge</Tooltip> to demonstrate the structure of an OpenGraph payload.
+
+You can expand on this example to create more complex graphs with additional nodes, edges, and properties as needed.
+
+<Steps>
+    <Step title="Create a new JSON file">
+
+        First, you need to define your OpenGraph payload in a JSON file. 
+
+        1. Create a new file called `opengraph-example.json` using a plain text editor (UTF-8 encoding).
+
+        1. Copy and paste the following example, which includes two nodes (`bob` and `alice`) connected by an edge (`Knows`).
+
+            ```json
+            {
+              "metadata": {
+                "source_kind": "Person"
+            },
+              "graph": {
+                "nodes": [
+                  {
+                    "id": "123",
+                    "kinds": [
+                      "Person",
+                      "Base"
+                    ],
+                    "properties": {
+                      "displayname": "bob",
+                      "property1": "property1",
+                      "objectid": "123",
+                      "name": "BOB"
+                    }
+                  },
+                  {
+                    "id": "234",
+                    "kinds": [
+                      "Person",
+                      "Base"
+                    ],
+                    "properties": {
+                      "displayname": "alice",
+                      "property1": "property1",
+                      "objectid": "234",
+                      "name": "ALICE"
+                    }
+                  }
+                ],
+                "edges": [
+                  {
+                    "kind": "Knows",
+                    "start": {
+                      "value": "123",
+                      "match_by": "id"
+                    },
+                    "end": {
+                      "value": "234",
+                      "match_by": "id"
+                    }
+                  }
+                ]
+              }
+            }
+            ```
+
+            The following table describes the structure and properties of the example JSON file:
+
+            | Section | Property | Description |
+            |---------|----------|-------------|
+            | **metadata** | `source_kind` | Optional property that identifies the type of data (e.g., "Person") in the **Database Management** page for easy clean up later |
+            | **graph.nodes** | `id` | Unique identifier for the node |
+            | | `kinds` | Array of node types (first is your custom type, "Base" is required) |
+            | | `properties` | Object containing node properties (e.g., `name`, `displayname`, `objectid`, and custom properties) |
+            | **graph.edges** | `kind` | The edge type name (e.g., "Knows") |
+            | | `start` | Source node reference that must match a node ID in the nodes section |
+            | | `end` | Target node reference that must match a node ID in the nodes section |
+
+            **DELETE ME: `Base` kind is required for simple search to work; is that expected?**
+    </Step>
+    <Step title="Save the file">
+        Save the `opengraph-example.json` file to a location you can easily access for uploading in the next step.
+    </Step>
+    <Step title="Upload the JSON file">
+        Use the BloodHound web interface to upload the `opengraph-example.json` file directly through the browser.
+
+        1. Log in to your BloodHound instance.
+        1. In the left menu, click **Quick Upload**.
+        1. Click the **Upload Files** screen to open a file system dialog or drag and drop the `opengraph-example.json` file.
+        1. Click **Upload** and wait for the upload to complete.
+
+            You should see a confirmation message indicating the file was successfully ingested.
+
+            <Warning>If you receive an error, validate your JSON file using a [linter](https://jsonlint.com/) and ensure all [required properties](/opengraph/requirements) are present.</Warning>
+    </Step>
+</Steps>
+
+## Customize nodes
+
+To enhance the visualization of the node types on the graph and in the **Entity** panel, you can define custom icons and colors.
+
+<Note>This is done separately from the OpenGraph data payload and must be uploaded through the [BloodHound API](/integrations/bloodhound-api/working-with-api).</Note>
+
+<Steps>
+    <Step title="Prepare your custom type definition">
+        This example creates a custom definition for the `Person` node type defined in the example JSON file. It specifies that the `Person` node type should display with a user icon and red color.
+
+        The custom type definition is a JSON object with the following structure:
+
+        ```json
+        {
+          "custom_types": {
+            "Person": {
+              "icon": {
+                "type": "font-awesome",
+                "name": "user",
+                "color": "#FF0000"
+              }
+            },
+              ... other custom type definitions ...
+          }
+        }
+        ```
+
+         The following table describes the properties in the custom type definition:
+
+        | Property | Description |
+        |----------|-------------|
+        | `custom_types` | Object containing custom type definitions, where each key is a node type and the value defines the visualization properties for that type |
+        | `icon.type` | Font Awesome is the icon library used for custom icons |
+        | `icon.name` | Font Awesome [icon name]((https://fontawesome.com/search?s=solid)) (without "fa-" prefix) |
+        | `icon.color` | Hex color code (#RGB or #RRGGBB format) |
+    </Step>
+    <Step title="Run a POST request">
+        Use a `POST` request to the BloodHound API to upload your custom type definition.
+
+        Here's an example request body for a `Person` node type with a user icon and red color:
+
+        ```bash
+        curl -X POST \
+          https://your-bloodhound-instance/api/v2/graphs/custom_nodes \
+          -H "Authorization: Bearer YOUR_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "custom_types": {
+              "Person": {
+                "icon": {
+                  "type": "font-awesome",
+                  "name": "user",
+                  "color": "#FF0000"
+                }
+              }
+            }
+          }'
+          ```
+
+        After running this request, any nodes of type `Person` in your graph display with the specified icon and color.
+    </Step>
+</Steps>
+
+## Validate example data
+
+After uploading the OpenGraph example data and custom node icons/colors, it's important to validate that BloodHound ingested everything correctly and displays it as expected.
+
+<Steps>
+    <Step title="Open the Explore page">
+        Log in to your BloodHound instance and navigate to the **Explore** page.
+    </Step>
+      <Step title="Search for nodes and edges">
+
+        Use the **Search** features to find the example nodes and edges, and verify that properties and custom icons/colors are displayed correctly.
+
+        <Tabs>
+            <Tab title="Search" icon="magnifying-glass">
+                To find nodes by display name or object ID:
+
+                1. Click the **Search** tab.
+                1. In the search field, enter `bob` or `alice`.
+                1. Select the node from the suggested search results.
+                1. Click the node on the graph to view its properties in the **Entity** panel.
+
+                    **Expected results:**
+
+                    - Suggested search results include the Bob and Alice `Person` nodes
+                    - Node properties and custom icons/colors display in the **Entity** panel
+                    - Custom node icons and colors **do not** display on the graph for Bob and Alice nodes
+
+                      <Note>Custom icons/colors render on the graph for Cypher search only.</Note>
+
+                      <img src="/images/opengraph/bob.png" alt="A view of the custom Bob node on the graph showing properties in the Entity panel" />
+            </Tab>
+            <Tab title="Cypher" icon="code">
+                To find nodes and edges by type:
+
+                1. Click the **Cypher** tab
+                1. Copy and paste one of the following queries and click **Run**:
+
+                    - To find all `Person` nodes:
+
+                        ```cypher
+                        MATCH (n:Person)
+                        RETURN n
+                        ```
+                        **Expected results:**
+
+                        - Nodes BOB and ALICE display on the graph (not connected by an edge)
+                        - Node properties and custom icons/colors display in the **Entity** panel after clicking a node on the graph
+                        - Custom node icons and colors display on the graph
+
+                          <img src="/images/opengraph/bob-and-alice.png" alt="A view of the custom Bob and Alice nodes on the graph and property details for Bob in the Entity panel" />
+
+                    - To find the `Knows` edge between nodes:
+
+                        ```cypher
+                        MATCH p=()-[:Knows]-()
+                        RETURN p
+                        ```
+                        **Expected results:**
+
+                        - Nodes BOB and ALICE nodes display on the graph and are connected by the `Knows` edge
+                        - Node properties and custom icons/colors display in the **Entity** panel after clicking a node on the graph
+                        - Custom node icons and colors display on the graph
+
+                          <img src="/images/opengraph/bob-knows-alice.png" alt="A view of the custom Bob and Alice nodes connected by the Knows edge on the graph and property details for Bob in the Entity panel" />
+            </Tab>
+        </Tabs>
+    </Step>
+</Steps>
+
+## Delete example data
+
+After you've finished testing, you should clean up your example data by deleting the example OpenGraph payload.
+
+<Steps>
+    <Step title="Delete example data">
+        Use the BloodHound web interface to delete nodes by `source_kind`.
+
+        1. Log in to your BloodHound instance.
+        1. In the left menu, click **Administration** > **Database Management**.
+        1. Under **All graph data**, check the **Person data** checkbox.
+
+            <Note>The name of the checkbox is based on the value of the `source_kind` property in the metadata section of the example JSON file.</Note>
+
+        1. Click **Delete** and confirm the deletion.
+
+            <Warning>This action permanently deletes all nodes with the `Person` source kind, including any edges connected to those nodes.</Warning>
+    </Step>
+    <Step title="Verify deletion">
+        Run the following Cypher query to confirm the example OpenGraph data is gone:
+
+        ```cypher
+        MATCH (n:Person)
+        RETURN n
+        ```
+
+        You should see a `No results match your criteria` message confirming that the nodes have been deleted.
+    </Step>
+</Steps>
+
+## Troubleshooting
+
+This section provides solutions to common issues you may encounter when testing your OpenGraph data.
+
+<AccordionGroup>
+    <Accordion title="Upload fails">
+    - Validate your JSON using [JSONLint](https://jsonlint.com/)
+    - Ensure all required sections are present
+    - Verify all node IDs are unique
+    - Check that node IDs referenced in edges match the node IDs in the nodes section exactly
+    </Accordion>
+
+    <Accordion title="Nodes don't appear in search">
+    - Ensure you correctly used the node ID values in search
+    - Verify the upload completed successfully without errors
+    - Check the BloodHound logs for any ingest errors
+    </Accordion>
+
+    <Accordion title="Custom icons not displaying">
+    - Verify the icon name is correct and does not include a prefix, such as `fa-` (see [FontAwesome](https://fontawesome.com/search?o=r&ic=free&s=solid) to confirm available icons)
+    - Ensure the color is in valid HEX format (#RGB or #RRGGBB)
+    - Run a `GET` request to `api/v2/graphs/custom_nodes` to confirm your BloodHound instance contains the custom type definition you want to use
+    </Accordion>
+
+    <Accordion title="Edge not found in Cypher query">
+    - Verify the edge `kind` name is spelled correctly and matches your JSON file
+    - Ensure the node IDs in the `start` and `end` references match your node IDs exactly
+    - Check that both referenced nodes were created successfully
+    </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+After you're comfortable with this process, consider:
+
+- Creating more complex node types with additional properties
+- Testing multiple edge types between different node kinds
+- Reading the [OpenGraph Schema](/opengraph/schema) documentation for advanced configurations
+- Reviewing [OpenGraph Best Practices](/opengraph/best-practices) before deploying production data
