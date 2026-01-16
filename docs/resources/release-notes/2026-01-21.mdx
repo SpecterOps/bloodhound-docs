@@ -20,7 +20,9 @@ sidebarTitle: "2026-01-21"
 
   Navigate and interact with BloodHound using keyboard shortcuts.
 
-  BloodHound now includes a variety of [keyboard shortcuts](/manage-bloodhound/bh-shortcuts) to enhance navigation and streamline interactions across the platform. These shortcuts allow you to quickly access features, execute commands, and navigate between pages without relying solely on mouse input, improving accessibility and efficiency for power users.
+  BloodHound now includes a variety of [keyboard shortcuts](/manage-bloodhound/bh-shortcuts) to enhance navigation and streamline interactions across the platform. 
+  
+  These shortcuts allow you to quickly access features, execute commands, and navigate between pages without relying solely on mouse input, improving accessibility and efficiency for power users.
 
     <Frame>
       <img
@@ -52,7 +54,7 @@ sidebarTitle: "2026-01-21"
 
   Filter on OpenGraph environments in the domain selector.
 
-  **DELETE ME: I can't reproduce this. Is it ready for 8.5.0 or is it coming later?**
+  **WIP**: I can't reproduce this. Is it ready for 8.5.0 or is it coming later?
 
     <Frame>
       <img
@@ -71,7 +73,7 @@ sidebarTitle: "2026-01-21"
 
   The custom date range filter on the [Posture](/analyze-data/posture-page) page now includes a time picker that allows you to specify the exact time when filtering attack paths by date range.
   
-  The time value is automatically floored to the nearest minute, ensuring consistent filtering behavior across preset and custom date range options.
+  This resolves an issue where the preset date range options (e.g. Last 7 days) used different times of day than the custom date range, which caused inconsistencies in attack path visibility between preset and custom date ranges.
 
     <Frame>
       <img
@@ -86,7 +88,7 @@ sidebarTitle: "2026-01-21"
   
   ## Privilege Zone Management (Renamed)
 
-  The **Privilege Zone Management** page has been renamed to **Zone Builder** to better reflect its purpose as a tool for [building and managing zones](/analyze-data/privilege-zones/overview) that represent different levels of privilege within your environment.
+  The **Privilege Zone Management** page has been renamed **Zone Builder** to better reflect its purpose as a tool for [building and managing zones](/analyze-data/privilege-zones/overview) that represent different levels of privilege within your environment.
   
     <Frame>
       <img
@@ -95,7 +97,7 @@ sidebarTitle: "2026-01-21"
       />
     </Frame>
 
-  This enhancement includes several updates to the layout and navigation of the page, as well as updates to terminology. Keep reading for details!
+  This enhancement includes several layout and navigation improvements, as well as updates to terminology. Keep reading for details!
 
   ### Zone and Label Dropdown Menus
 
@@ -105,7 +107,7 @@ sidebarTitle: "2026-01-21"
 
   <Badge shape="rounded" size="sm" color="purple">Enterprise Edition</Badge>
 
-  The zone dropdown menu in the [Detail View](/analyze-data/privilege-zones/zones#detail-view) now uses consistent iconography to improve visual recognition and navigation.
+  The zone dropdown menu in the [Details View](/analyze-data/privilege-zones/zones#detail-view) now uses consistent iconography to improve visual recognition and navigation.
   
   The <Icon icon="gem"/> (gem) icon represents the default Tier Zero zone. A new zone icon represents all other zones (unless you've applied a custom glyph to the zone configuration).
   
@@ -135,6 +137,8 @@ sidebarTitle: "2026-01-21"
   - **Custom Rules**: View rules that you have created
   - **Default Rules** (zones only): View [default rules](/analyze-data/privilege-zones/default-rules) that come pre-configured with BloodHound
   - **Disabled Rules**: View rules that are currently disabled, regardless of whether they are default or custom
+  
+      <Note>To see objects for disabled rules, you must re-enable the rule.</Note>
 
     <Frame>
       <img
@@ -151,9 +155,21 @@ sidebarTitle: "2026-01-21"
   
   The new term "objects" encompasses both directly matched and expanded objects, providing clearer communication about how rules function and the resulting tagged objects in zones and labels.
 
-  ### Dynamic Details
+  ### Zone and Label Details
 
-  **WIP**: BED-6836 This section is still being finalized, but will include updates related to the new dynamic details panel on the zone and label details view pages.
+  The zone and label **Details View** now displays details in the following tabs:
+
+  - **Zone**: Displayed by default when opening the zone [Details View](/analyze-data/privilege-zones/zones#detail-view). This tab includes name, description, update history, and status.
+  - **Label**: Displayed by default when opening the label [Details View](/analyze-data/privilege-zones/labels#detail-view). This tab includes name, description, and update history.
+  - **Rule**: Displayed after selecting a rule. This tab includes name, description, update history, certification state (for zones), type, status, and Cypher query (if applicable).
+  - **Object**: Displayed after selecting an object. This tab shows the **Entity** panel containing object properties and relationships.
+
+    <Frame>
+      <img
+        src="/images/release_notes/8_5_0/details-panel.gif"
+        alt="An animated view of the Details View in the Zone Builder page showing the information that appears in the details panel on the right-hand side of the screen when selecting a rule or object, including the object's type and the rule that caused it to be included in the zone or label."
+      />
+    </Frame>
 
 </Update>
 
@@ -166,7 +182,7 @@ sidebarTitle: "2026-01-21"
   
   ### Rule Status
 
-  This is a minor enhancement, but one that provides a concise call-to-action for users [managing zone rules](/analyze-data/privilege-zones/rules#edit-or-delete-a-rule).
+  This is a minor enhancement, but one that provides a concise call-to-action for users [managing rules](/analyze-data/privilege-zones/rules#edit-or-delete-a-rule).
   
   When enabling or disabling rules, you'll now see **Enable Rule** instead of **Rule Status** with the status on the same line as the toggle.
 
@@ -179,7 +195,7 @@ sidebarTitle: "2026-01-21"
 
   ### Direct and Expanded Objects in Sample Results
 
-  BloodHound now separates direct matches (objects that directly match the rule criteria) from expanded matches (objects that are connected to direct matches based on the expansion) in the **Sample Results** panel when [defining rules](/analyze-data/privilege-zones/rules#define-a-rule).
+  BloodHound now separates direct matches (objects that directly match the rule criteria) from expanded matches (objects that are connected to direct matches based on [expansion](/analyze-data/privilege-zones/rules#rule-expansion)) in the **Sample Results** panel when defining rules.
   
   This enhancement provides clearer insights into how rules are applied and which objects are being tagged as a result.
 
@@ -426,7 +442,7 @@ sidebarTitle: "2026-01-21"
 
 - {/*BED-7084*/} Resolved an issue where creating a large number of rules could exceed database connection limits, fail silently, and prevent tagging objects as expected.
 
-- {/*BED-7083*/} Resolved an issue where object expansion in rules fails silently and prevents tagging members as expected.
+- {/*BED-7083*/} Resolved an issue where object [expansion](/analyze-data/privilege-zones/rules#rule-expansion) in rules fails silently and prevents tagging members as expected.
 
 - {/*BED-6874*/} Resolved an issue where the **Total Count** (renamed to **Total Objects** this release) on the zone and label **Details View** displayed inaccurate object totals when filtering between domains.
 
