@@ -4,42 +4,56 @@ description: Learn how to use labels to categorize and manage objects within Pri
 ---
 
 import RuleWarning from '/snippets/privilege-zones/rule-warning.mdx';
+import ZoneLabelViews from '/snippets/privilege-zones/zone-label-views.mdx';
+import DeleteZoneLabel from '/snippets/privilege-zones/delete-zone-label.mdx';
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-Labels let you tag groups of objects for easier searching and filtering. Use labels to mark objects with common characteristics (e.g., "PCI", "Owned", "Production").
+Labels let you tag groups of objects for easier searching and filtering. For example, you can label compromised assets with the default **Owned** label to quickly identify attack paths from non-compromised to compromised assets in your environment.
 
-You can filter views and queries based on labels. For example, label PCI-scoped systems to quickly identify attack paths from non-PCI to PCI environments.
+The **Owned** label represents objects that have been compromised in your environment. You can tag objects with the **Owned** label using rules or manually in the graph.
 
 <Note>Unlike zones, BloodHound does not use labels in risk analysis—they're designed to help you organize and query your data.</Note>
 
-The **Labels** tab offers two views:
+<ZoneLabelViews tab="Labels" />
 
 <Tabs>
   <Tab title="Summary View">
-  The **Summary View** shows label names, rule counts, and member count.
+  The **Summary View** shows label names, rule counts, and object counts.
     <img
       src="/images/privzones/labels-summary-view.png"
-      alt="Privilege Zones summary view"
-      style={{ width:"100%" }}
+      alt="A view of the Zone Builder labels summary view"
     />
   </Tab>
-  <Tab title="Detail View">
-  The **Detail View** lists every rule and member that each rule pulls into the associated label.
+  <Tab title="Details View">
+  The **Details View** displays all rules configured for the selected label and the objects that they pull into the label (organized by node type). Use the drop-down menus to filter the view by specific labels and domains in your environment.
+
+  Select a rule or object to display more details in the right panel, including:
+  
+  - Rule definition and Cypher query
+  - Object properties and relationships
+
+  <Note>BloodHound displays objects for enabled rules only. To view objects related to a disabled rule, you must re-enable it.</Note>
+
     <img
       src="/images/privzones/labels-detail-view.png"
-      alt="Privilege Zones detail view"
-      style={{ width:"100%" }}
+      alt="A view of the Zone Builder labels detail view"
     />
   </Tab>
 </Tabs>
 
 ### Create a label
 
+<Badge shape="rounded" size="sm" stroke color="purple">Enterprise Edition</Badge>
+
+You can create custom labels to categorize objects based on any criteria relevant to your environment, such as business function, sensitivity level, or compliance requirements.
+
+For example, you might create a label for PCI-scoped systems to quickly identify attack paths from non-PCI to PCI environments.
+
 Creating a label involves configuring the label details and defining a rule.
 
 <Steps>
-  <Step title="Open the Privilege Zones page">
+  <Step title="Open the Zone Builder page">
   In the left menu, click **Privilege Zones** > **Labels** > **Create Label**.
   </Step>
 
@@ -53,7 +67,7 @@ Creating a label involves configuring the label details and defining a rule.
 
     <img
       src="/images/privzones/create-label.png"
-      alt="Configure a new privilege zone label"
+      alt="A view of the Zone Builder create label page"
       style={{ width:"70%" }}
     />
 
@@ -74,7 +88,7 @@ Creating a label involves configuring the label details and defining a rule.
 
     <img
       src="/images/privzones/define-label-rule.png"
-      alt="Define a rule for the privilege zone label"
+      alt="A view of the Zone Builder define label rule page"
       style={{ width:"100%" }}
     />
   </Step>
@@ -83,41 +97,72 @@ Creating a label involves configuring the label details and defining a rule.
     </Step>
 </Steps>
 
-### Edit or delete a label
+### Edit a label
 
-To edit or delete an existing label, follow these steps:
+To edit a label, follow these steps:
 
 <Steps>
   <Step title="Select a label">
-   Navigate to the **Labels** tab, select the label you want to edit or delete, and click **Edit Label**.
+   1. In the left menu, click **Privilege Zones**.
+ 
+   1. Click the **Labels** tab
+
+   1. By default, the **Owned** label is pre-selected. To edit a different label, select the label you want to edit.
+
+      If you're using BloodHound Enterprise, you can select a label from the **Summary View**.
+
+      <img
+        src="/images/privzones/edit-label-summary-view.png"
+        alt="A view of the Zone Builder edit label page in BloodHound Enterprise with the Summary View"
+      />
+
+      Alternatively, BloodHound Enterprise and BloodHound Community Edition users can select a label using the dropdown menu on the **Details View**.
+
+      <img
+        src="/images/privzones/edit-label-details-view.png"
+        alt="A view of the Zone Builder edit label page in BloodHound with the Detail View"
+      />
+
+   1. Click **Edit Label**.
   </Step>
 
-  <Step title="Edit or delete a label">
-    Choose one of the following actions:
+  <Step title="Edit the label">
+   To edit the label:
 
-    <Tabs>
-      <Tab title="Edit a label" icon="edit">
-      To edit the label:
+    1. Modify the label's name or description.
+    1. Click **Save Edits** to apply your changes.
 
-      1. Modify the label's name and description.
+    <Tip>To manage how objects are included in the label, see [Rules](/analyze-data/privilege-zones/rules).</Tip>
+  </Step>
+</Steps>
 
-      1. Click **Save Edits** to apply your changes.
-      </Tab>
+### Delete a label
 
-      <Tab title="Delete a label" icon="trash-can">
-      To delete the label:
+<Badge shape="rounded" size="sm" stroke color="purple">Enterprise Edition</Badge>
 
-      1. Click <Icon icon="trash-can" /> **Delete Label** at the bottom of the page
+You cannot delete the default **Owned** label, but you can edit its description and rules.
+
+<DeleteZoneLabel tab="label" />
+
+To delete an existing label, follow these steps:
+
+<Steps>
+  <Step title="Select a label">
+   Navigate to the **Labels** tab, select the label you want to delete, and click **Edit Label**.
+  </Step>
+
+  <Step title="Delete the label">
+    To delete the label:
+
+      1. Click <Icon icon="trash-can" /> **Delete Label** at the top of the page.
       1. Confirm your action in the dialog.
 
           <img
             src="/images/privzones/confirm-label-delete.png"
-            alt="Confirm deletion of a custom privilege zone"
+            alt="A view of the Zone Builder confirm label delete dialog"
             style={{ width:"70%" }}
            />
 
       1. Click **Confirm** to delete the label.
-      </Tab>
-    </Tabs>
   </Step>
 </Steps>

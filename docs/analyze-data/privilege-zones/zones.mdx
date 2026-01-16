@@ -4,61 +4,74 @@ description: Organize and categorize objects in your environment using Privilege
 ---
 
 import RuleWarning from '/snippets/privilege-zones/rule-warning.mdx';
+import ContactSales from '/snippets/privilege-zones/contact-sales.mdx';
+import ZoneLabelViews from '/snippets/privilege-zones/zone-label-views.mdx';
+import DeleteZoneLabel from '/snippets/privilege-zones/delete-zone-label.mdx';
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 Zones define hierarchical privilege levels in your environment based on a tiered administration model. The most common tiering model is [Microsoft's Enterprise Access Model](https://learn.microsoft.com/en-us/security/privileged-access-workstations/privileged-access-access-model). 
 
-BloodHound uses zones to measure risk and detect violations. Each zone has a specific tier level (**Tier Zero** is the default and highest). You can create multiple zones (e.g., Tier One, Tier Two) to match your security model.
+BloodHound uses zones to measure risk and detect violations. Each zone has a specific tier level (**Tier Zero** is the default and highest).
 
-The **Zones** tab offers two views:
+<ContactSales/>
+
+<ZoneLabelViews tab="Zones" />
 
 <Tabs>
   <Tab title="Summary View">
-  The **Summary View** shows zone names, rule counts, member count, and their hierarchy relative to other zones (the top zone is most critical).
+  The **Summary View** shows zone names and their hierarchy relative to other zones (the top zone is most critical), rule counts, and object counts.
     <img
       src="/images/privzones/zones-summary-view.png"
-      alt="Privilege Zones summary view"
-      style={{ width:"100%" }}
+      alt="A view of the Zone Builder summary view"
     />
   </Tab>
-  <Tab title="Detail View">
-  The **Detail View** lists every rule and member that each rule pulls into the associated zone.
+  <Tab title="Details View">
+  The **Details View** displays all rules configured for the selected zone and the objects that they pull into the zone (organized by node type). Use the drop-down menus to filter the view by specific zones and domains in your environment.
 
-  Use the **Domain Selector** beside the **Detail View** to filter the view by specific domains in your environment.
+  Select a rule or object to display more details in the right panel, including:
+  
+  - Rule definition and Cypher query
+  - Object properties and relationships
+
+  <Note>BloodHound displays objects for enabled rules only. To view objects related to a disabled rule, you must re-enable it.</Note>
+
     <img
       src="/images/privzones/zones-detail-view.png"
-      alt="Privilege Zones detail view"
-      style={{ width:"100%" }}
+      alt="A view of the Zone Builder detail view"
     />
+
+  <Tip>Use the drop-down menus to filter the view by specific domains and zones in your environment.</Tip>
   </Tab>
 </Tabs>
 
 ### Create a zone
+
+<Badge shape="rounded" size="sm" stroke color="purple">Enterprise Edition</Badge>
 
 Creating a zone involves configuring the zone details and defining a rule.
 
 <RuleWarning/>
 
 <Steps>
-  <Step title="Open the Privilege Zones page">
+  <Step title="Open the Zone Builder page">
   In the left menu, click **Privilege Zones** > **Zones** > **Create Zone**.
   </Step>
 
   <Step title="Configure initial zone details">
   Enter all relevant information about the zone:
 
-  | Field                 | Required?    | Description                                                                                                             |
-  |-----------------------|:------------:|-------------------------------------------------------------------------------------------------------------------------|
-  | Name                  | Yes          | A unique name for the zone (e.g., Server Tier)                                                                          |
-  | Description           | No           | A brief description of the zone's purpose and scope (e.g., PCI assets)                                                  |
-  | Require Certification | No           | **_[BHE Only]_** An option to mandate [certification](#certification) for all members within this zone                  |
-  | Enable Analysis       | No          | **_[BHE Only]_** An option to include this zone in risk analysis and Attack Path Findings                                |
-  | Apply Custom Glyph    | No           | **_[BHE Only]_** An option to apply a custom glyph to visually distinguish members of this zone in the **Explore** page |
+  | Field                 | Required?    | Description                                                                                                                 |
+  |-----------------------|:------------:|-----------------------------------------------------------------------------------------------------------------------------|
+  | Name                  | Yes          | A unique name for the zone (e.g., Server Tier)                                                                              |
+  | Description           | No           | A brief description of the zone's purpose and scope (e.g., PCI assets)                                                      |
+  | Enable Certification  | No           | An option to mandate [certification](/analyze-data/privilege-zones/certification) for all objects within this zone                      |
+  | Enable Analysis       | No           | An option to include this zone in risk analysis and Attack Path Findings                                   |
+  | Apply Custom Glyph    | No           | An option to apply a custom glyph to visually distinguish objects within this zone on the **Explore** page |
 
     <img
       src="/images/privzones/create-zone.png"
-      alt="Configure a new privilege zone"
+      alt="A view of the Zone Builder create zone page"
       style={{ width:"70%" }}
     />
 
@@ -75,12 +88,12 @@ Creating a zone involves configuring the zone details and defining a rule.
   |------------------------|:------------------:|-----------------------------------------------------------------------------------------------|
   | Name                   | Yes                | A unique name for the rule (e.g., PCI Assets)                                                 |
   | Description            | No                 | A brief description of the rule's purpose and scope (e.g., PCI assets)                        |
-  | Rule Type              | Yes                    | The type of rule to use (e.g., Object ID or Cypher)                                       |
-  | Automatic Certification| No                 | **_[BHE Only]_** An option to choose how BloodHound [certifies](#certification) new objects   |
+  | Rule Type              | Yes                | The type of rule to use (e.g., Object ID or Cypher)                                           |
+  | Automatic Certification| No                 | An option to choose how BloodHound Enterprise [certifies](/analyze-data/privilege-zones/certification) new objects   |
 
     <img
       src="/images/privzones/define-zone-rule.png"
-      alt="Define a rule for the privilege zone"
+      alt="A view of the Zone Builder define zone rule page"
       style={{ width:"100%" }}
     />
   </Step>
@@ -89,53 +102,81 @@ Creating a zone involves configuring the zone details and defining a rule.
     </Step>
 </Steps>
 
-### Edit or delete a zone
+### Edit a zone
 
-To edit or delete an existing zone, follow these steps:
+Editing options depend on which edition of BloodHound you're using. In BloodHound Enterprise, you can edit all zone properties. In BloodHound Community Edition, you can edit the default **Tier Zero** zone description.
 
-<Note>You cannot delete the default **Tier Zero** zone, but you can modify its properties. See [Modify Tier Zero](/get-started/security-boundaries/modifying-tier-zero) for more information.</Note>
+To edit a zone, follow these steps:
 
 <Steps>
   <Step title="Select a zone">
-   Navigate to the **Zones** tab, select the zone you want to edit or delete, and click **Edit Zone**.
+   1. In the left menu, click **Privilege Zones**.
+
+   1. By default, the **Tier Zero** zone is pre-selected. To edit a different zone in BloodHound Enterprise, select the zone you want to edit.
+   
+      <Note>**Tier Zero** is the only available zone for BloodHound Community Edition.</Note>
+
+      <img
+        src="/images/privzones/edit-zone.png"
+        alt="A view of the Zone Builder edit zone page in BloodHound Community Edition"
+      />
+
+    1. Click **Edit Zone**.
   </Step>
 
-  <Step title="Edit or delete a zone">
-    Choose one of the following actions:
+  <Step title="Edit the zone">
 
-    <Tabs>
-      <Tab title="Edit a zone" icon="edit">
-      To edit the zone:
+   Modify one of the available fields.
 
-      1. Modify one of the available fields.
+   For example, you can modify the zone's name, description, [certification](/analyze-data/privilege-zones/certification) and analysis settings, and custom glyph.
 
-         For example, you can modify the zone's name, description, [certification](#certification) and analysis settings, and custom glyph.
+   <Note>In BloodHound Community Edition, you can edit the default **Tier Zero** zone description only.</Note>
 
-       1. With the exception of the default **Tier Zero** zone, you can also change the zone's hierarchical position by using the vertical grip control (<Icon icon="grip-vertical" iconType="solid" />) in the **Zone Order** panel to reorder it.
+   You can also change the zone's hierarchical position by using the <Icon icon="grip-vertical" iconType="solid" /> (vertical grip control) in the **Zone Order** panel to reorder it.
 
-          <img
-            src="/images/privzones/reorder-zone.png"
-            alt="Reorder privilege zones"
-            style={{ width:"70%" }}
-           />
+   Zone order is defined by privilege level, with the highest-privileged zone at the top.
 
-       1. Click **Save Edits** to apply your changes.
-      </Tab>
+   <img
+     src="/images/privzones/reorder-zone.png"
+     alt="A view of the Zone Builder zone reorder control"
+     style={{ width:"70%" }}
+   />
+  </Step>
+  <Step title="Save your changes">
+    Click **Save Edits** to apply your changes.
+  </Step>
+</Steps>
 
-      <Tab title="Delete a zone" icon="trash-can">
+### Delete a zone
+
+<Badge shape="rounded" size="sm" stroke color="purple">Enterprise Edition</Badge>
+
+You cannot delete the default **Tier Zero** zone, but you can edit its properties. See [Modify Tier Zero](/get-started/security-boundaries/modifying-tier-zero) for more information.
+
+<DeleteZoneLabel tab="zone" />
+
+To delete an existing zone, follow these steps:
+
+<Steps>
+  <Step title="Select a zone">
+   Navigate to the **Zones** tab, select the zone you want to delete, and click **Edit Zone**.
+  </Step>
+
+  <Step title="Delete the zone">
+
       To delete the zone:
 
-      1. Click <Icon icon="trash-can" /> **Delete Zone** at the bottom of the page.
+      1. Click <Icon icon="trash-can" /> **Delete Zone** at the top of the page.
       1. Confirm your action in the dialog.
 
           <img
             src="/images/privzones/confirm-zone-delete.png"
-            alt="Confirm deletion of a custom privilege zone"
+            alt="A view of the Zone Builder confirm zone delete dialog"
             style={{ width:"70%" }}
            />
 
       1. Click **Confirm** to delete the zone.
-      </Tab>
-    </Tabs>
+
+      <Note>Zone deletion is not available in BloodHound Community Edition.</Note>
   </Step>
 </Steps>
