@@ -17,7 +17,9 @@ Use this guide to get hands-on experience with the OpenGraph structure and valid
 
 ## Create example data
 
-This example defines two `Person` <Tooltip headline="node" tip="Part of the graph construct and refers to an entity in the network, such as a user, computer, group, or domain. Two nodes can be connected by an edge." cta="See the docs" href="/resources/nodes/overview">nodes</Tooltip> connected by a `Knows` <Tooltip headline="edge" tip="Part of the graph construct and refers to a relationship between two nodes, such as group membership or session information." cta="See the docs" href="/resources/edges/overview">edge</Tooltip> to demonstrate the structure of an OpenGraph payload.
+This example defines two custom <Tooltip headline="node" tip="Part of the graph construct and refers to an entity in the network, such as a user, computer, group, or domain. Two nodes can be connected by an edge." cta="See the docs" href="/resources/nodes/overview">nodes</Tooltip> (`Manager` for Bob and `Employee` for Alice) connected by a `Manages` <Tooltip headline="edge" tip="Part of the graph construct and refers to a relationship between two nodes, such as group membership or session information." cta="See the docs" href="/resources/edges/overview">edge</Tooltip> to demonstrate the structure of an OpenGraph payload.
+
+<Tip>It also includes an optional (but recommended) `source_kind` property in the `metadata` section to facilitate easy cleanup later.</Tip>
 
 You can expand on this example to create more complex graphs with additional nodes, edges, and properties as needed.
 
@@ -26,22 +28,37 @@ You can expand on this example to create more complex graphs with additional nod
 
         First, you need to define your OpenGraph payload in a JSON file. 
 
+        At minimum, every OpenGraph payload must follow this basic structure:
+
+        ```json
+        {
+          "metadata": {
+            "source_kind": "EXBase"
+          },
+          "graph": {
+            "nodes": [],
+            "edges": []
+          }
+        }
+        ```
+
+        <Note>See the [OpenGraph schema](/opengraph/schema) for required fields and the full structure.</Note>
+
         1. Create a new file called `opengraph-example.json` using a plain text editor (UTF-8 encoding).
 
-        1. Copy and paste the following example, which includes two nodes (`bob` and `alice`) connected by an edge (`Knows`).
+        1. Copy and paste the following example, which includes two nodes (`bob` as a `Manager` and `alice` as an `Employee`) connected by a `Manages` edge.
 
             ```json
             {
               "metadata": {
-                "source_kind": "Person"
-            },
+                "source_kind": "EXBase"
+              },
               "graph": {
                 "nodes": [
                   {
                     "id": "123",
                     "kinds": [
-                      "Person",
-                      "Base"
+                      "Manager"
                     ],
                     "properties": {
                       "displayname": "bob",
@@ -53,8 +70,7 @@ You can expand on this example to create more complex graphs with additional nod
                   {
                     "id": "234",
                     "kinds": [
-                      "Person",
-                      "Base"
+                      "Employee"
                     ],
                     "properties": {
                       "displayname": "alice",
@@ -66,7 +82,7 @@ You can expand on this example to create more complex graphs with additional nod
                 ],
                 "edges": [
                   {
-                    "kind": "Knows",
+                    "kind": "Manages",
                     "start": {
                       "value": "123",
                       "match_by": "id"
@@ -85,15 +101,28 @@ You can expand on this example to create more complex graphs with additional nod
 
             | Section | Property | Description |
             |---------|----------|-------------|
-            | **metadata** | `source_kind` | Optional property that identifies the type of data (e.g., "Person") in the **Database Management** page for easy clean up later |
+            | **metadata** | `source_kind` | Optional data source identifier for grouping and managing nodes (e.g., "EXBase") |
             | **graph.nodes** | `id` | Unique identifier for the node |
-            | | `kinds` | Array of node types (first is your custom type, "Base" is required) |
+            | | `kinds` | Array of node types; the first determines the node's icon and display |
             | | `properties` | Object containing node properties (e.g., `name`, `displayname`, `objectid`, and custom properties) |
-            | **graph.edges** | `kind` | The edge type name (e.g., "Knows") |
-            | | `start` | Source node reference that must match a node ID in the nodes section |
-            | | `end` | Target node reference that must match a node ID in the nodes section |
+            | **graph.edges** | `kind` | The edge type name (e.g., "Manages") |
+            | | `start` | Source node reference; can match a node in this payload or any pre-existing node |
+            | | `end` | Target node reference; can match a node in this payload or any pre-existing node |
 
-            **DELETE ME: `Base` kind is required for simple search to work; is that expected?**
+            <Note>
+            **About source kinds and node types:**
+
+            - The `source_kind` value automatically applies to all nodes in the payload, enabling grouped management and bulk deletion in **Database Management**. Alternatively, you can add `source_kind` to individual nodes if you don't declare it in metadata.
+
+            - Each node must have at least one `kind`. The first `kind` is the **Primary Kind** that determines which node type it is and which icon and color represents it.
+
+            - Edges can reference nodes from different payloads. You can create all your nodes first, then create edges between them in a separate payload.
+            </Note>
+
+            <Warning>
+            **BloodHound Enterprise only:** All nodes must have at least one edge connecting them to other nodes. Nodes without any edges are [automatically removed](/opengraph/faq#why-do-opengraph-nodes-disappear-after-ingestion) by the built-in reconciliation process. Ensure every node has at least one edge pointing to or from it.
+            </Warning>
+
     </Step>
     <Step title="Save the file">
         Save the `opengraph-example.json` file to a location you can easily access for uploading in the next step.
@@ -116,25 +145,31 @@ You can expand on this example to create more complex graphs with additional nod
 
 To enhance the visualization of the node types on the graph and in the **Entity** panel, you can define custom icons and colors.
 
-<Note>This is done separately from the OpenGraph data payload and must be uploaded through the [BloodHound API](/integrations/bloodhound-api/working-with-api).</Note>
+<Note>This is done separately from the OpenGraph data payload and must be uploaded through the [BloodHound API](/integrations/bloodhound-api/working-with-api). Stay tuned for a more streamlined process for managing icons and colors!</Note>
 
 <Steps>
     <Step title="Prepare your custom type definition">
-        This example creates a custom definition for the `Person` node type defined in the example JSON file. It specifies that the `Person` node type should display with a user icon and red color.
+        This example creates custom definitions for the `Manager` and `Employee` node types defined in the example JSON file. It specifies that `Manager` nodes should display with a briefcase icon in blue, and `Employee` nodes should display with a user icon in green.
 
         The custom type definition is a JSON object with the following structure:
 
         ```json
         {
           "custom_types": {
-            "Person": {
+            "Manager": {
+              "icon": {
+                "type": "font-awesome",
+                "name": "briefcase",
+                "color": "#0066CC"
+              }
+            },
+            "Employee": {
               "icon": {
                 "type": "font-awesome",
                 "name": "user",
-                "color": "#FF0000"
+                "color": "#00AA00"
               }
-            },
-              ... other custom type definitions ...
+            }
           }
         }
         ```
@@ -145,13 +180,13 @@ To enhance the visualization of the node types on the graph and in the **Entity*
         |----------|-------------|
         | `custom_types` | Object containing custom type definitions, where each key is a node type and the value defines the visualization properties for that type |
         | `icon.type` | Font Awesome is the icon library used for custom icons |
-        | `icon.name` | Font Awesome [icon name]((https://fontawesome.com/search?s=solid)) (without "fa-" prefix) |
-        | `icon.color` | Hex color code (#RGB or #RRGGBB format) |
+        | `icon.name` | Font Awesome [icon name](https://fontawesome.com/search?s=solid) (without "fa-" prefix) |
+        | `icon.color` | Hex color code in `#RGB` or `#RRGGBB` format (the `#` is required) |
     </Step>
     <Step title="Run a POST request">
-        Use a `POST` request to the BloodHound API to upload your custom type definition.
+        Use a `POST` request to the BloodHound API to upload your custom type definitions.
 
-        Here's an example request body for a `Person` node type with a user icon and red color:
+        Here's an example request body for the `Manager` and `Employee` node types:
 
         ```bash
         curl -X POST \
@@ -160,18 +195,25 @@ To enhance the visualization of the node types on the graph and in the **Entity*
           -H "Content-Type: application/json" \
           -d '{
             "custom_types": {
-              "Person": {
+              "Manager": {
+                "icon": {
+                  "type": "font-awesome",
+                  "name": "briefcase",
+                  "color": "#0066CC"
+                }
+              },
+              "Employee": {
                 "icon": {
                   "type": "font-awesome",
                   "name": "user",
-                  "color": "#FF0000"
+                  "color": "#00AA00"
                 }
               }
             }
           }'
           ```
 
-        After running this request, any nodes of type `Person` in your graph display with the specified icon and color.
+        After running this request, any nodes of type `Manager` or `Employee` in your graph display with the specified icons and colors. You can modify these custom type definitions as needed with a `PUT` request with updated properties.
     </Step>
 </Steps>
 
@@ -198,47 +240,66 @@ After uploading the OpenGraph example data and custom node icons/colors, it's im
 
                     **Expected results:**
 
-                    - Suggested search results include the Bob and Alice `Person` nodes
-                    - Node properties and custom icons/colors display in the **Entity** panel
-                    - Custom node icons and colors **do not** display on the graph for Bob and Alice nodes
+                    - Suggested search results include the Bob (`Manager`) and Alice (`Employee`) nodes
+                    - Node properties and custom icons/colors display in the **Entity** panel after clicking a node on the graph
+                    - Custom node icons and colors display on the graph (blue briefcase for Manager, green user for Employee)
 
                       <Note>Custom icons/colors render on the graph for Cypher search only.</Note>
 
                       <img src="/images/opengraph/bob.png" alt="A view of the custom Bob node on the graph showing properties in the Entity panel" />
             </Tab>
             <Tab title="Cypher" icon="code">
-                To find nodes and edges by type:
+                To find nodes and edges by source or type:
 
                 1. Click the **Cypher** tab
                 1. Copy and paste one of the following queries and click **Run**:
 
-                    - To find all `Person` nodes:
+                    - To find all nodes from the `EXBase` source:
 
                         ```cypher
-                        MATCH (n:Person)
+                        MATCH (n)
+                        WHERE n:EXBase
                         RETURN n
                         ```
                         **Expected results:**
 
-                        - Nodes BOB and ALICE display on the graph (not connected by an edge)
+                        - All nodes with `source_kind` of "EXBase" display on the graph (BOB as `Manager` and ALICE as `Employee` in this example)
                         - Node properties and custom icons/colors display in the **Entity** panel after clicking a node on the graph
-                        - Custom node icons and colors display on the graph
+                        - Custom node icons and colors display on the graph (blue briefcase for Manager, green user for Employee)
 
-                          <img src="/images/opengraph/bob-and-alice.png" alt="A view of the custom Bob and Alice nodes on the graph and property details for Bob in the Entity panel" />
+                            <Note>This query is useful when you have multiple node types within a single source and want to see them all at once.</Note>
 
-                    - To find the `Knows` edge between nodes:
+                            <img src="/images/opengraph/bob-and-alice.png" alt="A view of the custom Bob and Alice nodes on the graph and property details for Bob in the Entity panel" />
+
+                    - To find all `Manager` nodes specifically:
 
                         ```cypher
-                        MATCH p=()-[:Knows]-()
+                        MATCH (n:Manager)
+                        RETURN n
+                        ```
+                        **Expected results:**
+
+                        - Node BOB displays on the graph with the blue briefcase icon
+                        - Node properties and custom icons/colors display in the **Entity** panel after clicking the node on the graph
+                        - Custom node icon and color display on the graph (blue briefcase for Manager)
+
+                            <Note>This query is useful when you want to find a specific node type, which is helpful when your source contains multiple different node types. You could also search for `Employee` nodes with `MATCH (n:Employee) RETURN n`.</Note>
+
+                            <img src="/images/opengraph/managers.png" alt="A view of the custom Manager nodes on the graph and property details for a Manager node in the Entity panel" />
+
+                    - To find the `Manages` edge between nodes:
+
+                        ```cypher
+                        MATCH p=()-[:Manages]->()
                         RETURN p
                         ```
                         **Expected results:**
 
-                        - Nodes BOB and ALICE nodes display on the graph and are connected by the `Knows` edge
-                        - Node properties and custom icons/colors display in the **Entity** panel after clicking a node on the graph
-                        - Custom node icons and colors display on the graph
+                        - Nodes BOB (`Manager`) and ALICE (`Employee`) display on the graph and are connected by the `Manages` edge from BOB to ALICE
+                        - Custom node icons and colors display on the graph (blue briefcase for Manager, green user for Employee)
+                        - Edge properties display in the **Entity** panel after clicking the `Manages` edge on the graph
 
-                          <img src="/images/opengraph/bob-knows-alice.png" alt="A view of the custom Bob and Alice nodes connected by the Knows edge on the graph and property details for Bob in the Entity panel" />
+                          <img src="/images/opengraph/bob-manages-alice.png" alt="A view of the custom Bob and Alice nodes connected by the Manages edge on the graph and property details for the Manages edge in the Entity panel" />
             </Tab>
         </Tabs>
     </Step>
@@ -254,23 +315,26 @@ After you've finished testing, you should clean up your example data by deleting
 
         1. Log in to your BloodHound instance.
         1. In the left menu, click **Administration** > **Database Management**.
-        1. Under **All graph data**, check the **Person data** checkbox.
+        1. Under **All graph data**, check the **EXBase data** checkbox.
 
-            <Note>The name of the checkbox is based on the value of the `source_kind` property in the metadata section of the example JSON file.</Note>
+          <Note>The name of the checkbox is based on the value of the `source_kind` property in the metadata section of the example JSON file.</Note>
 
         1. Click **Delete** and confirm the deletion.
 
-            <Warning>This action permanently deletes all nodes with the `Person` source kind, including any edges connected to those nodes.</Warning>
+          <Warning>This action permanently deletes all nodes with the `EXBase` source kind, including any edges connected to those nodes.</Warning>
     </Step>
     <Step title="Verify deletion">
         Run the following Cypher query to confirm the example OpenGraph data is gone:
 
         ```cypher
-        MATCH (n:Person)
+        MATCH (n)
+        WHERE n:EXBase
         RETURN n
         ```
 
-        You should see a `No results match your criteria` message confirming that the nodes have been deleted.
+        You should see a `No results match your criteria` message confirming that all nodes from the EXBase source have been deleted.
+
+        <Note>The Cypher query results may be cached. If you don't see the expected results immediately, try refreshing the **Cypher** page to clear the cache and confirm the deletion.</Note>
     </Step>
 </Steps>
 
@@ -282,25 +346,25 @@ This section provides solutions to common issues you may encounter when testing 
     <Accordion title="Upload fails">
     - Validate your JSON using [JSONLint](https://jsonlint.com/)
     - Ensure all required sections are present
-    - Verify all node IDs are unique
-    - Check that node IDs referenced in edges match the node IDs in the nodes section exactly
+    - Verify that node IDs within the current payload are unique
+    - Check that node IDs referenced in edges match nodes either in the current payload or from pre-existing data
     </Accordion>
 
     <Accordion title="Nodes don't appear in search">
-    - Ensure you correctly used the node ID values in search
+    - Ensure you correctly used the node name or object ID values in search
     - Verify the upload completed successfully without errors
-    - Check the BloodHound logs for any ingest errors
+    - Check the [file ingest logs](/collect-data/enterprise-collection/monitor#file-ingest-logs) for errors (restricted based on [user role](/manage-bloodhound/auth/users-and-roles#user-role-definitions))
     </Accordion>
 
     <Accordion title="Custom icons not displaying">
     - Verify the icon name is correct and does not include a prefix, such as `fa-` (see [FontAwesome](https://fontawesome.com/search?o=r&ic=free&s=solid) to confirm available icons)
-    - Ensure the color is in valid HEX format (#RGB or #RRGGBB)
+    - Ensure the color is in valid HEX format (#RGB or #RRGGBB) and includes the `#` symbol
     - Run a `GET` request to `api/v2/graphs/custom_nodes` to confirm your BloodHound instance contains the custom type definition you want to use
     </Accordion>
 
     <Accordion title="Edge not found in Cypher query">
     - Verify the edge `kind` name is spelled correctly and matches your JSON file
-    - Ensure the node IDs in the `start` and `end` references match your node IDs exactly
+    - Ensure the `id` values in the `start` and `end` references match your node `id` values exactly (labeled as **Object ID** in the **Entity** panel on the graph, but referenced as `id` in the payload)
     - Check that both referenced nodes were created successfully
     </Accordion>
 </AccordionGroup>
