@@ -1,4 +1,3 @@
-# From https://github.com/SadProcessor/BloodHoundOperator
 function Get-BloodHoundAPISignature{
     [Alias('BHSignature')]
     Param(
@@ -9,17 +8,8 @@ function Get-BloodHoundAPISignature{
         [Parameter(Mandatory=1,Position=3)][String]$Key,
         [Parameter(Mandatory=0,Position=4)][Datetime]$Date
         )
-    # Timestamp
-    $Stamp=if($Date){$Date.tostring('o')}else{[Datetime]::utcnow.tostring('o')}
-    $Content = if($Body){$Body | Convertto-json -Depth 21}else{'{}'}
-    # Data
-    $Params = [PSCustomObject]@{
-        stamp  = $Stamp
-        method = $Method
-        uri    = $URI
-        body   = $Content
-        key    = $Key
-        }
+    # Prep
+    $Stamp   = if($Date){$Date.tostring('o')}else{[Datetime]::utcnow.tostring('o')}
     if($URI -match "^/"){$URI=$URI.trimstart('/')}
     # Signature
     $KeyByte   = [Text.Encoding]::UTF8.GetBytes($Key)
