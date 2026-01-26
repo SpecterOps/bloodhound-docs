@@ -18,7 +18,7 @@ The data types are:
 * _Local Groups/NTLM_, collecting:
     * [Local Group Membership](/collect-data/permissions#local-group-membership)
     * [User Rights Assignments](/collect-data/permissions#user-rights-assignments)
-    * NTLM Settings
+    * [NTLM](/collect-data/permissions#ntlm)
 * [Sessions](/collect-data/permissions#sessions)
 * [Certificate Services](/collect-data/permissions#certificate-services)
 * [CA Registry](/collect-data/permissions#ca-registry)
@@ -84,6 +84,18 @@ User Rights Assignments (URAs) in Windows define what privileges and capabilitie
 **Required Permissions:** Only local `Administrators` may call the `LsaOpenPolicy` function.
 
 **Least-Privileged Option:** There is currently no known method to delegate this permission for least-privileged collection, see [Least-Privileged Collection - User Rights Assignments](/collect-data/enterprise-collection/least-privileged-collection#user-rights-assignments) for more details on the implications.
+
+## NTLM
+
+SharpHound collects various registry values related to NTLM from the registry paths `SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0`, `SYSTEM\CurrentControlSet\Control\Lsa\`, and `SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters` to create the `CoerceAndRelayNTLMTo*` edges.
+
+### Collection and Permissions
+
+**Collection Method:** SharpHound collects these registry key values first via WMI access, and remote registry as a failover.
+
+**Default Permissions:** Collecting these registry key values requires membership of `Administrators` on the systems by default.
+
+**Least-Privileged Option:** Delegation is possible via Group Policy or registry modifications, see [Least-Privileged Collection - NTLM Relay Registry Paths](/collect-data/enterprise-collection/least-privileged-collection#ntlm-relay-registry-paths).
 
 ## Sessions
 
