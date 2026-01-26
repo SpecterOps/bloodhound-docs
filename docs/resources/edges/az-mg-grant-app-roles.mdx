@@ -34,19 +34,19 @@ Next, find the MS Graph Service Principal’s ID. You can do this by piping $SPs
 $SPs | ?{$_.appId -Like "00000003-0000-0000-c000-000000000000"} | Select id
 ```
 
-The output will be the object ID of the MS Graph Service Principal. Take that ID and use it as the “ResourceID” argument for BARK’s New-AppRoleAssignment function. The AppRoleID of ‘9e3f62cf-ca93-4989-b6ce-bf83c28f9fe8’ is the universal ID for RoleManagement.ReadWrite.Directory. The SPObjectId is the object ID of the Service Principal you want to grant this app role to:
+The output will be the object ID of the MS Graph Service Principal. Take that ID and use it as the “ResourceID” argument for BARK’s New-EntraAppRoleAssignment function. The AppRoleID of ‘9e3f62cf-ca93-4989-b6ce-bf83c28f9fe8’ is the universal ID for RoleManagement.ReadWrite.Directory. The SPObjectId is the object ID of the Service Principal you want to grant this app role to:
 
 ```bash
-New-AppRoleAssignment `
+New-EntraAppRoleAssignment `
     -SPObjectId "6b6f9289-fe92-4930-a331-9575e0a4c1d8" `
     -AppRoleID "9e3f62cf-ca93-4989-b6ce-bf83c28f9fe8" `
     -ResourceID "9858020a-4c00-4399-9ae4-e7897a8333fa" `
     -Token $MGToken
 ```
-If successful, the output of this command will show you the App Role assignment ID. Now that your Service Principal has the RoleManagement.ReadWrite.Directory MS Graph app role, you can promote the Service Principal to Global Administrator using BARK’s New-AzureADRoleAssignment.
+If successful, the output of this command will show you the App Role assignment ID. Now that your Service Principal has the RoleManagement.ReadWrite.Directory MS Graph app role, you can promote the Service Principal to Global Administrator using BARK’s New-EntraRoleAssignment.
 
 ```bash
-New-AzureADRoleAssignment `
+New-EntraRoleAssignment `
     -PrincipalID "6b6f9289-fe92-4930-a331-9575e0a4c1d8" `
     -RoleDefinitionId "62e90394-69f5-4237-9190-012177145e10" `
     -Token $MGToken
