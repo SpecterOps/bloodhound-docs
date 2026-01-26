@@ -119,6 +119,23 @@ Information about the Active Directory Certificate Service hierarchy within your
 
 **Additional Data Sources:** Two additional types of data can enhance the findings - [DC Registry](/collect-data/permissions#dc-registry) and [CA Registry](/collect-data/permissions#ca-registry).
 
+## CA Registry
+
+SharpHound collects the following registry key values on enterprise CAs stored under `SYSTEM\CurrentControlSet\Services\CertSvc\Configuration\<CA Name>`:
+
+* **EnrollmentAgentRights**: Contains restrictions for enrollment agents. BloodHound will take the restrictions into account when calculating ADCS ESC3 edges, and assume no restrictions if not collected, as no restrictions are configured by default.
+* **Security**: Contains the security descriptor for the enterprise CA (i.e., the permissions for Enroll, ManageCA, and ManageCertificates edges against the enterprise CA). This security descriptor is also stored in the AD object of the enterprise CA. SharpHound collects both. The CA registry security descriptor holds the effective permissions. Changes in the CA registry security descriptor are replicated to the AD copy, however, not the other way. Therefore, collecting the CA registry security descriptor may reveal permissions of the enterprise CA that are not present if only collecting the AD object.
+* **PolicyModules\\&lt;Active Policy&gt;\\EditFlags**: SharpHound checks if the `EDITF_ATTRIBUTESUBJECTALTNAME2` flag is present, which is required to calculate ADCS ESC6 edges.
+* **RoleSeparationEnabled**: SharpHound checks whether role separation is enforced (a user cannot be both CA Administrator and Certificate Manager).
+
+The registry key values are described in detail in the [Certified Pre-Owned whitepaper](https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf).
+
+### Collection and Permissions
+
+**Collection Method:** SharpHound collects these registry key values via remote registry access on enterprise CAs.
+
+**Default Permissions:** `Authenticated Users` may collect these registry key values by default, see [Least-Privileged Collection - CA Registry](/collect-data/enterprise-collection/least-privileged-collection#ca-registry) for an explanation of why this is accessible.
+
 ## DC Registry
 
 SharpHound collects the registry values `Kdc\StrongCertificateBindingEnforcement` and `Schannel\CertificateMappingMethods` (described [here](https://support.microsoft.com/en-us/topic/kb5014754-certificate-based-authentication-changes-on-windows-domain-controllers-ad2c23b0-15d8-4340-a468-4d4f3b188f16)) to determine the allowed certificate mapping methods on domain controllers (DCs). The BloodHound ADCS edges ESC6, ESC9, and ESC10 require this data to be collected.
@@ -133,14 +150,6 @@ SharpHound Enterprise additionally collects the `VulnerableChannelAllowList` val
 
 **Least-Privileged Option:** Delegation is possible via Group Policy or registry modifications, see [Least-Privileged Collection - DC Registry](/collect-data/enterprise-collection/least-privileged-collection#dc-registry).
 
-## CA Registry
-
-SharpHound collects the following registry key values on enterprise CAs stored under `SYSTEM\CurrentControlSet\Services\CertSvc\Configuration\<CA Name>`:
-
-* **EnrollmentAgentRights**: Contains restrictions for enrollment agents. BloodHound will take the restrictions into account when calculating ADCS ESC3 edges, and assume no restrictions if not collected, as no restrictions are configured by default.
-* **Security**: Contains the security descriptor for the enterprise CA (i.e., the permissions for Enroll, ManageCA, and ManageCertificates edges against the enterprise CA). This security descriptor is also stored in the AD object of the enterprise CA. SharpHound collects both. The CA registry security descriptor holds the effective permissions. Changes in the CA registry security descriptor are replicated to the AD copy, however, not the other way. Therefore, collecting the CA registry security descriptor may reveal permissions of the enterprise CA that are not present if only collecting the AD object.
-* **PolicyModules\\&lt;Active Policy&gt;\\EditFlags**: SharpHound checks if the `EDITF_ATTRIBUTESUBJECTALTNAME2` flag is present, which is required to calculate ADCS ESC6 edges.
-* **RoleSeparationEnabled**: SharpHound checks whether role separation is enforced (a user cannot be both CA Administrator and Certificate Manager).
 
 The registry key values are described in detail in the [Certified Pre-Owned whitepaper](https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf).
 
