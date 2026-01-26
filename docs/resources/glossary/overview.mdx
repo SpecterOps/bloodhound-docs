@@ -7,23 +7,23 @@ description: Learn the terminology used in BloodHound software and documentation
 
 ## Attack Path
 
-A chain of abusable privileges and user behaviors that create direct and indirect connections between computers and users. In BloodHound, attack paths are visualized in the [graph](#graph) by [nodes](#node) and [edges](#edge). Learn more in [What is Attack Path Management](https://bloodhoundenterprise.io/what-is-attack-path-management/).
+A chain of abusable privileges and user behaviors that create direct and indirect connections between principals. In BloodHound, Attack Paths are visualized in the [graph](#graph) by [nodes](#node) and [edges](#edge). Learn more in [What is Attack Path Management](https://bloodhoundenterprise.io/what-is-attack-path-management/).
 
-- **Identity-based attack path**—An attack path is based on identity or an already authenticated [principal](#principal). BloodHound's main goal is to help visualize and manage attack paths.
+- **Identity-based Attack Path**—An Attack Path is based on identity or an already authenticated [principal](#principal). BloodHound's main goal is to help visualize and manage Attack Paths.
 
 ## Attack Path Management (APM)
 
-The process of identifying, analyzing, and managing the [attack paths](#attack-path) that an adversary might exploit to reach high-value objects or compromise the network's security. BloodHound helps visualize and manage attack paths through Attack Path Management.
+The process of identifying, analyzing, and managing the [Attack Paths](#attack-path) that an adversary might exploit to reach high-value objects or compromise the network's security. BloodHound helps visualize and manage Attack Paths through Attack Path Management.
 
 ## Choke Point
 
 A [privilege](#privilege) or user behavior (called [edges](#edge)) that, like the driveway to a house, connects the rest of the environment through an object or collection of objects (called [nodes](#node)). For example, any Edge into the collection of [Tier Zero](#tier-zero%2Fhigh-value) nodes is a Tier Zero Choke Point. This is a privilege or user behavior the adversary must abuse to compromise a Tier Zero object.
 
-Choke points are significant points of control and defense in the network security architecture. They represent the optimal location to block the largest number of [attack paths](#attack-path). BloodHound Enterprise calculates [exposure](#exposure) for all choke points.
+Choke points are significant points of control and defense in the network security architecture. They represent the optimal location to block the largest number of [Attack Paths](#attack-path). BloodHound Enterprise calculates [exposure](#exposure) for all choke points.
 
 ## Collector
 
-A collector, collector client, or data collector is software that collects [attack path](#attack-path)-related data from a [directory](#directory). For example, SharpHound and AzureHound.
+A collector, collector client, or data collector is software that collects [Attack Path](#attack-path)-related data from a [directory](#directory). For example, SharpHound and AzureHound.
 
 ## Cypher
 
@@ -39,26 +39,33 @@ An edge is part of the [graph](#graph) construct and represents a relationship b
 
 ## Enterprise Access Model (EAM)
 
-A security framework developed by Microsoft that defines a privileged access strategy\[[1](https://learn.microsoft.com/en-us/security/privileged-access-workstations/privileged-access-access-model)\] with the ultimate goal of preventing privilege escalation through [identity-based attack paths](#attack-path). In most cases, EAM supersedes and replaces [tiering](#tiering%2Ftier-model).
+A security framework developed by Microsoft that defines a privileged access strategy\[[1](https://learn.microsoft.com/en-us/security/privileged-access-workstations/privileged-access-access-model)\] with the ultimate goal of preventing privilege escalation through [identity-based Attack Paths](#attack-path). In most cases, EAM supersedes and replaces [tiering](#tiering%2Ftier-model).
 
 ## Escalation (ESC)
 
-A series of Active Directory Certificate Services (ADCS) attack paths that BloodHound can detect. These are escalation techniques that abuse misconfigurations in certificate services.
+The process of exploiting vulnerabilities or misconfigurations to gain higher privileges or access levels than initially granted. In BloodHound, escalation encompasses various techniques an attacker can use to move from lower-privileged [principals](#principal) to higher-privileged ones or sensitive [objects](#object).
+
+BloodHound detects and visualizes escalations as [Attack Paths](#attack-path) to help organizations identify and remediate privilege escalation risks.
 
 ## Exposure
 
-The percentage of [principals](#principal) in a [directory](#directory) with a [Tier Zero](#tier-zero%2Fhigh-value) [attack path](#attack-path). It encompasses both principals with one-step paths (`UserA -[ForceChangePassword]-> TierZero`), and multi-step paths (`UserA -[ForceChangePassword]-> UserB -[GenericAll]-> TierZero`). BloodHound Enterprise calculates exposure for all [choke points](#choke-point).
+A risk measurement that quantifies the extent to which [principals](#principal) in a [directory](#directory) have [Attack Paths](#attack-path) to [Tier Zero](#tier-zero%2Fhigh-value) [objects](#object). It encompasses both principals with one-step paths (`UserA -[ForceChangePassword]-> TierZero`), and multi-step paths (`UserA -[ForceChangePassword]-> UserB -[GenericAll]-> TierZero`). Exposure is measured in two ways:
+
+- **Exposure count**—The number of principals with a Tier Zero Attack Path.
+
+- **Exposure percentage**—The percentage of principals in the directory with a Tier Zero Attack Path.
+
+BloodHound Enterprise calculates exposure for all [choke points](#choke-point).
 
 ## Finding
 
-A specific instance of a vulnerability that an attacker could abuse to gain access to, and eventually take control of, a network. Each finding can be categorized as a specific [attack path](#attack-path) type.
+A specific instance of a vulnerability that an attacker could abuse to gain access to, and eventually take control of, a network. Each finding can be categorized as a specific [Attack Path](#attack-path) type.
 
 There are two types of findings in BloodHound:
 
-- **List-based finding**—A finding for a specific [principal](#principal) where the vulnerability is related to the principal itself, such as a misconfiguration. Because of this nature, list-based findings do not necessarily have an [exposure](#exposure) metric (as they are theoretically completely exposed), but they will
-have an [impact](#impact) metric.
+- **List-based finding**—A finding for a specific [principal](#principal) where the vulnerability is related to the principal itself, such as a misconfiguration. Because of this nature, list-based findings do not necessarily have an [exposure](#exposure) metric, but they will have an [impact](#impact) metric.
 
-- **Relationship-based finding**—A finding for a pair of [principals](#principal)—a target that is privileged (such as belonging to Tier Zero) and a source/origin that is not—that can be compromised by one or more connections between said principals. Each relationship-based finding may be composed of one or many individual [attack paths](#attack-path).
+- **Relationship-based finding**—A finding for a pair of [principals](#principal)—a target that is privileged (such as belonging to Tier Zero) and a source/origin that is not—that can be compromised by one or more connections between said principals. Each relationship-based finding may be composed of one or many individual [Attack Paths](#attack-path).
 
   A relationship-based finding can have an [exposure](#exposure) metric (the exposure risk of the source/origin principal being compromised) and an [impact](#impact) metric (the impact risk of the target principal being compromised).
 
@@ -68,17 +75,17 @@ Stands for Free and Open Source Software. For example, "BloodHound CE is a FOSS 
 
 ## Graph
 
-The graph database used by BloodHound. It stores the relationships between [nodes](#node) and [edges](#edge) and feeds BloodHound functionality like visualizing and understanding complex [attack paths](#attack-path) and environment risks.
+The graph database used by BloodHound. It stores the relationships between [nodes](#node) and [edges](#edge) and feeds BloodHound functionality like visualizing and understanding complex [Attack Paths](#attack-path) and environment risks.
 
 ## Impact
 
-Refers to a risk measurement that quantifies how much of your environment could be affected by an attack path. Specifically:
+A risk measurement that quantifies how much control of your environment an affected asset has. Specifically:
 
-- **Impact count**—The number of principals/objects that could be compromised through an attack path.
+- **Impact count**—The number of principals/objects that could be compromised through an Attack Path.
 
 - **Impact percentage**—The percentage of the environment that could be impacted by a specific identity vulnerability.
 
-Impact is closely related to [exposure](#exposure), which measures the percentage of principals with a *Tier Zero* attack path. Together, these metrics help organizations prioritize remediation by understanding which attack paths pose the greatest risk.
+Impact is closely related to [exposure](#exposure), which measures the percentage of principals with a *Tier Zero* Attack Path. Together, these metrics help organizations prioritize remediation by understanding which Attack Paths pose the greatest risk.
 
 ## Kind
 
@@ -86,19 +93,19 @@ The schema-level classification or label applied to [nodes](#node) in the [graph
 
 ## Node
 
-A node is part of the [graph](#graph) construct and represents an entity in the environment as stored in the BloodHound graph. Nodes typically correspond to directory [objects](#object) or other assets, such as users, computers, groups, or domains. Two nodes can be connected by an [edge](#edge). See [About BloodHound Nodes](/resources/nodes/overview).
+A node is part of the [graph](#graph) construct and represents an entity in the environment as stored in the BloodHound graph. Nodes are synonymous with [objects](#object) and can represent a wide variety of entities from different data sources, including directory objects (users, computers, groups, domains, trusts) and other assets discovered through integrations like OpenGraph. Two nodes can be connected by an [edge](#edge). See [About BloodHound Nodes](/resources/nodes/overview).
 
 ## Object
 
-A directory-level entity within Active Directory and Entra ID [directories](#directory), such as users, groups, computers, organizational units (OUs), domains, and trusts.
+An entity represented in the BloodHound [graph](#graph), encompassing both directory-level entities from Active Directory and Entra ID [directories](#directory) and other assets discovered through data integrations like OpenGraph. Examples include users, groups, computers, organizational units (OUs), domains, trusts, and cloud resources.
 
-Objects exist in the directory service itself; many of them are also represented as [nodes](#node) in the BloodHound graph. Each object represents a distinct element contributing to the network's overall structure and security posture. An object can also be referred to as an "asset".
+Objects are synonymous with [nodes](#node) and represent distinct elements contributing to the network's overall structure and security posture. An object can also be referred to as an "asset".
 
 ## Principal
 
 A type of [object](#object) that can authenticate and be assigned permissions within the environment, also known as a security principal.
 
-Examples of principals include users and computers in Active Directory and users, virtual machines, and service principal objects in Entra ID and Azure. Principals are typically represented as [nodes](#node) in the graph and play a central role in identity attack path mechanisms.
+Examples of principals include users and computers in Active Directory and users, virtual machines, and service principal objects in Entra ID and Azure. Principals are typically represented as [nodes](#node) in the graph and play a central role in identity Attack Path mechanisms.
 
 ## Privilege
 
@@ -108,7 +115,7 @@ Privileges are generally more granular permissions that define how or to what ex
 
 ## Remediation
 
-The process of fixing or mitigating security risks identified during the analysis of attack paths with BloodHound.
+The process of fixing or mitigating security risks identified during the analysis of Attack Paths with BloodHound.
 
 ## Right
 
@@ -116,7 +123,7 @@ Rights are broad permissions granted to a user, group, or system to perform spec
 
 ## Tenant
 
-Refers to a dedicated instance of BloodHound Enterprise (hosted and managed by SpecterOps) that contains its own data, configurations, and user access controls.
+Refers to a dedicated instance of BloodHound that contains its own data, configurations, and user access controls.
 
 ## Tier Zero/High Value
 
