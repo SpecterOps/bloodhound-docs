@@ -1,7 +1,6 @@
 ---
 title: SharpHound Data Collection and Permissions
 sidebarTitle: Collection Permissions
-mode: wide
 description: "Learn how to collect data."
 ---
 
@@ -9,27 +8,20 @@ description: "Learn how to collect data."
 
 SharpHound data collection utilizes the open-source [SharpHound Common](https://github.com/SpecterOps/SharpHoundCommon) library, maintained by the BloodHound Enterprise Engineering team.
 
-In BloodHound Enterprise you can start scans for different data types via a [collection schedule](/collect-data/enterprise-collection/collection-schedule) or an [on-demand scan](/collect-data/enterprise-collection/on-demand-scan).
-With BloodHound Community Edition, you run scans by [running the executable itself](/collect-data/ce-collection/sharphound).
+The scan types in SharpHound Enterprise and SharpHound Community Edition are named differently but effectively collect the same data.
 
-The data types are:
+- BloodHound Enterprise scan types can be started with a [collection schedule](/collect-data/enterprise-collection/collection-schedule) or an [on-demand scan](/collect-data/enterprise-collection/on-demand-scan)
+- BloodHound Community Edition, you run scans with the [CollectionMethods flag](https://bloodhound.specterops.io/collect-data/ce-collection/sharphound-flags#enumeration-options)
 
-* [Active Directory Structure Data](/collect-data/permissions#ad-structure-data)
-* _Local Groups_, collecting:
-    * [Local Group Membership](/collect-data/permissions#local-group-membership)
-    * [User Rights Assignments](/collect-data/permissions#user-rights-assignments)
-* [Sessions](/collect-data/permissions#sessions)
-* [Certificate Services](/collect-data/permissions#certificate-services)
-* [DC Registry](/collect-data/permissions#dc-registry)
-* [CA Registry](/collect-data/permissions#ca-registry)
+This article details all BloodHound Enterprise scan types and the required service account permissions.
 
 SpecterOps recommends collecting all data types because it provides maximum visibility into your environment. Local Group Memberships and Sessions are especially important, as they reveal Attack Paths to individual systems based on non-centralized configurations, see [Why perform privileged collection in SharpHound](/collect-data/enterprise-collection/privileged-collection).
 
 
-<Warning>The SharpHound collection service account does not require `Domain Admin` membership. While adding the account to local `Administrators` groups on domain computers will work, we recommend following the articles [Least-Privileged Collection](/collect-data/enterprise-collection/least-privileged-collection) and [SharpHound Enterprise Service Hardening](/manage-bloodhound/securing-bloodhound-and-collectors/sharphound-hardening).</Warning>
+<Warning>The SharpHound collection service account does not require `Domain Admin` membership. While adding the account to local `Administrators` groups on domain computers will work, we recommend following the articles [Least-Privileged Collection](/collect-data/enterprise-collection/least-privileged-collection) (referenced below for each scan type) and [SharpHound Enterprise Service Hardening](/manage-bloodhound/securing-bloodhound-and-collectors/sharphound-hardening).</Warning>
 
 
-## AD Structure Data
+## Active Directory Structure Data
 
 Information about the objects and relationships within your Active Directory environment makes up the basic information necessary to identify attack paths within your environment.
 
@@ -43,15 +35,18 @@ This information includes:
 
 Reference: [Current Object Properties collected by SharpHound](https://github.com/SpecterOps/SharpHoundCommon/blob/68a68c6eab5375b46f975274b16ff1acdc35dc48/src/CommonLib/LdapQueries/CommonProperties.cs).
 
-### Collection and Permissions
-
 **Collection Method:** SharpHound collects this information utilizing signed LDAP queries against a domain controller in the domain.
 
-**Default Permissions:** By default, all `Authenticated Users` can enumerate almost all AD Structure Data utilized by BloodHound Enterprise.
+**Default Permissions:** By default, all `Authenticated Users` may query almost all data from Active Directory utilized by BloodHound via LDAP. Higher privileges are required for other objects, see **Least-Privileged Option**.
 
-**Additional Data Source (Optional - Deleted Objects Container):** SharpHound can also read the contents of the Deleted Objects container (also known as the AD Recycle Bin). By default, SharpHound cannot read the Deleted Objects container, but read access can be delegated. Collecting deleted objects affects data retention behavior in BloodHound Enterprise, see [Active Directory Recycle Bin](/collect-data/enterprise-collection/data-retention#active-directory-recycle-bin) for details. For delegation configuration, see [Least-Privileged Collection - AD Structure Data](/collect-data/enterprise-collection/least-privileged-collection#ad-structure-data).
+**Least-Privileged Option:** For information on how to collect all objects with least privilege, see [Least-Privileged Collection - AD Structure Data](/collect-data/enterprise-collection/least-privileged-collection#ad-structure-data).
 
-## Local Group Membership
+**Additional Data Sources:** (Optional) Deleted Objects Container: SharpHound can read the contents of the Deleted Objects container (also known as the AD Recycle Bin). By default, SharpHound cannot read the Deleted Objects container, but read access can be delegated. Collecting deleted objects affects data retention behavior in BloodHound Enterprise, see [Active Directory Recycle Bin](/collect-data/enterprise-collection/data-retention#active-directory-recycle-bin) for details. For delegation configuration, see [Least-Privileged Collection - AD Structure Data](/collect-data/enterprise-collection/least-privileged-collection#ad-structure-data).
+
+
+## Local Groups / NTLM
+
+### Local Group Membership
 
 Members of the following groups are enumerated:
 
@@ -60,19 +55,16 @@ Members of the following groups are enumerated:
 * Distributed COM Users
 * Remote Management Users
 
-### Collection and Permissions
-
 **Collection Method:** SharpHound collects this information utilizing [Remote SAM Enumeration](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-access-restrict-clients-allowed-to-make-remote-sam-calls).
 
 **Default Permissions:** By default, computers beginning with Windows 10 version 1607 and Windows Server 2016 require `Administrator` access to perform `Remote SAM` operations.
 
 **Least-Privileged Option:** This setting may be overridden with Group Policy to allow non-administrative collection. For detailed configuration steps using the "Network access: Restrict clients allowed to make remote calls to SAM" setting, see [Least-Privileged Collection - Local Group Membership](/collect-data/enterprise-collection/least-privileged-collection#local-group-membership).
 
-## User Rights Assignments
+
+### User Rights Assignments
 
 User Rights Assignments (URAs) in Windows define what privileges and capabilities security principals have on a system, independent of group membership. Collecting User Rights Assignments allows BloodHound to accurately determine the [CanRDP](/resources/edges/can-rdp) edge. Before SharpHound Common v3, BloodHound made assumptions based solely on group membership—assuming that membership in the `Remote Desktop Users` group alone gives users the ability to RDP to a system. However, to successfully use Remote Desktop, a user needs **both** membership in the `Remote Desktop Users` group **and** the User Rights Assignment `SeRemoteInteractiveLogonRight`.
-
-### Collection and Permissions
 
 **Collection Method:** SharpHound collects this information utilizing the [LsaOpenPolicy](https://learn.microsoft.com/en-us/windows/win32/api/ntsecapi/nf-ntsecapi-lsaopenpolicy) function.
 
@@ -80,11 +72,20 @@ User Rights Assignments (URAs) in Windows define what privileges and capabilitie
 
 **Least-Privileged Option:** There is currently no known method to delegate this permission for least-privileged collection, see [Least-Privileged Collection - User Rights Assignments](/collect-data/enterprise-collection/least-privileged-collection#user-rights-assignments) for more details on the implications.
 
+### NTLM
+
+SharpHound collects various registry values related to NTLM from the registry paths `SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0`, `SYSTEM\CurrentControlSet\Control\Lsa\`, and `SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters` to create the `CoerceAndRelayNTLMTo*` edges.
+
+**Collection Method:** SharpHound collects these registry key values first via WMI access, and remote registry as a failover.
+
+**Default Permissions:** Collecting these registry key values requires membership of `Administrators` on the systems by default.
+
+**Least-Privileged Option:** Delegation is possible via Group Policy or registry modifications, see [Least-Privileged Collection - NTLM Relay Registry Paths](/collect-data/enterprise-collection/least-privileged-collection#ntlm-relay-registry-paths).
+
+
 ## Sessions
 
 SharpHound collects active session information to identify abusable sessions on domain-joined systems. These sessions are vulnerable to [OS Credential Dumping](https://attack.mitre.org/techniques/T1003/001/) from tools such as [Mimikatz](https://github.com/ParrotSec/mimikatz).
-
-### Collection and Permissions
 
 **Collection Method:** SharpHound collects this information utilizing the [NetWkstaUserEnum](https://learn.microsoft.com/en-us/windows/win32/api/lmwksta/nf-lmwksta-netwkstauserenum) function.
 
@@ -98,6 +99,7 @@ SharpHound collects active session information to identify abusable sessions on 
 
 For detailed configuration instructions, including how to safely configure `Print Operators`, see [Least-Privileged Collection - Sessions](/collect-data/enterprise-collection/least-privileged-collection#sessions).
 
+
 ## Certificate Services
 
 Information about the Active Directory Certificate Service hierarchy within your Active Directory environment makes up the basic information necessary to identify ADCS attack paths within your environment. This information includes:
@@ -106,27 +108,12 @@ Information about the Active Directory Certificate Service hierarchy within your
 * Root CAs
 * Enterprise CAs
 
-### Collection and Permissions
-
 **Collection Method:** SharpHound collects this information utilizing signed LDAP queries against a domain controller in the domain.
 
 **Default Permissions:** By default, `Authenticated Users` can enumerate almost all Certificate Services data utilized by BloodHound Enterprise.
 
 **Additional Data Sources:** Two additional types of data can enhance the findings - [DC Registry](/collect-data/permissions#dc-registry) and [CA Registry](/collect-data/permissions#ca-registry).
 
-## DC Registry
-
-SharpHound collects the registry values `Kdc\StrongCertificateBindingEnforcement` and `Schannel\CertificateMappingMethods` (described [here](https://support.microsoft.com/en-us/topic/kb5014754-certificate-based-authentication-changes-on-windows-domain-controllers-ad2c23b0-15d8-4340-a468-4d4f3b188f16)) to determine the allowed certificate mapping methods on domain controllers (DCs). The BloodHound ADCS edges ESC6, ESC9, and ESC10 require this data to be collected.
-
-SharpHound Enterprise additionally collects the `VulnerableChannelAllowList` value under `SYSTEM\CurrentControlSet\Services\Netlogon\Parameters` (described [here](https://support.microsoft.com/en-us/topic/how-to-manage-the-changes-in-netlogon-secure-channel-connections-associated-with-cve-2020-1472-f7e8cc17-0309-1d6a-304e-5ba73cd1a11e#theGroupPolicy)) to determine which accounts are allowed to use Netlogon secure channel connections without secure RPC.
-
-### Collection and Permissions
-
-**Collection Method:** SharpHound collects these registry key values via remote registry access.
-
-**Default Permissions:** Collecting these registry key values requires membership of `Administrators` on the DCs by default.
-
-**Least-Privileged Option:** Delegation is possible via Group Policy or registry modifications, see [Least-Privileged Collection - DC Registry](/collect-data/enterprise-collection/least-privileged-collection#dc-registry).
 
 ## CA Registry
 
@@ -139,9 +126,30 @@ SharpHound collects the following registry key values on enterprise CAs stored u
 
 The registry key values are described in detail in the [Certified Pre-Owned whitepaper](https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf).
 
-### Collection and Permissions
-
 **Collection Method:** SharpHound collects these registry key values via remote registry access on enterprise CAs.
 
 **Default Permissions:** `Authenticated Users` may collect these registry key values by default, see [Least-Privileged Collection - CA Registry](/collect-data/enterprise-collection/least-privileged-collection#ca-registry) for an explanation of why this is accessible.
+
+
+## DC Registry/LDAP Services
+
+### DC Registry
+
+SharpHound collects the registry values `Kdc\StrongCertificateBindingEnforcement` and `Schannel\CertificateMappingMethods` (described [here](https://support.microsoft.com/en-us/topic/kb5014754-certificate-based-authentication-changes-on-windows-domain-controllers-ad2c23b0-15d8-4340-a468-4d4f3b188f16)) to determine the allowed certificate mapping methods on domain controllers (DCs). The BloodHound ADCS edges ESC6, ESC9, and ESC10 require this data to be collected.
+
+SharpHound Enterprise additionally collects the `VulnerableChannelAllowList` value under `SYSTEM\CurrentControlSet\Services\Netlogon\Parameters` (described [here](https://support.microsoft.com/en-us/topic/how-to-manage-the-changes-in-netlogon-secure-channel-connections-associated-with-cve-2020-1472-f7e8cc17-0309-1d6a-304e-5ba73cd1a11e#theGroupPolicy)) to determine which accounts are allowed to use Netlogon secure channel connections without secure RPC.
+
+**Collection Method:** SharpHound collects these registry key values via remote registry access.
+
+**Default Permissions:** Collecting these registry key values requires membership of `Administrators` on the DCs by default.
+
+**Least-Privileged Option:** Delegation is possible via Group Policy or registry modifications, see [Least-Privileged Collection - DC Registry](/collect-data/enterprise-collection/least-privileged-collection#dc-registry).
+
+### LDAP Services
+
+SharpHound collects LDAP service configuration information from domain controllers.
+
+**Collection Method:** SharpHound collects this information by performing NTLM authentication tests against all domain controllers by default on ports 389 (LDAP) and 636 (LDAPS).
+
+**Default Permissions:** No special directory permissions are required beyond valid domain credentials and network access.
 
