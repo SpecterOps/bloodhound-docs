@@ -1,0 +1,17 @@
+---
+title: OwnsRaw
+description: "This edge is established from the principal that owns an object to the owned object. This edge is processed further to determine whether implicit owner rights (e.g., WriteDacl) are blocked, which may prevent the owner from compromising the destination object."
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+Source: [User](/resources/nodes/user), [Group](/resources/nodes/group), [Computer](/resources/nodes/computer)   
+Destination: [AIACA](/resources/nodes/aiaca), [CertTemplate](/resources/nodes/cert-template), [Computer](/resources/nodes/computer), [Container](/resources/nodes/container), [Domain](/resources/nodes/domain), [EnterpriseCA](/resources/nodes/enterprise-ca), [Group](/resources/nodes/group), [GPO](/resources/nodes/gpo), [IssuancePolicy](/resources/nodes/issuance-policy), [NTAuthStore](/resources/nodes/nt-auth-store), [OU](/resources/nodes/ou), [RootCA](/resources/nodes/root-ca), [User](/resources/nodes/user)  
+Traversable: **No**  
+
+## References
+
+* [SpecterOps: Do You Own Your Permissions, or Do Your Permissions Own You?](https://specterops.io/blog/2025/03/26/do-you-own-your-permissions-or-do-your-permissions-own-you/)
+* [Whitepaper: Owner or Pwnd?](https://adminsdholder.com/2025/02/21/UpdatedOwnerOrPwned.html)
