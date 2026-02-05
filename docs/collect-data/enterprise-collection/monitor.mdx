@@ -1,9 +1,66 @@
 ---
 title: Monitor Data Collection
-description: Learn how to monitor data collection activities in BloodHound Enterprise.
+description: Learn how to interpret the status of collector jobs and file uploads.
 ---
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+Monitor collection activity and processing status to confirm uploads, understand analysis timing, and troubleshoot failures. The status concepts in this guide apply to both collector client jobs on the [Finished Jobs Log](#finished-jobs-log) page and manual uploads on the [File Ingest](#file-ingest) page.
+
+BloodHound Enterprise uses separate status indicators for tenants and jobs. These statuses operate independently and are not directly synchronized. This means you may observe scenarios where job status and tenant status appear out of sync, which is expected behavior.
+
+- **Tenant** status reflects datapipe ingestion and analysis progress. The datapipe performs its own processing and reflects status independent of job status.
+- **Job** status reflects the collector client and file ingest workflows. Jobs notify the datapipe when certain actions are complete.
+
+## Tenant Status
+
+Tenant status (also known as [datapipe status](/reference/datapipe/get-datapipe-status)) displays in the top-right corner of the BloodHound Enterprise user interface. This status reflects the current state of data processing for your tenant.
+
+| Status | Description |
+| ------ | ----------- |
+| **Idle** | The tenant is waiting for new data. |
+| **Ingesting** | Data is actively being ingested from one or more collection jobs or file uploads. |
+| **Analyzing** | Analysis is actively running on ingested data. |
+| **Purging** | Data is actively being deleted from the database (for example, you used the **Database Management** page to delete data). |
+
+## Job Status
+
+The following statuses apply to both the **Finished Jobs Log** and **File Ingest** pages.
+
+| Status | Description |
+| ------ | ----------- |
+| **Ready** | Job is queued and waiting to start. |
+| **Running** | Job is actively executing data collection or file processing. |
+| **Complete** | Job finished successfully; all data has been ingested and analyzed. |
+| **Partially Completed** | Job finished with some data processed successfully, but one or more files or operations encountered issues. Check the job details for specific warnings. |
+| **Canceled** | Job was manually canceled before completion. |
+| **Timed Out** | Job exceeded the maximum allowed execution time and was terminated. |
+| **Failed** | Job encountered an error and could not complete. Check the job details for specific error messages. |
+| **Ingesting** | Data is actively being written to the database. |
+| **Analyzing** | Data collection is complete; awaiting completion of analysis. |
+| **Invalid** | Data failed validation (for example, schema errors, corrupted files, or unsupported formats). |
+
+The following state diagram illustrates the possible transitions between job statuses:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Ready
+    Ready --> Running: Job starts
+    Running --> Ingesting: Data upload begins
+    Running --> Failed: Error occurs
+    Running --> TimedOut: Timeout exceeded
+    Running --> Canceled: User cancels
+    Ingesting --> Analyzing: Ingestion complete
+    Ingesting --> Invalid: Validation fails
+    Analyzing --> Complete: Analysis complete
+    Analyzing --> PartiallyCompleted: Partial success
+    state "Timed Out" as TimedOut
+    state "Partially Completed" as PartiallyCompleted
+    Complete
+    Failed
+    Canceled
+    Invalid
+```
 
 ## Finished Jobs Log
 
@@ -15,11 +72,13 @@ The **Finished Jobs Log** page provides a detailed log of each collection job, i
 | --- | --- |
 | **ID** | A unique identifier for the client collection job |
 | **Client** | The client that initiated the collection job |
-| **Status** | The status of the collection job (e.g., complete, failed) |
+| **Status** | The [status](#job-status) of the collection job (for example, complete, failed) |
 | **Message** | A brief message providing additional context about the collection job |
 | **Start Time** | The time when the collection job started |
 | **Duration** | The time taken to process the collection job |
 | **Data Collected** | The [type of data](/collect-data/permissions) that the client is configured to collect |
+
+<Note>For clients on [scheduled collection](/collect-data/enterprise-collection/collection-schedule), jobs can display an *Analyzing* status while the tenant status remains *Idle*. When the scheduled collection time arrives, the tenant status changes to *Ingesting*, and analysis begins automatically after the collection completes successfully.</Note>
 
 <Frame>
   <img
@@ -61,7 +120,7 @@ The **Finished Jobs Log** page provides a detailed log of each collection job, i
   </Step>
 </Steps>
 
-## File Ingest Logs
+## File Ingest
 
 When you perform an [ad-hoc data collection](/collect-data/enterprise-collection/ad-hoc-collection) by uploading a SharpHound output .zip file, ingestion process details are logged on the **File Ingest** page.
 
@@ -73,7 +132,7 @@ The **File Ingest** page provides a detailed log of each ingestion attempt, incl
 | --- | --- |
 | **ID** | A unique identifier for the file ingest operation |
 | **User** | The user who initiated the file ingest operation |
-| **Status** | The current status of the file ingest operation (e.g., complete, failed) |
+| **Status** | The current [status](#job-status) of the file ingest operation (for example, complete, failed) |
 | **Message** | A brief message providing additional context about the file ingest operation |
 | **Start Time** | The time when the file ingest was initiated |
 | **Duration** | The time taken to process the file ingest operation |
