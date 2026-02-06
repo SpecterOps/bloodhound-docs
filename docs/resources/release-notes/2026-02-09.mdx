@@ -1,0 +1,143 @@
+---
+title: 2026-02-09 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-02-09"
+---
+
+|     |     |     |     |
+| --- | --- | --- | --- |
+| **Release** | **BloodHound** | **SharpHound** | **AzureHound** |
+| 2026-02-09 | v8.6.0 | v2.9.1 | v2.9.0 |
+
+<Tip>Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.</Tip>
+
+<Update label="AzureHound" description="New Feature" tags={["Data Collection"]}>
+  {/*specterops/azurehound/pull/152*/}
+
+  ## User-Agent Flag
+
+  Customize the User-Agent header used by AzureHound in all HTTP requests with the `--user-agent` [flag](/collect-data/ce-collection/azurehound-flags#custom-user-agent).
+  
+  This is useful for evasion, debugging, or identification purposes without recompiling the binary.
+
+</Update>
+
+<Update label="AzureHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-7248*/}
+
+  ## Last Sign-In from Azure
+
+  Track user activity based on last successful sign-in timestamp collected from Entra ID.
+  
+  AzureHound [configuration](/install-data-collector/install-azurehound/azure-configuration#grant-microsoft-graph-permissions) now supports collecting the `lastSuccessfulSignInDateTime` property for Azure users when the `AuditLog.Read.All` Microsoft Graph API permission is available.
+  
+  BloodHound displays this information for Azure nodes in the [Entity panel](/analyze-data/explore/search#entity-panel).
+
+    <Frame>
+      <img
+        src="/images/release_notes/8_6_0/azurehound-last-sign-in.png"
+        alt="A view of the Entity panel showing the Last Successful Sign-In Date Time property for an Azure user"
+        style={{ maxWidth: "50%" }}
+      />
+    </Frame>
+
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-6515*/}
+
+  ## Updated Permissions for Saved Cypher Queries
+
+  Edit Cypher queries that you've saved and shared with your organization.
+
+  User and Power User roles can now edit [shared](/analyze-data/explore/cypher-search#create-and-manage-queries) Cypher queries (no longer restricted to Admin users). This allows teams to collaborate more effectively by tailoring shared queries based on evolving needs.
+
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Zone Builder"]}>
+  {/*BED-6422*/}
+
+  ## Cypher Rule Testing
+
+  Verify your query before creating a [Cypher-based rule](/analyze-data/privilege-zones/rules#cypher).
+  
+  A new **Run** button makes it more clear that you must run your Cypher query and preview the results before creating the rule.
+
+  <Frame>
+    <img
+      src="/images/release_notes/8_6_0/rule-cypher-run.png"
+      alt="A view of defining a Cypher-based rule highlighting the new Run button"/>
+  </Frame>
+
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Zone Builder"]}>
+  {/*BED-7148*/}
+
+  ## Consistent Certification Terminology
+
+  <Badge shape="rounded" size="sm" color="purple">Enterprise</Badge>
+
+  Use consistent language when managing certifications.
+  
+  The **Revoke** button on the [Certifications](/analyze-data/privilege-zones/certification) tab has been renamed to **Reject** to align with the "Rejected" status filter.
+
+  <Frame>
+    <img
+      src="/images/release_notes/8_6_0/reject-certification.png"
+      alt="A view of the Certifications tab showing the updated Reject button"/>
+  </Frame>
+
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Zone Builder"]}>
+  {/*BED-6822*/}
+
+  ## Zone Name in Object Information
+
+  Quickly identify the name of the zone that an object belongs to instead of its position in the zone hierarchy.
+  
+  When you select an object on the graph or zone and label **Details** view, the name of the zone that the object belongs to now appears on the first line of the **Object Information** panel for clearer context.
+
+    <Frame>
+      <img
+        src="/images/release_notes/8_6_0/zone-name.png"
+        alt="A view of the Object Information panel showing the zone name instead of position"
+      />
+    </Frame>
+
+</Update>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+
+## Administration
+
+{/*BED-7278*/} Resolved an issue where default admin configuration failed to populate missing fields when only some values were provided, which could prevent creating the default admin user.
+
+## API
+
+- {/*BED-7142*/} Resolved an issue where Active Directory entity API responses omitted the `kinds` array when counts were not included.
+- {/*BED-7089*/} Resolved an issue where the [List asset group tag member by IDs](/reference/asset-isolation/list-asset-group-tag-members-by-id) endpoint returned all members when filtering by a source kind with the `primary_kind` filter.
+- {/*BED-6941*/} Resolved an issue where the path of the [Get API Spec](/reference/api-info/get-api-spec) endpoint in the **API Explorer** and documentation was incorrect.
+
+## Attack Path Analysis
+
+<Badge shape="rounded" size="sm" color="purple">Enterprise</Badge>
+
+- {/*BED-7149*/} Resolved an issue where the **Posture** page displayed an error after initial file ingestion.
+- {/*BED-6961*/} Resolved an issue where long-running file ingestion jobs prevented analysis from running.
+
+## Cypher
+
+{/*BED-6696*/} Resolved an issue where `OPTIONAL MATCH` clauses in Cypher queries were treated as regular `MATCH` clauses, which caused incorrect results.
+
+## OpenGraph
+
+{/*BED-6995*/} Resolved an issue where the **File Ingest** logs did not surface warnings for partially successful OpenGraph data uploads. Warnings now display alongside errors in the **File Ingest** table to clarify partial failures.
+
+## Zone Builder
+
+- {/*BED-7196*/} Resolved an issue where clicking a rule's **View** option in the **Object** tab on the **Zone Builder** page didn't scroll the rule into view.
+- {/*BED-7260*/} Resolved an issue where memory consumption was overestimated, which could cause graph queries to be prematurely cancelled.
+
+</Update>
