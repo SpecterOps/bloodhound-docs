@@ -1,0 +1,102 @@
+---
+title: Configure ADFS for Integrated Windows Authentication
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+When using Integrated Windows Authentication (IWA) to authenticate SharpHound with your BloodHound Enterprise tenant, you must configure your Active Directory Federation Services (ADFS) server to support this authentication method.
+
+This guide documents the BloodHound-specific ADFS configuration requirements. For general ADFS setup and administration, refer to [Microsoft's ADFS documentation](https://learn.microsoft.com/en-us/windows-server/identity/active-directory-federation-services).
+
+## Prerequisites
+
+- An ADFS server deployed and operational in your network
+- Administrative access to your ADFS server or delegation of ADFS administration
+- The Client ID generated when [creating an IWA collector client](/collect-data/enterprise-collection/create-collector)
+- The Resource value provided during collector client creation
+- Access to your BloodHound Enterprise tenant's ADFS issuer configuration
+
+## ADFS Configuration Steps
+
+### 1. Create a Server Application (Web API)
+
+In ADFS Management, you will need to create a server application using the Web API template.
+
+1. Open **ADFS Management** on your ADFS server
+2. Expand **Service** and right-click **Application Groups**
+3. Select **Add Application Group**
+4. Enter a name for the application group (e.g., "BloodHound SharpHound Clients")
+5. In the **Scenarios** list, select **Server application accessing a Web API**
+6. Click **Next** to proceed
+
+### 2. Configure the Server Application
+
+1. On the **Configure Server Application** page:
+   - **Client Identifier**: Use the Client ID provided when creating the IWA collector client
+   - **Redirect URL**: Enter a value (e.g., `https://bloodhound.example.com/callback`). This URL is not used in the IWA authentication flow but is required for ADFS setup.
+   - Click **Next**
+
+### 3. Configure Windows Authentication
+
+1. On the **Configure Web API** page:
+   - Select the newly created application from the list
+   - In the **Authentication Method** section, ensure that **Windows Authentication** is enabled for SharpHound users
+   - This should be the primary or only authentication method for this Web API
+   - Click **Next**
+
+### 4. Configure the Issuer Transformer Rule
+
+The issuer transformer rule is critical for token validation in BloodHound. This rule ensures that the Client ID is properly included as the "sub" (subject) claim in the token.
+
+1. On the **Configure Application Permissions** page, note the default permissions and click **Next**
+2. On the **Summary** page, review the configuration and click **Next** to create the application group
+3. After creation, you need to add an **Issuer Transformer** rule to the Web API:
+   - Right-click the Web API application that was just created
+   - Select **Edit Claim Issuance Policy**
+   - Click **Add Rule**
+   - Select **Claim rule template: Transform an Incoming Claim**
+   - Configure the rule as follows:
+     - **Incoming claim type**: `Windows Account Name` or appropriate identifier
+     - **Outgoing claim type**: `Name ID`
+     - **Outgoing name ID format**: `Persistent`
+     - Under **Pass through all claim values**, ensure the rule will transform claims appropriately
+   - Click **Finish**
+
+### 5. Add the Client ID as "sub" Claim
+
+In addition to the above rule, ensure that your claim rules include a provision where the Client ID is issued as the "sub" claim. This is essential for BloodHound to properly validate tokens.
+
+1. Open the claim issuance policy for the Web API again if not already open
+2. Verify that existing rules or add a new rule to ensure the Client ID appears in the token's "sub" claim
+3. The exact configuration depends on your ADFS version and claim structure; work with your ADFS administrator to ensure this requirement is met
+
+<Note>
+The exact claim transformation rules required may vary based on your ADFS version and configuration. The critical requirement is that the token issued by ADFS must include the Client ID as the "sub" claim so that BloodHound can validate that the token is intended for SharpHound.
+</Note>
+
+## Verifying the Configuration
+
+After configuring ADFS, verify that:
+
+1. The Client ID you used in ADFS matches the Client ID shown in the BloodHound Enterprise tenant for the IWA collector client
+2. The ADFS well-known endpoint is accessible: `https://adfs.example.com/.well-known/openid-configuration`
+3. The Web API application has Windows authentication enabled
+4. Claim rules are configured to include the Client ID in the token's "sub" claim
+
+## Troubleshooting
+
+If SharpHound does not authenticate successfully with ADFS:
+
+1. **Check the ADFS event log** for authentication failures or token issuance errors
+2. **Verify network connectivity** from the SharpHound service account to the ADFS server over HTTPS (port 443)
+3. **Confirm the service account has Windows authentication rights** on the ADFS-protected Web API
+4. **Review token contents** using a JWT decoder to ensure the "sub" claim contains the correct Client ID
+5. **Check the SharpHound logs** (typically in `%APPDATA%\Roaming\BloodHoundEnterprise`) for detailed error messages during authentication attempts
+
+## Next Steps
+
+After ADFS is configured:
+
+1. [Configure SharpHound locally](/install-data-collector/install-sharphound/local-configuration) with the IWA settings in `settings.json`
+2. Verify that SharpHound can authenticate to your BloodHound Enterprise tenant
+3. [Run an on-demand scan](/collect-data/enterprise-collection/on-demand-scan) to test the configuration

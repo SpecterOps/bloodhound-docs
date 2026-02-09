@@ -45,16 +45,28 @@ The process to create a BloodHound Enterprise collector client consists of the f
               | Field | Required | Description |
               |-------|----------|-------------|
               | **Client Name** | Required | A descriptive name for the collector client |
+              | **Authentication Method** | Required | Select the authentication method:<br/>- **API Authentication**: Traditional token-based authentication (default)<br/>- **Integrated Windows Authentication (IWA)**: Windows-based authentication via ADFS |
               | **Collection Schedule** | Optional | |
               | **Advanced Options** | Optional | |
 
-                <Frame>
-                  <img
-                    src="/images/data_collectors/create-sharphound.png"
-                    alt="A view of the Create Client screen for SharpHound Enterprise"
-                  />
-                </Frame>
-              </Tab>
+              #### API Authentication
+              For API Authentication clients, no additional fields are required beyond the client name.
+
+              #### Integrated Windows Authentication (IWA)
+              For IWA clients, you will need to provide ADFS configuration details:
+
+              | Field | Required | Description |
+              |-------|----------|-------------|
+              | **Issuer ID (Well-known)** | Required | The ADFS well-known endpoint URL, typically: `https://adfs.example.com/.well-known/openid-configuration` |
+              | **Issuer Override ID** | Optional | An optional override for the token issuer address if your ADFS configuration uses a different issuer URL for token validation |
+
+              <Frame>
+                <img
+                  src="/images/data_collectors/create-sharphound.png"
+                  alt="A view of the Create Client screen for SharpHound Enterprise"
+                />
+              </Frame>
+            </Tab>
 
             <Tab title="AzureHound Enterprise Client">
               Enter details for the AzureHound Enterprise Client and click **Create**.
@@ -63,6 +75,8 @@ The process to create a BloodHound Enterprise collector client consists of the f
               |-------|----------|-------------|
               | **Client Name** | Required | A descriptive name for the collector client |
               | **Collection Schedule** | Optional | |
+
+              <Note>AzureHound clients always use API Authentication.</Note>
 
                 <Frame>
                   <img
@@ -74,14 +88,14 @@ The process to create a BloodHound Enterprise collector client consists of the f
           </Tabs>
   </Step>
   
-  <Step title="Save the client token">
-  The pop-up window _Client Token Info_ will appear; follow the instructions in it - save the key before clicking **CLOSE**.
+  <Step title="Save the client token or configuration">
+  A pop-up window will appear with client configuration information; follow the instructions in it before clicking **CLOSE**.
 
     <Tabs>
-      <Tab title="SharpHound Enterprise Client">
-        Copy the token information for the SharpHound Enterprise Client.
+      <Tab title="API Authentication">
+        A _Client Token Info_ window will appear with authentication credentials. Copy and save the token information before closing.
 
-        <Note>The token information is required to [configure](/install-data-collector/install-sharphound/local-configuration) the collector client application.</Note>
+        <Note>The token information is required to [configure](/install-data-collector/install-sharphound/local-configuration) the collector client application in the `auth.json` file.</Note>
 
           <Frame>
             <img
@@ -91,25 +105,38 @@ The process to create a BloodHound Enterprise collector client consists of the f
           </Frame>
         </Tab>
 
-        <Tab title="AzureHound Enterprise Client">
-          Copy the token information for the AzureHound Enterprise Client.
+      <Tab title="Integrated Windows Authentication (IWA)">
+        A _Client Configuration Info_ window will appear with the Client ID and other configuration details needed to set up ADFS.
 
-          <Note>The token information is required to [configure](/install-data-collector/install-azurehound/create-configuration) the collector client application.</Note>
+        <Note>The Client ID and configuration details are required to [configure ADFS](/install-data-collector/install-sharphound/configure-adfs-iwa) and to [configure](/install-data-collector/install-sharphound/local-configuration) the collector client application in `settings.json`.</Note>
 
-            <Frame>
-              <img
-                src="/images/data_collectors/azurehound-client-token-info.png"
-                alt="A view of the client token info screen for AzureHound Enterprise"
-              />
-            </Frame>
+          <Frame>
+            <img
+              src="/images/data_collectors/sharphound-client-config-info.png"
+              alt="A view of the client configuration info screen for SharpHound Enterprise IWA"
+            />
+          </Frame>
         </Tab>
-      </Tabs>
+
+      <Tab title="AzureHound Enterprise Client">
+        A _Client Token Info_ window will appear with authentication credentials. Copy and save the token information before closing.
+
+        <Note>The token information is required to [configure](/install-data-collector/install-azurehound/create-configuration) the collector client application.</Note>
+
+          <Frame>
+            <img
+              src="/images/data_collectors/azurehound-client-token-info.png"
+              alt="A view of the client token info screen for AzureHound Enterprise"
+            />
+          </Frame>
+        </Tab>
+    </Tabs>
   </Step>
 </Steps>
 
 ## Outcome
 
-The collector client will appear in the clients table with a **Status** of **Unconfigured**.
+The collector client will appear in the clients table with a **Status** of **Unconfigured**. The table displays each client's **Authentication Method**, showing either "API Authentication" or "Integrated Windows Authentication" based on the method selected during client creation.
 
 <Frame>
   <img
@@ -118,4 +145,9 @@ The collector client will appear in the clients table with a **Status** of **Unc
   />
 </Frame>
 
-You can now use the token information to configure the collector client application. See [Install SharpHound Enterprise](/install-data-collector/install-sharphound) or [Install AzureHound Enterprise](/install-data-collector/install-azurehound) for more information.
+### Next Steps
+
+- **For API Authentication clients**: Use the token information to [configure](/install-data-collector/install-sharphound/local-configuration) the collector client application in the `auth.json` file.
+- **For IWA clients**: Follow the [ADFS configuration guide](/install-data-collector/install-sharphound/configure-adfs-iwa) to set up ADFS, then [configure](/install-data-collector/install-sharphound/local-configuration) the collector client application in `settings.json`.
+
+See [Install SharpHound Enterprise](/install-data-collector/install-sharphound) or [Install AzureHound Enterprise](/install-data-collector/install-azurehound) for more information.

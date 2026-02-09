@@ -4,7 +4,9 @@ title: SharpHound Enterprise Local Configuration
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-The local configuration of SharpHound Enterprise occurs within two files: [settings.json](#settings-json) and [auth.json](#auth-json), their file paths can be found in the table below. Note that %AppData% is the directory of the service account: "C:\\Users\\SERVICE_ACCOUNT$\\AppData\\Roaming".
+The local configuration of SharpHound Enterprise occurs within two files: [settings.json](#settings-json) and [auth.json](#auth-json), their file paths can be found in the table below. Note that `%AppData%` is the directory of the service account: `C:\\Users\\SERVICE_ACCOUNT$\\AppData\\Roaming`.
+
+<Note>When using Integrated Windows Authentication (IWA), the `auth.json` file is not used; all authentication information is provided in `settings.json` instead.</Note>
 
 | **SharpHound File** | **Default Path (v2.5.8+)  <br/>** | **Default Path (\v2.5.8)  <br/>** |
 | --- | --- | --- |
@@ -51,6 +53,38 @@ An example of the file:
 }
 ```
 
+#### Integrated Windows Authentication (IWA) Example
+
+If using Integrated Windows Authentication instead of API tokens, your `settings.json` would include the IWA-specific configuration fields:
+
+```json
+{
+  "RestEndpoint": "CODENAME.bloodhoundenterprise.io",
+  "RestPort": 443,
+  "SSL": true,
+  "CurrentJob": null,
+  "LogLevel": "Information",
+  "EnumerationLogLevel": "Information",
+  "TempDirectory": "C:\\\Users\\\gmsa_SHS$\\\AppData\\\Roaming\\\BloodHoundEnterprise",
+  "Proxy": null,
+  "ComputerPasswordResetWindow": 60,
+  "ForceLDAPKerberosAuth": true,
+  "PortCheckTimeout": 10000,
+  "LDAPSSLPort": 636,
+  "LDAPPort": 389,
+  "ForceLDAPSSL": false,
+  "NumWorkers": 50,
+  "PartitionLDAPQueries": true,
+  "ProviderWellKnown": "https://adfs.example.com/.well-known/openid-configuration",
+  "ClientId": "12345678-1234-1234-1234-123456789012",
+  "Resource": "https://bloodhound.example.com",
+  "UseIntegratedWindowsAuthForADFS": true,
+  "Version": "2.5.9.0"
+}
+```
+
+When using this configuration, do not include an `auth.json` file. The authentication credentials will be handled through ADFS using the service account's Windows identity.
+
 The following table outlines supported fields and their default values:
 
 | **Field** | **Type** | **Description** | **Default value** | **Example value** |
@@ -72,6 +106,11 @@ The following table outlines supported fields and their default values:
 | NumWorkers | Integer | The number of concurrent threads performing privileged collection.<br/><br/>_Minimum value: 10_<br/><br/>_Maximum value: 100_<br/><br/>_Requires SharpHound Enterprise v2.2.1+_ | 50  | 50  |
 | PartitionLDAPQueries | Boolean | Whether SharpHound should split LDAP queries into multiple parts, used when querying very large domains. | True | True |
 | Version | String | The current version of SharpHound Enterprise. | Do not modify this value. | Do not modify this value. |
+| ProviderWellKnown | String | \[IWA Only\] The ADFS well-known endpoint URL for Integrated Windows Authentication. This is typically the ADFS server address with "/.well-known/openid-configuration" appended. Required when `UseIntegratedWindowsAuthForADFS` is enabled. | null | "https://adfs.example.com/.well-known/openid-configuration" |
+| ClientId | String | \[IWA Only\] The Client ID issued by ADFS during collector client creation. Used to identify SharpHound to the ADFS server. Required when `UseIntegratedWindowsAuthForADFS` is enabled. | null | "12345678-1234-1234-1234-123456789012" |
+| Resource | String | \[IWA Only\] The resource identifier for the ADFS application. Provided during collector client creation for your BloodHound Enterprise tenant. Required when `UseIntegratedWindowsAuthForADFS` is enabled. | null | "https://bloodhound.example.com" |
+| IssuerOverride | String | \[IWA Only\] Optional override for the ADFS token issuer address used during token validation. Use this if your ADFS token issuer differs from the well-known endpoint base URL. When not set, the issuer is derived from `ProviderWellKnown` by removing the "/.well-known/openid-configuration" suffix. | null | "https://adfs-custom.example.com" |
+| UseIntegratedWindowsAuthForADFS | Boolean | \[IWA Only\] Enable Integrated Windows Authentication via ADFS. When set to `true`, SharpHound will authenticate using the service account's Windows credentials against the configured ADFS server. The `auth.json` file is not used when this is enabled. Requires `ProviderWellKnown`, `ClientId`, and `Resource` to be configured. | False | True |
 
 ### auth.json
 
