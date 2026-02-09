@@ -56,15 +56,18 @@ The SharpHound Enterprise service will run as a domain-joined account and will u
 * \[Optional\]: If Active Directory tombstoning is enabled
     * Read privileges to the Deleted Objects container (see [How to let non-administrators view the Active Directory deleted objects container](https://learn.microsoft.com/en-us/troubleshoot/windows-server/identity/non-administrators-view-deleted-object-container))
 
-### Service Account Requirements for Integrated Windows Authentication (IWA)
+### Integrated Windows Authentication (IWA)
 
 If SharpHound is configured to use Integrated Windows Authentication with your BloodHound Enterprise tenant, the following additional requirements apply:
 
 * Active Directory Federation Services (ADFS) server must be accessible in your network environment
-* The service account must be configured in ADFS to support Windows authentication for SharpHound
-  * See [Configuring ADFS for Integrated Windows Authentication](/install-data-collector/install-sharphound/configure-adfs-iwa) for detailed ADFS setup instructions
-* The Client ID property must be registered in ADFS (provided during [collector client creation](/collect-data/enterprise-collection/create-collector))
-* The Resource value must be specified in SharpHound's configuration (provided during client creation)
+* Service account must be [configured](/install-data-collector/install-sharphound/configure-adfs-iwa) in ADFS to support Windows authentication for SharpHound
+* Client ID property must be registered in ADFS (provided during [collector client creation](/collect-data/enterprise-collection/create-collector))
+* Local SharpHound configuration must include IWA-specific properties
+    * `ProviderWellKnown` - The well-known endpoint URL for your ADFS server (e.g., `https://adfs.example.com/.well-known/openid-configuration`)
+    * `ClientId` - The Client ID generated during collector client creation
+    * `Resource` - Your BloodHound Enterprise tenant URL (e.g., `https://bloodhound.example.com`)
+    * `UseIntegratedWindowsAuthForADFS` - Set to `true` to enable IWA authentication
 
 See [SharpHound Data Collection and Permissions](/collect-data/permissions) for comprehensive requirement information.
 
