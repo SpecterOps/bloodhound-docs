@@ -31,8 +31,6 @@ If BloodHound Enterprise detects an object in a lower-privileged zone controllin
 
 This analysis helps you identify and remediate privilege escalation paths and misconfigurations that violate your security model.
 
-{/* TODO The following diagram illustrates the control relationships between a set of hypothetical zones: */}
-
 ## Features
 
 The **Zone Builder** page provides tools for configuring and managing your privilege zones.
@@ -41,9 +39,72 @@ Once configured, BloodHound Enterprise analyzes your zones and displays findings
 
 The **Zone Builder** page provides the following tabs:
 
-* **Zones**: A group of objects that represent the hierarchy of control across all domains in an environment based on access level
-* **Labels**: A flexible way to categorize a group of objects in a single zone (or across multiple zones) for easier searching and filtering
-* **Certifications** <Badge shape="rounded" size="sm" stroke color="purple">Enterprise Edition</Badge>: An optional process to interrupt automatic inclusion of additional objects in a zone by requiring manual certification of the additional objects
-* **History**: An audit log of changes made to your zones and labels over time
+- **Zones**: A group of objects that represent the hierarchy of control across all domains in an environment based on access level
+- **Labels**: A flexible way to categorize a group of objects in a single zone (or across multiple zones) for easier searching and filtering
+- **Certifications** <Badge shape="rounded" size="sm" stroke color="purple">Enterprise Edition</Badge>: An optional process to interrupt automatic inclusion of additional objects in a zone by requiring manual certification of the additional objects
+- **History**: An audit log of changes made to your zones and labels over time
 
 These tools enable further risk mitigation in your environments by highlighting the violations and misconfigurations in your tiered network model.
+
+## Object membership
+
+Before working with Privilege Zones, it's important to understand how BloodHound assigns objects as members of zones and labels:
+
+- **Zone membership requires rule matching**: Objects are only assigned to a zone if they match at least one of the zone's rules
+- **Zone membership is exclusive to the highest-priority zone**: If multiple zone rules match an object, BloodHound assigns it to the highest-priority zone only
+- **Objects can have multiple labels**: Unlike zones, an object can match multiple label rules simultaneously
+
+## How changes take effect
+
+Changes to Privilege Zones do not take effect immediately. Understanding when changes become active helps you plan configuration updates and validate that your security model and remediation efforts are working as expected.
+
+### Workflow
+
+After making changes to zones, labels, or rules:
+
+1. **Changes are saved**: Configuration is stored but not yet active
+1. **Analysis is triggered**: Most changes automatically queue an analysis run (see table below)
+1. **Analysis runs**: BloodHound re-evaluates all objects against the updated configuration
+1. **Changes become visible**: Object assignments, metrics, and findings reflect the new configuration
+
+<Warning>Analysis may take several minutes to complete depending on the size of your environment. Until analysis finishes, the Zone Builder **Details View** and related metrics will not reflect your latest changes.</Warning>
+
+### Triggers
+
+Not all actions trigger an immediate analysis run or require waiting for analysis to see changes. Use the following table to understand which actions trigger analysis and when changes become visible:
+
+| Action | Triggers Analysis | Changes Visible |
+| ------ | :---------------: | --------------- |
+| Create a zone | <Icon icon="square-xmark" iconType="solid" color="#ef4444" /> | Immediate (but zone will be empty until rules are added) |
+| Update a zone (e.g., reorder, rename, toggle analysis) | <Icon icon="square-check" iconType="solid" color="#22c55e" /> | After analysis completes |
+| Delete a zone | <Icon icon="square-check" iconType="solid" color="#22c55e" /> | After analysis completes |
+| Create or update a label | <Icon icon="square-xmark" iconType="solid" color="#ef4444" /> | Immediate |
+| Create a rule | <Icon icon="square-check" iconType="solid" color="#22c55e" /> | After analysis completes |
+| Update a rule (including enable/disable) | <Icon icon="square-check" iconType="solid" color="#22c55e" /> | After analysis completes |
+| Delete a rule | <Icon icon="square-check" iconType="solid" color="#22c55e" /> | After analysis completes |
+
+### Validation
+
+After making changes, follow these steps to confirm they've taken effect:
+
+1. **Monitor analysis status**: Check your [tenant status](/collect-data/enterprise-collection/monitor#tenant-status) to see if analysis is running
+1. **Wait for completion**: Analysis must finish before changes are reflected
+1. **Review zone membership**: Navigate to the affected zone and verify that the expected objects appear
+1. **Check findings**: Review the **Attack Paths** and **Posture** pages for any new findings or changes in existing findings related to the updated zones
+
+### Common issues
+
+**I created a new zone rule but don't see any objects in the zone.**
+
+- Analysis may still be running. Wait for it to complete before checking zone membership.
+- The rule may not match any objects. Review the rule criteria and test with known objects.
+- Multiple zone rules may match the same objects. Check if another zone with higher priority is taking precedence for those objects.
+
+**I updated a zone rule but don't see any changes.**
+
+Analysis is required for rule updates to take effect. Check the analysis status and wait for completion.
+
+**I deleted a zone rule and objects are still showing in the zone.**
+
+- Other rules in the same zone may still match those objects.
+- Analysis may still be running. Wait for completion to see the final result.
