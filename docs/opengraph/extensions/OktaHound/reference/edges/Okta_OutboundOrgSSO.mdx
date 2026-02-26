@@ -1,0 +1,41 @@
+---
+title: 'Okta_OutboundOrgSSO'
+description: 'Single sign-on from an Okta application to an external organization'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Source: [Okta_Application](../nodes/Okta_Application)
+- Destination: [AZTenant](https://bloodhound.specterops.io/resources/nodes/az-tenant), [GHOrganization](https://github.com/SpecterOps/GitHound), [jamf_Tenant](https://github.com/SpecterOps/JamfHound), [SNOWAccount](https://github.com/SpecterOps/SnowHound)
+- Traversable: ✅
+
+## General Information
+
+The traversable `Okta_OutboundOrgSSO` edges represent the Single Sign-On (SSO) relationships between Okta applications and supported external organizations or tenants, such as GitHub Enterprise or Jamf Pro, using SAML 2.0 or OIDC protocols.
+
+```mermaid
+graph LR
+  subgraph okta["OktaHound"]
+    direction TB
+    o("Okta_Organization contoso.okta.com")
+    app1("Okta_Application GitHub Enterprise Cloud")
+    app2("Okta_Application Jamf Pro SAML")
+    o -- Okta_Contains --> app1
+    o -- Okta_Contains --> app2
+  end
+  subgraph "GitHound"
+    direction TB
+    ghorg("GHOrganization Contoso")
+    app1 -- Okta_OutboundOrgSSO --> ghorg
+  end
+  subgraph "JamfHound"
+    direction TB
+    jamf("jamf_Tenant contoso.jamfcloud.com")
+    app2 -- Okta_OutboundOrgSSO --> jamf
+  end
+```
+
+The respective BloodHound collectors, e.g., `GitHound` for GitHub organizations and `JamfHound` for Jamf Pro tenants,
+must be used to gather the external node information.
