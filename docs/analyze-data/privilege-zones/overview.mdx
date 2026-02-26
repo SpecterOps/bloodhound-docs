@@ -36,81 +36,61 @@ This analysis helps you identify and remediate privilege escalation paths and mi
 
 ## Object membership
 
-Before working with Privilege Zones, it's important to understand how BloodHound assigns objects as members of zones and labels:
+Before working with Privilege Zones, it's important to understand how BloodHound assigns objects to zones and labels through the analysis process.
 
 - **Object membership requires rule matching**: Objects are only assigned to a zone or label if they match at least one of the zone's or label's rules
 - **Zone membership is exclusive to the highest-priority zone**: If multiple zone rules match an object, BloodHound assigns it to the highest-priority zone only
 - **Objects can have multiple labels**: Unlike zones, an object can match multiple label rules simultaneously
 
-## How changes take effect
+Most changes to Privilege Zones affect object membership and require analysis to run before you can validate the results. Understanding when you can expect to see results helps you maintain your configuration and validate remediation efforts.
 
-Most changes to Privilege Zones require an analysis run before they take effect. Understanding when changes become active helps you plan configuration updates and validate that your security model and remediation efforts are working as expected.
+## Workflow
 
-### Workflow
-
-The following steps represent the general workflow for making changes to zones and labels and when those changes take effect:
+The following steps represent the general workflow for making changes and validating the results:
 
 <Steps>
-	<Step title="Changes are made">
-        You make changes to zones, labels, and rules on the Zone Builder page.
+	<Step title="Configure settings">
+
+    Make any necessary changes to your zones, labels, and rules on the **Zone Builder** page.
+
     </Step>
-    <Step title="Changes are saved">
-		Configuration changes are saved, but most changes are not visible until analysis runs.
-	</Step>
-	<Step title="Analysis is triggered">
-		Changes that require analysis automatically queue an analysis run (see table below).
-	</Step>
-	<Step title="Analysis runs">
-		BloodHound re-evaluates all objects against the updated configuration.
-	</Step>
-	<Step title="Changes become visible">
-		Object membership, metrics, and findings reflect the new configuration.
 
-        <Warning>Analysis may take several minutes to complete depending on the size of your environment. Until analysis finishes, the Zone Builder **Details View** and related metrics will not reflect your latest changes.</Warning>
+    <Step title="Save changes">
+
+    Save your configuration changes to automatically trigger analysis for any settings that affect object membership.
+
+    All changes that affect object membership require analysis to run before you can validate the results. Actions that require analysis include:
+
+    - Creating a new zone or label with a rule definition
+    - Creating, editing, or deleting a rule definition for an existing zone or label
+    - Editing the details of a zone or label that has a rule definition
+    - Deleting a zone or label that has a rule definition
+
 	</Step>
-</Steps>
 
-### Triggers
+	<Step title="Wait for analysis to complete">
 
-Not all actions trigger an immediate analysis run or require waiting for analysis to see changes. Use the following table to understand which actions trigger analysis and when changes become visible:
+    Check your [tenant status](/collect-data/enterprise-collection/monitor#tenant-status) to monitor analysis progress. During analysis, BloodHound re-evaluates object membership against the updated configuration.
 
-| Action | Triggers Analysis | Changes Visible |
-| ------ | :---------------: | --------------- |
-| Create a zone | <Icon icon="square-xmark" iconType="solid" color="#ef4444" /> | Immediate (but won't include objects until rules are added) |
-| Update a zone (reorder, rename, enable/disable analysis) | <Icon icon="square-check" iconType="solid" color="#22c55e" /> | After analysis completes |
-| Delete a zone | <Icon icon="square-check" iconType="solid" color="#22c55e" /> | Zone is removed immediately in **Zone Builder**; related object membership updates after analysis completes |
-| Create a label | <Icon icon="square-xmark" iconType="solid" color="#ef4444" /> | Immediate (but won't include objects until rules are added) |
-| Update a label (rename) | <Icon icon="square-xmark" iconType="solid" color="#ef4444" /> | Immediate |
-| Delete a label | <Icon icon="square-check" iconType="solid" color="#22c55e" /> | Label is removed immediately in **Zone Builder**; related object membership updates after analysis completes |
-| Create a rule | <Icon icon="square-check" iconType="solid" color="#22c55e" /> | After analysis completes |
-| Update a rule (including enable/disable) | <Icon icon="square-check" iconType="solid" color="#22c55e" /> | After analysis completes |
-| Delete a rule | <Icon icon="square-check" iconType="solid" color="#22c55e" /> | After analysis completes |
+    <Note>Analysis may take several minutes to complete depending on the size of your environment. Until analysis finishes, the Zone Builder **Details View** and related metrics will not reflect your latest changes.</Note>
 
-### Validation
-
-After making changes, follow these steps to confirm they've taken effect:
-
-<Steps>
-	<Step title="Monitor analysis status">
-		Check your [tenant status](/collect-data/enterprise-collection/monitor#tenant-status) to see if analysis is running.
 	</Step>
-	<Step title="Wait for completion">
-		Analysis must finish before changes are reflected.
-	</Step>
-	<Step title="Review zone membership">
-		Navigate to the affected zone and verify that the expected objects appear.
-	</Step>
-	<Step title="Check findings">
-		Review the **Attack Paths** and **Posture** pages for any new findings or changes in existing findings related to the updated zones.
+	<Step title="Validate the results">
+
+    Validate that your configuration changes have the expected results:
+
+    1. Navigate to the **Zone Builder** page and verify that the expected objects are now included in (or excluded from) the relevant zones and labels.
+    1. Review the **Attack Paths** and **Posture** pages for new findings or changes in existing findings related to the updated zones and labels.
+
 	</Step>
 </Steps>
 
-### Common issues
+## Common issues
 
 **I created a new zone rule but don't see any objects in the zone.**
 
 - Analysis may still be running. Wait for it to complete before checking zone membership.
-- The rule may not match any objects. Review the rule criteria and test with known objects.
+- The rule may not match any objects. Review the rule definition and test with known objects.
 - Multiple zone rules may match the same objects. Check if another zone with higher priority is taking precedence for those objects.
 
 **I updated a zone rule but don't see any changes.**
