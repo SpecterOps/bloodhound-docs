@@ -6,15 +6,20 @@ description: "Description of the OpenGraph JSON Schema"
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-# Schema
+This page explains the JSON payload structure and minimum JSON schema requirements that BloodHound uses to ingest OpenGraph nodes and edges.
 
-In this section, you will find all the information to create a JSON file that BloodHound can ingest and use to display your Nodes and Edges.
+Terms used on this page:
 
-The most up-to-date JSON Schema can always be found in our CE repository. Currently, the location of the node and edge schema files in our source code can be found [here](https://github.com/SpecterOps/BloodHound/tree/main/cmd/api/src/services/upload/jsonschema).
+- **Schema-less (generic) data** refers to OpenGraph payloads that follow the minimum node and edge schemas described on this page.
+- **Schema-based data** refers to OpenGraph payloads that use an extension-defined schema outside the payload itself.
 
-# Ingesting Generic Formatted Data
+This page focuses on the JSON requirements for schema-less (generic) data.
 
-## File Requirements
+<Tip>You can find the latest node and edge schemas in the BloodHound [source code](https://github.com/SpecterOps/BloodHound/tree/main/cmd/api/src/services/upload/jsonschema) on GitHub.</Tip>
+
+## Ingesting Schema-less (Generic) Data
+
+### File Requirements
 
 Acceptable formats: `.json`, `.zip`
 
@@ -22,9 +27,9 @@ You can mix file types in a single upload (e.g. Sharphound + Generic).
 
 Compressed ZIPs containing multiple file types are supported.
 
-## JSON Format
+### Data Payload Structure
 
-The standard BloodHound UI upload screen now accepts files in a generic format. You can continue using it as before.
+The standard BloodHound UI upload screen accepts all OpenGraph payloads—both schema-less (generic) and schema-based.
 
 At minimum, your JSON file should have these elements:
 
@@ -37,26 +42,28 @@ At minimum, your JSON file should have these elements:
 }
 ```
 
-The `nodes` and `edges` must conform to our JSON Schema, see details below. The validation of the data occurs at upload time.
+The `nodes` and `edges` must conform to the minimum JSON schemas (see details below). BloodHound validates that the JSON is well-formed and that nodes and edges meet these schema requirements, but it does not enforce additional structure or constraints beyond them.
 
-When ingest completes, the generic data will be available via **Cypher search ONLY**. Generic data is not searchable via the pathfinding feature (yet).
+When ingest completes, you can [search](/analyze-data/explore/search) OpenGraph data. Supported search methods depend on whether the data is schema-based or schema-less:
 
-**Entity Panels**: clicking on a generic node or edge will only render the entity’s property bag. At this time there is no support for defining entity panels for generic entities.
+| Search method | Schema-based | Schema-less |
+| --- | --- | --- |
+| Node Search | <Icon icon="square-check" iconType="solid" color="#22c55e" />  | <Icon icon="square-xmark" iconType="solid" color="#ef4444" /> |
+| Pathfinding | <Icon icon="square-check" iconType="solid" color="#22c55e" />  | <Icon icon="square-xmark" iconType="solid" color="#ef4444" />  |
+| Cypher | <Icon icon="square-check" iconType="solid" color="#22c55e" />  | <Icon icon="square-check" iconType="solid" color="#22c55e" />  |
 
+**Entity Panels**: clicking on a node or edge will only render the entity's property bag. At this time there is no support for defining entity panels for generic entities.
 
-## Nodes
+### Nodes
 
-### Property Rules
+#### Property Rules
 
-Properties must be primitive types or arrays of primitive types
+- Properties must be primitive types or arrays of primitive types.
+- Nested objects and arrays of objects are not allowed.
+- Arrays must be homogeneous (for example, all strings or all numbers).
+- An array of kind labels for the node. The first element is treated as the node's primary kind and determines which icon appears in the graph UI. This primary kind is only used for visual representation and has no semantic significance for data processing.
 
-Nested objects and arrays of objects are not allowed
-
-Arrays must be homogeneous (e.g. all strings or all numbers)
-
-An array of kind labels for the node. The first element is treated as the node's primary kind and is used to determine which icon to display in the graph UI. This primary kind is only used for visual representation and has no semantic significance for data processing.
-
-### Node JSON
+#### Node JSON
 
 The following is the <a href="/assets/opengraph/opengraph-node.json" download>JSON schema</a> that all nodes must conform to.
 
@@ -112,7 +119,7 @@ The following is the <a href="/assets/opengraph/opengraph-node.json" download>JS
 }
 ```
 
-## Edges
+### Edges
 
 Edges names cannot contain dash `-`. It is highly recommended to use Pascal Case and no special characters.
 
@@ -120,7 +127,7 @@ From [tuple.nl](https://www.tuple.nl/en/knowledge-base/pascal-case): Pascal Case
 
 See Neo4j [Naming and Conventions](https://neo4j.com/docs/cypher-manual/current/syntax/naming/) for more details. 
 
-### Edge JSON
+#### Edge JSON
 
 The following is the <a href="/assets/opengraph/opengraph-edge.json" download>JSON schema</a> that all edges must conform to.
 
@@ -247,11 +254,11 @@ The following is the <a href="/assets/opengraph/opengraph-edge.json" download>JS
 }
 ```
 
-### Post-processing
+#### Post-processing
 
-Post-processing in BloodHound refers to the analysis phase where the system creates certain edges after ingesting data to identify attack paths.
+Post-processing in BloodHound refers to a series of steps during analysis phase where the system creates specific edges after ingesting data to enrich the graph and more accurately reflect the graph's state.
 
-After ingesting data, BloodHound analyzes the graph state and adds edges it considers useful. BloodHound regenerates "post-processed" edges after it builds a complete graph. Before regenerating post-processed edges, BloodHound deletes any existing ones. As a result, BloodHound removes any post-processed edges that you add directly to an OpenGraph payload.
+After ingesting data, BloodHound analyzes the graph state and adds edges that are essential to accurately represent the environment and support attack path analysis. BloodHound regenerates "post-processed" edges after it builds a complete graph. Before regenerating post-processed edges, BloodHound deletes any existing ones. As a result, BloodHound removes any post-processed edges that you add directly to an OpenGraph payload.
 
 <Accordion title="Show post-processed edges">
 BloodHound creates the following edges during post-processing:
@@ -338,9 +345,9 @@ See the following example OpenGraph payload that produces the effect:
 }
 ```
 
-## Optional Metadata Field
+### Optional Metadata Field
 
-You can optionally include a metadata object at the top level of your JSON payload. This metadata currently supports a single field:
+You can optionally include a metadata object at the top level of your data payload. This metadata currently supports a single field:
 
     - `source_kind`: a string that applies to all nodes in the file, used to attribute a source to ingested nodes (e.g.  Github, Snowflake, MSSQL). This is useful for tracking where a node originated. We internally use this concept already for AD/Azure, using the labels “Base” and “AZBase” respectively.
 
@@ -360,7 +367,7 @@ Example:
 
 If present, the `source_kind` will be added to the `kinds` list of all nodes in the file during ingest. This feature is optional.
 
-## Minimal Working JSON
+### Minimal Viable Data Payload
 
 The following is a minimal example payload that conforms to the node and edge schemas above. You can use this as a starting point to build your own OpenGraph. Copy and paste the following example into a new `.json` file or <a href="/assets/opengraph/opengraph-minimal.json" download>download this example file</a>.
 
