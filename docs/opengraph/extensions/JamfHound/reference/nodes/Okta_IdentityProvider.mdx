@@ -1,0 +1,81 @@
+---
+title: 'Okta_IdentityProvider'
+description: 'An identity provider trusted by Okta for authentication'
+icon: '/images/extensions/OktaHound/Okta_IdentityProvider.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Overview
+
+Identity Providers (IdPs) in Okta represent external authentication sources that can be used to authenticate users. These can include social identity providers (such as Google, Facebook, or Microsoft), enterprise identity providers using SAML or OIDC, or other Okta organizations in an Org2Org configuration.
+
+When users authenticate through an external identity provider, Okta can optionally create or link user accounts, enabling federated authentication across multiple systems.
+
+In `OktaHound`, identity providers are represented as `Okta_IdentityProvider` nodes.
+
+<Warning>
+The inbound identity provider routing rules and JIT (Just-In-Time) provisioning settings are currently not evaluated by `OktaHound`.
+</Warning>
+## Edges
+
+<Note>
+The tables below list edges defined by the OktaHound extension only. Additional edges to or from this node may be created by other extensions.
+</Note>
+
+### Inbound Edges
+
+| Edge Type | Source Node Types |
+| --------- | ----------------- |
+| [Okta_Contains](../edges/Okta_Contains) | [Okta_Organization](../nodes/Okta_Organization) |
+| [Okta_InboundOrgSSO](../edges/Okta_InboundOrgSSO) | [AZTenant](https://bloodhound.specterops.io/resources/nodes/az-tenant) |
+| [Okta_ResourceSetContains](../edges/Okta_ResourceSetContains) | [Okta_ResourceSet](../nodes/Okta_ResourceSet) |
+
+### Outbound Edges
+
+| Edge Type | Destination Node Types |
+| --------- | ---------------------- |
+| [Okta_IdentityProviderFor](../edges/Okta_IdentityProviderFor) | [Okta_User](../nodes/Okta_User) |
+| [Okta_IdpGroupAssignment](../edges/Okta_IdpGroupAssignment) | [Okta_Group](../nodes/Okta_Group) |
+
+## Properties
+
+These properties are common for all identity provider types:
+
+| Name | Source | Type | Description |
+| ---- | ------ | ---- | ----------- |
+| `id` | `idp.id` | `string` | Unique identity provider identifier. |
+| `name` | `idp.name` | `string` | Identity provider name. |
+| `displayName` | `idp.name` | `string` | Display label used in BloodHound. |
+| `oktaDomain` | Collector context (non-API) | `string` | Okta organization domain where the identity provider exists. |
+| `issuerMode` | `idp.issuerMode` | `string` | Issuer mode for the identity provider. |
+| `type` | `idp.type` | `string` | Identity provider category/type. |
+| `enabled` | `idp.status == "ACTIVE"` | `bool` | Whether the IdP is active/enabled. |
+| `autoUserProvisioning` | `idp.policy.provisioning.action == "AUTO"` | `bool` | Whether automatic user provisioning is enabled. |
+| `governedGroupIds` | `idp.policy.provisioning.groups` | `string[]` | Group IDs governed by this IdP provisioning policy. |
+| `protocolType` | `idp.protocol.*.type[0]` | `string` | Protocol configured for authentication through this IdP. |
+| `url` | `idp.protocol.*.endpoints.*.url[0]` | `string` | Primary authorization/SSO endpoint URL for the IdP. |
+| `created` | `idp.created` | `datetime` | IdP creation timestamp. |
+
+Additional properties are provider-specific:
+
+| Name | Source | Type | Description |
+| ---- | ------ | ---- | ----------- |
+| `entraTenantId` | `TenantIdFromSamlEndpoint(url)` | `string` | Associated Entra tenant ID when identifiable. |
+
+## Sample Property Values
+
+```yaml
+id: 0oazpi53t1cRNcPL4697
+name: Microsoft Entra ID
+displayName: Microsoft Entra ID
+oktaDomain: contoso.okta.com
+created: 2026-01-31T15:21:37+00:00
+issuerMode: DYNAMIC
+type: MICROSOFT
+enabled: false
+autoUserProvisioning: true
+governedGroupIds: []
+protocolType: OIDC
+url: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
+```

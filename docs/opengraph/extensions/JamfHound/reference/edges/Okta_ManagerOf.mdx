@@ -1,0 +1,34 @@
+---
+title: 'Okta_ManagerOf'
+description: 'Manager relationship between Okta users'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Source: [Okta_User](../nodes/Okta_User)
+- Destination: [Okta_User](../nodes/Okta_User)
+- Traversable: ❌
+
+## General Information
+
+Okta uses the `Manager` and `ManagerId` user profile attributes to represent managerial relationships. Unfortunately, these attributes can have any arbitrary value and their referential integrity is not enforced by Okta. They are not even synchronized from external directories by default.
+
+Our recommendation is to map the `ManagerId` attribute to the login of the manager in Okta. When synchronizing users from Active Directory,
+the `getManagerUser("active_directory").login` mapping expression can be used to achieve this. Such values are automatically recognized by `OktaHound`.
+
+The **non-traversable** `Okta_ManagerOf` edges represent the organizational structure in BloodHound:
+
+```mermaid
+graph LR
+    u1("Okta_User john\@contoso.com")
+    u2("Okta_User steve\@contoso.com")
+    u3("Okta_User mary\@contoso.com")
+    u4("Okta_User bob\@contoso.com")
+    u5("Okta_User alice\@contoso.com")
+    u1 -. Okta_ManagerOf .-> u2
+    u1 -. Okta_ManagerOf .-> u3
+    u3 -. Okta_ManagerOf .-> u4
+    u3 -. Okta_ManagerOf .-> u5
+```

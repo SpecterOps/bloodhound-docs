@@ -1,0 +1,35 @@
+---
+title: 'Okta_ResourceSetContains'
+description: 'Membership of objects within an Okta resource set'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Source: [Okta_ResourceSet](../nodes/Okta_ResourceSet)
+- Destination: [Okta_User](../nodes/Okta_User), [Okta_Group](../nodes/Okta_Group), [Okta_Application](../nodes/Okta_Application), [Okta_ApiServiceIntegration](../nodes/Okta_ApiServiceIntegration), [Okta_Device](../nodes/Okta_Device), [Okta_AuthorizationServer](../nodes/Okta_AuthorizationServer), [Okta_IdentityProvider](../nodes/Okta_IdentityProvider), [Okta_Policy](../nodes/Okta_Policy)
+- Traversable: ✅
+
+## General Information
+
+The traversable `Okta_ResourceSetContains` edges represent the membership relationships between resource sets and their member entities in Okta:
+
+```mermaid
+graph LR
+    rs1("Okta_ResourceSet Sales Department Resources")
+    u1("Okta_User john\@contoso.com")
+    u2("Okta_User alice\@contoso.com")
+    g1("Okta_Group Sales Team")
+    a1("Okta_Application GitHub")
+    d1("Okta_Device John's MacBook")
+    rs1 -- Okta_ResourceSetContains --> u1
+    rs1 -. Okta_ResourceSetContains .-> g1
+    rs1 -- Okta_ResourceSetContains --> a1
+    rs1 -- Okta_ResourceSetContains --> d1
+    u2 -- Okta_MemberOf --> g1
+    rs1 -- Okta_ResourceSetContains --> u2
+```
+
+Note that users can also be members of resource sets indirectly through group memberships.
+The intermediate group will not appear in the graph, but the user membership will be resolved by `OktaHound`.
