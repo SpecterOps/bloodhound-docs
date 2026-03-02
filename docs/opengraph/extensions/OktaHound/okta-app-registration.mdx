@@ -1,0 +1,124 @@
+---
+title: Okta App Registration
+description: Create an Okta API service application for OktaHound
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+OktaHound authenticates to the Okta API using an OAuth 2.0 service application with a public/private key pair.
+
+<Steps>
+  <Step title="Open the Applications page">
+    In the Okta Admin Console, navigate to **Applications > Applications** and click **Create App Integration**.
+
+    <Frame>
+      <img src="/images/extensions/OktaHound/Screenshots/app-registration1.png" alt="Okta Admin Console - Applications page" />
+    </Frame>
+  </Step>
+
+  <Step title="Select API Services">
+    In the **Create a new app integration** dialog, select **API Services** and click **Next**.
+
+    <Frame>
+      <img src="/images/extensions/OktaHound/Screenshots/app-registration2.png" alt="Create a new app integration - select API Services" />
+    </Frame>
+  </Step>
+
+  <Step title="Name the application">
+    Enter `OktaHound` as the **App integration name** and click **Save**.
+
+    <Frame>
+      <img src="/images/extensions/OktaHound/Screenshots/app-registration3.png" alt="New API Services App Integration - name" />
+    </Frame>
+  </Step>
+
+  <Step title="Configure public key authentication">
+    After the application is created, you are taken to the **General** tab. Make a note of the newly created application's Client ID for the `okta.yaml` file.
+
+    <Frame>
+      <img src="/images/extensions/OktaHound/Screenshots/app-registration4.png" alt="OktaHound app - Client Credentials" />
+    </Frame>
+
+    Under **Client Credentials**, click **Edit** and change **Client authentication** from **Client secret** to **Public key / Private key**.
+
+    <Frame>
+      <img src="/images/extensions/OktaHound/Screenshots/app-registration5.png" alt="Switch to Public key / Private key authentication" />
+    </Frame>
+  </Step>
+
+  <Step title="Generate a key pair">
+    Under **PUBLIC KEYS**, click **Add key**, then click **Generate new key**.
+
+    <Frame>
+      <img src="/images/extensions/OktaHound/Screenshots/app-registration6.png" alt="Add a public key dialog" />
+    </Frame>
+
+    <Frame>
+      <img src="/images/extensions/OktaHound/Screenshots/app-registration7.png" alt="Generated key pair - copy the private key" />
+    </Frame>
+
+    <Warning>Copy the private key (JSON) and store it securely — it is only displayed once.</Warning>
+
+    Click **Done** to close the key dialog.
+  </Step>
+
+  <Step title="Save the credentials">
+    Verify the key appears in the PUBLIC KEYS table, then click **Save**. Confirm the prompt that existing client secrets will no longer be used.
+
+    <Frame>
+      <img src="/images/extensions/OktaHound/Screenshots/app-registration8.png" alt="Public key listed in credentials" />
+    </Frame>
+
+    <Frame>
+      <img src="/images/extensions/OktaHound/Screenshots/app-registration9.png" alt="Confirm client secret removal" />
+    </Frame>
+  </Step>
+
+  <Step title="Uncheck the Require Demonstrating of Proof of Possession">
+    Uncheck the **Require Demonstrating of Proof of Possession (DPoP)** option and click the **Save**.
+
+    <Frame>
+      <img src="/images/extensions/OktaHound/Screenshots/app-registration10.png" alt="OktaHound General Settings" />
+    </Frame>
+  </Step>
+
+  <Step title="Grant OAuth 2.0 scopes">
+    Navigate to the **Okta API Scopes** tab and grant the scopes required by OktaHound.
+
+    The Okta application registration used by `OktaHound` requires the following [OAuth 2.0 scopes](https://developer.okta.com/docs/api/oauth2/) for the data collection to function correctly:
+
+    | OAuth 2.0 Scope | Description |
+    |-----------------|-------------|
+    | `okta.orgs.read` | Allows the app to read organization-specific details about your Okta organization. |
+    | [okta.users.read](https://developer.okta.com/docs/api/openapi/okta-management/guides/permissions/#oktausersread) | Allows the app to read the existing users' profiles and credentials. |
+    | [okta.groups.read](https://developer.okta.com/docs/api/openapi/okta-management/guides/permissions/#oktagroupsread) | Allows the app to read information about groups and their members in your Okta organization. |
+    | [okta.apps.read](https://developer.okta.com/docs/api/openapi/okta-management/guides/permissions/#oktaappsread) | Allows the app to read information about Apps in your Okta organization. |
+    | `okta.appGrants.read` | Allows the app to read grants in your Okta organization. |
+    | [okta.devices.read](https://developer.okta.com/docs/api/openapi/okta-management/guides/permissions/#oktadevicesread) | Allows the app to read the existing device's profile and search devices. |
+    | `okta.roles.read` | Allows the app to read administrative role assignments for users in your Okta organization. |
+    | `okta.apiTokens.read` | Allows the app to read API Tokens in your Okta organization. |
+    | `okta.agentPools.read` | Allows the app to read agent pools in your Okta organization. |
+    | `okta.idps.read` | Allows the app to read information about Identity Providers in your Okta organization. |
+    | `okta.authorizationServers.read` | Allows the app to read information about Authorization Servers in your Okta organization. |
+    | `okta.oauthIntegrations.read` | Allows the app to read API service Integration instances in your Okta organization. |
+    | [okta.policies.read](https://developer.okta.com/docs/api/openapi/okta-management/guides/permissions/#oktapoliciesread) | Allows the app to read information about policies in your Okta organization. |
+    | `okta.features.read` | Allows the app to read information about features in your Okta organization. |
+    | [okta.realms.read](https://developer.okta.com/docs/api/openapi/okta-management/guides/permissions/#oktarealmsread) | Allows the app to read the existing realms and their details. |
+    | `okta.realmAssignments.read` | Allows a user to read realm assignments. |
+    | `okta.logs.read` | Allows the app to read system log events in your Okta organization. |
+
+    <Note>
+    Realm scopes are only available for tenants with the Okta Identity Governance add-on.
+    </Note>
+
+    </Step>
+
+  <Step title="Assign admin role">
+    Navigate to the **Admin roles** tab and assign the [**Super Administrator**](https://help.okta.com/en-us/content/topics/security/administrators-super-admin.htm) role.
+
+    <Note>
+    Less privileged Okta roles currently cannot be used to read role assignments and OAuth 2.0 grants.
+    Due to the OAuth 2.0 scopes defined above, the `OktaHound` collector will not be able to modify any data in the Okta organization.
+    </Note>
+  </Step>
+</Steps>

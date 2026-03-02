@@ -49,13 +49,17 @@ The tables below list edges defined by the OktaHound extension only. Additional 
 
 | Name | Source | Type | Description |
 | ---- | ------ | ---- | ----------- |
-| `id` | `MakeAgentPoolUnique(agentPool.Id)` | `string` | Unique agent pool identifier (domain-qualified). |
-| `name` | `agentPool.Name` | `string` | Name of the Okta agent pool. |
-| `displayName` | `agentPool.Name` | `string` | Display label used in BloodHound. |
-| `oktaDomain` | Constructor argument `domainName` | `string` | Okta organization domain where the pool is defined. |
-| `operationalStatus` | `agentPool.OperationalStatus.Value` | `string` | Current health/operational state of the agent pool. |
-| `type` | `agentPool.Type.Value` | `string` | Agent pool type (for example AD, LDAP, IWA, RADIUS). |
+| `id` | `agentPool.id + "_pool"` | `string` | Unique agent pool identifier. |
+| `name` | `agentPool.name` | `string` | Name of the Okta agent pool. |
+| `displayName` | `agentPool.name` | `string` | Display label used in BloodHound. |
+| `oktaDomain` | Collector context (non-API) | `string` | Okta organization domain where the agent pool exists. |
+| `operationalStatus` | `agentPool.operationalStatus` | `string` | Current health/operational state of the agent pool. |
+| `type` | `agentPool.type` | `string` | Agent pool type (for example AD, LDAP, IWA, RADIUS). |
 
+<Info>
+Active Directory (AD) agent pool identifiers have the same values as the identifiers of the corresponding application objects.
+The `_pool` suffix is therefore added to the `id` property of `Okta_AgentPool` nodes to ensure uniqueness of node identifiers in BloodHound.
+</Info>
 ## Sample Property Values
 
 ```yaml

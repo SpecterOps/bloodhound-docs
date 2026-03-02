@@ -40,28 +40,35 @@ The tables below list edges defined by the OktaHound extension only. Additional 
 
 ## Properties
 
+These properties are common for all identity provider types:
+
 | Name | Source | Type | Description |
 | ---- | ------ | ---- | ----------- |
-| `id` | `idp.Id` | `string` | Unique identity provider identifier. |
-| `name` | `idp.Name` | `string` | Identity provider name. |
-| `displayName` | `idp.Name` | `string` | Display label used in BloodHound. |
-| `oktaDomain` | Constructor argument `domainName` | `string` | Okta organization domain where the IdP exists. |
-| `created` | `idp.Created` | `datetime` | IdP creation timestamp. |
-| `issuerMode` | `idp.IssuerMode.Value` | `string` | Issuer mode for the identity provider. |
-| `type` | `idp.Type.Value` | `string` | Identity provider category/type. |
-| `enabled` | `idp.Status == ACTIVE` | `bool` | Whether the IdP is active/enabled. |
-| `autoUserProvisioning` | `idp.Policy.Provisioning.Action == AUTO` | `bool` | Whether automatic user provisioning is enabled. |
-| `governedGroupIds` | Provisioning group assignments/filter | `string[]` | Group IDs governed by this IdP provisioning policy. |
-| `protocolType` | Protocol instance type (`SAML2`, `OIDC`, `OAUTH2`, `MTLS`, etc.) | `string` | Protocol configured for authentication through this IdP. |
-| `url` | Protocol endpoint URL | `string` | Primary authorization/SSO endpoint URL for the IdP. |
-| `entraTenantId` | Derived from SAML endpoint when Entra is detected | `string` | Associated Entra tenant ID when identifiable. |
+| `id` | `idp.id` | `string` | Unique identity provider identifier. |
+| `name` | `idp.name` | `string` | Identity provider name. |
+| `displayName` | `idp.name` | `string` | Display label used in BloodHound. |
+| `oktaDomain` | Collector context (non-API) | `string` | Okta organization domain where the identity provider exists. |
+| `issuerMode` | `idp.issuerMode` | `string` | Issuer mode for the identity provider. |
+| `type` | `idp.type` | `string` | Identity provider category/type. |
+| `enabled` | `idp.status == "ACTIVE"` | `bool` | Whether the IdP is active/enabled. |
+| `autoUserProvisioning` | `idp.policy.provisioning.action == "AUTO"` | `bool` | Whether automatic user provisioning is enabled. |
+| `governedGroupIds` | `idp.policy.provisioning.groups` | `string[]` | Group IDs governed by this IdP provisioning policy. |
+| `protocolType` | `idp.protocol.*.type[0]` | `string` | Protocol configured for authentication through this IdP. |
+| `url` | `idp.protocol.*.endpoints.*.url[0]` | `string` | Primary authorization/SSO endpoint URL for the IdP. |
+| `created` | `idp.created` | `datetime` | IdP creation timestamp. |
+
+Additional properties are provider-specific:
+
+| Name | Source | Type | Description |
+| ---- | ------ | ---- | ----------- |
+| `entraTenantId` | `TenantIdFromSamlEndpoint(url)` | `string` | Associated Entra tenant ID when identifiable. |
 
 ## Sample Property Values
 
 ```yaml
 id: 0oazpi53t1cRNcPL4697
-name: X
-displayName: X
+name: Microsoft Entra ID
+displayName: Microsoft Entra ID
 oktaDomain: contoso.okta.com
 created: 2026-01-31T15:21:37+00:00
 issuerMode: DYNAMIC

@@ -1,0 +1,85 @@
+---
+title: Running the Collector
+description: Run the OktaHound collector to gather data from your Okta organization
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+This page covers downloading, configuring, and running the OktaHound collector against your Okta organization.
+
+## Authentication Options
+
+Okta supports multiple authentication methods for applications like `OktaHound` to access the Okta API:
+
+### OAuth 2.0 Service Application (Recommended)
+
+Register the `OktaHound` collector as a service application in Okta.
+
+The application can then be assigned limited read-only permissions and authenticate using a public/private key pair or a client secret.
+
+A symmetric client secret or asymmetric RSA public/private key pair can be used for authentication,
+with the latter being the more secure option.
+
+<Card title="Okta App Registration" icon="gear" href="/opengraph/extensions/OktaHound/okta-app-registration">
+  Create an API service application in Okta for OktaHound to authenticate with the Okta API.
+</Card>
+
+### API Token (SSWS)
+
+The `OktaHound` collector can also authenticate using API tokens (also known as SSWS tokens) associated with specific Okta Super Administrator accounts.
+This is the least secure option, but the easiest one to set up.
+
+## Downloading OktaHound
+
+Download the latest release of `OktaHound` specific to your operating system
+from the [releases page](https://github.com/SpecterOps/OktaHound/releases) and extract the archive.
+
+## Configuring Authentication
+
+Rename the `okta.sample.oauth.yaml` template file to `okta.yaml` and fill in the Okta organization URI,
+client ID, and private key from the [application registration process](okta-app-registration).
+Note that the private key must be converted from the JSON format to YAML:
+
+```yaml
+okta:
+  client:
+    oktaDomain: "https://TODO.okta.com"
+    authorizationMode: "PrivateKey"
+    clientId: "TODO"
+    privateKey:
+      "d": "TODO"
+      "p": "TODO"
+      "q": "TODO"
+      "dp": "TODO"
+      "dq": "TODO"
+      "qi": "TODO"
+      "kty": "RSA"
+      "e": "AQAB"
+      "kid": "TODO"
+      "n": "TODO"
+```
+
+If API token authentication is to be used instead (not recommended), rename the `okta.sample.token` template file to `okta.yaml`
+and fill in the Okta organization URI and API token:
+
+```yaml
+okta:
+  client:
+    oktaDomain: "https://TODO.okta.com"
+    authorizationMode: "SSWS"
+    token: "TODO"
+```
+
+## Running OktaHound
+
+Run the following command to start the data collection from the Okta organization:
+
+```shell
+OktaHound collect --output ./output --verbosity Trace
+```
+
+## API Rate Limiting
+
+Okta [enforces API rate limits](https://developer.okta.com/docs/reference/rl-global-mgmt/) to mitigate denial-of-service attacks.
+The `OktaHound` collector sometimes hits the limit of 20 calls to the `/api/v1/apps/*` and `/oauth2/v1/clients/*` endpoints per second for the **Integrator Free Plan**.
+By default, the client is configured to retry each HTTP request up to 3 times with increasing delays, which effectively mitigates this problem.

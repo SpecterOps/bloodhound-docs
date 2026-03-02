@@ -58,26 +58,33 @@ The tables below list edges defined by the OktaHound extension only. Additional 
 
 ## Properties
 
+Standard Okta group properties:
+
 | Name | Source | Type | Description |
 | ---- | ------ | ---- | ----------- |
-| `id` | `group.Id` | `string` | Unique group identifier. |
-| `name` | `groupProfile.Name` / `adGroupProfile.Name` | `string` | Group name in Okta (or synchronized source). |
-| `displayName` | `groupProfile.Name` / `adGroupProfile.Name` | `string` | Display label used in BloodHound. |
-| `oktaDomain` | Constructor argument `domainName` | `string` | Okta organization domain where the group exists. |
-| `hasRoleAssignments` | `OktaSecurityPrincipal` default | `bool` | Indicates whether role assignments exist for the group principal. |
-| `created` | `group.Created` | `datetime` | Group creation timestamp. |
-| `lastUpdated` | `group.LastUpdated` | `datetime` | Last update timestamp. |
-| `lastMembershipUpdated` | `group.LastMembershipUpdated` | `datetime` | Last membership change timestamp. |
-| `oktaGroupType` | `group.Type.Value` | `string` | Group type (for example `OKTA_GROUP`, `APP_GROUP`, `BUILT_IN`). |
-| `objectClass` | `group.ObjectClass[0]` | `string` | Source object class (for example AD security principal). |
-| `description` | Profile-specific description | `string` | Group description text. |
-| `objectSid` | AD profile only (`adGroupProfile.ObjectSid`) | `string` | SID for synchronized Active Directory groups. |
-| `distinguishedName` | AD profile only (`adGroupProfile.Dn`) | `string` | Active Directory distinguished name. |
-| `samAccountName` | AD profile only (`adGroupProfile.SamAccountName`) | `string` | Active Directory SAM account name. |
-| `domainQualifiedName` | AD profile only (`adGroupProfile.WindowsDomainQualifiedName`) | `string` | Domain-qualified name of the AD group. |
-| `groupScope` | AD profile only (`adGroupProfile.GroupScope`) | `string` | AD group scope (for example global, domainLocal, universal). |
-| `groupType` | AD profile only (`adGroupProfile.GroupType`) | `string` | AD group type classification. |
-| `objectGuid` | AD profile only (`adGroupProfile.ExternalId` decoded) | `string` | Decoded AD object GUID when available. |
+| `id` | `group.id` | `string` | Unique group identifier. |
+| `name` | `group.profile.name` | `string` | Group name in Okta (or synchronized source). |
+| `displayName` | `group.profile.name` | `string` | Display label used in BloodHound. |
+| `description` | `group.profile.description` | `string` | Group description text. |
+| `oktaDomain` | Collector context (non-API) | `string` | Okta organization domain where the group exists. |
+| `hasRoleAssignments` | Calculated | `bool` | Indicates whether the group is assigned any administrative roles. |
+| `oktaGroupType` | `group.type` | `string` | Group type (for example `OKTA_GROUP`, `APP_GROUP`, `BUILT_IN`). |
+| `objectClass` | `group.objectClass[0]` | `string` | Source object class (for example AD security principal). |
+| `created` | `group.created` | `datetime` | Group creation timestamp. |
+| `lastUpdated` | `group.lastUpdated` | `datetime` | Last update timestamp. |
+| `lastMembershipUpdated` | `group.lastMembershipUpdated` | `datetime` | Last membership change timestamp. |
+
+Additional properties of groups synchronized from Active Directory:
+
+| Name | Source | Type | Description |
+| ---- | ------ | ---- | ----------- |
+| `objectSid` | `group.profile.objectSid` | `string` | Security Identifier (SID) for the AD group. |
+| `distinguishedName` | `group.profile.dn` | `string` | Active Directory distinguished name. |
+| `samAccountName` | `group.profile.samAccountName` | `string` | Security Account Manager (SAM) account name. |
+| `domainQualifiedName` | `group.profile.windowsDomainQualifiedName` | `string` | Domain-qualified name of the AD group. |
+| `groupScope` | `group.profile.groupScope` | `string` | AD group scope (for example global, domainLocal, universal). |
+| `groupType` | `group.profile.groupType` | `string` | AD group type, i.e., security or distribution. |
+| `objectGuid` | `Base64ToGuid(group.profile.externalId)` | `string` | AD object GUID. |
 
 ## Sample Property Values
 
