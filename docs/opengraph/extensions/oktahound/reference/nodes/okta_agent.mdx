@@ -1,0 +1,66 @@
+---
+title: 'Okta_Agent'
+description: 'A synchronization or authentication agent in Okta'
+icon: '/images/extensions/oktahound/reference/okta_agent.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Overview
+
+The `Okta_Agent` node represents an Okta Agent, which is a component used in Okta's integration with on-premises systems.
+Okta Agents facilitate communication between the Okta cloud and on-premises applications or directories, enabling features such as single sign-on (SSO) and user provisioning.
+
+One or more agents are grouped into Agent Pools, represented by the [Okta_AgentPool](okta_agentpool) nodes, to provide redundancy and load balancing.
+
+![Active Directory Agent in BloodHound](/images/extensions/oktahound/reference/bloodhound-ad-agent.png)
+
+## Edges
+
+<Note>
+The tables below list edges defined by the OktaHound extension only. Additional edges to or from this node may be created by other extensions.
+</Note>
+
+### Inbound Edges
+
+| Edge Type | Source Node Types |
+| --------- | ----------------- |
+| [Okta_HostsAgent](../edges/okta_hostsagent) | [Computer](https://bloodhound.specterops.io/resources/nodes/computer) |
+
+### Outbound Edges
+
+| Edge Type | Destination Node Types |
+| --------- | ---------------------- |
+| [Okta_AgentMemberOf](../edges/okta_agentmemberof) | [Okta_AgentPool](../nodes/okta_agentpool) |
+
+## Properties
+
+| Name | Source | Type | Description |
+| ---- | ------ | ---- | ----------- |
+| `id` | `agent.id` | `string` | Unique agent identifier. |
+| `name` | `agent.name` | `string` | Agent name shown in Okta Admin Console. |
+| `displayName` | `agent.name` | `string` | Display label used in BloodHound. |
+| `oktaDomain` | Collector context (non-API) | `string` | Okta organization domain where the agent exists. |
+| `poolName` | `agentPool.name` | `string` | Name of the parent [Okta_AgentPool](okta_agentpool). For AD pools this typically corresponds to the synced AD domain. |
+| `operationalStatus` | `agent.operationalStatus` | `string` | Runtime health/operational state reported by Okta. |
+| `updateStatus` | `agent.updateStatus` | `string` | Agent software update state. |
+| `type` | `agent.type` | `string` | Agent type (for example AD, LDAP, IWA, or RADIUS). |
+| `version` | `agent.version` | `string` | Agent software version. |
+| `poolId` | `agent.poolId` | `string` | Identifier of the parent Okta agent pool. |
+| `lastConnection` | `FromUnixTime(agent.lastConnection)` | `datetime` | Timestamp of the last successful agent connection to Okta. |
+
+## Sample Property Values
+
+```yaml
+id: a53xfufl4rqWcHhQo697
+name: LON-SRV01
+displayName: LON-SRV01
+poolId: 0oaxg9rhdd7ncGCXv697
+oktaDomain: contoso.okta.com
+poolName: contoso.local
+operationalStatus: DISRUPTED
+updateStatus: Cancelled
+type: AD
+version: 3.22.0
+lastConnection: 2026-01-15T02:29:40+00:00
+```

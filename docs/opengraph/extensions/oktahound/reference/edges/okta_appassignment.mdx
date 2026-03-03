@@ -1,0 +1,42 @@
+---
+title: 'Okta_AppAssignment'
+description: 'Assignment of users or groups to an Okta application'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Source: [Okta_User](../nodes/okta_user), [Okta_Group](../nodes/okta_group)
+- Destination: [Okta_Application](../nodes/okta_application)
+- Traversable: ❌
+
+## General Information
+
+Only users that are assigned to applications can access them. Users can be assigned to applications directly or indirectly through group memberships.
+
+The non-traversable `Okta_AppAssignment` edges represent the application assignments for users and groups in Okta:
+
+```mermaid
+graph LR
+    u1("Okta_User john\@contoso.com")
+    u2("Okta_User steve\@contoso.com")
+    u3("Okta_User mary\@contoso.com")
+    u4("Okta_User bob\@contoso.com")
+    u5("Okta_User alice\@contoso.com")
+    g1("Okta_Group Engineering")
+    e("Okta_Group Everyone")
+    a1("Okta_Application SalesForce")
+    a2("Okta_Application GitHub")
+    a3("Okta_Application VPN")
+    e -- Okta_AppAssignment --> a1
+    u1 -- Okta_MemberOf --> e
+    u2 -- Okta_MemberOf --> e
+    u3 -- Okta_MemberOf --> e
+    u4 -- Okta_MemberOf --> e
+    u3 -- Okta_MemberOf --> g1
+    u4 -- Okta_MemberOf --> g1
+    g1 -- Okta_AppAssignment --> a2
+    u4 -- Okta_AppAssignment --> a3
+    u5 -- Okta_AppAssignment --> a3
+```

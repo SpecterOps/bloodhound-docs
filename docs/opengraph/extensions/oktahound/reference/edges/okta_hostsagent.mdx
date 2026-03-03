@@ -1,0 +1,36 @@
+---
+title: 'Okta_HostsAgent'
+description: 'Relationship between an AD server and the Okta agent running on that host'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Source: [Computer](https://bloodhound.specterops.io/resources/nodes/computer)
+- Destination: [Okta_Agent](../nodes/okta_agent)
+- Traversable: ✅
+
+## General Information
+
+Hybrid `Okta_HostsAgent` edges connect an AD `Computer` node to the `Okta_Agent` running on that host.
+
+```mermaid
+graph LR
+    subgraph ad["Active Directory"]
+        d1("Domain contoso.com")
+        c1("Computer LON-SRV1$")
+        c2("Computer NY-SRV2$")
+        d1 -- Contains --> c1
+        d1 -- Contains --> c2
+    end
+    subgraph okta["Okta"]
+        ap1("Okta_AgentPool contoso.com")
+        a1("Okta_Agent LON-SRV1")
+        a2("Okta_Agent NY-SRV2")
+        a1 -- Okta_AgentMemberOf --> ap1
+        a2 -- Okta_AgentMemberOf --> ap1
+    end
+    c1 -- Okta_HostsAgent --> a1
+    c2 -- Okta_HostsAgent --> a2
+```

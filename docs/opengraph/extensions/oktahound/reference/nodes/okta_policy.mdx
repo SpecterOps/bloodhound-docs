@@ -1,0 +1,79 @@
+---
+title: 'Okta_Policy'
+description: 'A policy defining rules for authentication, password, or other features in Okta'
+icon: '/images/extensions/oktahound/reference/okta_policy.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Overview
+
+Policies in Okta define the rules and conditions that govern authentication, authorization, and security behaviors within an organization. They control aspects such as password requirements, MFA enrollment, session management, and application access.
+
+In `OktaHound`, policies are represented as `Okta_Policy` nodes.
+
+## Edges
+
+<Note>
+The tables below list edges defined by the OktaHound extension only. Additional edges to or from this node may be created by other extensions.
+</Note>
+
+### Inbound Edges
+
+| Edge Type | Source Node Types |
+| --------- | ----------------- |
+| [Okta_Contains](../edges/okta_contains) | [Okta_Organization](../nodes/okta_organization) |
+| [Okta_ResourceSetContains](../edges/okta_resourcesetcontains) | [Okta_ResourceSet](../nodes/okta_resourceset) |
+
+### Outbound Edges
+
+| Edge Type | Destination Node Types |
+| --------- | ---------------------- |
+| [Okta_PolicyMapping](../edges/okta_policymapping) | [Okta_Application](../nodes/okta_application) |
+
+## Properties
+
+| Name | Source | Type | Description |
+| ---- | ------ | ---- | ----------- |
+| `id` | `policy.id` | `string` | Unique policy identifier. |
+| `name` | `policy.name` | `string` | Policy name. |
+| `displayName` | `policy.name` | `string` | Display-friendly policy name. |
+| `oktaDomain` | Collector context (non-API) | `string` | Okta organization domain where the policy exists. |
+| `description` | `policy.description` | `string` | Policy description text. |
+| `type` | `policy.type` | `string` | Policy type identifier (for example `OKTA_SIGN_ON`, `ACCESS_POLICY`, `PROFILE_ENROLLMENT`). |
+| `priority` | `policy.priority` | `integer` | Policy evaluation order priority. |
+| `system` | `policy.system` | `bool` | Indicates whether the policy is system-managed. |
+| `created` | `policy.created` | `datetime` | Policy creation timestamp. |
+
+## Sample Property Values
+
+```yaml
+id: rstw0o8il8ktUxo3t697
+name: Okta Account Management Policy
+displayName: Okta Account Management Policy
+oktaDomain: contoso.okta.com
+description: This policy defines how users must authenticate for authenticator enrollment, password reset, or unlock account. Password policy rules control whether to enforce this policy for password reset and unlock account.
+type: ACCESS_POLICY
+priority: 1
+system: false
+created: 2025-10-02T09:21:37+00:00
+```
+
+## Policy Types
+
+The following [policy types](https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/) are supported by Okta:
+
+| Policy Type ID | Description |
+|----------------|-------------|
+| OKTA_SIGN_ON | [Global session policies](https://help.okta.com/oie/en-us/content/topics/identity-engine/policies/about-okta-sign-on-policies.htm) |
+| PASSWORD | [Password policies](https://help.okta.com/en-us/content/topics/security/policies/about-password-policies.htm) |
+| MFA_ENROLL | [Authenticator enrollment policies](https://help.okta.com/en-us/content/topics/security/policies/configure-mfa-policies.htm) |
+| IDP_DISCOVERY | [Identity Provider routing rules](https://help.okta.com/en-us/content/topics/security/identity_provider_discovery.htm) |
+| ACCESS_POLICY | [App sign-in policies](https://help.okta.com/oie/en-us/content/topics/identity-engine/policies/about-app-sign-on-policies.htm) |
+| DEVICE_SIGNAL_COLLECTION | [Device signal collection policies](https://help.okta.com/oie/en-us/content/topics/identity-engine/policies/create-device-signal-collection-ruleset.htm) |
+| PROFILE_ENROLLMENT | [User profile policies](https://help.okta.com/oie/en-us/content/topics/identity-engine/policies/create-profile-enrollment-policy.htm) |
+| POST_AUTH_SESSION | [Identity Threat Protection policies](https://help.okta.com/oie/en-us/content/topics/itp/overview.htm) |
+| ENTITY_RISK | [Entity risk policies](https://help.okta.com/oie/en-us/content/topics/itp/entity-risk-policy.htm) |
+
+The `OktaHound` collector specifically reads the `IDP_DISCOVERY` policies to check
+if the [Agentless Desktop SSO](https://help.okta.com/en-us/content/topics/directory/configuring_agentless_sso.htm) feature is enabled in the organization through at least one such policy.

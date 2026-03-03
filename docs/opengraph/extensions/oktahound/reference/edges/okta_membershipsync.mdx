@@ -1,0 +1,34 @@
+---
+title: 'Okta_MembershipSync'
+description: 'Bidirectional synchronization between Okta groups and external groups'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Source: [Group](https://bloodhound.specterops.io/resources/nodes/group), [Okta_Group](../nodes/okta_group), [AZGroup](https://bloodhound.specterops.io/resources/nodes/az-group), [SNOW_Group](https://github.com/SpecterOps/SnowHound)
+- Destination: [Okta_Group](../nodes/okta_group), [Group](https://bloodhound.specterops.io/resources/nodes/group), [SNOW_Group](https://github.com/SpecterOps/SnowHound)
+- Traversable: ✅
+
+## General Information
+
+The traversable hybrid `Okta_MembershipSync` edges represent the synchronization relationships between groups in external directories and their corresponding groups in Okta:
+
+```mermaid
+graph TB
+  subgraph ad["Active Directory"]
+    adg1("Group IT")
+    adg2("Group HR")
+  end
+  subgraph okta["Okta"]
+    g1("Okta_Group IT")
+    g2("Okta_Group HR")
+    adg1 -- Okta_MembershipSync --> g1
+    g2 -- Okta_MembershipSync --> adg2
+  end
+  subgraph snow["Snowflake"]
+    snowg1("SNOW_Group IT")
+    g1 -- Okta_MembershipSync --> snowg1
+  end
+```
