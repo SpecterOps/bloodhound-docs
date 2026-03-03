@@ -1,85 +1,51 @@
 ---
 title: Running the Collector
-description: Run the OktaHound collector to gather data from your Okta organization
+description: Run the JamfHound collector to gather data from your JAMF Pro tenant
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-This page covers downloading, configuring, and running the OktaHound collector against your Okta organization.
+This page covers downloading, configuring, and running the JamfHound collector against your JAMF Pro tenant.
 
-## Authentication Options
+## Dependencies
 
-Okta supports multiple authentication methods for applications like `OktaHound` to access the Okta API:
+* Python3 - version 3.12 or newer
+* Requests Module
 
-### OAuth 2.0 Service Application (Recommended)
+###  Auditor Account (Recommended)
 
-Register the `OktaHound` collector as a service application in Okta.
+Create a [new account](https://docs.jamf.com/10.36.0/jamf-pro/install-guide-linux/Jamf_Pro_User_Accounts_and_Groups.html) directly assigned or part of a group assigned the "Auditor" default JAMF Pro role with "Full Access". 
+This account will have restricted read permissions to JAMF Pro objects.
 
-The application can then be assigned limited read-only permissions and authenticate using a public/private key pair or a client secret.
+Username and password are used to authenticate to the tenant and run the collector.
 
-A symmetric client secret or asymmetric RSA public/private key pair can be used for authentication,
-with the latter being the more secure option.
+`python3 main.py --username auditor1 --password "auditorPASS" --target https://mytenant.jamfcloud.com --collect`
 
-<Card title="Okta App Registration" icon="gear" href="/opengraph/extensions/OktaHound/okta-app-registration">
-  Create an API service application in Okta for OktaHound to authenticate with the Okta API.
-</Card>
+### Administrator Account
 
-### API Token (SSWS)
+The `JamfHound` collector can authenticate using username and password for an account that has the default "Administrator" role with "Full Access" or member of a group with the "Administrator" role and "Full Access".
+This is the least secure option and does not follow the best practice of least-privilege.
 
-The `OktaHound` collector can also authenticate using API tokens (also known as SSWS tokens) associated with specific Okta Super Administrator accounts.
-This is the least secure option, but the easiest one to set up.
+`python3 main.py --username administrator1 --password $admin_pass_var --target https://mytenant.jamfcloud.com --collect `
 
-## Downloading OktaHound
+## Installing JamfHound
 
-Download the latest release of `OktaHound` specific to your operating system
-from the [releases page](https://github.com/SpecterOps/OktaHound/releases) and extract the archive.
+Retrieve the latest version of the JamfHound collector.
 
-## Configuring Authentication
+`git clone https://github.com/SpecterOps/JamfHound.git`
 
-Rename the `okta.sample.oauth.yaml` template file to `okta.yaml` and fill in the Okta organization URI,
-client ID, and private key from the [application registration process](okta-app-registration).
-Note that the private key must be converted from the JSON format to YAML:
+Ensure python3.12 or newer is installed and install the `requests` module.
 
-```yaml
-okta:
-  client:
-    oktaDomain: "https://TODO.okta.com"
-    authorizationMode: "PrivateKey"
-    clientId: "TODO"
-    privateKey:
-      "d": "TODO"
-      "p": "TODO"
-      "q": "TODO"
-      "dp": "TODO"
-      "dq": "TODO"
-      "qi": "TODO"
-      "kty": "RSA"
-      "e": "AQAB"
-      "kid": "TODO"
-      "n": "TODO"
-```
+`python3 -m pip install requests`
 
-If API token authentication is to be used instead (not recommended), rename the `okta.sample.token` template file to `okta.yaml`
-and fill in the Okta organization URI and API token:
+## Running JamfHound With Okta Edges
 
-```yaml
-okta:
-  client:
-    oktaDomain: "https://TODO.okta.com"
-    authorizationMode: "SSWS"
-    token: "TODO"
-```
+Run the `collect` command with the `--okta` argument to collect JAMF Pro data and prepopulate edges that allow creating hybrid paths to OktaHound ingested data:
 
-## Running OktaHound
+`python3 main.py --username auditor1 --password $auditor_pass_var --target https://mytenant.jamfcloud.com --collect --okta`
 
-Run the following command to start the data collection from the Okta organization:
+## Collection Output
 
-```shell
-OktaHound collect --output ./output --verbosity Trace
-```
+JamfHound will create a local collection directory named with a timestamp for when it was run. (example Collection_2026_03_02_16_02_48)
 
-## API Rate Limiting
-
-Okta [enforces API rate limits](https://developer.okta.com/docs/reference/rl-global-mgmt/) to mitigate denial-of-service attacks.
-The `OktaHound` collector sometimes hits the limit of 20 calls to the `/api/v1/apps/*` and `/oauth2/v1/clients/*` endpoints per second for the **Integrator Free Plan**.
-By default, the client is configured to retry each HTTP request up to 3 times with increasing delays, which effectively mitigates this problem.
+Within that directory will be the ouptut file JAMFCollection.json that will be uploaded and ingested into BloodHound.
