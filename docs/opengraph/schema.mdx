@@ -120,15 +120,41 @@ The following is the <a href="/assets/opengraph/opengraph-node.json" download>JS
 
 ## Edges
 
-Edges names cannot contain dash `-`. It is highly recommended to use Pascal Case and no special characters.
+Edge `kind` values must contain only letters (`A-Z`, `a-z`), numbers (`0-9`), and underscores (`_`).
 
-From [tuple.nl](https://www.tuple.nl/en/knowledge-base/pascal-case): Pascal Case is a naming convention used in programming where compound words are written without spaces, and each word starts with an uppercase letter. It is commonly used for naming variables, functions, classes, and other identifiers in code. Pascal Case helps create descriptive and easily distinguishable names, contributing to the clarity of your code. 
+BloodHound validates edge kinds at upload time. If any edge kind includes spaces, dashes (`-`), backticks, or other special characters, the file upload fails.
 
-See Neo4j [Naming and Conventions](https://neo4j.com/docs/cypher-manual/current/syntax/naming/) for more details. 
+We recommend using PascalCase (for example, `AdminTo`, `HasSession`) for readability and consistency.
+
+See Neo4j [Naming and Conventions](https://neo4j.com/docs/cypher-manual/current/syntax/naming/) for additional naming guidance.
+
+### Edge kind validation
+
+BloodHound enforces this pattern for edge kinds:
+
+```text
+^[A-Za-z0-9_]+$
+```
+
+**Valid examples**
+
+- `AdminTo`
+- `HasSession`
+- `AZMGGrantRole`
+- `Edge_1`
+
+**Invalid examples**
+
+- `Admin-To`
+- `Has Session`
+- ``Has`Session``
+- `Has$Session`
 
 ### Edge JSON
 
 The following is the <a href="/assets/opengraph/opengraph-edge.json" download>JSON schema</a> that all edges must conform to.
+
+If an edge kind does not meet the allowed pattern, BloodHound returns a schema validation error and rejects the upload.
 
 ```json
 {
