@@ -48,13 +48,19 @@ When ingest completes, the generic data will be available via **Cypher search ON
 
 ### Property Rules
 
-Properties must be primitive types or arrays of primitive types
+- Properties must be primitive types or arrays of primitive types.
 
-Nested objects and arrays of objects are not allowed
+- Nested objects and arrays of objects are not allowed.
 
-Arrays must be homogeneous (e.g. all strings or all numbers)
+- Arrays must be homogeneous (e.g. all strings or all numbers).
 
-An array of kind labels for the node. The first element is treated as the node's primary kind and is used to determine which icon to display in the graph UI. This primary kind is only used for visual representation and has no semantic significance for data processing.
+- An array of kind labels for the node. The first element is treated as the node's primary kind and is used to determine which icon to display in the graph UI. This primary kind is only used for visual representation and has no semantic significance for data processing.
+
+- Property names must be lowercase. Property names in BloodHound are case-sensitive, which means `objectid` and `ObjectID` are treated as two distinct properties on the same node. This can cause issues when parsing API responses in languages that treat JSON keys as case-insensitive (for example, PowerShell and some .NET-based tools).
+
+  <Warning>
+    A future release will enforce lowercase property names. To avoid breaking changes, adopt lowercase property names now.
+  </Warning>
 
 ### Node JSON
 
@@ -98,7 +104,7 @@ The following is the <a href="/assets/opengraph/opengraph-node.json" download>JS
             "properties": {
                 "manufacturer": "Brandon Corp",
                 "model": "4000x",
-                "isActive": true,
+                "isactive": true,
                 "rating": 43.50
             },
             "kinds": ["Device", "Asset"]
@@ -114,15 +120,43 @@ The following is the <a href="/assets/opengraph/opengraph-node.json" download>JS
 
 ## Edges
 
-Edges names cannot contain dash `-`. It is highly recommended to use Pascal Case and no special characters.
+Edge `kind` values must contain only letters (`A-Z`, `a-z`), numbers (`0-9`), and underscores (`_`).
 
-From [tuple.nl](https://www.tuple.nl/en/knowledge-base/pascal-case): Pascal Case is a naming convention used in programming where compound words are written without spaces, and each word starts with an uppercase letter. It is commonly used for naming variables, functions, classes, and other identifiers in code. Pascal Case helps create descriptive and easily distinguishable names, contributing to the clarity of your code. 
+BloodHound validates edge kinds at upload time. If any edge kind includes spaces, dashes (`-`), backticks, or other special characters, the file upload fails.
 
-See Neo4j [Naming and Conventions](https://neo4j.com/docs/cypher-manual/current/syntax/naming/) for more details. 
+We recommend using PascalCase (for example, `AdminTo`, `HasSession`) for readability and consistency.
+
+Neo4j Cypher allows many special characters in symbolic names when the name is enclosed in backticks. BloodHound OpenGraph ingest is more restrictive: edge `kind` values must match `^[A-Za-z0-9_]+$`, so upload validation rejects backtick-escaped names, spaces, dashes, and other special characters.
+
+See Neo4j [Escaping rules for symbolic names](https://neo4j.com/docs/cypher-manual/current/syntax/naming/#symbolic-names-escaping-rules) for additional naming guidance.
+
+### Edge kind validation
+
+BloodHound enforces this pattern for edge kinds:
+
+```text
+^[A-Za-z0-9_]+$
+```
+
+**Valid examples**
+
+- `AdminTo`
+- `HasSession`
+- `AZMGGrantRole`
+- `Edge_1`
+
+**Invalid examples**
+
+- `Admin-To`
+- `Has Session`
+- ``Has`Session``
+- `Has$Session`
 
 ### Edge JSON
 
 The following is the <a href="/assets/opengraph/opengraph-edge.json" download>JSON schema</a> that all edges must conform to.
+
+If an edge kind does not meet the allowed pattern, BloodHound returns a schema validation error and rejects the upload.
 
 ```json
 {
@@ -170,7 +204,11 @@ The following is the <a href="/assets/opengraph/opengraph-edge.json" download>JS
             },
             "required": ["value"]
         },
-        "kind": { "type": "string" },
+        "kind": {
+            "type": "string",
+            "description": "The relationship type. Must contain only letters, numbers, and underscores.",
+            "pattern": "^[A-Za-z0-9_]+$"
+        },
         "properties": {
             "type": ["object", "null"],
             "description": "A key-value map of edge attributes. Values must not be objects. If a value is an array, it must contain only primitive types (e.g., strings, numbers, booleans) and must be homogeneous (all items must be of the same type).",
