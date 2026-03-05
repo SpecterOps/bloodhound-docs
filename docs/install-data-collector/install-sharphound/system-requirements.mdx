@@ -46,17 +46,19 @@ To collect Active Directory data with SharpHound and ingest it into BloodHound f
 
 Run the SharpHound Enterprise service under a domain-joined account that has the **Log on as a service** User Rights Assignment on the SharpHound Enterprise server. This account can be a traditional user account or a [Group Managed Service Account (gMSA)](/install-data-collector/install-sharphound/create-gmsa).
 
-The service account needs permissions to collect data from your target domains and systems, but it does not need to be a member of `Domain Admins`. 
+The service account needs permissions to collect data from your target domains and systems, but it does not need to be a member of `Domain Admins`.
 
 For [privileged collection](/collect-data/enterprise-collection/privileged-collection), adding the account to local administrator groups on domain computers works. However, we recommend a least-privilege approach: grant only the permissions required for the specific data types you plan to collect.
 
 | Data type | Default permissions | Least-privileged option |
 |---|---|---|
 | [Active Directory Structure](/collect-data/permissions#active-directory-structure-data) | `Authenticated Users` can read most required data via LDAP | Delegate additional read permissions where needed (for example, restricted AD objects and dMSA) |
-| [Local Groups/NTLM](/collect-data/permissions#local-groups--ntlm) | Local `Administrators` | Delegate Remote SAM and NTLM registry access with GPO/registry configuration |
+| [Local Group Membership](/collect-data/permissions#local-group-membership) | Local `Administrators` | Delegate Remote SAM access with Group Policy configuration |
+| [User Rights Assignments](/collect-data/permissions#user-rights-assignments) | Local `Administrators` | No known delegation path today |
+| [NTLM](/collect-data/permissions#ntlm) | Local `Administrators` | Delegate registry access with Group Policy or registry configuration |
 | [Sessions](/collect-data/permissions#sessions) | Local `Administrators` | On Windows Server, `Print Operators` can be used; Windows desktops still require local `Administrators` |
 | [Certificate Services](/collect-data/permissions#certificate-services) | `Authenticated Users` can collect most ADCS LDAP data | Already least-privileged by default for LDAP-collected certificate services data |
 | [CA Registry](/collect-data/permissions#ca-registry) | `Authenticated Users` can collect CA registry data when AD CS is installed | No additional delegation is typically required |
-| [DC Registry](/collect-data/permissions#dc-registry) | Local `Administrators` on domain controllers | Delegate access via GPO/registry configuration for required paths |
+| [DC Registry](/collect-data/permissions#dc-registry) | Local `Administrators` on domain controllers | Delegate access via Group Policy or registry configuration for required paths |
 
 <Note>If Active Directory tombstoning is enabled, the service account must also have [read permissions](https://learn.microsoft.com/en-us/troubleshoot/windows-server/identity/non-administrators-view-deleted-object-container) on the deleted objects container.</Note>
