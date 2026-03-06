@@ -1,0 +1,81 @@
+---
+title: 'Okta_CustomRole'
+description: 'A custom role in Okta created by an administrator'
+icon: '/images/extensions/oktahound/reference/okta_customrole.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Overview
+
+Custom roles can be created with specific [permissions](https://developer.okta.com/docs/api/openapi/okta-management/guides/permissions/)
+and then assigned to [users](/opengraph/extensions/oktahound/reference/nodes/okta_user), [groups](/opengraph/extensions/oktahound/reference/nodes/okta_group), and [applications](/opengraph/extensions/oktahound/reference/nodes/okta_application) over [resource sets](/opengraph/extensions/oktahound/reference/nodes/okta_resourceset).
+[Complex conditions](https://help.okta.com/oie/en-us/content/topics/security/custom-admin-role/permission-conditions.htm) can be used if the custom admin role has one of the following permissions:
+
+- okta.users.read
+- okta.users.manage
+- okta.users.create
+
+Custom roles are represented as `Okta_CustomRole` and `Okta_RoleAssignment` nodes in `OktaHound`, similar to built-in roles.
+
+## Edges
+
+<Note>
+The tables below list edges defined by the OktaHound extension only. Additional edges to or from this node may be created by other extensions.
+</Note>
+
+### Inbound Edges
+
+| Edge Type | Source Node Types |
+| --------- | ----------------- |
+| [Okta_Contains](/opengraph/extensions/oktahound/reference/edges/okta_contains) | [Okta_Organization](/opengraph/extensions/oktahound/reference/nodes/okta_organization) |
+| [Okta_HasRole](/opengraph/extensions/oktahound/reference/edges/okta_hasrole) | [Okta_User](/opengraph/extensions/oktahound/reference/nodes/okta_user), [Okta_Group](/opengraph/extensions/oktahound/reference/nodes/okta_group), [Okta_Application](/opengraph/extensions/oktahound/reference/nodes/okta_application) |
+
+### Outbound Edges
+
+No outbound edges are defined by the OktaHound extension for this node.
+
+## Properties
+
+| Name | Source | Type | Description |
+| ---- | ------ | ---- | ----------- |
+| `id` | `role.id` | `string` | Unique custom role identifier. |
+| `name` | `role.label` | `string` | Name of the custom role. |
+| `displayName` | `role.label` | `string` | Display label used in BloodHound. |
+| `oktaDomain` | Collector context (non-API) | `string` | Okta organization domain where the custom role exists. |
+| `permissions` | `role.permissions` | `string[]` | Effective permission labels associated with the custom role. |
+| `created` | `role.created` | `datetime` | Custom role creation timestamp. |
+| `lastUpdated` | `role.lastUpdated` | `datetime` | Last update timestamp of the role definition. |
+
+## Sample Property Values
+
+```yaml
+id: cr0wwdjuk0w96MpFr697
+name: IAM Readers
+displayName: IAM Readers
+oktaDomain: contoso.okta.com
+created: 2025-10-29T12:45:55+00:00
+lastUpdated: 2025-10-30T13:35:36+00:00
+permissions:
+  - okta.iam.read
+```
+
+## Abusable Permissions of Custom Roles in Okta
+
+The following Okta permissions are particularly interesting from an offensive security perspective,
+as they can be abused to escalate privileges in hybrid scenarios:
+
+- okta.users.manage
+- okta.users.credentials.manage
+- okta.users.credentials.resetFactors
+- okta.users.credentials.resetPassword
+- okta.users.credentials.expirePassword
+- okta.users.credentials.manageTemporaryAccessCode
+- okta.groups.manage
+- okta.groups.members.manage
+- okta.apps.manage
+- okta.apps.clientCredentials.read
+
+<Warning>
+The research on abusable Okta permissions is still ongoing.
+</Warning>

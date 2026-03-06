@@ -1,0 +1,34 @@
+---
+title: 'Okta_OrgSWA'
+description: 'Secure Web Authentication from an Okta application to an external organization'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Source: [Okta_Application](/opengraph/extensions/oktahound/reference/nodes/okta_application)
+- Destination: [GH_Organization](https://github.com/SpecterOps/GitHound), [jamf_SSOIntegration](https://github.com/SpecterOps/JamfHound), [OP_Account](https://github.com/SpecterOps/1PassHound), [SNOW_Account](https://github.com/SpecterOps/SnowHound)
+- Traversable: ❌
+
+## General Information
+
+The non-traversable `Okta_OrgSWA` edges represent the Secure Web Authentication (SWA) relationships between Okta applications and supported external organizations or tenants. SWA stores user credentials in Okta and automatically fills them in when users access the application, which is less secure than federated SSO protocols.
+
+```mermaid
+graph LR
+  subgraph okta["OktaHound"]
+    direction TB
+    o("Okta_Organization contoso.okta.com")
+    app1("Okta_Application Jamf Pro SWA")
+    o -- Okta_Contains --> app1
+  end
+  subgraph "JamfHound"
+    direction TB
+    jamf("jamf_SSOIntegration contoso.jamfcloud.com-SSO")
+    app1 -. Okta_OrgSWA .-> jamf
+  end
+```
+
+The respective BloodHound collectors, e.g., `GitHound` for GitHub organizations and `JamfHound` for Jamf Pro tenants,
+must be used to gather the external node information.

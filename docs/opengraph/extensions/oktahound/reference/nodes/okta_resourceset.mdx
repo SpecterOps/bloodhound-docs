@@ -1,0 +1,86 @@
+---
+title: 'Okta_ResourceSet'
+description: 'A resource set containing users, groups, applications, and other Okta objects'
+icon: '/images/extensions/oktahound/reference/okta_resourceset.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Overview
+
+Resource sets are collections of entities that can be used to scope custom role assignments in Okta.
+A resource set can contain the following object types:
+
+- [x] [Users](/opengraph/extensions/oktahound/reference/nodes/okta_user)
+- [x] [Groups](/opengraph/extensions/oktahound/reference/nodes/okta_group)
+- [x] [Applications](/opengraph/extensions/oktahound/reference/nodes/okta_application)
+- [x] [API Service Integrations](/opengraph/extensions/oktahound/reference/nodes/okta_apiserviceintegration)
+- [x] [Devices](/opengraph/extensions/oktahound/reference/nodes/okta_device)
+- [x] [Authorization servers](/opengraph/extensions/oktahound/reference/nodes/okta_authorizationserver)
+- [x] [Identity Providers](/opengraph/extensions/oktahound/reference/nodes/okta_identityprovider)
+- [x] [Policies](/opengraph/extensions/oktahound/reference/nodes/okta_policy)
+  - [x] Entity risk policy
+  - [x] Session protection policy
+  - [x] Authentication policy
+  - [x] Global session policy
+  - [x] End user account management policy
+- [ ] Shared Signals Framework (SSF) Receivers
+- [ ] ~~Workflows~~ (Gaps in the Okta API)
+- [ ] ~~Customizations~~ (Gaps in the Okta API)
+- [ ] ~~Support cases~~ (Gaps in the Okta API)
+- [ ] ~~Identity and Access Management Resources~~ (Gaps in the Okta API)
+
+<Info>
+Only the marked resource types are currently supported by `OktaHound` as resource set members.
+Some resource types, such as Workflows, are not accessible via the Okta API at all.
+</Info>
+![Okta Resource Set displayed in BloodHound](/images/extensions/oktahound/reference/bloodhound-resource-set.png)
+
+In `OktaHound`, resource sets are represented as `Okta_ResourceSet` nodes.
+
+## Edges
+
+<Note>
+The tables below list edges defined by the OktaHound extension only. Additional edges to or from this node may be created by other extensions.
+</Note>
+
+### Inbound Edges
+
+| Edge Type | Source Node Types |
+| --------- | ----------------- |
+| [Okta_Contains](/opengraph/extensions/oktahound/reference/edges/okta_contains) | [Okta_Organization](/opengraph/extensions/oktahound/reference/nodes/okta_organization) |
+| [Okta_ScopedTo](/opengraph/extensions/oktahound/reference/edges/okta_scopedto) | [Okta_RoleAssignment](/opengraph/extensions/oktahound/reference/nodes/okta_roleassignment) |
+
+### Outbound Edges
+
+| Edge Type | Destination Node Types |
+| --------- | ---------------------- |
+| [Okta_ResourceSetContains](/opengraph/extensions/oktahound/reference/edges/okta_resourcesetcontains) | [Okta_User](/opengraph/extensions/oktahound/reference/nodes/okta_user), [Okta_Group](/opengraph/extensions/oktahound/reference/nodes/okta_group), [Okta_Application](/opengraph/extensions/oktahound/reference/nodes/okta_application), [Okta_ApiServiceIntegration](/opengraph/extensions/oktahound/reference/nodes/okta_apiserviceintegration), [Okta_Device](/opengraph/extensions/oktahound/reference/nodes/okta_device), [Okta_AuthorizationServer](/opengraph/extensions/oktahound/reference/nodes/okta_authorizationserver), [Okta_IdentityProvider](/opengraph/extensions/oktahound/reference/nodes/okta_identityprovider), [Okta_Policy](/opengraph/extensions/oktahound/reference/nodes/okta_policy) |
+
+## Properties
+
+| Name | Source | Type | Description |
+| ---- | ------ | ---- | ----------- |
+| `id` | `resourceSet.id + "@" + oktaDomain` or `resourceSet.id` | `string` | Unique resource set identifier (domain-qualified). |
+| `name` | `resourceSet.label` | `string` | Resource set name. |
+| `displayName` | `resourceSet.label` | `string` | Display-friendly resource set name. |
+| `oktaDomain` | Collector context (non-API) | `string` | Okta organization domain where the resource set exists. |
+| `description` | `resourceSet.description` | `string` | Resource set description text. |
+| `created` | `resourceSet.created` | `datetime` | Resource set creation timestamp. |
+| `lastUpdated` | `resourceSet.lastUpdated` | `datetime` | Last resource set update timestamp. |
+
+<Info>
+The built-in resource set `Workflows Resource Set` has the `WORKFLOWS_IAM_POLICY` identifier in all Okta organizations.
+To make it unique, the `OktaHound` collector adds the organization domain name as a suffix to the resource set's ID, e.g., `WORKFLOWS_IAM_POLICY@contoso.okta.com`.
+</Info>
+## Sample Property Values
+
+```yaml
+id: WORKFLOWS_IAM_POLICY@contoso.okta.com
+name: Workflows Resource Set
+displayName: Workflows Resource Set
+oktaDomain: contoso.okta.com
+description: A resource set managed by Workflows Administrator
+created: 2025-10-22T13:29:26+00:00
+lastUpdated: 2025-10-22T13:29:26+00:00
+```
