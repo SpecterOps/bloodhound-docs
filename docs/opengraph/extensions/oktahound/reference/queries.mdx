@@ -91,7 +91,8 @@ This query can be imported into BloodHound from the [group-members.json](https:/
 Retrieves all hybrid relationships from external systems to Okta.
 
 ```cypher
-MATCH p = (:SNOW_Base:GH_Base:OP_Base:Base:Jamf:AZBase)-[]->(:Okta)
+MATCH p = (n)-[]->(:Okta)
+WHERE NOT n:Okta
 RETURN p
 LIMIT 1000
 ```
@@ -103,7 +104,8 @@ This query can be imported into BloodHound from the [hybrid-inbound.json](https:
 Retrieves all hybrid relationships from Okta to external systems.
 
 ```cypher
-MATCH p = (:Okta)-[]->(:SNOW_Base:GH_Base:OP_Base:Base:Jamf:AZBase)
+MATCH p = (:Okta)-[]->(n)
+WHERE NOT n:Okta
 RETURN p
 LIMIT 1000
 ```
@@ -397,24 +399,37 @@ This query can be imported into BloodHound from the [stale-privileged-accounts.j
 Secure Web Authentication (SWA) relationships between Okta users and their linked accounts in external applications.
 
 ```cypher
-MATCH p = (:Okta_User)-[:Okta_SWA]->(:GH_User:jamf_Account:OP_User:SNOW_User)
+MATCH p = (:Okta_User)-[:Okta_SWA]->(n)
+WHERE NOT n:Okta
 RETURN p
 LIMIT 1000
 ```
 
 This query can be imported into BloodHound from the [swa-applications.json](https://github.com/SpecterOps/OktaHound/tree/main/Src/Queries/swa-applications.json) file.
 
-## User and Group Synchronization
+## Inbound User and Group Synchronization
 
-Lists all user and group synchronization relationships between Okta and external identity systems such as Active Directory or Snowflake.
+Lists all inbound user and group synchronization relationships to Okta, including password synchronization across Org2Org setups.
 
 ```cypher
-MATCH p = (:Okta_User:Okta_Group)-[:Okta_UserSync|Okta_MembershipSync]-()
+MATCH p = (n)-[:Okta_UserSync|Okta_MembershipSync|Okta_PasswordSync]->(:Okta_User:Okta_Group)
 RETURN p
 LIMIT 1000
 ```
 
-This query can be imported into BloodHound from the [sync-relationships.json](https://github.com/SpecterOps/OktaHound/tree/main/Src/Queries/sync-relationships.json) file.
+This query can be imported into BloodHound from the [sync-relationships-inbound.json](https://github.com/SpecterOps/OktaHound/tree/main/Src/Queries/sync-relationships-inbound.json) file.
+
+## Outbound User and Group Synchronization
+
+Lists all outbound user and group synchronization relationships from Okta, including password synchronization across Org2Org setups.
+
+```cypher
+MATCH p = (:Okta_User:Okta_Group)-[:Okta_UserSync|Okta_MembershipSync|Okta_PasswordSync]->(n)
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [sync-relationships-outbound.json](https://github.com/SpecterOps/OktaHound/tree/main/Src/Queries/sync-relationships-outbound.json) file.
 
 ## Tier Zero Principals and Devices
 
