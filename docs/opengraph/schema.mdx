@@ -184,17 +184,23 @@ BloodHound enforces this pattern for edge kinds:
 
 ### Edge Endpoint Matching
 
-Edges in OpenGraph Ingest define relationships between nodes by specifying a `start` and an `end` point. Each endpoint can be resolved using one of two distinct matching strategies, controlled by the `match_by` field. This flexibility allows you to link nodes based on their unique database identifiers or by dynamically finding them based on specific attribute values.
+Edges in OpenGraph data define relationships between nodes using a `start` endpoint and an `end` endpoint. You can control how BloodHound resolves each endpoint using one of two matching strategies in the `match_by` field. This flexibility allows you to link nodes based on their unique database identifiers or by dynamically finding them based on specific attribute values.
 
-#### Performance Costs
 
-Matching edge endpoints in OpenGraph Ingest by the `match_by` `property` strategy will suffer from lower performance than default `match_by` `id` strategy. It is advised that users only exercise `match_by` `property` when no other method for matching by a node's identifier is viable.
 
-#### Edge Endpoint Matching via Identifier
+<Note>
+  Use identifier matching when possible. Property matching is more flexible, but it is slower and should be used only when you cannot match by node ID.
+</Note>
+
+#### Match by Identifier
 
 This is the default and most common method for defining edges. It resolves the endpoint by looking up a node using its unique internal ID or its human-readable name.
 
-To use this strategy, set the `match_by` property to either `"id"` or `"name"` (note: `"name"` is deprecated and will be removed in future versions; using `"property"` with a single equality matcher is the recommended approach for name-based lookups).
+To use this strategy, set the `match_by` property to either `"id"` or `"name"`.
+
+<Note>
+  `"name"` is deprecated and will be removed in future versions; using `"property"` with a single equality matcher is the recommended approach for name-based lookups.
+</Note>
 
 - **`match_by`:** Set to `"id"` to match the node's unique object identifier, or `"name"` to match the node's name string.
 - **`value`:** A required string containing the specific ID or name of the target node.
@@ -217,7 +223,7 @@ Linking a specific user to a server using their unique IDs:
 }
 ```
 
-#### Edge Endpoint Matching via Property Match
+#### Match by Property
 
 Use this strategy when you do not know the unique ID of the target node but can identify it through one or more known attributes (e.g., a username, email address, hostname, or custom property). This method allows for dynamic resolution based on data available at ingestion time.
 
