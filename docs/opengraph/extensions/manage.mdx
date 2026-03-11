@@ -49,30 +49,34 @@ The following table summarizes the key features enabled by extension-based data 
 
 The general workflow for extension-based data ingestion involves three main stages that include different steps.
 
-Not all steps are required (for example, uploading Cypher queries and creating Privilege Zone rules are optional), and the workflow is not strictly linear. However, the following diagram provides a high-level overview of the recommended workflow for extension-based data ingestion in BloodHound:
+The workflow is not strictly linear and not all steps are required. For example, uploading Cypher queries and creating Privilege Zone rules are optional. However, the following diagram provides a high-level overview of the recommended workflow for extension-based data ingestion in BloodHound:
 
 ```mermaid
-flowchart LR
-	subgraph prepare[Install and Configure]
+flowchart TB
+	subgraph prepare[Configure and Collect]
 		a["Download extension<br/>and collector"]
-        a-->b["Register<br/>extension"]
-        b-->c["Configure and<br/>run collector"]
-        c-->d["Generate data<br/>payload"]
+        a-->b["Configure and<br/>run collector"]
+        b-->c["Generate data<br/>payload"]
     end
 
 	subgraph upload[Upload and Manage]
-		f["Upload data<br/>payload"]
-        f-->g["Import Cypher<br/>queries"]
-		g-->h["Update Privilege<br/>Zone rules"]
+		f["Register</br/>extension schema"]
+		f-->g["Upload data<br/>payload"]
+        g-->h["Import Cypher<br/>queries"]
+		h-->i["Update Privilege<br/>Zone rules"]
 	end
 
 	subgraph use[Explore and Analyze]
-		i["Explore data in<br/>BloodHound"]
+		j["Explore data in<br/>BloodHound"]
 	end
     prepare-->upload-->use
 ```
 
-## Before you begin
+## Manage extensions
+
+Use the **OpenGraph Management** page in BloodHound to upload, search, and delete extension schemas.
+
+### Before you begin
 
 Complete the following steps before registering an extension or uploading extension-based data:
 
@@ -95,4 +99,85 @@ Complete the following steps before registering an extension or uploading extens
 	<Step title="Validate version compatibility">
 		Verify the extension and collector versions are compatible with each other and with the version of BloodHound running on your tenant.
 	</Step>
+</Steps>
+
+### Register an extension
+
+Registering an extension involves uploading the extension schema to BloodHound, which validates the schema and makes it available for use with compatible data payloads. Once registered, you can upload data payloads that conform to the extension schema and take advantage of enhanced features in BloodHound.
+
+<Steps>
+  <Step title="Open the OpenGraph Management page">
+	In the left menu, click **Administration** > **OpenGraph Management**.
+  </Step>
+  <Step title="Upload the extension schema">
+	1. Click **Upload File** to open a file system dialog or drag and drop an extension schema file onto the canvas.
+
+	1. Click **Upload** to begin the schema registration and validation process.
+
+	   <img
+		src="/images/opengraph/extensions/manage/upload-extension-schema.png"
+		alt="A screenshot showing the OpenGraph Management page with the Upload Schema Files dialog open, allowing the user to select a file and upload it."
+		style= {{ width: "50%" }}
+	   />
+  </Step>
+  <Step title="Confirm installation">
+	Confirm the extension appears in the list of active extensions.
+
+	<Frame>
+	  <img
+	    src="/images/opengraph/extensions/manage/active-extensions-list.png"
+		alt="A screenshot showing the OpenGraph Management page with the list of active extensions, highlighting the newly installed extension."
+	  />
+	</Frame>
+  </Step>
+</Steps>
+
+### Delete an extension
+
+Deleting an extension removes the extension schema from BloodHound, which disables enhanced features for any data payloads that conformed to that schema. However, the underlying data payloads remain in BloodHound and can still be explored using the [Search](/analyze-data/explore/search#search) tab on the **Explore** page.
+
+If you want to delete the data payloads associated with an extension, you can do so separately using the **Database Management** page.
+
+To delete an extension schema, click the <Icon icon="trash"/> (trash) icon next to the extension in the list of active extensions and confirm the deletion in the prompt.
+
+<Note>You cannot delete built-in extensions that come with BloodHound, but you can delete custom extensions that you have uploaded.</Note>
+
+### Update an extension
+
+Collectors and extension schemas are versioned separately to allow for more flexible updates, but this requires coordination to maintain compatibility and support. Follow these guidelines for managing updates:
+
+- Do not update collectors independently without confirming extension schema compatibility.
+- Update collectors and extension schemas together whenever possible.
+- For Enterprise, coordinate update cycles with your Technical Account Manager.
+- Uploading a new version of an extension schema automatically deletes the previous version, so there is no need to manually delete old versions of the schema.
+- Ensure that any data payloads you upload _before_ updating the schema conform to the previous version to avoid errors and maintain access to enhanced features.
+- Ensure that any data payloads you upload _after_ updating the schema conform to the new version to avoid ingestion errors and maintain access to enhanced features.
+
+## Upload data
+
+After an admin registers an extension, users can upload compatible data payloads and take advantage of enhanced features in BloodHound. Follow these steps to use extension-based data:
+
+<Steps>
+  <Step title="Upload data">
+	Upload a data payload that conforms to the registered extension schema.
+
+	1. In the left menu, click <Icon icon="arrow-up-from-bracket"/> **Quick Upload**.
+
+	1. Click the **Upload File** modal to open a file system dialog or drag and drop the data payload file(s) onto the canvas.
+
+	1. Click **Upload** to begin the data ingestion and validation process.
+
+	   <Tip>You can monitor the progress of the upload and validation process on the [File Ingest](/collect-data/enterprise-collection/monitor#file-ingest) page.</Tip>
+  </Step>
+
+  <Step title="Explore and analyze">
+    Use the enhanced features enabled by the extension schema to explore and analyze your OpenGraph data in BloodHound.
+
+	| Feature | Description |
+	|---|---|
+	| Pathfinding | Use [Pathfinding](/analyze-data/explore/search#pathfinding) to identify attack paths and analyze relationships between entities in your environment |
+	| Cypher queries | [Import](/analyze-data/explore/cypher-search#import-and-export) and use extension-specific Cypher queries to perform general searches and create Privilege Zone rules |
+	| Environment filtering | Filter on schema-defined environments to focus on specific contexts in the **Attack Paths**, **Posture**, and **Zone Builder** pages |
+	| Findings and remediation | Use findings and remediation information to prioritize and address issues in your environment |
+  </Step>
 </Steps>
