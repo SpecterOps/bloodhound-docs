@@ -1,0 +1,90 @@
+---
+title: 'Okta_ApiServiceIntegration'
+description: 'An API service integration'
+icon: '/images/extensions/oktahound/reference/okta_apiserviceintegration.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Overview
+
+API service integrations in Okta represent OAuth 2.0 service (daemon) applications that can be granted machine-to-machine access to Okta APIs. There are some important differences between API service integrations and [regular OIDC service applications in Okta](/opengraph/extensions/oktahound/reference/nodes/okta_application):
+
+| Feature                                      | Service Applications | API Service Integrations |
+|----------------------------------------------|----------------------|--------------------------|
+| Can be created manually:                     | ✅                  | ❌                       |
+| Can be added from the OIN Catalog:           | ✅                  | ✅                       |
+| Require role assignments:                    | ✅                  | ❌                       |
+| Support authentication using client secrets: | ✅                  | ✅                       |
+| Support authentication using private keys:   | ✅                  | ❌                       |
+| Admins can read cleartext client secrets:    | ✅                  | ❌                       |
+
+In OktaHound, API service integrations are represented as `Okta_ApiServiceIntegration` nodes.
+
+## Edges
+
+<Note>
+The tables below list edges defined by the OktaHound extension only. Additional edges to or from this node may be created by other extensions.
+</Note>
+
+### Inbound Edges
+
+| Edge Type | Source Node Types |
+| --------- | ----------------- |
+| [Okta_AppAdmin](/opengraph/extensions/oktahound/reference/edges/okta_appadmin) | [Okta_User](/opengraph/extensions/oktahound/reference/nodes/okta_user), [Okta_Group](/opengraph/extensions/oktahound/reference/nodes/okta_group), [Okta_Application](/opengraph/extensions/oktahound/reference/nodes/okta_application) |
+| [Okta_Contains](/opengraph/extensions/oktahound/reference/edges/okta_contains) | [Okta_Organization](/opengraph/extensions/oktahound/reference/nodes/okta_organization) |
+| [Okta_CreatorOf](/opengraph/extensions/oktahound/reference/edges/okta_creatorof) | [Okta_User](/opengraph/extensions/oktahound/reference/nodes/okta_user), [Okta_Application](/opengraph/extensions/oktahound/reference/nodes/okta_application), [Okta_ApiServiceIntegration](/opengraph/extensions/oktahound/reference/nodes/okta_apiserviceintegration) |
+| [Okta_ResourceSetContains](/opengraph/extensions/oktahound/reference/edges/okta_resourcesetcontains) | [Okta_ResourceSet](/opengraph/extensions/oktahound/reference/nodes/okta_resourceset) |
+| [Okta_ScopedTo](/opengraph/extensions/oktahound/reference/edges/okta_scopedto) | [Okta_RoleAssignment](/opengraph/extensions/oktahound/reference/nodes/okta_roleassignment) |
+| [Okta_SecretOf](/opengraph/extensions/oktahound/reference/edges/okta_secretof) | [Okta_ClientSecret](/opengraph/extensions/oktahound/reference/nodes/okta_clientsecret) |
+
+### Outbound Edges
+
+| Edge Type | Destination Node Types |
+| --------- | ---------------------- |
+| [Okta_CreatorOf](/opengraph/extensions/oktahound/reference/edges/okta_creatorof) | [Okta_ApiServiceIntegration](/opengraph/extensions/oktahound/reference/nodes/okta_apiserviceintegration) |
+
+## Properties
+
+| Name | Source | Type | Description |
+| ---- | ------ | ---- | ----------- |
+| `id` | `service.id` | `string` | Unique API service integration identifier. |
+| `name` | `service.name` | `string` | Name of the API service integration in Okta. |
+| `displayName` | `service.name` | `string` | Display label used in BloodHound. |
+| `oktaDomain` | Collector context (non-API) | `string` | Okta organization domain where the integration exists. |
+| `appType` | `service.type` | `string` | Integration/application type identifier. |
+| `oauthScopes` | `service.grantedScopes` | `string[]` | OAuth 2.0 scopes granted to the integration. |
+| `createdAt` | `service.createdAt` | `datetime` | Timestamp when the integration was created. |
+
+## Sample Property Values
+
+```yaml
+id: 0oaz7jy5f2oXnvtmN697
+name: Falcon Shield
+displayName: Falcon Shield
+oktaDomain: contoso.okta.com
+appType: falconshieldapiservice
+oauthScopes:
+  - okta.users.read
+  - okta.oauthIntegrations.read
+  - okta.threatInsights.read
+  - okta.devices.read
+  - okta.apiTokens.read
+  - okta.roles.read
+  - okta.logs.read
+  - okta.groups.read
+  - okta.apps.read
+  - okta.domains.read
+  - okta.factors.read
+  - okta.authenticators.read
+  - okta.policies.read
+  - okta.networkZones.read
+  - okta.features.read
+createdAt: 2026-01-15T12:25:42.000Z
+```
+
+## Integration OAuth 2.0 Scopes
+
+Each API service integration comes with a pre-defined set of OAuth 2.0 scopes to access Okta APIs:
+
+![Okta API service integration scopes in BloodHound](/images/extensions/oktahound/reference/bloodhound-api-service-integration-scopes.png)
