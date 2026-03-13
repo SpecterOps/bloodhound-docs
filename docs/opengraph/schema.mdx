@@ -4,7 +4,11 @@ sidebarTitle: OpenGraph Schema
 description: "Description of the OpenGraph JSON Schema"
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img
+  noZoom
+  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise and CE"
+/>
 
 # Schema
 
@@ -43,7 +47,6 @@ When ingest completes, the generic data will be available via **Cypher search ON
 
 **Entity Panels**: clicking on a generic node or edge will only render the entity’s property bag. At this time there is no support for defining entity panels for generic entities.
 
-
 ## Nodes
 
 ### Property Rules
@@ -59,8 +62,17 @@ When ingest completes, the generic data will be available via **Cypher search ON
 - Property names must be lowercase. Property names in BloodHound are case-sensitive, which means `objectid` and `ObjectID` are treated as two distinct properties on the same node. This can cause issues when parsing API responses in languages that treat JSON keys as case-insensitive (for example, PowerShell and some .NET-based tools).
 
   <Warning>
-    A future release will enforce lowercase property names. To avoid breaking changes, adopt lowercase property names now.
+    A future release will enforce lowercase property names. To avoid breaking
+    changes, adopt lowercase property names now.
   </Warning>
+
+#### Reserved Property: `objectid`
+
+The property name `objectid` is reserved and **must not** be included in the `properties` object of a node definition.
+
+In the BloodHound data model, the top-level `id` field serves as the unique identifier for the node.
+
+Upon ingestion, this `id` value is automatically mapped and stored internally as the `objectid` property. Explicitly defining `objectid` within the `properties` map creates a redundant conflict that is unsupported. To ensure successful ingestion, remove any `objectid` keys from your node's `properties` object and rely solely on the root-level `id` field for identification.
 
 ### Node JSON
 
@@ -68,53 +80,71 @@ The following is the <a href="/assets/opengraph/opengraph-node.json" download>JS
 
 ```json
 {
-    "title": "Generic Ingest Node",
-    "description": "A node used in a generic graph ingestion system. Each node must have a unique identifier (`id`) and at least one kind describing its role or type. Nodes may also include a `properties` object containing custom attributes.",
-    "type": "object",
-    "properties": {
-        "id": { "type": "string" },
-        "properties": {
-            "type": ["object", "null"],
-            "description": "A key-value map of node attributes. Values must not be objects. If a value is an array, it must contain only primitive types (e.g., strings, numbers, booleans) and must be homogeneous (all items must be of the same type).",
-            "additionalProperties": {
-                "type": ["string", "number", "boolean", "array"],
-                "items": {
-                    "not": {
-                        "type": "object"
-                    }
-                }
-            }
-        },
-        "kinds": {
-            "type": ["array"],
-            "items": { "type": "string" },
-            "maxItems": 3,
-            "minItems": 1,
-            "description": "An array of kind labels for the node. The first element is treated as the node's primary kind and is used to determine which icon to display in the graph UI. This primary kind is only used for visual representation and has no semantic significance for data processing."
-        }
+  "title": "Generic Ingest Node",
+  "description": "A node used in a generic graph ingestion system. Each node must have a unique identifier (`id`) and at least one kind describing its role or type. Nodes may also include a `properties` object containing custom attributes.",
+  "type": "object",
+  "$defs": {
+    "property_map": {
+      "type": ["object", "null"],
+      "description": "A key-value map of entity attributes. Values must not be objects. If a value is an array, it must contain only primitive types (e.g., strings, numbers, booleans) and must be homogeneous (all items must be of the same type).",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" },
+          {
+            "type": "array",
+            "anyOf": [
+              { "items": { "type": "string" } },
+              { "items": { "type": "number" } },
+              { "items": { "type": "boolean" } }
+            ]
+          }
+        ]
+      },
+
+      "not": {
+        "required": ["objectid"]
+      }
+    }
+  },
+  "properties": {
+    "id": {
+      "type": "string"
     },
-    "required": ["id", "kinds"],
-    "examples": [
-        {
-            "id": "user-1234",
-            "kinds": ["Person"]
-        },
-        {
-            "id": "device-5678",
-            "properties": {
-                "manufacturer": "Brandon Corp",
-                "model": "4000x",
-                "isactive": true,
-                "rating": 43.50
-            },
-            "kinds": ["Device", "Asset"]
-        },
-        {
-            "id": "location-001",
-            "properties": null,
-            "kinds": ["Location"]
-        }
-    ]
+    "properties": {
+      "$ref": "#/$defs/property_map"
+    },
+    "kinds": {
+      "type": ["array"],
+      "items": { "type": "string" },
+      "minItems": 0,
+      "maxItems": 3,
+      "description": "An array of kind labels for the node. The first element is treated as the node's primary kind and is used to determine which icon to display in the graph UI. This primary kind is only used for visual representation and has no semantic significance for data processing."
+    }
+  },
+  "required": ["id", "kinds"],
+  "examples": [
+    {
+      "id": "user-1234",
+      "kinds": ["Person"]
+    },
+    {
+      "id": "device-5678",
+      "properties": {
+        "manufacturer": "Brandon Corp",
+        "model": "4000x",
+        "is_active": true,
+        "rating": 43.5
+      },
+      "kinds": ["Device", "Asset"]
+    },
+    {
+      "id": "location-001",
+      "properties": null,
+      "kinds": ["Location"]
+    }
+  ]
 }
 ```
 
@@ -130,7 +160,7 @@ Neo4j Cypher allows many special characters in symbolic names when the name is e
 
 See Neo4j [Escaping rules for symbolic names](https://neo4j.com/docs/cypher-manual/current/syntax/naming/#symbolic-names-escaping-rules) for additional naming guidance.
 
-### Edge kind validation
+### Edge Kind Validation
 
 BloodHound enforces this pattern for edge kinds:
 
@@ -152,6 +182,96 @@ BloodHound enforces this pattern for edge kinds:
 - ``Has`Session``
 - `Has$Session`
 
+### Edge Endpoint Matching
+
+Edges in OpenGraph data define relationships between nodes using a `start` endpoint and an `end` endpoint. You can control how BloodHound resolves each endpoint using one of two matching strategies in the `match_by` field. This flexibility allows you to link nodes based on their unique database identifiers or by dynamically finding them based on specific attribute values.
+
+
+
+<Note>
+  Use identifier matching when possible. Property matching is more flexible, but it is slower and should be used only when you cannot match by node ID.
+</Note>
+
+#### Match by Identifier
+
+This is the default and most common method for defining edges. It resolves the endpoint by looking up a node using its unique internal ID or its human-readable name.
+
+To use this strategy, set the `match_by` property to either `"id"` or `"name"`.
+
+<Note>
+  `"name"` is deprecated and will be removed in future versions; using `"property"` with a single equality matcher is the recommended approach for name-based lookups.
+</Note>
+
+- **`match_by`:** Set to `"id"` to match the node's unique object identifier, or `"name"` to match the node's name string.
+- **`value`:** A required string containing the specific ID or name of the target node.
+- **`kind` (Optional):** You may constrain the lookup to ensure the found node belongs to a specific type. For example, setting `kind: "User"` ensures that even if a name exists across multiple entity types, only the one classified as a `User` is selected.
+- **`property_matchers`:** Not used in this mode. If provided alongside `match_by: "id"`, validation will fail.
+
+**Example:**
+Linking a specific user to a server using their unique IDs:
+
+```json
+{
+  "start": {
+    "match_by": "id",
+    "value": "user-12345"
+  },
+  "end": {
+    "match_by": "id",
+    "value": "server-98765"
+  }
+}
+```
+
+#### Match by Property
+
+Use this strategy when you do not know the unique ID of the target node but can identify it through one or more known attributes (e.g., a username, email address, hostname, or custom property). This method allows for dynamic resolution based on data available at ingestion time.
+
+To use this strategy, set the `match_by` property to `"property"`.
+
+- **`match_by`:** Must be set to `"property"`.
+- **`property_matchers`:** A required array of objects defining the criteria to find the node. Each object must include:
+  - `key`: The name of the node property to check.
+  - `operator`: Currently, only `"equals"` is supported.
+  - `value`: The expected value for the property (string, number, or boolean).
+  - _Note:_ You can provide multiple matchers in the array. The system will attempt to find a node that satisfies all conditions simultaneously.
+- **`value`:** Not used in this mode. Providing a `value` field when `match_by` is `"property"` will cause validation errors.
+- **`kind` (Optional):** Similar to identifier matching, you can restrict the search to nodes of a specific kind to avoid ambiguity.
+
+**Example:**
+Linking a user to a server by matching the user's `username` property and the server's `hostname` property:
+
+```json
+{
+  "start": {
+    "match_by": "property",
+    "property_matchers": [
+      {
+        "key": "username",
+        "operator": "equals",
+        "value": "alice.smith"
+      },
+      {
+        "key": "active",
+        "operator": "equals",
+        "value": true
+      }
+    ],
+    "kind": "User"
+  },
+  "end": {
+    "match_by": "property",
+    "property_matchers": [
+      {
+        "key": "hostname",
+        "operator": "equals",
+        "value": "db-prod-01"
+      }
+    ]
+  }
+}
+```
+
 ### Edge JSON
 
 The following is the <a href="/assets/opengraph/opengraph-edge.json" download>JSON schema</a> that all edges must conform to.
@@ -160,128 +280,199 @@ If an edge kind does not meet the allowed pattern, BloodHound returns a schema v
 
 ```json
 {
-    "title": "Generic Ingest Edge",
-    "description": "Defines an edge between two nodes in a generic graph ingestion system. Each edge specifies a start and end node using either a unique identifier (id) or a name-based lookup. A kind is required to indicate the relationship type. Optional properties may include custom attributes. You may optionally constrain the start or end node to a specific kind using the kind field inside each reference.",
-    "type": "object",
-    "properties": {
-        "start": {
-            "type": "object",
-            "properties": {
-                "match_by": {
-                    "type": "string",
-                    "enum": ["id", "name"],
-                    "default": "id",
-                    "description": "Whether to match the start node by its unique object ID or by its name property."
-                },
-                "value": {
-                    "type": "string",
-                    "description": "The value used for matching — either an object ID or a name, depending on match_by."
-                },
-                "kind": {
-                    "type": "string",
-                    "description": "Optional kind filter; the referenced node must have this kind."
-                }
-            },
-            "required": ["value"]
+  "title": "Generic Ingest Edge",
+  "description": "Defines an edge between two nodes in a generic graph ingestion system. Each edge specifies a start and end node using either a unique identifier (id) or a name-based lookup. A kind is required to indicate the relationship type. Optional properties may include custom attributes. You may optionally constrain the start or end node to a specific kind using the kind field inside each reference.",
+  "type": "object",
+  "$defs": {
+    "property_map": {
+      "type": ["object", "null"],
+      "description": "A key-value map of edge attributes. Values must not be objects. If a value is an array, it must contain only primitive types (e.g., strings, numbers, booleans) and must be homogeneous (all items must be of the same type).",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" },
+          {
+            "type": "array",
+            "anyOf": [
+              { "items": { "type": "string" } },
+              { "items": { "type": "number" } },
+              { "items": { "type": "boolean" } }
+            ]
+          }
+        ]
+      }
+    },
+    "endpoint": {
+      "type": "object",
+      "properties": {
+        "match_by": {
+          "type": "string",
+          "enum": ["id", "name", "property"],
+          "default": "id",
+          "description": "Whether to match the start node by its unique object ID or by a series of property matches. Note that the name value here is deprecated and will be removed in future versions. Users are advised to use the multi-property match strategy moving forward."
         },
-        "end": {
+        "property_matchers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
             "type": "object",
             "properties": {
-                "match_by": {
-                    "type": "string",
-                    "enum": ["id", "name"],
-                    "default": "id",
-                    "description": "Whether to match the end node by its unique object ID or by its name property."
-                },
-                "value": {
-                    "type": "string",
-                    "description": "The value used for matching — either an object ID or a name, depending on match_by."
-                },
-                "kind": {
-                    "type": "string",
-                    "description": "Optional kind filter; the referenced node must have this kind."
-                }
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string",
+                "enum": ["equals"]
+              },
+              "value": {
+                "type": ["string", "number", "boolean"]
+              }
             },
-            "required": ["value"]
+            "required": ["key", "operator", "value"]
+          }
+        },
+        "value": {
+          "type": "string",
+          "description": "The value used for matching — either an object ID or a name, depending on match_by."
         },
         "kind": {
-            "type": "string",
-            "description": "The relationship type. Must contain only letters, numbers, and underscores.",
-            "pattern": "^[A-Za-z0-9_]+$"
-        },
-        "properties": {
-            "type": ["object", "null"],
-            "description": "A key-value map of edge attributes. Values must not be objects. If a value is an array, it must contain only primitive types (e.g., strings, numbers, booleans) and must be homogeneous (all items must be of the same type).",
-            "additionalProperties": {
-                "type": ["string", "number", "boolean", "array"],
-                "items": {
-                    "not": {
-                        "type": "object"
-                    }
+          "type": "string",
+          "description": "Optional kind filter; the referenced node must have this kind."
+        }
+      },
+      "if": {
+        "allOf": [
+          {
+            "properties": {
+              "match_by": {
+                "type": "string",
+                "const": "property"
+              }
+            }
+          },
+          {
+            "not": {
+              "properties": {
+                "match_by": {
+                  "type": "null"
                 }
+              }
             }
+          }
+        ]
+      },
+      "then": {
+        "required": ["property_matchers"],
+        "not": {
+          "required": ["value"]
         }
+      },
+      "else": {
+        "required": ["value"],
+        "not": {
+          "required": ["property_matchers"]
+        }
+      }
+    }
+  },
+  "properties": {
+    "start": {
+      "$ref": "#/$defs/endpoint"
     },
-    "required": ["start", "end", "kind"],
-    "examples": [
-        {
-            "start": {
-                "match_by": "id",
-                "value": "user-1234"
-            },
-            "end": {
-                "match_by": "id",
-                "value": "server-5678"
-            },
-            "kind": "HasSession",
-            "properties": {
-                "timestamp": "2025-04-16T12:00:00Z",
-                "duration_minutes": 45
-            }
-        },
-        {
-            "start": {
-                "match_by": "name",
-                "value": "alice",
-                "kind": "User"
-            },
-            "end": {
-                "match_by": "name",
-                "value": "file-server-1",
-                "kind": "Server"
-            },
-            "kind": "AccessedResource",
-            "properties": {
-                "via": "SMB",
-                "sensitive": true
-            }
-        },
-        {
-            "start": {
-                "value": "admin-1"
-            },
-            "end": {
-                "value": "domain-controller-9"
-            },
-            "kind": "AdminTo",
-            "properties": {
-                "reason": "elevated_permissions",
-                "confirmed": false
-            }
-        },
-        {
-            "start": {
-                "match_by": "name",
-                "value": "Printer-007"
-            },
-            "end": {
-                "match_by": "id",
-                "value": "network-42"
-            },
-            "kind": "ConnectedTo",
-            "properties": null
-        }
-    ]
+    "end": {
+      "$ref": "#/$defs/endpoint"
+    },
+    "kind": {
+      "type": "string",
+      "description": "Edge kind name must contain only alphanumeric characters and underscores.",
+      "pattern": "^[A-Za-z0-9_]+$"
+    },
+    "properties": {
+      "$ref": "#/$defs/property_map"
+    }
+  },
+  "required": ["start", "end", "kind"],
+  "examples": [
+    {
+      "start": {
+        "match_by": "id",
+        "value": "user-1234"
+      },
+      "end": {
+        "match_by": "id",
+        "value": "server-5678"
+      },
+      "kind": "has_session",
+      "properties": {
+        "timestamp": "2025-04-16T12:00:00Z",
+        "duration_minutes": 45
+      }
+    },
+    {
+      "start": {
+        "match_by": "property",
+        "property_matchers": [
+          {
+            "key": "prop_1",
+            "operator": "equals",
+            "value": "value"
+          }
+        ]
+      },
+      "end": {
+        "match_by": "id",
+        "value": "server-5678"
+      },
+      "kind": "has_session",
+      "properties": {
+        "timestamp": "2025-04-16T12:00:00Z",
+        "duration_minutes": 45
+      }
+    },
+    {
+      "start": {
+        "match_by": "name",
+        "value": "alice",
+        "kind": "User"
+      },
+      "end": {
+        "match_by": "name",
+        "value": "file-server-1",
+        "kind": "Server"
+      },
+      "kind": "accessed_resource",
+      "properties": {
+        "via": "SMB",
+        "sensitive": true
+      }
+    },
+    {
+      "start": {
+        "value": "admin-1"
+      },
+      "end": {
+        "value": "domain-controller-9"
+      },
+      "kind": "admin_to",
+      "properties": {
+        "reason": "elevated_permissions",
+        "confirmed": false
+      }
+    },
+    {
+      "start": {
+        "match_by": "name",
+        "value": "Printer-007"
+      },
+      "end": {
+        "match_by": "id",
+        "value": "network-42"
+      },
+      "kind": "connected_to",
+      "properties": null
+    }
+  ]
 }
 ```
 
@@ -352,27 +543,27 @@ See the following example OpenGraph payload that produces the effect:
 
 ```json
 {
-    "graph": {
-        "nodes": [
-            {
-                "id": "TESTNODE",
-                "kinds": ["User"]
-            }
-        ],
-        "edges": [
-            {
-                "start": {
-                    "match_by": "id",
-                    "value": "TESTNODE"
-                },
-                "end": {
-                    "match_by": "id",
-                    "value": "S-1-5-21-2697957641-2271029196-387917394-2171-544"
-                },
-                "kind": "MemberOfLocalGroup"
-            }
-        ]
-    }
+  "graph": {
+    "nodes": [
+      {
+        "id": "TESTNODE",
+        "kinds": ["User"]
+      }
+    ],
+    "edges": [
+      {
+        "start": {
+          "match_by": "id",
+          "value": "TESTNODE"
+        },
+        "end": {
+          "match_by": "id",
+          "value": "S-1-5-21-2697957641-2271029196-387917394-2171-544"
+        },
+        "kind": "MemberOfLocalGroup"
+      }
+    ]
+  }
 }
 ```
 
@@ -402,7 +593,12 @@ If present, the `source_kind` will be added to the `kinds` list of all nodes in 
 
 The following is a minimal example payload that conforms to the node and edge schemas above. You can use this as a starting point to build your own OpenGraph. Copy and paste the following example into a new `.json` file or <a href="/assets/opengraph/opengraph-minimal.json" download>download this example file</a>.
 
-<Tip>When working with JSON files, use a plain text editor and UTF-8 encoding. Some text editors may introduce unexpected, non-standard characters that can cause parsing errors. It's always a good idea to validate your JSON with a [linter](https://jsonlint.com/) before uploading it to BloodHound.</Tip>
+<Tip>
+  When working with JSON files, use a plain text editor and UTF-8 encoding. Some
+  text editors may introduce unexpected, non-standard characters that can cause
+  parsing errors. It's always a good idea to validate your JSON with a
+  [linter](https://jsonlint.com/) before uploading it to BloodHound.
+</Tip>
 
 ```json
 {
@@ -410,9 +606,7 @@ The following is a minimal example payload that conforms to the node and edge sc
     "nodes": [
       {
         "id": "123",
-        "kinds": [
-          "Person"
-        ],
+        "kinds": ["Person"],
         "properties": {
           "displayname": "bob",
           "property": "a",
@@ -422,9 +616,7 @@ The following is a minimal example payload that conforms to the node and edge sc
       },
       {
         "id": "234",
-        "kinds": [
-          "Person"
-        ],
+        "kinds": ["Person"],
         "properties": {
           "displayname": "alice",
           "property": "b",
@@ -458,4 +650,5 @@ return p
 ```
 
 You should get something that looks like this:
-<img noZoom src="/assets/og-sch-1.png" alt="BOB->Knows->Alice"/>
+
+<img noZoom src="/assets/og-sch-1.png" alt="BOB->Knows->Alice" />
