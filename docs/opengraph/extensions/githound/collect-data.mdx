@@ -1,0 +1,61 @@
+---
+title: Running the Collector
+description: Run the JamfHound collector to gather data from your JAMF Pro tenant
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+This page covers downloading, configuring, and running the JamfHound collector against your JAMF Pro tenant.
+
+## Dependencies
+
+* Python3 - version 3.12 or newer
+* Requests Module
+
+### Auditor Account (Recommended)
+
+Create a [new account](https://docs.jamf.com/10.36.0/jamf-pro/install-guide-linux/Jamf_Pro_User_Accounts_and_Groups.html) directly assigned or part of a group assigned the "Auditor" default JAMF Pro role with "Full Access". 
+
+This account will have restricted read permissions to JAMF Pro objects.
+
+### Administrator Account
+
+The JamfHound collector can authenticate using username and password for an account that has the default "Administrator" role with "Full Access" or member of a group with the "Administrator" role and "Full Access".
+
+This is the least secure option and does not follow the best practice of least-privilege.
+
+## Install JamfHound
+
+Retrieve the latest version of the JamfHound collector.
+
+```shell
+git clone https://github.com/SpecterOps/JamfHound.git
+```
+
+Ensure python3.12 or newer is installed and install the `requests` module.
+
+```shell
+python3 -m pip install requests
+```
+
+## Run JamfHound
+
+Username and password are used to authenticate to the tenant and run the collector.
+
+```shell
+python3 main.py --username auditor1 --password "auditorPASS" --target https://mytenant.jamfcloud.com --collect
+```
+
+## Run JamfHound With Okta Edges
+
+Run the `collect` command with the `--okta` argument to collect JAMF Pro data and prepopulate edges that allow creating hybrid paths to OktaHound ingested data:
+
+```shell
+python3 main.py --username auditor1 --password $auditor_pass_var --target https://mytenant.jamfcloud.com --collect --okta
+```
+
+## Collection Output
+
+JamfHound will create a local collection directory named with a timestamp for when it was run (for example, `Collection_2026_03_02_16_02_48`).
+
+Within that directory will be the output file `JAMFCollection.json` that you can upload to BloodHound.

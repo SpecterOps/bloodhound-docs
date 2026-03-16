@@ -1,0 +1,70 @@
+---
+title: 'GH_OrgVariable'
+description: 'An organization-level GitHub Actions variable that can be scoped to all, private, or selected repositories. Unlike secrets, variable values are readable.'
+icon: '/images/extensions/githound/reference/gh_orgvariable.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+Represents an organization-level GitHub Actions variable. Organization variables can be scoped to all repositories, only private/internal repositories, or a specific set of selected repositories. The visibility property determines how GH_HasVariable edges are resolved to repository nodes. Unlike secrets, variable values are readable via the API.
+
+Created by: `Git-HoundOrganizationSecret`
+
+## Edges
+
+<Note>
+The tables below list edges defined by the GitHound extension only. Additional edges to or from this node may be created by other extensions.
+</Note>
+
+### Inbound Edges
+
+| Edge Type | Source Node Types |
+| --------- | ----------------- |
+| [GH_HasVariable](/opengraph/extensions/githound/reference/edges/gh_hasvariable) | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository) |
+
+### Outbound Edges
+
+No outbound edges are defined by the GitHound extension for this node.
+
+## Properties
+
+| Property Name    | Data Type | Description                                                                                                                 |
+| ---------------- | --------- | --------------------------------------------------------------------------------------------------------------------------- |
+| objectid         | string    | A deterministic ID in the format `GH_OrgVariable_{orgNodeId}_{variableName}`.                                               |
+| id               | string    | Same as objectid.                                                                                                           |
+| name             | string    | The name of the variable.                                                                                                   |
+| environment_name | string    | The name of the environment (GitHub organization).                                                                          |
+| environmentid    | string    | The node_id of the environment (GitHub organization).                                                                       |
+| value            | string    | The plaintext value of the variable.                                                                                        |
+| created_at       | datetime  | When the variable was created.                                                                                              |
+| updated_at       | datetime  | When the variable was last updated.                                                                                         |
+| visibility       | string    | The variable's visibility scope: `all` (all repos), `private` (private and internal repos), or `selected` (specific repos). |
+
+## Edges
+
+### Outbound Edges
+
+None
+
+### Inbound Edges
+
+| Edge Kind                                               | Source Node                           | Traversable | Description                                                                                                                                                               |
+| ------------------------------------------------------- | ------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [GH_Contains](../edgedescriptions/gh_contains)       | [GH_Organization](/opengraph/extensions/githound/reference/nodes/gh_organization) | No          | Organization contains this variable.                                                                                                                                      |
+| [GH_HasVariable](../edgedescriptions/gh_hasvariable) | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository)     | Yes         | Repository has access to this organization variable (resolved by visibility). Traversable because write access to the repo enables variable access via workflow creation. |
+
+## Diagram
+
+```mermaid
+flowchart TD
+    GH_OrgVariable[fa:fa-lock-open GH_OrgVariable]
+    GH_Organization[fa:fa-building GH_Organization]
+    GH_Repository[fa:fa-box-archive GH_Repository]
+
+    style GH_OrgVariable fill:#E8B84D
+    style GH_Organization fill:#5FED83
+    style GH_Repository fill:#9EECFF
+
+    GH_Organization -.->|GH_Contains| GH_OrgVariable
+    GH_Repository -->|GH_HasVariable| GH_OrgVariable
+```
