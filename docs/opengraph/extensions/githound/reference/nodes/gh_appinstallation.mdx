@@ -20,16 +20,16 @@ The tables below list edges defined by the GitHound extension only. Additional e
 
 ### Inbound Edges
 
-| Edge Type | Source Node Types |
-| --------- | ----------------- |
-| [GH_Contains](/opengraph/extensions/githound/reference/edges/gh_contains) | [GH_Organization](/opengraph/extensions/githound/reference/nodes/gh_organization), [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository), [GH_Environment](/opengraph/extensions/githound/reference/nodes/gh_environment) |
-| [GH_InstalledAs](/opengraph/extensions/githound/reference/edges/gh_installedas) | [GH_App](/opengraph/extensions/githound/reference/nodes/gh_app) |
+| Edge Type | Source Node Types | Traversable | Description |
+| --------- | ----------------- | ----------- | ----------- |
+| [GH_Contains](/opengraph/extensions/githound/reference/edges/gh_contains) | [GH_Organization](/opengraph/extensions/githound/reference/nodes/gh_organization), [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository), [GH_Environment](/opengraph/extensions/githound/reference/nodes/gh_environment) | ❌ | Container relationship for organizational hierarchy (org contains secrets/variables, repo contains secrets/variables, environment contains secrets/variables) |
+| [GH_InstalledAs](/opengraph/extensions/githound/reference/edges/gh_installedas) | [GH_App](/opengraph/extensions/githound/reference/nodes/gh_app) | ✅ | GitHub App is installed as this app installation on an organization |
 
 ### Outbound Edges
 
-| Edge Type | Destination Node Types |
-| --------- | ---------------------- |
-| [GH_CanAccess](/opengraph/extensions/githound/reference/edges/gh_canaccess) | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository) |
+| Edge Type | Destination Node Types | Traversable | Description |
+| --------- | ---------------------- | ----------- | ----------- |
+| [GH_CanAccess](/opengraph/extensions/githound/reference/edges/gh_canaccess) | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository) | ❌ | Personal access token or app installation can access this repository or organization |
 
 ## Properties
 
@@ -54,21 +54,6 @@ The tables below list edges defined by the GitHound extension only. Additional e
 | permissions          | string    | JSON string of the permissions granted to the app (e.g., `{"contents": "read", "metadata": "read"}`). |
 | events               | string    | JSON string of the webhook events the app subscribes to.                                              |
 
-## Edges
-
-### Outbound Edges
-
-| Edge Name                                           | Target Node                       | Traversable | Description                                                                                 |
-| --------------------------------------------------- | --------------------------------- | ----------- | ------------------------------------------------------------------------------------------- |
-| [GH_CanAccess](../edgedescriptions/gh_canaccess) | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository) | -.->        | App installation can access this repository (created when `repository_selection` is `all`). |
-
-### Inbound Edges
-
-| Edge Name                                               | Source Node                           | Traversable | Description                                                  |
-| ------------------------------------------------------- | ------------------------------------- | ----------- | ------------------------------------------------------------ |
-| [GH_InstalledAs](../edgedescriptions/gh_installedas) | [GH_App](/opengraph/extensions/githound/reference/nodes/gh_app)                   | -->         | The parent app definition that this installation belongs to. |
-| [GH_Contains](../edgedescriptions/gh_contains)       | [GH_Organization](/opengraph/extensions/githound/reference/nodes/gh_organization) | -.->        | The organization that contains this app installation.        |
-
 ## Diagram
 
 ```mermaid
@@ -82,8 +67,4 @@ flowchart TD
     GH_Organization -.->|GH_Contains| GH_AppInstallation
     GH_AppInstallation -.->|GH_CanAccess| GH_Repository
 
-    style GH_App fill:#7EC8E3
-    style GH_Organization fill:#5FED83
-    style GH_AppInstallation fill:#A8D8EA
-    style GH_Repository fill:#9EECFF
 ```

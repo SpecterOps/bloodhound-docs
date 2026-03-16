@@ -18,19 +18,19 @@ The tables below list edges defined by the GitHound extension only. Additional e
 
 ### Inbound Edges
 
-| Edge Type | Source Node Types |
-| --------- | ----------------- |
-| [GH_CanEditProtection](/opengraph/extensions/githound/reference/edges/gh_caneditprotection) | [GH_RepoRole](/opengraph/extensions/githound/reference/nodes/gh_reporole) |
-| [GH_CanWriteBranch](/opengraph/extensions/githound/reference/edges/gh_canwritebranch) | [GH_RepoRole](/opengraph/extensions/githound/reference/nodes/gh_reporole), [GH_User](/opengraph/extensions/githound/reference/nodes/gh_user), [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) |
-| [GH_HasBranch](/opengraph/extensions/githound/reference/edges/gh_hasbranch) | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository) |
-| [GH_ProtectedBy](/opengraph/extensions/githound/reference/edges/gh_protectedby) | [GH_BranchProtectionRule](/opengraph/extensions/githound/reference/nodes/gh_branchprotectionrule) |
+| Edge Type | Source Node Types | Traversable | Description |
+| --------- | ----------------- | ----------- | ----------- |
+| [GH_CanEditProtection](/opengraph/extensions/githound/reference/edges/gh_caneditprotection) | [GH_RepoRole](/opengraph/extensions/githound/reference/nodes/gh_reporole) | ✅ | [Repository - Computed] Repo role can modify or remove the branch protection rules governing this branch (computed from GH_EditRepoProtections + GH_ProtectedBy) |
+| [GH_CanWriteBranch](/opengraph/extensions/githound/reference/edges/gh_canwritebranch) | [GH_RepoRole](/opengraph/extensions/githound/reference/nodes/gh_reporole), [GH_User](/opengraph/extensions/githound/reference/nodes/gh_user), [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) | ✅ | [Repository - Computed] Role can push to this branch after evaluating branch protection rules, push restrictions, and bypass allowances |
+| [GH_HasBranch](/opengraph/extensions/githound/reference/edges/gh_hasbranch) | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository) | ❌ | Repository has this branch |
+| [GH_ProtectedBy](/opengraph/extensions/githound/reference/edges/gh_protectedby) | [GH_BranchProtectionRule](/opengraph/extensions/githound/reference/nodes/gh_branchprotectionrule) | ❌ | Branch protection rule protects this branch |
 
 ### Outbound Edges
 
-| Edge Type | Destination Node Types |
-| --------- | ---------------------- |
-| [GH_CanAssumeIdentity](/opengraph/extensions/githound/reference/edges/gh_canassumeidentity) | [AZFederatedIdentityCredential](https://bloodhound.specterops.io/resources/nodes/az-federated-identity-credential), [AWSRole](https://bloodhound.specterops.io/resources/nodes/aws-role) |
-| [GH_HasEnvironment](/opengraph/extensions/githound/reference/edges/gh_hasenvironment) | [GH_Environment](/opengraph/extensions/githound/reference/nodes/gh_environment) |
+| Edge Type | Destination Node Types | Traversable | Description |
+| --------- | ---------------------- | ----------- | ----------- |
+| [GH_CanAssumeIdentity](/opengraph/extensions/githound/reference/edges/gh_canassumeidentity) | [AZFederatedIdentityCredential](https://bloodhound.specterops.io/resources/nodes/az-federated-identity-credential), [AWSRole](https://bloodhound.specterops.io/resources/nodes/aws-role) | ✅ | Repository can assume this cloud identity via OIDC federation (Azure workload identity or AWS IAM role) |
+| [GH_HasEnvironment](/opengraph/extensions/githound/reference/edges/gh_hasenvironment) | [GH_Environment](/opengraph/extensions/githound/reference/nodes/gh_environment) | ❌ | Repository or branch has/can deploy to this environment |
 
 ## Properties
 
@@ -43,25 +43,6 @@ The tables below list edges defined by the GitHound extension only. Additional e
 | environment_name | string    | The name of the environment (GitHub organization).                             |
 | environmentid    | string    | The node_id of the environment (GitHub organization).                          |
 | protected        | boolean   | Whether the branch has a protection rule.                                      |
-
-## Edges
-
-### Outbound Edges
-
-| Edge Kind                                                           | Target Node                                                                                                        | Traversable | Description                                                                                  |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------- | -------------------------------------------------------------------------------------------- |
-| [GH_HasEnvironment](../edgedescriptions/gh_hasenvironment)       | [GH_Environment](/opengraph/extensions/githound/reference/nodes/gh_environment)                                                                                | No          | Branch has a deployment environment via custom branch policy (from Git-HoundEnvironment).    |
-| [GH_CanAssumeIdentity](../edgedescriptions/gh_canassumeidentity) | [AZFederatedIdentityCredential](https://bloodhound.specterops.io/resources/nodes/az-federated-identity-credential) | Yes         | Branch can assume an Azure federated identity via OIDC (subject: `ref:refs/heads/{branch}`). |
-
-### Inbound Edges
-
-| Edge Kind                                                           | Source Node                                           | Traversable | Description                                                                        |
-| ------------------------------------------------------------------- | ----------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------- |
-| [GH_HasBranch](../edgedescriptions/gh_hasbranch)                 | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository)                     | No          | Repository has this branch.                                                        |
-| [GH_ProtectedBy](../edgedescriptions/gh_protectedby)             | [GH_BranchProtectionRule](/opengraph/extensions/githound/reference/nodes/gh_branchprotectionrule) | No          | Branch protection rule protects this branch.                                       |
-| [GH_CanEditProtection](../edgedescriptions/gh_caneditprotection) | [GH_RepoRole](/opengraph/extensions/githound/reference/nodes/gh_reporole)                         | Yes         | Repo role can modify/remove the protection rules governing this branch (computed). |
-| [GH_CanWriteBranch](../edgedescriptions/gh_canwritebranch)       | [GH_RepoRole](/opengraph/extensions/githound/reference/nodes/gh_reporole)                         | Yes         | Repo role can push to this branch (computed from permissions + BPR state).         |
-| [GH_CanWriteBranch](../edgedescriptions/gh_canwritebranch)       | [GH_User](/opengraph/extensions/githound/reference/nodes/gh_user) or [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team)        | Yes         | User or team can push to this branch (computed — per-actor allowance delta).       |
 
 ## Diagram
 
@@ -76,14 +57,6 @@ flowchart TD
     GH_Team[fa:fa-user-group GH_Team]
     AZFederatedIdentityCredential[fa:fa-id-card AZFederatedIdentityCredential]
 
-    style GH_Branch fill:#FF80D2
-    style GH_Repository fill:#9EECFF
-    style GH_RepoRole fill:#DEFEFA
-    style GH_BranchProtectionRule fill:#FFB347
-    style GH_Environment fill:#D5F2C2
-    style GH_User fill:#FF8E40
-    style GH_Team fill:#C06EFF
-    style AZFederatedIdentityCredential fill:#FF80D2
 
     GH_Repository -.->|GH_HasBranch| GH_Branch
     GH_BranchProtectionRule -.->|GH_ProtectedBy| GH_Branch
