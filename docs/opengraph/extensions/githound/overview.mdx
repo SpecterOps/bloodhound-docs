@@ -1,53 +1,62 @@
 ---
 title: Overview
-description: Learn about JamfHound, an OpenGraph extensions and data collector for JAMF Pro.
+description: Learn about GitHound, an OpenGraph extension and data collector for GitHub organizations.
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-JamfHound is an OpenGraph extension and data collector for [JAMF Pro](https://www.jamf.com/products/jamf-pro/) locally hosted and cloud environments that helps security professionals visualize and analyze their JAMF Pro configurations in BloodHound.
+GitHound is an OpenGraph extension and data collector for [GitHub](https://github.com/) organizations that helps security professionals visualize and analyze their GitHub configurations in BloodHound.
 
-It collects data about users, groups, sites, scripts, API integrations, and other entities within a JAMF Pro tenant and represents them as [nodes](/opengraph/extensions/jamfhound/reference/schema#nodes) and [edges](/opengraph/extensions/jamfhound/reference/schema#edges) in BloodHound's graph database.
+It collects data about organizations, users, teams, repositories, branches, roles, secrets, GitHub Apps, and other entities within a GitHub organization and represents them as [nodes](/opengraph/extensions/githound/reference/schema#nodes) and [edges](/opengraph/extensions/githound/reference/schema#edges) in BloodHound's graph database.
 
-<Note>The other main products in JAMF's portfolio are [JAMF Protect](https://www.jamf.com/products/jamf-protect/), [JAMF Account](https://learn.jamf.com/en-US/bundle/jamf-account-documentation/page/Jamf_Account_Documentation.html), [JAMF Now](https://www.jamf.com/products/jamf-now/), and [JAMF Connect](https://www.jamf.com/products/jamf-connect/). JamfHound **does not** currently support these products.</Note>
+## GitHub Attack Paths
 
-## JAMF Pro Attack Paths
+GitHub is a highly valuable target for attackers in the modern enterprise. The privileged actions required to administer repositories, manage secrets, and control CI/CD pipelines allow elevated access to source code, cloud environments, and connected infrastructure, and complicate the jobs of defensive teams trying to differentiate benign and malicious actions.
 
-JAMF Pro is a highly valuable target for attackers in the modern enterprise. The privileged MDM
-actions required to administer Apple devices with JAMF Pro allow elevated access to local devices and complicates the jobs of EDRs and defensive teams trying to differentiate benign and malicious actions.
-
-Compromising a JAMF Pro tenant can provide attackers with a wide range of access to laterally move to Apple devices, exfiltrate information, lock or DOS devices, and more.
+Compromising a GitHub organization can provide attackers with a wide range of access to laterally move across repositories, exfiltrate sensitive code and secrets, tamper with CI/CD pipelines, and pivot to connected cloud environments via OIDC federation.
 
 <Frame>
-  <img src="/images/extensions/jamfhound/jamf-graph.png" alt="Example JamfHound graph"/>
+  <img src="/images/extensions/githound/reference/github_bloodhound.png" alt="Example GitHound graph"/>
 </Frame>
 
-SpecterOps has identified and exploited numerous JAMF Pro misconfigurations and blind spots during red team engagements and penetration tests in hardened macOS client environments. One such attack path has been highlighted in the [State of Attack Path Management](https://specterops.io/wp-content/uploads/sites/3/2025/08/StateofAPM-2025_1037-0_Updated.pdf) (p 59,60).
+Our research on GitHub attack paths is still ongoing.
 
-Our research on JAMF attack paths is still ongoing.
+## Data Collection & Privacy
 
-## JAMF Pro Trial
+GitHound is an open-source, read-only data collector. It requests only **read-only** permissions and never modifies your GitHub organization, repositories, or settings.
 
-JAMF Pro provides a [free trial](https://www.jamf.com/request-trial/) for organizations interested in testing their MDM capability.
+### What GitHound Collects
+
+- Organization metadata and custom roles
+- User accounts, team memberships, and SAML/SSO identities
+- Repository details, branch protection rules, and repository roles
+- GitHub Actions workflow YAML files (for trigger and permission analysis)
+- Deployment environments and branch policies
+- Organization and repository-level secrets and variables metadata
+- Secret scanning alerts
+- GitHub App installations and PAT grants
+
+### What GitHound Does Not Collect
+
+- Source code content (except GitHub Actions workflow YAML files)
+- Secret values or credentials
+
+### Data Storage
+
+All collected data is stored **locally** on the machine running GitHound, in JSON files written to the working directory. GitHound communicates solely with the GitHub API using the credentials you provide — no data is sent to any other external service.
+
+Authentication credentials are held in memory only during collection and are never written to disk. Output files persist on your local filesystem until you delete them.
+
+For the full privacy policy, see [PRIVACY.md](https://github.com/SpecterOps/GitHound/blob/main/PRIVACY.md) in the GitHound repository.
 
 ## References
 
-We recommend reading the following posts and pages to learn more about potential JAMF Pro attack vectors:
+We recommend reading the following posts and pages to learn more about potential GitHub attack vectors:
 
-- [Lance Cain and Daniel Mayer (SpecterOps): Leveraging Jamf For Red Teaming in Enterprise Environments](https://i.blackhat.com/BH-USA-25/Presentations/USA-25-Cain-Mayer-Leveraging-Jamf-for-Red-Teaming.pdf)
-- [Video: Leveraging Jamf For Red Teaming in Enterprise Environments](https://www.youtube.com/watch?v=6TZD5Gb7z0c)
-- [Calum Hall and Luke Roberts (GitHub): Come to the Dark Side, We Have Apples | Turning macOS Management Evil](https://i.blackhat.com/USA21/Wednesday-Handouts/us-21-Come-To-The-Dark-Side-We-Have-Apples-Turning-MacOS-Management-Evil.pdf)
-- [(1nf1n1ty): macOS Red Teaming | Abusing MDMs](https://blog.1nf1n1ty.team/hacktricks/macos-hardening/macos-red-teaming#abusing-mdms)
-
-
-## Research Tools
-
-Here are some interesting GitHub repositories related to JAMF Pro security research:
-
-- [Eve JAMF Post Exploitation Toolkit](https://github.com/RobotOperator/Eve)
-- [Typhon Mythic Agent](https://github.com/MythicAgents/typhon)
-- [Jamf-Attack-Toolkit](https://github.com/ReversecLabs/Jamf-Attack-Toolkit)
+- [SpecterOps GitHound GitHub Repository](https://github.com/SpecterOps/GitHound)
+- [GitHub Documentation: Managing access to your organization](https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories)
+- [GitHub Documentation: Security best practices](https://docs.github.com/en/code-security/getting-started/github-security-features)
 
 ## Community
 
-Please join us in the `#jamf` channel of the [BloodHound Community Slack](https://slack.specterops.io/) workspace if you want to chat about attack paths in JAMF or the usage of JamfHound. You are also welcome to open an issue or pull request on [GitHub](https://github.com/SpecterOps/JamfHound).
+Please join us in the #githound channel of the [BloodHound Community Slack](https://slack.specterops.io/) workspace if you want to chat about attack paths in GitHub or the usage of GitHound. You are also welcome to open an issue or pull request on [GitHub](https://github.com/SpecterOps/GitHound).

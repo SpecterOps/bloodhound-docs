@@ -77,26 +77,26 @@ flowchart TD
 Branch protection rules are critical security controls. Key settings to review:
 
 - **enforce_admins**: Enforces merge-gate controls (PR reviews, lock branch) for admins and users with `bypass_branch_protection`. Does **not** enforce push-gate controls (`push_restrictions`) for admins or users with `push_protected_branch`.
-- **required_pull_request_reviews**: Blocks direct pushes to existing protected branches. Bypassed by [GH_BypassBranchProtection](../edgedescriptions/gh_bypassbranchprotection) and [GH_BypassPullRequestAllowances](../edgedescriptions/gh_bypasspullrequestallowances) (both suppressed by `enforce_admins`).
-- **push_restrictions**: Restricts who can push. Bypassed by [GH_PushProtectedBranch](../edgedescriptions/gh_pushprotectedbranch), [GH_AdminTo](../edgedescriptions/gh_adminto), and [GH_RestrictionsCanPush](../edgedescriptions/gh_restrictionscanpush) (none suppressed by `enforce_admins`).
+- **required_pull_request_reviews**: Blocks direct pushes to existing protected branches. Bypassed by [GH_BypassBranchProtection](/opengraph/extensions/githound/reference/edges/gh_bypassbranchprotection) and [GH_BypassPullRequestAllowances](/opengraph/extensions/githound/reference/edges/gh_bypasspullrequestallowances) (both suppressed by `enforce_admins`).
+- **push_restrictions**: Restricts who can push. Bypassed by [GH_PushProtectedBranch](/opengraph/extensions/githound/reference/edges/gh_pushprotectedbranch), [GH_AdminTo](/opengraph/extensions/githound/reference/edges/gh_adminto), and [GH_RestrictionsCanPush](/opengraph/extensions/githound/reference/edges/gh_restrictionscanpush) (none suppressed by `enforce_admins`).
 - **blocks_creations**: Restricts new branch creation when `push_restrictions` is also `true`. Same bypass vectors as `push_restrictions`. Silently reverts to `false` if `push_restrictions` is disabled.
-- **lock_branch**: Makes branch read-only. Bypassed by [GH_BypassBranchProtection](../edgedescriptions/gh_bypassbranchprotection) (suppressed by `enforce_admins`).
+- **lock_branch**: Makes branch read-only. Bypassed by [GH_BypassBranchProtection](/opengraph/extensions/githound/reference/edges/gh_bypassbranchprotection) (suppressed by `enforce_admins`).
 - **require_code_owner_reviews**: If `false`, changes to critical paths may not require owner approval.
 - **allows_force_pushes**: Controls whether history rewrites are allowed. Does **not** grant push access — it is not a bypass mechanism.
 - **allows_deletions**: If `true`, branches can be deleted (potentially losing code).
 
 ### Secret Exfiltration Mitigation
 
-The only branch protection configuration that blocks the write-access → workflow → secrets exfiltration attack path is `push_restrictions` + `blocks_creations` on a `*` pattern rule. However, users with [GH_PushProtectedBranch](../edgedescriptions/gh_pushprotectedbranch), [GH_AdminTo](../edgedescriptions/gh_adminto), [GH_RestrictionsCanPush](../edgedescriptions/gh_restrictionscanpush), or [GH_EditRepoProtections](../edgedescriptions/gh_editrepoprotections) can bypass this control.
+The only branch protection configuration that blocks the write-access → workflow → secrets exfiltration attack path is `push_restrictions` + `blocks_creations` on a `*` pattern rule. However, users with [GH_PushProtectedBranch](/opengraph/extensions/githound/reference/edges/gh_pushprotectedbranch), [GH_AdminTo](/opengraph/extensions/githound/reference/edges/gh_adminto), [GH_RestrictionsCanPush](/opengraph/extensions/githound/reference/edges/gh_restrictionscanpush), or [GH_EditRepoProtections](/opengraph/extensions/githound/reference/edges/gh_editrepoprotections) can bypass this control.
 
-For complete analysis, see [MITIGATING_CONTROLS.md](../mitigating_controls).
+For complete analysis, see [BloodHound Docs: GitHound - Mitigating Controls](https://bloodhound.specterops.io/opengraph/extensions/githound/reference/mitigating-controls).
 
 ### Identifying Bypass Actors
 
 Use these edges to identify users and teams with elevated branch permissions:
 
-- [GH_BypassPullRequestAllowances](../edgedescriptions/gh_bypasspullrequestallowances) — can bypass PR requirements on a specific rule (PR reviews only)
-- [GH_RestrictionsCanPush](../edgedescriptions/gh_restrictionscanpush) — can push despite push restrictions on a specific rule
-- [GH_BypassBranchProtection](../edgedescriptions/gh_bypassbranchprotection) — repo-wide bypass of merge-gate controls (PR reviews + lock branch)
-- [GH_PushProtectedBranch](../edgedescriptions/gh_pushprotectedbranch) — repo-wide bypass of push-gate controls (push restrictions + blocks creations)
-- [GH_EditRepoProtections](../edgedescriptions/gh_editrepoprotections) — can remove/modify protection rules entirely
+- [GH_BypassPullRequestAllowances](/opengraph/extensions/githound/reference/edges/gh_bypasspullrequestallowances) — can bypass PR requirements on a specific rule (PR reviews only)
+- [GH_RestrictionsCanPush](/opengraph/extensions/githound/reference/edges/gh_restrictionscanpush) — can push despite push restrictions on a specific rule
+- [GH_BypassBranchProtection](/opengraph/extensions/githound/reference/edges/gh_bypassbranchprotection) — repo-wide bypass of merge-gate controls (PR reviews + lock branch)
+- [GH_PushProtectedBranch](/opengraph/extensions/githound/reference/edges/gh_pushprotectedbranch) — repo-wide bypass of push-gate controls (push restrictions + blocks creations)
+- [GH_EditRepoProtections](/opengraph/extensions/githound/reference/edges/gh_editrepoprotections) — can remove/modify protection rules entirely
