@@ -11,7 +11,7 @@ This guide covers common issues encountered when running GitHound and how to res
 
 ### "Bad credentials" or 401 Unauthorized
 
-- The Personal Access Token may have expired or been revoked. Generate a new [Fine-grained PAT](/opengraph/extensions/githound/configure-pat).
+- The Personal Access Token (PAT) may have expired or been revoked. Generate a new [Fine-grained PAT](/opengraph/extensions/githound/configure-pat).
 - Verify the token has all required repository and organization permissions.
 - Ensure the token is scoped to **All repositories**.
 
@@ -32,9 +32,9 @@ This guide covers common issues encountered when running GitHound and how to res
 
 This error indicates insufficient GitHub App permissions. Verify:
 
-- The app has all required permissions listed in [Configure a GitHub App Installation](/opengraph/extensions/githound/configure-app)
-- The app is installed on your target organization
-- The app has access to all repositories (or the specific repositories you need)
+- The app has all required permissions listed in [Configure a GitHub App Installation](/opengraph/extensions/githound/configure-app).
+- The app is installed on your target organization.
+- The app has access to all repositories (or the specific repositories you need).
 
 ### JWT Token Expired
 
@@ -49,17 +49,17 @@ Invoke-GitHound -Session $jwt -Resume
 
 If you encounter errors related to the private key:
 
-- Ensure the `.pem` file path is correct and accessible
-- Verify the file contains a complete private key (begins with `-----BEGIN RSA PRIVATE KEY-----`)
-- If the key doesn't match, regenerate a new private key from the GitHub App settings
+- Ensure the `.pem` file path is correct and accessible.
+- Verify the file contains a complete private key (begins with `-----BEGIN RSA PRIVATE KEY-----`).
+- If the key doesn't match, regenerate a new private key from the GitHub App settings.
 
 ## Rate Limiting
 
 ### Symptoms
 
-- Collection pauses with messages about waiting for rate limit renewal
-- `403 Forbidden` errors with `X-RateLimit-Remaining: 0`
-- Very slow collection times
+- Collection pauses with messages about waiting for rate limit renewal.
+- `403 Forbidden` errors with `X-RateLimit-Remaining: 0`.
+- Very slow collection times.
 
 ### Solutions
 
@@ -67,9 +67,9 @@ For small to medium environments (< 500 repos), the built-in rate limit handling
 
 For large environments (500+ repos):
 
-1. Use the [App Installation method](/opengraph/extensions/githound/configure-app) for 3x higher rate limits (15,000/hour vs 5,000/hour)
-2. Run collection during off-peak hours
-3. Use the [manual step-by-step collection](/opengraph/extensions/githound/collect-data#manual-step-by-step-collection) process for maximum control
+1. Use the [App Installation method](/opengraph/extensions/githound/configure-app) for 3x higher rate limits (15,000/hour vs 5,000/hour).
+2. Run collection during off-peak hours.
+3. Use the [manual step-by-step collection](/opengraph/extensions/githound/collect-data#manual-step-by-step-collection) process for maximum control.
 
 ## Crash Recovery
 
@@ -85,9 +85,9 @@ The `-Resume` flag detects existing per-step files on disk and skips completed s
 
 **What gets preserved:**
 
-- Any step that fully completed has its output file on disk (e.g., `githound_Organization_*.json`, `githound_User_*.json`)
-- Functions with internal checkpointing (RepositoryRole, Workflow, Secret) save intermediate chunk files, so they can resume mid-function
-- `Git-HoundBranch` saves per-page checkpoint files but will re-run from scratch if interrupted mid-function
+- Any step that fully completed has its output file on disk (e.g., `githound_Organization_*.json`, `githound_User_*.json`).
+- Functions with internal checkpointing (RepositoryRole, Workflow, Secret) save intermediate chunk files, so they can resume mid-function.
+- `Git-HoundBranch` saves per-page checkpoint files but will re-run from scratch if interrupted mid-function.
 
 To start completely fresh and ignore any existing files, run without the `-Resume` flag:
 
@@ -127,29 +127,29 @@ $org  # Check if data was returned
 
 For organizations with thousands of repositories, a full collection can take several hours.
 
-1. Use the [App Installation method](/opengraph/extensions/githound/configure-app) for higher rate limits
-2. Run collection during off-peak hours
-3. Use `-Resume` to pick up where you left off if collection is interrupted
+1. Use the [App Installation method](/opengraph/extensions/githound/configure-app) for higher rate limits.
+2. Run collection during off-peak hours.
+3. Use `-Resume` to pick up where you left off if collection is interrupted.
 
 ### Memory Issues
 
-- Use a 64-bit PowerShell session
-- Close unnecessary applications to free memory
-- Use the step-by-step collection process to collect in smaller batches
+- Use a 64-bit PowerShell session.
+- Close unnecessary applications to free memory.
+- Use the step-by-step collection process to collect in smaller batches.
 
 ## Missing Data
 
 ### No Workflow or Environment Nodes
 
-- Verify GitHub Actions is enabled in your organization settings
-- Check that the PAT has **Actions** read permission on repositories
-- Repositories with Actions disabled are intentionally skipped
+- Verify GitHub Actions is enabled in your organization settings.
+- Check that the PAT has **Actions** read permission on repositories.
+- Repositories with Actions disabled are intentionally skipped.
 
 ### No External Identity Nodes (SAML/SSO)
 
-- SAML SSO must be configured for the organization
-- The PAT user must be an organization owner
-- A GitHub Enterprise license is required for SAML identity data
+- SAML SSO must be configured for the organization.
+- The PAT user must be an organization owner.
+- A GitHub Enterprise license is required for SAML identity data.
 
 ## BloodHound Import Issues
 
@@ -165,14 +165,14 @@ If validation fails, re-run the collection or use `-Resume` to regenerate the af
 
 ### Nodes or Edges Not Appearing
 
-- Ensure you are using a BloodHound version that supports OpenGraph extensions
-- Check BloodHound logs for import errors
-- Verify the JSON structure matches the expected format
+- Ensure you are using a BloodHound version that supports OpenGraph extensions.
+- Check BloodHound logs for import errors.
+- Verify the JSON structure matches the expected format.
 
 ## Getting Help
 
 If you encounter issues not covered here:
 
-1. Check [GitHub Issues](https://github.com/SpecterOps/GitHound/issues) for known problems
-2. Open a new issue with your PowerShell version (`$PSVersionTable`), GitHound version, full error message, and approximate environment size
-3. Join the `#githound` channel on the [BloodHound Community Slack](https://slack.specterops.io/)
+1. Check [GitHub Issues](https://github.com/SpecterOps/GitHound/issues) for known problems.
+2. Open a new issue with your PowerShell version (`$PSVersionTable`), GitHound version, full error message, and approximate environment size.
+3. Join the `#githound` channel on the [BloodHound Community Slack](https://slack.specterops.io/).
