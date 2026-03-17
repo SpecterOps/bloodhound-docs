@@ -84,6 +84,55 @@ sidebarTitle: "2026-03-23"
   </Frame>
 </Update>
 
+<Update label="AzureHound" description="New Feature" tags={["Data Collection"]}>
+  {/*BED-7398*/}
+
+  ## Azure Federated Identity Credentials
+
+  Map trust relationships from external identity providers to Azure App Registrations with new OpenGraph nodes and edges representing Federated Identity Credentials (FICs).
+
+  An FIC is a trust configuration on an App Registration that allows an external identity provider to authenticate without a password or certificate. You can follow this trust path to the related Service Principal through [AZRunsAs](/resources/edges/az-runs-as) to understand downstream impact.
+
+  AzureHound now collects FICs from Azure and adds two new graph elements in BloodHound:
+
+  - [AZFederatedIdentityCredential](/resources/nodes/az-federated-identity-credential) node: Represents each FIC as an object with properties such as audiences, issuer, and subject.
+
+      <Frame>
+        <img
+          src="/images/release_notes/8_9_0/az-federated-identity-node.png"
+          alt="A screenshot of the AZFederatedIdentityCredential node object properties in the BloodHound entity panel"
+          style={{ width: "70%" }}
+        />
+     </Frame>
+
+  - [AZAuthenticatesTo](/resources/edges/az-authenticates-to) edge: Connects each FIC node to its associated App Registration so you can map trust relationships from external identity providers.
+
+      <Frame>
+        <img
+          src="/images/release_notes/8_9_0/az-auth-to-edge.png"
+          alt="A screenshot of the AZAuthenticatesTo edge in the BloodHound entity panel"
+          style={{ width: "70%" }}
+        />
+     </Frame>
+
+</Update>
+
+<Update label="SharpHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-7374*/}
+
+  ## Improved Logging for NTLM Collection
+
+  Troubleshoot NTLM collection failures faster with detailed per-machine status logging.
+  
+  SharpHound now reports the outcome of each WMI and Remote Registry operation attempt directly in your service and run logs, eliminating guesswork about which machines rejected collection and why.
+
+  - **Per-attempt status events**: Registry operations now emit status events for each collection attempt, immediately visible in SharpHound's service and run logs
+  - **Strategy visibility**: Logs now expose which collection strategy (WMI or Remote Registry) succeeded for each machine
+  - **Enhanced error details**: Failure messages include inner exception information for better troubleshooting
+  - **Port-scan optimization**: Immediate success status is reported when port scanning is skipped
+
+</Update>
+
 <Update label="BloodHound" tags={["Fixed Issues"]}>
 
   ## Cypher
@@ -133,7 +182,10 @@ sidebarTitle: "2026-03-23"
 
 <Update label="SharpHound" tags={["Fixed Issues"]}>
 
-  - {/*BED-7513*/} Resolved an issue where [AIACA](/resources/nodes/aiaca) objects with empty `cACertificate` values (for example, `{0}`) could be skipped during collection.
-  - {/*BED-7153*/} <img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }} /> Resolved an issue where DAG group data for some machines could be dropped during post-processing, causing Large Default Groups with RDP Access findings to incorrectly include Citrix systems even when the Citrix RDP Support flag was enabled.
+  {/*BED-7513*/} Resolved an issue where [AIACA](/resources/nodes/aiaca) objects with empty `cACertificate` values (for example, `{0}`) could be skipped during collection.
+  
+  <img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }} />
+
+  {/*BED-7153*/} Resolved an issue where DAG group data for some machines could be dropped during post-processing, causing Large Default Groups with RDP Access findings to incorrectly include Citrix systems even when the Citrix RDP Support flag was enabled.
 
 </Update>
