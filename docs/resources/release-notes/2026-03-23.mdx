@@ -19,6 +19,37 @@ sidebarTitle: "2026-03-23"
   The [Privilege Zones](/analyze-data/privilege-zones/overview) feature is now generally available in BloodHound, providing a supported workflow for organizing objects by privilege level and monitoring violations of your network tiering model.
 </Update>
 
+<Update label="BloodHound" description="Breaking Change" tags={["OpenGraph"]}>
+  {/*BED-7451*/}
+
+  ## `objectid` is Now a Reserved Node Property
+
+  OpenGraph payloads that include `objectid` in a node's `properties` object will now **fail upload validation**.
+
+  The new [property-based edge matching](/opengraph/schema#edge-endpoint-matching) (`match_by: "property"`) enables hybrid edge creation across data sources by letting collectors identify external nodes using cross-system attributes (such as email, username, or hostname) without needing to know the external system's internal ID. To keep node identity unambiguous for this matching strategy, `objectid` is now [reserved](/opengraph/schema#reserved-property-objectid) and may not be defined in a node's `properties` object.
+
+  The root-level `id` field already serves as the unique identifier for every node. BloodHound automatically maps this value to `objectid` internally upon ingestion. Remove any `objectid` keys from your node `properties` objects and rely solely on the root-level `id` field.
+
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  {/*BED-7577*/}
+  
+  ## Flexible OpenGraph Node Ingestion
+
+  <img
+    src="/assets/enterprise-edition-pill-tag.svg"
+    alt="BloodHound Enterprise logo"
+    style={{ width: "25%" }}
+  />
+  
+  Upload nodes and edges in separate OpenGraph data payloads.
+  
+  Previously, BloodHound Enterprise immediately deleted OpenGraph nodes that were not connected by at least one edge during the reconciliation process that runs after ingestion.
+  
+  Now, disconnected nodes are subject to [reconciliation and retention](/collect-data/enterprise-collection/data-retention) settings. This enables more flexible multi-step OpenGraph workflows where you upload nodes and edges in separate data payloads, without the risk of losing data after ingestion.
+</Update>
+
 <Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
   {/*BED-7542*/}
   
@@ -51,24 +82,6 @@ sidebarTitle: "2026-03-23"
       alt="A view of the table layout highlighting visible scrollbars when content overflows"
     />
   </Frame>
-</Update>
-
-<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
-  {/*BED-7577*/}
-  
-  ## Flexible OpenGraph Node Ingestion
-
-  <img
-    src="/assets/enterprise-edition-pill-tag.svg"
-    alt="BloodHound Enterprise logo"
-    style={{ width: "25%" }}
-  />
-  
-  Upload nodes and edges in separate OpenGraph data payloads.
-  
-  Previously, BloodHound Enterprise immediately deleted OpenGraph nodes that were not connected by at least one edge during the reconciliation process that runs after ingestion.
-  
-  Now, disconnected nodes are subject to [reconciliation and retention](/collect-data/enterprise-collection/data-retention) settings. This enables more flexible multi-step OpenGraph workflows where you upload nodes and edges in separate data payloads, without the risk of losing data after ingestion.
 </Update>
 
 <Update label="BloodHound" tags={["Fixed Issues"]}>
