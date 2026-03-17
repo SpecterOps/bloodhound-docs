@@ -18,22 +18,22 @@ The tables below list edges defined by the GitHound extension only. Additional e
 
 ### Inbound Edges
 
-| Edge Type | Source Node Types | Traversable | Description |
-| --------- | ----------------- | ----------- | ----------- |
-| [GH_AddMember](/opengraph/extensions/githound/reference/edges/gh_addmember) | [GH_TeamRole](/opengraph/extensions/githound/reference/nodes/gh_teamrole) | ✅ | Team role can add members to the team (maintainer privilege) |
-| [GH_Contains](/opengraph/extensions/githound/reference/edges/gh_contains) | [GH_Organization](/opengraph/extensions/githound/reference/nodes/gh_organization), [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository), [GH_Environment](/opengraph/extensions/githound/reference/nodes/gh_environment) | ❌ | Container relationship for organizational hierarchy (org contains secrets/variables, repo contains secrets/variables, environment contains secrets/variables) |
-| [GH_MemberOf](/opengraph/extensions/githound/reference/edges/gh_memberof) | [GH_TeamRole](/opengraph/extensions/githound/reference/nodes/gh_teamrole), [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) | ✅ | Team role is a member of a team, or team is a nested member of a parent team |
+| Edge Type | Source Node Types | Traversable |
+| --------- | ----------------- | ----------- |
+| [GH_AddMember](/opengraph/extensions/githound/reference/edges/gh_addmember) | [GH_TeamRole](/opengraph/extensions/githound/reference/nodes/gh_teamrole) | ✅ |
+| [GH_Contains](/opengraph/extensions/githound/reference/edges/gh_contains) | [GH_Organization](/opengraph/extensions/githound/reference/nodes/gh_organization), [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository), [GH_Environment](/opengraph/extensions/githound/reference/nodes/gh_environment) | ❌ |
+| [GH_MemberOf](/opengraph/extensions/githound/reference/edges/gh_memberof) | [GH_TeamRole](/opengraph/extensions/githound/reference/nodes/gh_teamrole), [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) | ✅ |
 
 ### Outbound Edges
 
-| Edge Type | Destination Node Types | Traversable | Description |
-| --------- | ---------------------- | ----------- | ----------- |
-| [GH_BypassPullRequestAllowances](/opengraph/extensions/githound/reference/edges/gh_bypasspullrequestallowances) | [GH_BranchProtectionRule](/opengraph/extensions/githound/reference/nodes/gh_branchprotectionrule) | ❌ | User or team can bypass pull request requirements on a branch protection rule |
-| [GH_CanCreateBranch](/opengraph/extensions/githound/reference/edges/gh_cancreatebranch) | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository) | ✅ | [Repository - Computed] Role can create new branches in this repository (unprotected branches that bypass the merge gate) |
-| [GH_CanWriteBranch](/opengraph/extensions/githound/reference/edges/gh_canwritebranch) | [GH_Branch](/opengraph/extensions/githound/reference/nodes/gh_branch) | ✅ | [Repository - Computed] Role can push to this branch after evaluating branch protection rules, push restrictions, and bypass allowances |
-| [GH_HasRole](/opengraph/extensions/githound/reference/edges/gh_hasrole) | [GH_OrgRole](/opengraph/extensions/githound/reference/nodes/gh_orgrole), [GH_RepoRole](/opengraph/extensions/githound/reference/nodes/gh_reporole), [GH_TeamRole](/opengraph/extensions/githound/reference/nodes/gh_teamrole) | ✅ | User or team has a role assignment (org role, team role, or repo role) |
-| [GH_MemberOf](/opengraph/extensions/githound/reference/edges/gh_memberof) | [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) | ✅ | Team role is a member of a team, or team is a nested member of a parent team |
-| [GH_RestrictionsCanPush](/opengraph/extensions/githound/reference/edges/gh_restrictionscanpush) | [GH_BranchProtectionRule](/opengraph/extensions/githound/reference/nodes/gh_branchprotectionrule) | ❌ | User or team is allowed to push to branches protected by this rule |
+| Edge Type | Destination Node Types | Traversable |
+| --------- | ---------------------- | ----------- |
+| [GH_BypassPullRequestAllowances](/opengraph/extensions/githound/reference/edges/gh_bypasspullrequestallowances) | [GH_BranchProtectionRule](/opengraph/extensions/githound/reference/nodes/gh_branchprotectionrule) | ❌ |
+| [GH_CanCreateBranch](/opengraph/extensions/githound/reference/edges/gh_cancreatebranch) | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository) | ✅ |
+| [GH_CanWriteBranch](/opengraph/extensions/githound/reference/edges/gh_canwritebranch) | [GH_Branch](/opengraph/extensions/githound/reference/nodes/gh_branch) | ✅ |
+| [GH_HasRole](/opengraph/extensions/githound/reference/edges/gh_hasrole) | [GH_OrgRole](/opengraph/extensions/githound/reference/nodes/gh_orgrole), [GH_RepoRole](/opengraph/extensions/githound/reference/nodes/gh_reporole), [GH_TeamRole](/opengraph/extensions/githound/reference/nodes/gh_teamrole) | ✅ |
+| [GH_MemberOf](/opengraph/extensions/githound/reference/edges/gh_memberof) | [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) | ✅ |
+| [GH_RestrictionsCanPush](/opengraph/extensions/githound/reference/edges/gh_restrictionscanpush) | [GH_BranchProtectionRule](/opengraph/extensions/githound/reference/nodes/gh_branchprotectionrule) | ❌ |
 
 ## Properties
 
@@ -50,6 +50,27 @@ The tables below list edges defined by the GitHound extension only. Additional e
 | environment_name | string    | The name of the environment (GitHub organization).                        |
 | environmentid    | string    | The node_id of the environment (GitHub organization).                     |
 
+## Edges
+
+### Outbound Edges
+
+| Edge Kind                                                                               | Target Node                                           | Traversable | Description                                                           |
+| --------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------- | --------------------------------------------------------------------- |
+| [GH_MemberOf](/opengraph/extensions/githound/reference/edges/gh_memberof)                                       | [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team)                                 | Yes         | Team is a child of a parent team.                                     |
+| [GH_HasRole](/opengraph/extensions/githound/reference/edges/gh_hasrole)                                         | [GH_OrgRole](/opengraph/extensions/githound/reference/nodes/gh_orgrole)                           | Yes         | Team is assigned to a custom organization role.                       |
+| [GH_HasRole](/opengraph/extensions/githound/reference/edges/gh_hasrole)                                         | [GH_RepoRole](/opengraph/extensions/githound/reference/nodes/gh_reporole)                         | Yes         | Team is assigned to a repository role (from Git-HoundRepositoryRole). |
+| [GH_BypassPullRequestAllowances](/opengraph/extensions/githound/reference/edges/gh_bypasspullrequestallowances) | [GH_BranchProtectionRule](/opengraph/extensions/githound/reference/nodes/gh_branchprotectionrule) | No          | Team can bypass PR requirements on this protection rule.              |
+| [GH_RestrictionsCanPush](/opengraph/extensions/githound/reference/edges/gh_restrictionscanpush)                 | [GH_BranchProtectionRule](/opengraph/extensions/githound/reference/nodes/gh_branchprotectionrule) | No          | Team is allowed to push to branches protected by this rule.           |
+| [GH_CanWriteBranch](/opengraph/extensions/githound/reference/edges/gh_canwritebranch)                           | [GH_Branch](/opengraph/extensions/githound/reference/nodes/gh_branch)                             | Yes         | Team can push to this branch (computed — per-actor allowance delta).  |
+| [GH_CanCreateBranch](/opengraph/extensions/githound/reference/edges/gh_cancreatebranch)                         | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository)                     | Yes         | Team can create new branches (computed — per-actor allowance delta).  |
+
+### Inbound Edges
+
+| Edge Kind                                         | Source Node                   | Traversable | Description                                           |
+| ------------------------------------------------- | ----------------------------- | ----------- | ----------------------------------------------------- |
+| [GH_MemberOf](/opengraph/extensions/githound/reference/edges/gh_memberof) | [GH_TeamRole](/opengraph/extensions/githound/reference/nodes/gh_teamrole) | Yes         | A team role (Member/Maintainer) belongs to this team. |
+| [GH_MemberOf](/opengraph/extensions/githound/reference/edges/gh_memberof) | [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team)         | Yes         | A child team is a member of this team.                |
+
 ## Diagram
 
 ```mermaid
@@ -62,6 +83,13 @@ flowchart TD
     GH_BranchProtectionRule[fa:fa-shield GH_BranchProtectionRule]
     GH_Repository[fa:fa-box-archive GH_Repository]
 
+    style GH_Team fill:#C06EFF
+    style GH_OrgRole fill:#BFFFD1
+    style GH_RepoRole fill:#DEFEFA
+    style GH_TeamRole fill:#D0B0FF
+    style GH_Branch fill:#FF80D2
+    style GH_BranchProtectionRule fill:#FFB347
+    style GH_Repository fill:#9EECFF
 
     GH_Team -->|GH_MemberOf| GH_Team
     GH_Team -->|GH_HasRole| GH_OrgRole

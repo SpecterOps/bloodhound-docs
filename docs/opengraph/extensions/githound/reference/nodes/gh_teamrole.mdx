@@ -18,17 +18,17 @@ The tables below list edges defined by the GitHound extension only. Additional e
 
 ### Inbound Edges
 
-| Edge Type | Source Node Types | Traversable | Description |
-| --------- | ----------------- | ----------- | ----------- |
-| [GH_Contains](/opengraph/extensions/githound/reference/edges/gh_contains) | [GH_Organization](/opengraph/extensions/githound/reference/nodes/gh_organization), [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository), [GH_Environment](/opengraph/extensions/githound/reference/nodes/gh_environment) | ❌ | Container relationship for organizational hierarchy (org contains secrets/variables, repo contains secrets/variables, environment contains secrets/variables) |
-| [GH_HasRole](/opengraph/extensions/githound/reference/edges/gh_hasrole) | [GH_User](/opengraph/extensions/githound/reference/nodes/gh_user), [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) | ✅ | User or team has a role assignment (org role, team role, or repo role) |
+| Edge Type | Source Node Types | Traversable |
+| --------- | ----------------- | ----------- |
+| [GH_Contains](/opengraph/extensions/githound/reference/edges/gh_contains) | [GH_Organization](/opengraph/extensions/githound/reference/nodes/gh_organization), [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository), [GH_Environment](/opengraph/extensions/githound/reference/nodes/gh_environment) | ❌ |
+| [GH_HasRole](/opengraph/extensions/githound/reference/edges/gh_hasrole) | [GH_User](/opengraph/extensions/githound/reference/nodes/gh_user), [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) | ✅ |
 
 ### Outbound Edges
 
-| Edge Type | Destination Node Types | Traversable | Description |
-| --------- | ---------------------- | ----------- | ----------- |
-| [GH_AddMember](/opengraph/extensions/githound/reference/edges/gh_addmember) | [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) | ✅ | Team role can add members to the team (maintainer privilege) |
-| [GH_MemberOf](/opengraph/extensions/githound/reference/edges/gh_memberof) | [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) | ✅ | Team role is a member of a team, or team is a nested member of a parent team |
+| Edge Type | Destination Node Types | Traversable |
+| --------- | ---------------------- | ----------- |
+| [GH_AddMember](/opengraph/extensions/githound/reference/edges/gh_addmember) | [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) | ✅ |
+| [GH_MemberOf](/opengraph/extensions/githound/reference/edges/gh_memberof) | [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) | ✅ |
 
 ## Properties
 
@@ -42,6 +42,21 @@ The tables below list edges defined by the GitHound extension only. Additional e
 | environment_name | string    | The name of the environment (GitHub organization).                                   |
 | environmentid    | string    | The node_id of the environment (GitHub organization).                                |
 
+## Edges
+
+### Outbound Edges
+
+| Edge Kind                                           | Target Node           | Traversable | Description                                                    |
+| --------------------------------------------------- | --------------------- | ----------- | -------------------------------------------------------------- |
+| [GH_MemberOf](/opengraph/extensions/githound/reference/edges/gh_memberof)   | [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) | Yes         | This role belongs to a team.                                   |
+| [GH_AddMember](/opengraph/extensions/githound/reference/edges/gh_addmember) | [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) | Yes         | Maintainer role can add members to the team (Maintainer only). |
+
+### Inbound Edges
+
+| Edge Kind                                       | Source Node           | Traversable | Description                           |
+| ----------------------------------------------- | --------------------- | ----------- | ------------------------------------- |
+| [GH_HasRole](/opengraph/extensions/githound/reference/edges/gh_hasrole) | [GH_User](/opengraph/extensions/githound/reference/nodes/gh_user) | Yes         | A user is assigned to this team role. |
+
 ## Diagram
 
 ```mermaid
@@ -50,6 +65,9 @@ flowchart TD
     GH_User[fa:fa-user GH_User]
     GH_Team[fa:fa-user-group GH_Team]
 
+    style GH_TeamRole fill:#D0B0FF
+    style GH_User fill:#FF8E40
+    style GH_Team fill:#C06EFF
 
     GH_User -->|GH_HasRole| GH_TeamRole
     GH_TeamRole -->|GH_MemberOf| GH_Team

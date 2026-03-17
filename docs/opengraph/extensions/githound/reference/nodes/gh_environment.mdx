@@ -18,17 +18,17 @@ The tables below list edges defined by the GitHound extension only. Additional e
 
 ### Inbound Edges
 
-| Edge Type | Source Node Types | Traversable | Description |
-| --------- | ----------------- | ----------- | ----------- |
-| [GH_HasEnvironment](/opengraph/extensions/githound/reference/edges/gh_hasenvironment) | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository), [GH_Branch](/opengraph/extensions/githound/reference/nodes/gh_branch) | ❌ | Repository or branch has/can deploy to this environment |
+| Edge Type | Source Node Types | Traversable |
+| --------- | ----------------- | ----------- |
+| [GH_HasEnvironment](/opengraph/extensions/githound/reference/edges/gh_hasenvironment) | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository), [GH_Branch](/opengraph/extensions/githound/reference/nodes/gh_branch) | ❌ |
 
 ### Outbound Edges
 
-| Edge Type | Destination Node Types | Traversable | Description |
-| --------- | ---------------------- | ----------- | ----------- |
-| [GH_CanAssumeIdentity](/opengraph/extensions/githound/reference/edges/gh_canassumeidentity) | [AZFederatedIdentityCredential](https://bloodhound.specterops.io/resources/nodes/az-federated-identity-credential), [AWSRole](https://bloodhound.specterops.io/resources/nodes/aws-role) | ✅ | Repository can assume this cloud identity via OIDC federation (Azure workload identity or AWS IAM role) |
-| [GH_Contains](/opengraph/extensions/githound/reference/edges/gh_contains) | [GH_User](/opengraph/extensions/githound/reference/nodes/gh_user), [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team), [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository), [GH_OrgRole](/opengraph/extensions/githound/reference/nodes/gh_orgrole), [GH_RepoRole](/opengraph/extensions/githound/reference/nodes/gh_reporole), [GH_TeamRole](/opengraph/extensions/githound/reference/nodes/gh_teamrole), [GH_OrgSecret](/opengraph/extensions/githound/reference/nodes/gh_orgsecret), [GH_AppInstallation](/opengraph/extensions/githound/reference/nodes/gh_appinstallation), [GH_PersonalAccessToken](/opengraph/extensions/githound/reference/nodes/gh_personalaccesstoken), [GH_PersonalAccessTokenRequest](/opengraph/extensions/githound/reference/nodes/gh_personalaccesstokenrequest), [GH_RepoSecret](/opengraph/extensions/githound/reference/nodes/gh_reposecret), [GH_EnvironmentSecret](/opengraph/extensions/githound/reference/nodes/gh_environmentsecret), [GH_SecretScanningAlert](/opengraph/extensions/githound/reference/nodes/gh_secretscanningalert) | ❌ | Container relationship for organizational hierarchy (org contains secrets/variables, repo contains secrets/variables, environment contains secrets/variables) |
-| [GH_HasSecret](/opengraph/extensions/githound/reference/edges/gh_hassecret) | [GH_OrgSecret](/opengraph/extensions/githound/reference/nodes/gh_orgsecret), [GH_RepoSecret](/opengraph/extensions/githound/reference/nodes/gh_reposecret), [GH_EnvironmentSecret](/opengraph/extensions/githound/reference/nodes/gh_environmentsecret) | ✅ | Repository or environment has access to this secret |
+| Edge Type | Destination Node Types | Traversable |
+| --------- | ---------------------- | ----------- |
+| [GH_CanAssumeIdentity](/opengraph/extensions/githound/reference/edges/gh_canassumeidentity) | [AZFederatedIdentityCredential](https://bloodhound.specterops.io/resources/nodes/az-federated-identity-credential), [AWSRole](https://bloodhound.specterops.io/resources/nodes/aws-role) | ✅ |
+| [GH_Contains](/opengraph/extensions/githound/reference/edges/gh_contains) | [GH_User](/opengraph/extensions/githound/reference/nodes/gh_user), [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team), [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository), [GH_OrgRole](/opengraph/extensions/githound/reference/nodes/gh_orgrole), [GH_RepoRole](/opengraph/extensions/githound/reference/nodes/gh_reporole), [GH_TeamRole](/opengraph/extensions/githound/reference/nodes/gh_teamrole), [GH_OrgSecret](/opengraph/extensions/githound/reference/nodes/gh_orgsecret), [GH_AppInstallation](/opengraph/extensions/githound/reference/nodes/gh_appinstallation), [GH_PersonalAccessToken](/opengraph/extensions/githound/reference/nodes/gh_personalaccesstoken), [GH_PersonalAccessTokenRequest](/opengraph/extensions/githound/reference/nodes/gh_personalaccesstokenrequest), [GH_RepoSecret](/opengraph/extensions/githound/reference/nodes/gh_reposecret), [GH_EnvironmentSecret](/opengraph/extensions/githound/reference/nodes/gh_environmentsecret), [GH_SecretScanningAlert](/opengraph/extensions/githound/reference/nodes/gh_secretscanningalert) | ❌ |
+| [GH_HasSecret](/opengraph/extensions/githound/reference/edges/gh_hassecret) | [GH_OrgSecret](/opengraph/extensions/githound/reference/nodes/gh_orgsecret), [GH_RepoSecret](/opengraph/extensions/githound/reference/nodes/gh_reposecret), [GH_EnvironmentSecret](/opengraph/extensions/githound/reference/nodes/gh_environmentsecret) | ✅ |
 
 ## Properties
 
@@ -45,6 +45,24 @@ The tables below list edges defined by the GitHound extension only. Additional e
 | repository_name   | string    | The full name of the containing repository.                                   |
 | repository_id     | string    | The ID of the containing repository.                                          |
 
+## Edges
+
+### Outbound Edges
+
+| Edge Kind                                                           | Target Node                                                                                                        | Traversable | Description                                                                                                |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------- | ---------------------------------------------------------------------------------------------------------- |
+| [GH_Contains](/opengraph/extensions/githound/reference/edges/gh_contains)                   | [GH_EnvironmentSecret](/opengraph/extensions/githound/reference/nodes/gh_environmentsecret)                                                                    | No          | Environment contains an environment-level secret.                                                          |
+| [GH_Contains](/opengraph/extensions/githound/reference/edges/gh_contains)                   | [GH_EnvironmentVariable](/opengraph/extensions/githound/reference/nodes/gh_environmentvariable)                                                                | No          | Environment contains an environment-level variable.                                                        |
+| [GH_HasSecret](/opengraph/extensions/githound/reference/edges/gh_hassecret)                 | [GH_EnvironmentSecret](/opengraph/extensions/githound/reference/nodes/gh_environmentsecret)                                                                    | Yes         | Environment has this secret. Traversable because write access enables secret access via workflow creation. |
+| [GH_CanAssumeIdentity](/opengraph/extensions/githound/reference/edges/gh_canassumeidentity) | [AZFederatedIdentityCredential](https://bloodhound.specterops.io/resources/nodes/az-federated-identity-credential) | Yes         | Environment can assume an Azure federated identity via OIDC (subject: environment:{envName}).              |
+
+### Inbound Edges
+
+| Edge Kind                                                     | Source Node                       | Traversable | Description                                                                 |
+| ------------------------------------------------------------- | --------------------------------- | ----------- | --------------------------------------------------------------------------- |
+| [GH_HasEnvironment](/opengraph/extensions/githound/reference/edges/gh_hasenvironment) | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository) | No          | Repository has this environment (when no custom branch policies).           |
+| [GH_HasEnvironment](/opengraph/extensions/githound/reference/edges/gh_hasenvironment) | [GH_Branch](/opengraph/extensions/githound/reference/nodes/gh_branch)         | No          | Branch is allowed to deploy to this environment (via custom branch policy). |
+
 ## Diagram
 
 ```mermaid
@@ -56,6 +74,12 @@ flowchart TD
     GH_EnvironmentVariable[fa:fa-lock-open GH_EnvironmentVariable]
     AZFederatedIdentityCredential[fa:fa-id-card AZFederatedIdentityCredential]
 
+    style GH_Environment fill:#D5F2C2
+    style GH_Repository fill:#9EECFF
+    style GH_Branch fill:#FF80D2
+    style GH_EnvironmentSecret fill:#6FB94A
+    style GH_EnvironmentVariable fill:#D4A84B
+    style AZFederatedIdentityCredential fill:#FF80D2
 
     GH_Repository -.->|GH_HasEnvironment| GH_Environment
     GH_Branch -.->|GH_HasEnvironment| GH_Environment
