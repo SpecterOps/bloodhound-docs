@@ -5,19 +5,35 @@ description: Use extensions and extension schemas to fully integrate OpenGraph d
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-<Callout icon="bullhorn" color="#FFC107">Structured graphs are available under [early access](https://pages.specterops.io/lp-WEB-260316-BHE-OpenGraph.html).</Callout>
+<Callout icon="bullhorn" color="#FFC107">
+Structured graphs are available under [early access](https://pages.specterops.io/lp-WEB-260316-BHE-OpenGraph.html).
+</Callout>
+
+OpenGraph extensions expand BloodHound's ability to map attack paths beyond Microsoft platforms to other identity providers, developer infrastructure, and device management platforms. For example:
+
+- [OktaHound](/opengraph/extensions/oktahound/overview)
+- [GitHound](/opengraph/extensions/githound/overview)
+- [JamfHound](/opengraph/extensions/jamfhound/overview)
+
+<Tip>See the [OpenGraph Library](/opengraph/library) for a list of more OpenGraph extensions and collectors.</Tip>
+
+How extensions structure data has important implications for how you explore and analyze it in BloodHound, so it's important to understand the differences between **generic** and **structured** graphs and how to manage extensions effectively.
 
 ## Generic graphs
 
-When OpenGraph was introduced in BloodHound v8.0.0, it required data payloads to conform to basic node, edge, and metadata schemas only and produced **generic graphs** in BloodHound to support basic exploration.
+When OpenGraph was introduced in BloodHound v8.0.0, it required data payloads to conform to basic node, edge, and metadata schemas only and produced **generic graphs** to support basic exploration through Cypher queries (and later, node search).
 
-This enabled rapid iteration and flexibility for early OpenGraph extensions. However, it also meant that OpenGraph data was not fully integrated with BloodHound's features and capabilities.
+This enabled rapid iteration and flexibility for early OpenGraph extensions. However, it also meant that OpenGraph data was not integrated with other BloodHound features and capabilities.
 
 ## Structured graphs
 
 Extension developers can now create **extension schemas** to enable enhanced features and capabilities for OpenGraph data.
 
-When you upload a schema _and_ a data payload that conforms to it, BloodHound produces a **structured graph** that provides enhanced features compared to generic graphs, such as:
+<Callout icon="bulldozer" iconType="solid" color="#FFC107">
+The existing extension [developer documentation](/opengraph/schema) covers generic graphs only. Updates for structured graphs is in progress.
+</Callout>
+
+After you upload a schema _and_ a data payload that conforms to it, BloodHound produces a **structured graph** that provides enhanced features compared to generic graphs, such as:
 
 | Feature | Structured Graph | Generic Graph |
 |---|---|---|
@@ -25,13 +41,14 @@ When you upload a schema _and_ a data payload that conforms to it, BloodHound pr
 | Pathfinding | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-xmark" iconType="solid" color="#ef4444"/> |
 | Structured entity panel | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-xmark" iconType="solid" color="#ef4444"/> |
 | Environment filtering | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-xmark" iconType="solid" color="#ef4444"/> |
-| Findings and remediation | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-xmark" iconType="solid" color="#ef4444"/> |
+| Findings | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-xmark" iconType="solid" color="#ef4444"/> |
+| Remediation | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-xmark" iconType="solid" color="#ef4444"/> |
+| Posture metrics | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-xmark" iconType="solid" color="#ef4444"/> |
 | Database management | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-xmark" iconType="solid" color="#ef4444"/> |
 
 <Note>
-**Findings**
-
-Community extensions that include findings will work in both Community and Enterprise, but findings will only be visible in Enterprise.
+- Extensions that include findings and remediation data work in both BloodHound Community and BloodHound Enterprise, but those features are visible in BloodHound Enterprise only.
+- Posture metrics are available in BloodHound Enterprise only.
 </Note>
 
 ## Key terms
@@ -41,7 +58,7 @@ See the following table for important terms and definitions related to OpenGraph
 | Term | Definition |
 |---|---|
 | **Extension** | A modular package of OpenGraph components, including a schema, collector, Cypher queries, and findings. |
-| **Extension schema** | A schema that defines the models and structures for an OpenGraph extension. Both Community and Enterprise use the same schema format. |
+| **Extension schema** | A schema that fully integrates OpenGraph models and data, allowing them to use a broader set of BloodHound features. BloodHound Community and BloodHound Enterprise use the same schema format. |
 | **Collector** | A tool that authenticates to a third-party platform and generates a data payload that BloodHound can ingest. |
 | **Data payload** | The data generated by an OpenGraph collector that you upload to BloodHound. |
 | **Structured graph** | OpenGraph data associated with a registered extension schema. Structured graphs are fully integrated with BloodHound's features and functionality. |
@@ -51,28 +68,26 @@ See the following table for important terms and definitions related to OpenGraph
 
 Use the **OpenGraph Management** page in BloodHound to upload new extension schemas, view active extensions, and delete extensions that you no longer need.
 
+<Note>
+Only users with the Administrator [role](/manage-bloodhound/auth/users-and-roles#user-role-definitions) can manage extensions.
+</Note>
+
 ### Before you begin
 
 Complete the following steps before registering an extension or uploading structured graph data:
 
 <Steps>
 	<Step title="Get extension artifacts">
-		How you obtain extensions and collectors depends on your edition of BloodHound:
+		How you obtain extensions and collectors depends on your BloodHound edition and how they are distributed:
 
-		- **BloodHound Community** users can download and use Community extensions and collectors from public GitHub repositories
+		- **BloodHound Community** users can download and use publicly available extensions and collectors from GitHub repositories
 
-		- **BloodHound Enterprise** customers can use both Community and Enterprise extensions and collectors; contact your Technical Account Manager to obtain Enterprise versions
+		- **BloodHound Enterprise** customers can use publicly available extensions and collectors and may also have access to additional SpecterOps-provided extensions and collectors; contact your Technical Account Manager for availability
 	</Step>
 	<Step title="Review prerequisites">
 		After you obtain an extension and collector, review the prerequisites in the extension-specific setup documentation.
 		
 		For example, review collector permissions and required platform configurations, such as API service application registration.
-	</Step>
-	<Step title="Confirm role access">
-		Confirm that your [role](/manage-bloodhound/auth/users-and-roles#user-role-definitions) includes extension management permissions.
-	</Step>
-	<Step title="Validate version compatibility">
-		Verify the extension and collector versions are compatible with each other and with the version of BloodHound running on your tenant.
 	</Step>
 </Steps>
 
@@ -152,13 +167,13 @@ Collectors and extension schemas are versioned separately to allow for more flex
 
 - Do not update collectors independently without confirming extension schema compatibility.
 - Update collectors and extension schemas together whenever possible.
-- For Enterprise, coordinate update cycles with your Technical Account Manager.
+- If you use SpecterOps-provided extensions or collectors, coordinate update cycles with your Technical Account Manager.
 
 To update an extension, upload the new version using the same process as registering a new extension. BloodHound validates the new schema and replaces the old version with the new one.
 
 ## Upload data
 
-After an admin registers an extension, users can upload data payloads that conform to the extension schema and take advantage of structured graph capabilities in BloodHound. Follow these steps to upload and explore structured graph data:
+After an Administrator registers an extension, users can upload data payloads that conform to the extension schema and take advantage of structured graph capabilities in BloodHound. Follow these steps to upload and explore structured graph data:
 
 <Steps>
   <Step title="Upload data">
