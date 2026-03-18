@@ -1,0 +1,244 @@
+---
+title: Mitigating Controls
+description: "Branch protection analysis and attack path mitigation for GitHub organizations"
+icon: "lock"
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+This document provides empirically verified analysis of how GitHub branch protection rules interact with two key attack paths in the GitHound model. All findings were validated through systematic testing against live GitHub repositories.
+
+## Attack Paths
+
+### 1. Secret Exfiltration via Workflow Creation
+
+A user with write access (`GH_WriteRepoContents`) to a repository can:
+
+1. Create a **new branch** in the repository
+2. Push a **workflow file** (`.github/workflows/*.yml`) to that branch with `on: push` trigger
+3. The workflow executes automatically on push
+4. The workflow can access **all repo-level and org-level secrets** (`GH_HasSecret`) available to the repository
+5. The workflow exfiltrates the secrets (e.g., via HTTP request to an attacker-controlled server)
+
+**Graph path:** `(:GH_User)-[:GH_HasRole|GH_HasBaseRole|GH_MemberOf*1..]->(:GH_RepoRole)-[:GH_WriteRepoContents]->(repo:GH_Repository)-[:GH_HasSecret]->(:GH_RepoSecret|:GH_OrgSecret)`
+
+PR reviews do **not** prevent this attack because they only gate merging, not pushing to new branches. The attacker never needs to merge anything.
+
+### 2. Supply Chain Attack via Direct Push
+
+A user with write access to a repository can push directly to the default branch (e.g., `main`, `master`), injecting a backdoor into released software.
+
+**Graph path:** `(:GH_User)-[:GH_HasRole|GH_HasBaseRole|GH_MemberOf*1..]->(:GH_RepoRole)-[:GH_WriteRepoContents]->(repo:GH_Repository)`
+
+## Branch Protection Settings
+
+| Setting | GraphQL Field | BPR Property | Effect |
+|---------|--------------|--------------|--------|
+| Require PR reviews | `requiresApprovingReviews` | `required_pull_request_reviews` | Blocks direct pushes to **existing** protected branches (merge-gate control) |
+| Restrict pushes | `restrictsPushes` | `push_restrictions` | Restricts who can push to matching branches (push-gate control) |
+| Block creations | `blocksCreations` | `blocks_creations` | Restricts creation of new branches matching the pattern. **Requires `push_restrictions`**; silently reverts to `false` otherwise |
+| Lock branch | `lockBranch` | `lock_branch` | Makes the branch completely read-only (merge-gate control) |
+| Enforce for admins | `isAdminEnforced` | `enforce_admins` | Enforces merge-gate controls for admins and users with `bypass_branch_protection` |
+| Allow force pushes | `allowsForcePushes` | `allows_force_pushes` | Controls whether force pushes are allowed; does **not** grant push access |
+
+### Setting Dependencies
+
+- `blocks_creations` requires `push_restrictions` to be `true`. If `push_restrictions` is `false`, the GitHub API accepts the mutation but silently reverts `blocks_creations` to `false`.
+- `allows_force_pushes` only controls whether history rewrites are permitted. It does not bypass any access controls.
+
+## Merge-Gate vs. Push-Gate Controls
+
+Branch protection settings fall into two distinct categories based on *what they control* and *how they can be bypassed*. This distinction is critical because each category has a completely different set of bypass mechanisms, and `enforce_admins` only affects one category.
+
+### Merge-Gate Controls
+
+Govern whether changes can be merged or committed to a protected branch. They enforce code review and read-only policies.
+
+| Setting | Property | What it blocks |
+|---------|----------|---------------|
+| Require PR reviews | `required_pull_request_reviews` | Direct pushes to existing protected branches — forces changes through pull requests |
+| Lock branch | `lock_branch` | All changes to the branch — makes it completely read-only |
+
+Merge-gate controls are bypassed by `bypass_branch_protection` and `bypassPullRequestAllowances`. They **are** enforced by `enforce_admins`.
+
+### Push-Gate Controls
+
+Govern *who is authorized* to push to matching branches. They are an access control layer that restricts push operations to an explicit allowlist.
+
+| Setting | Property | What it blocks |
+|---------|----------|---------------|
+| Restrict pushes | `push_restrictions` | Pushes from anyone not in the `pushAllowances` list |
+| Block creations | `blocks_creations` | Creation of new branches matching the pattern (requires `push_restrictions`) |
+
+Push-gate controls are bypassed by `push_protected_branch`, admin access, and `pushAllowances`. They are **NOT** enforced by `enforce_admins`.
+
+<Warning>A common misconfiguration is enabling `enforce_admins` and assuming all protections are enforced. In reality, `enforce_admins` only enforces merge-gate controls. Admin users and users with `push_protected_branch` can still bypass push restrictions regardless of the `enforce_admins` setting.</Warning>
+
+## Bypass Mechanisms
+
+There are seven mechanisms that can bypass branch protection rules. They fall into two categories based on which type of control they bypass.
+
+### Merge-Gate Bypasses
+
+| Mechanism | Scope | Edge/Property | Blocked by `enforce_admins`? |
+|-----------|-------|---------------|------------------------------|
+| `bypass_branch_protection` permission | Repo-wide (via custom role) | `GH_BypassBranchProtection` | **Yes** |
+| `bypassPullRequestAllowances` | Per-rule (specific users/teams) | `GH_BypassPullRequestAllowances` | Not tested (likely yes) |
+
+`bypassPullRequestAllowances` is **narrower** than `bypass_branch_protection`. It only bypasses PR review requirements, not lock branch.
+
+### Push-Gate Bypasses
+
+| Mechanism | Scope | Edge/Property | Blocked by `enforce_admins`? |
+|-----------|-------|---------------|------------------------------|
+| `push_protected_branch` permission | Repo-wide (via custom role) | `GH_PushProtectedBranch` | **No** |
+| Admin access | Repo-wide (built-in role) | `GH_AdminTo` | **No** |
+| `pushAllowances` | Per-rule (specific users/teams) | `GH_RestrictionsCanPush` | Not tested (likely no) |
+
+### Other Bypasses
+
+| Mechanism | Effect | Edge |
+|-----------|--------|------|
+| `edit_repo_protections` permission | Can remove/modify protection rules entirely, then push | `GH_EditRepoProtections` |
+
+## Complete Test Results
+
+### Test Series 1: New Branch Creation (Secret Exfiltration Path)
+
+Can a user with write access create a new branch and push a workflow?
+
+| Test | PR Reviews | Push Restrictions | Blocks Creations (`*`) | Result |
+|------|:---:|:---:|:---:|--------|
+| 1 | On | Off | Off | **Succeeded** — new branch created |
+| 2 | On | On | Off | **Succeeded** — new branch created |
+| 3 | On | On | On | **Blocked** |
+| 4 | Off | On | On | **Blocked** |
+| 5 | Off | Off | On (silently ignored) | **Succeeded** — `blocks_creations` reverted to `false` |
+
+**Conclusion:** The **only** branch protection configuration that blocks the secret exfiltration attack is `push_restrictions` + `blocks_creations` on a `*` pattern rule.
+
+### Test Series 2: Push to Existing Protected Branch (Supply Chain Path)
+
+Can a user with write access push directly to `master`?
+
+| Test | Protection Config | Result | Error Message |
+|------|-------------------|--------|---------------|
+| 1 | PR reviews only | **Blocked** | "Changes must be made through a pull request" |
+| 2 | Push restrictions (user NOT in allowances) | **Blocked** | "You're not authorized to push" |
+| 3 | Push restrictions (user IN allowances) | **Succeeded** | — |
+| 4 | Lock branch | **Blocked** | "Cannot change this locked branch" |
+
+**Conclusion:** Any **one** of PR reviews, push restrictions (without allowance), or lock branch is sufficient to block direct pushes to an existing protected branch.
+
+### Test Series 3: `bypass_branch_protection` Permission
+
+| Test | Protection Config | Result |
+|------|-------------------|--------|
+| 3.1 | PR reviews | **Bypassed** ("Bypassed rule violations") |
+| 3.2 | Push restrictions (not in allowances) | **Blocked** ("You're not authorized to push") |
+| 3.3 | Lock branch | **Bypassed** ("Bypassed rule violations") |
+| 3.4 | Push restrictions + blocks creations (`*`) | **Blocked** ("You're not authorized to push") |
+
+**Conclusion:** `bypass_branch_protection` bypasses merge-gate controls (PR reviews, lock branch) but NOT push-gate controls (`push_restrictions`).
+
+### Test Series 4: `push_protected_branch` Permission
+
+| Test | Protection Config | Result |
+|------|-------------------|--------|
+| 4.1 | PR reviews | **Blocked** ("Changes must be made through a pull request") |
+| 4.2 | Push restrictions (not in allowances) | **Bypassed** |
+| 4.3 | Lock branch | **Blocked** ("Cannot change this locked branch") |
+| 4.4 | Push restrictions + blocks creations (`*`) | **Bypassed** (new branch created) |
+
+**Conclusion:** `push_protected_branch` bypasses push-gate controls (`push_restrictions`, `blocks_creations`) but NOT merge-gate controls (PR reviews, lock branch). It is the **exact complement** of `bypass_branch_protection`.
+
+### Test Series 5: `enforce_admins` Interaction
+
+| Test | Protection | Actor | Result |
+|------|-----------|-------|--------|
+| 5.1 | PR reviews | `bypass_branch_protection` | **Blocked** (enforce_admins suppresses bypass) |
+| 5.2 | Lock branch | `bypass_branch_protection` | **Blocked** (enforce_admins suppresses bypass) |
+| 5.3 | Push restrictions | `push_protected_branch` | **Bypassed** (enforce_admins has no effect) |
+| 5.4 | Push restrictions + blocks creations (`*`) | Admin (enforce_admins OFF) | **Bypassed** |
+| 5.5 | Push restrictions + blocks creations (`*`) | Admin (enforce_admins ON) | **Bypassed** (enforce_admins has no effect) |
+
+**Conclusion:** `enforce_admins` only enforces merge-gate controls. It suppresses `bypass_branch_protection` but has **no effect** on `push_protected_branch` or admin push access.
+
+### Test Series 6: `allows_force_pushes`
+
+| Test | Protection Config | Result |
+|------|-------------------|--------|
+| 6.1 | Lock branch + force push allowed | **Blocked** ("Cannot change this locked branch") |
+| 6.2 | Push restrictions + force push allowed | **Blocked** ("You're not authorized to push") |
+
+**Conclusion:** `allows_force_pushes` is not a bypass mechanism. It only controls whether force pushes (history rewrites) are permitted for users who already have push access.
+
+### Test Series 7: Both Permissions Combined
+
+User with both `bypass_branch_protection` and `push_protected_branch`:
+
+| Test | Protection Config | Result |
+|------|-------------------|--------|
+| 7.1 | PR reviews | **Bypassed** |
+| 7.2 | Push restrictions | **Bypassed** |
+| 7.3 | Lock branch | **Bypassed** |
+| 7.4 | Push restrictions + blocks creations (`*`) | **Bypassed** (new branch created) |
+
+**Conclusion:** Both permissions combined provide full bypass capability, equivalent to admin access.
+
+### Test Series 8: `bypassPullRequestAllowances` (Per-Rule Edge)
+
+User in `bypassPullRequestAllowances` list (regular write access, no custom role):
+
+| Test | Protection Config | Result |
+|------|-------------------|--------|
+| 8.1 | PR reviews | **Bypassed** ("Bypassed rule violations") |
+| 8.2 | Lock branch | **Blocked** ("Cannot change this locked branch") |
+
+**Conclusion:** `bypassPullRequestAllowances` is narrower than the `bypass_branch_protection` permission. It only bypasses PR review requirements, not lock branch.
+
+## Summary Matrix
+
+| Protection | Regular Write | `bypass_branch_protection` | `push_protected_branch` | Both | Admin | `bypassPRAllowances` | `pushAllowances` |
+|-----------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| PR reviews | Blocked | **Bypassed** | Blocked | **Bypassed** | N/T | **Bypassed** | N/T |
+| Push restrictions | Blocked | Blocked | **Bypassed** | **Bypassed** | **Bypassed** | N/T | **Bypassed** |
+| Lock branch | Blocked | **Bypassed** | Blocked | **Bypassed** | N/T | Blocked | N/T |
+| Blocks creations (`*`) | Blocked | Blocked | **Bypassed** | **Bypassed** | **Bypassed** | N/T | N/T |
+| **enforce_admins effect** | — | **Suppressed** | **No effect** | — | **No effect** | N/T | N/T |
+
+N/T = Not tested (not applicable to that control type)
+
+## Effective Mitigating Controls
+
+### For Secret Exfiltration (Write → New Branch → Workflow → Secrets)
+
+The attack requires creating a new branch. This is only blocked when **all** of the following are true:
+
+1. A `GH_BranchProtectionRule` exists with `pattern` = `*`
+2. `push_restrictions` = `true`
+3. `blocks_creations` = `true`
+
+**However**, even with this control in place, the following actors can still exfiltrate secrets:
+
+- Users with `push_protected_branch` permission (`GH_PushProtectedBranch`)
+- Users with admin access (`GH_AdminTo`) — **cannot** be mitigated by `enforce_admins`
+- Users in `pushAllowances` for the `*` rule (`GH_RestrictionsCanPush`)
+- Users with `edit_repo_protections` permission (`GH_EditRepoProtections`) — can remove the rule
+- Users with both `bypass_branch_protection` and `push_protected_branch`
+
+### For Supply Chain Attack (Write → Push to Default Branch)
+
+Any **one** of the following protections is sufficient to block direct pushes to an existing branch:
+
+- `required_pull_request_reviews` = `true`
+- `push_restrictions` = `true` (and attacker not in `pushAllowances`)
+- `lock_branch` = `true`
+
+**Bypass vectors per protection type:**
+
+| Protection | Bypassed by |
+|-----------|-------------|
+| PR reviews | `bypass_branch_protection`, `bypassPullRequestAllowances` (both blocked by `enforce_admins`) |
+| Push restrictions | `push_protected_branch`, admin, `pushAllowances` (none blocked by `enforce_admins`) |
+| Lock branch | `bypass_branch_protection` (blocked by `enforce_admins`) |
