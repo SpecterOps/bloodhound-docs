@@ -50,27 +50,6 @@ The tables below list edges defined by the GitHound extension only. Additional e
 | environment_name | string    | The name of the environment (GitHub organization).                        |
 | environmentid    | string    | The node_id of the environment (GitHub organization).                     |
 
-## Edges
-
-### Outbound Edges
-
-| Edge Kind                                                                               | Target Node                                           | Traversable | Description                                                           |
-| --------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------- | --------------------------------------------------------------------- |
-| [GH_MemberOf](/opengraph/extensions/githound/reference/edges/gh_memberof)                                       | [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team)                                 | Yes         | Team is a child of a parent team.                                     |
-| [GH_HasRole](/opengraph/extensions/githound/reference/edges/gh_hasrole)                                         | [GH_OrgRole](/opengraph/extensions/githound/reference/nodes/gh_orgrole)                           | Yes         | Team is assigned to a custom organization role.                       |
-| [GH_HasRole](/opengraph/extensions/githound/reference/edges/gh_hasrole)                                         | [GH_RepoRole](/opengraph/extensions/githound/reference/nodes/gh_reporole)                         | Yes         | Team is assigned to a repository role (from Git-HoundRepositoryRole). |
-| [GH_BypassPullRequestAllowances](/opengraph/extensions/githound/reference/edges/gh_bypasspullrequestallowances) | [GH_BranchProtectionRule](/opengraph/extensions/githound/reference/nodes/gh_branchprotectionrule) | No          | Team can bypass PR requirements on this protection rule.              |
-| [GH_RestrictionsCanPush](/opengraph/extensions/githound/reference/edges/gh_restrictionscanpush)                 | [GH_BranchProtectionRule](/opengraph/extensions/githound/reference/nodes/gh_branchprotectionrule) | No          | Team is allowed to push to branches protected by this rule.           |
-| [GH_CanWriteBranch](/opengraph/extensions/githound/reference/edges/gh_canwritebranch)                           | [GH_Branch](/opengraph/extensions/githound/reference/nodes/gh_branch)                             | Yes         | Team can push to this branch (computed — per-actor allowance delta).  |
-| [GH_CanCreateBranch](/opengraph/extensions/githound/reference/edges/gh_cancreatebranch)                         | [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository)                     | Yes         | Team can create new branches (computed — per-actor allowance delta).  |
-
-### Inbound Edges
-
-| Edge Kind                                         | Source Node                   | Traversable | Description                                           |
-| ------------------------------------------------- | ----------------------------- | ----------- | ----------------------------------------------------- |
-| [GH_MemberOf](/opengraph/extensions/githound/reference/edges/gh_memberof) | [GH_TeamRole](/opengraph/extensions/githound/reference/nodes/gh_teamrole) | Yes         | A team role (Member/Maintainer) belongs to this team. |
-| [GH_MemberOf](/opengraph/extensions/githound/reference/edges/gh_memberof) | [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team)         | Yes         | A child team is a member of this team.                |
-
 ## Diagram
 
 ```mermaid
@@ -83,13 +62,6 @@ flowchart TD
     GH_BranchProtectionRule[fa:fa-shield GH_BranchProtectionRule]
     GH_Repository[fa:fa-box-archive GH_Repository]
 
-    style GH_Team fill:#C06EFF
-    style GH_OrgRole fill:#BFFFD1
-    style GH_RepoRole fill:#DEFEFA
-    style GH_TeamRole fill:#D0B0FF
-    style GH_Branch fill:#FF80D2
-    style GH_BranchProtectionRule fill:#FFB347
-    style GH_Repository fill:#9EECFF
 
     GH_Team -->|GH_MemberOf| GH_Team
     GH_Team -->|GH_HasRole| GH_OrgRole
