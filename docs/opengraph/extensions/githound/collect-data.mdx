@@ -1,0 +1,159 @@
+---
+title: Running the Collector
+description: Run the GitHound collector to gather data from your GitHub organization.
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+This page covers downloading and running the GitHound collector against your GitHub organization.
+
+## Prerequisites
+
+* PowerShell
+* A [Personal Access Token (PAT)](/opengraph/extensions/githound/configure-pat) or [GitHub App Installation](/opengraph/extensions/githound/configure-app) configured with the required permissions
+
+## Required Permissions
+
+Both PAT and GitHub App authentication methods require the same set of Read-only permissions. The table below maps each permission to the collection functions it enables.
+
+**Repository permissions:**
+
+| Permission              | Collection Functions |
+|-------------------------|---------------------|
+| Actions                 | `Git-HoundWorkflow`, `Git-HoundEnvironment` |
+| Administration          | `Git-HoundBranch`, `Git-HoundRepositoryRole` |
+| Contents                | `Git-HoundBranch` |
+| Environments            | `Git-HoundEnvironment` |
+| Metadata                | `Git-HoundRepository`, `Git-HoundRepositoryRole` |
+| Secret scanning alerts  | `Git-HoundSecretScanningAlert` |
+| Secrets                 | `Git-HoundSecret` |
+| Variables               | `Git-HoundVariable` |
+
+**Organization permissions:**
+
+| Permission                     | Collection Functions |
+|--------------------------------|---------------------|
+| Administration                 | `Git-HoundOrganization`, `Git-HoundRepository`, `Git-HoundRepositoryRole`, `Git-HoundAppInstallation` |
+| Custom organization roles      | `Git-HoundOrganization` |
+| Custom repository roles        | `Git-HoundRepository` |
+| Members                        | `Git-HoundTeam`, `Git-HoundUser`, `Git-HoundOrganization` |
+| Personal access tokens         | `Git-HoundPersonalAccessToken` |
+| Personal access token requests | `Git-HoundPersonalAccessTokenRequest` |
+| Secrets                        | `Git-HoundOrganizationSecret`, `Git-HoundSecret` |
+| Variables                      | `Git-HoundOrganizationSecret` |
+
+## Load GitHound
+
+Retrieve the latest PowerShell version of the GitHound collector from the [GitHub repo](https://github.com/SpecterOps/GitHound/blob/main/githound.ps1).
+
+Load the collector script and create an authenticated session.
+
+### With a Personal Access Token
+
+```powershell
+. ./githound.ps1
+$session = New-GitHubSession -OrganizationName "YourOrgName" -Token (Get-Clipboard)
+```
+
+### With a GitHub App Installation
+
+```powershell
+. ./githound.ps1
+$session = New-GitHubJwtSession -OrganizationName "YourOrgName" -ClientId "your-client-id" -PrivateKeyPath "./your-app.pem" -AppId 123456789
+```
+
+## Run the Collector
+
+```powershell
+Invoke-GitHound -Session $session
+```
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `-Session` | GitHound.Session | (required) | Authentication session created above |
+| `-Resume` | Switch | `$false` | Load completed steps from disk instead of re-collecting |
+| `-CheckpointPath` | String | `"."` | Directory for output files and intermediate checkpoints |
+| `-CleanupIntermediates` | Switch | `$false` | Delete per-step files after final consolidation |
+| `-CollectAll` | Switch | `$false` | Include optional steps (Workflows, Environments, Repo Secrets, Repo Variables, App Installs, PATs) |
+
+### Collect All Data
+
+By default, GitHound collects core organizational data. Use `-CollectAll` to include optional collection steps such as Workflows, Environments, Repository Secrets, Repository Variables, App Installations, and PATs:
+
+```powershell
+Invoke-GitHound -Session $session -CollectAll
+```
+
+### Resume an Interrupted Collection
+
+If a collection is interrupted, use `-Resume` to continue from where it stopped. GitHound writes a per-step output file after each collection function completes. The `-Resume` flag detects existing files on disk and skips completed steps.
+
+```powershell
+Invoke-GitHound -Session $session -Resume
+```
+
+Functions with internal checkpointing (RepositoryRole, Workflow, Secret, Variable) save intermediate chunk files, so they can resume mid-function rather than starting over.
+
+### Custom Checkpoint Path
+
+Use `-CheckpointPath` to specify a directory for output and checkpoint files:
+
+```powershell
+Invoke-GitHound -Session $session -CheckpointPath "./output"
+```
+
+### Clean Up Intermediate Files
+
+Use `-CleanupIntermediates` to delete per-step files after the final consolidated JSON is generated:
+
+```powershell
+Invoke-GitHound -Session $session -CleanupIntermediates
+```
+
+## Rate Limits
+
+| Authentication Method   | Rate Limit    | Best For |
+|-------------------------|---------------|----------|
+| Personal Access Token   | 5,000/hour    | Small to medium organizations (&lt; 500 repos) |
+| GitHub App Installation | 15,000/hour   | Large organizations (500+ repos) |
+
+GitHound monitors rate limit headers and automatically pauses collection when limits are exhausted. You can check your current rate limit status:
+
+```powershell
+Invoke-GitHubRestMethod -Session $session -Uri "https://api.github.com/rate_limit" | ConvertTo-Json
+```
+
+## Manual Step-by-Step Collection
+
+For very large environments, you can run individual collection functions instead of using `Invoke-GitHound`. This gives you maximum control over the process and lets you monitor each step independently.
+
+| Function | API | Scaling Factor | Estimated Requests | Checkpointing |
+|----------|-----|----------------|-------------------|---------------|
+| `Git-HoundOrganization` | REST | Custom Org Roles (C) | 3 + 2C | No |
+| `Git-HoundUser` | GraphQL | User Count (U) | ceil(U / 100) | No |
+| `Git-HoundTeam` | GraphQL | Team Count (T) | ceil(T / 100) + overflow pages | No |
+| `Git-HoundRepository` | REST | Repository Count (R) | 3 + ceil(R / 30) | No |
+| `Git-HoundRepositoryRole` | REST | Repository Count (R) | 2R | Yes |
+| `Git-HoundBranch` | GraphQL | Repository Count (R) | ceil(R / 10) + overflow + protected repos | Yes |
+| `Git-HoundWorkflow` | REST | Actions-Enabled Repos (A) | A | Yes |
+| `Git-HoundEnvironment` | REST | Repository Count (R) | R + environments + branch policies | Yes |
+| `Git-HoundOrganizationSecret` | REST | Selected Secrets/Variables (S) | 2 + S | No |
+| `Git-HoundSecret` | REST | Repository Count (R) | R | Yes |
+| `Git-HoundVariable` | REST | Repository Count (R) | R | Yes |
+| `Git-HoundSecretScanningAlert` | REST | Alert Count | ceil(Count / 100) | No |
+| `Git-HoundAppInstallation` | REST | Installation Count (I) | 1 + unique app slugs | No |
+| `Git-HoundPersonalAccessToken` | REST | PAT Count (P) | ceil(P / 100) | No |
+| `Git-HoundPersonalAccessTokenRequest` | REST | Request Count | ceil(Count / 100) | No |
+| `Git-HoundGraphQlSamlProvider` | GraphQL | SAML Identities (I) | ceil(I / 100) | No |
+
+Functions marked with checkpointing are also rate limit aware and will automatically pause and resume when API limits are exhausted.
+
+## Collection Output
+
+GitHound generates a `githound_<orgId>.json` file that you can upload to BloodHound.
+
+## Next Steps
+
+- Having issues? See the [Troubleshooting](/opengraph/extensions/githound/troubleshooting) guide

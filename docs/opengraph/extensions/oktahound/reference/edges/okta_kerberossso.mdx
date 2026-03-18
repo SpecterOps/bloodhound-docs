@@ -1,0 +1,34 @@
+---
+title: 'Okta_KerberosSSO'
+description: 'Agentless desktop SSO relationship from on-prem AD user account to Okta AD application'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Source: [User](https://bloodhound.specterops.io/resources/nodes/user)
+- Destination: [Okta_Application](/opengraph/extensions/oktahound/reference/nodes/okta_application)
+- Traversable: ✅
+
+## General Information
+
+Hybrid traversable `Okta_KerberosSSO` edges represent [agentless desktop SSO](https://help.okta.com/en-us/content/topics/directory/ad-dsso-about-workflow.htm) trust from an on-prem AD `User` account to an AD-backed `Okta_Application`.
+
+```mermaid
+graph LR
+    subgraph ad["Active Directory"]
+        d1("Domain contoso.com")
+        u1("User SPN:HTTP/contoso.kerberos.okta.com")
+        u2("User jane.doe\@contoso.com")
+        d1 -- "Contains" --> u1
+        d1 -- "Contains" --> u2
+    end
+    subgraph okta["Okta"]
+        app1("Okta_Application contoso.com")
+        u3("Okta_User jane.doe\@contoso.com")
+        app1 -. Okta_UserPull .-> u3
+    end
+    u1 -- Okta_KerberosSSO --> app1
+    u2 -. Okta_UserSync .-> u3
+```
