@@ -94,7 +94,7 @@ Complete the following steps before installing an extension or uploading structu
 
 ### Workflow
 
-The general workflow for working with extensions and structured graphs includes a one-time initial setup (Administrators only) followed by a recurring operational loop (Administrators and users) to keep extension data current and take advantage of enhanced features in BloodHound.
+The general workflow for working with extensions and structured graphs includes initial setup (Administrators only) followed by a recurring operational cycle (Administrators and users) to keep extension data current and take advantage of enhanced features in BloodHound.
 
 #### Initial setup
 
@@ -106,36 +106,51 @@ The initial setup workflow is not strictly linear and not all steps are required
 
 ```mermaid
 flowchart TB
-	subgraph prepare[Configure and Test]
+	subgraph prepare[Configure and Run]
 		a["Download extension<br/>and collector"]
         a-->b["Configure<br/> collector"]
-        b-->c["Test<br/>collector"]
+        b-->c["Run<br/>collector"]
     end
 
 	subgraph upload[Install Extension]
 		f["Install extension<br/>schema"]
-		f-->g["Run<br/>collector"]
-        g-->h["Import Cypher<br/>queries"]
-		h-->i["Update Privilege<br/>Zone rules"]
+        f-->g["Import Cypher<br/>queries"]
+		g-->h["Update Privilege<br/>Zone rules"]
 	end
 
 	subgraph use[Explore and Analyze]
-		j["Upload data<br/>payload"]
-		j-->k["Explore data in<br/>BloodHound"]
+		i["Upload data<br/>payload"]
+		i-->j["Explore data in<br/>BloodHound"]
 	end
     prepare-->upload-->use
 ```
 
-#### Operational loop
+#### Operational cycle
 
-After initial setup, repeat the following steps as needed to keep your extension data current:
+After initial setup, the following diagram illustrates the recurring cycle of operations to keep extension data current:
 
 ```mermaid
-flowchart TB
-	a["Run<br/>collector"]
-    a-->b["Upload data<br/>payload"]
-	b-->c["Explore data in<br/>BloodHound"]
-	c-->a
+sequenceDiagram
+  autonumber
+
+	box rgba(128, 128, 128, 0.14) Human actors
+		actor Admin
+		actor User
+	end
+
+	box rgba(96, 96, 96, 0.12) Systems
+		participant Collector
+		participant TargetPlatform as Target Platform
+		participant BloodHound
+	end
+
+	Admin->>Collector: Run collector
+	Collector->>TargetPlatform: Collect data
+	TargetPlatform-->>Collector: Return source data
+	Collector-->>Admin: Generate data payload
+	Admin->>BloodHound: Upload data payload
+	BloodHound-->>Admin: Ingest complete
+	User->>BloodHound: Explore and analyze data
 ```
 
 ### Install an extension
