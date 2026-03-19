@@ -1,20 +1,22 @@
 ---
 title: Configure ETAC
-description: Configure Environment Targeted Access Control to limit user access by environment and optionally allow Explore access.
+description: Configure Environment Targeted Access Control to limit user access by environment.
 sidebarTitle: Environment Targeted Access Control
 ---
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-Environment Targeted Access Control (ETAC) helps you apply least-privilege access in BloodHound Enterprise. Use ETAC to limit which environments **User** and **Read-only** roles can access, and to control whether those users can open the **Explore** page.
+Environment Targeted Access Control (ETAC) helps you apply least-privilege access in BloodHound Enterprise. Use ETAC to limit which environments **User** and **Read-only** user roles can access.
 
 ## Before you begin
 
 - ETAC applies only to **User** and **Read-only** roles.
 - ETAC settings appear when you create or edit a user with one of those roles.
-- ETAC is a Premium add-on and may not be available in every tenant.
+- ETAC is a premium add-on and may not be available in every tenant.
 
-<Note>Roles still define the baseline actions a user can perform. ETAC further limits which environments those actions apply to for eligible roles.</Note>
+<Note>
+Roles still define the baseline actions a user can perform. ETAC further limits which environments those actions apply to.
+</Note>
 
 ## How ETAC works
 
@@ -22,14 +24,12 @@ ETAC adds environment scoping to the baseline permissions granted by the assigne
 
 - If you select no environments, the user has no environment access by default.
 - If you select specific environments, the user can access data only for those environments.
-- If you enable **All current and future environments**, that setting overrides individual environment selections.
-- If you enable **Explore access**, the user can open **Explore** for the environments they can access.
 
-<Tip>Use ETAC when a **User** or **Read-only** account should see only the environments that person owns or supports.</Tip>
+<Tip>Use ETAC when a **User** or **Read-only** account should see only the environments that user owns or supports.</Tip>
 
 ## Configure ETAC for a user
 
-Use the create or edit user workflow to apply ETAC to an eligible role.
+Use the create or edit user workflow to configure ETAC for an eligible role and assign environments in one flow.
 
 <Steps>
   <Step title="Open the user management workflow">
@@ -40,28 +40,24 @@ Use the create or edit user workflow to apply ETAC to an eligible role.
   <Step title="Assign an eligible role">
     In the **Role** field, select **User** or **Read-only**.
 
-    When you select an eligible role, the ETAC controls appear in the user workflow.
+    When you select an eligible role, the ETAC options display in a new section beside the **Add/Edit User** form.
+
+    <Frame>
+      <img
+        src="/images/manage/etac-controls.png"
+        alt="A view of the ETAC controls in the create/edit user workflow"
+      />
+    </Frame>
   </Step>
   <Step title="Review the default ETAC state">
-    By default, ETAC starts in a least-privilege state:
+    By default, no environments are selected, which means a user in this state has no environment access and cannot use the following pages until you select environments and save the user record:
 
-    - No environments are selected.
-    - **Explore access** is disabled.
+    - **Attack Paths**: The user sees no data and cannot use filters.
+    - **Posture**: The user can open the page, but cannot see data or use filters.
+    - **Explore**: The user can open the page, but sees a _Role-based access filtering applied_ message and cannot see data.
+    - **Privilege Zones**: The user can open the page, but receives a _Permission Denied!_ message and cannot make changes.
 
-    A user in this state does not receive environment access until you save a more permissive configuration.
   </Step>
-  <Step title="Save the user changes">
-    Save or confirm the user changes to persist the ETAC settings.
-
-    The user can access only the environments and pages allowed by the saved configuration.
-  </Step>
-</Steps>
-
-## Assign environments
-
-Use the environment selector to control which environments the user can access.
-
-<Steps>
   <Step title="Select environments manually">
     Choose one or more environments from the list to grant access only to those environments.
 
@@ -77,67 +73,40 @@ Use the environment selector to control which environments the user can access.
   <Step title="Search the environment list">
     Use the search box to filter the list when you need to find a specific environment quickly.
   </Step>
-  <Step title="Enable access to all current and future environments">
-    Turn on **All current and future environments** when the user should always inherit access to every existing environment and any environment added later.
+  <Step title="Save the user changes">
+    Save or confirm the user changes to persist the ETAC settings.
 
-    This setting overrides individual environment selections while it is enabled.
+    The user can access only the environments and pages allowed by the saved configuration.
   </Step>
 </Steps>
-
-## Configure Explore access
-
-Use **Explore access** to decide whether an ETAC-scoped **User** or **Read-only** user can open the **Explore** page.
-
-<Steps>
-  <Step title="Locate the Explore access setting">
-    In the ETAC section of the create or edit user workflow, find the **Explore access** checkbox.
-  </Step>
-  <Step title="Choose whether to allow Explore">
-    Leave the checkbox cleared to keep **Explore** unavailable.
-
-    Select the checkbox to allow the user to open **Explore** for the environments they can access.
-  </Step>
-  <Step title="Save the setting">
-    Save or confirm the user record so the change takes effect.
-  </Step>
-</Steps>
-
-## Environment selector reference
-
-The environment selector updates based on how many environments you choose.
-
-| Selector state | What you see | Result |
-| --- | --- | --- |
-| None selected | No environment checkboxes are selected | The user has no environment access by default |
-| Some selected | Individual environments are selected and **Select All Environments** is indeterminate | The user can access only the selected environments |
-| All selected manually | Every environment checkbox is selected and **Select All Environments** is selected | The user can access all currently listed environments |
-| All current and future environments enabled | The environment list is selected and unavailable for editing | The user can access all current environments and any environment added later |
 
 ## Effective access reference
 
 ETAC changes where eligible roles can use their baseline permissions. It does not turn a **User** into an administrator or expand **Read-only** permissions beyond read access.
 
-| Role | Environment scope | Explore access | Result |
-| --- | --- | --- | --- |
-| User | None selected | Disabled | The user keeps the **User** role but has no environment access by default |
-| User | None selected | Enabled | The user can open **Explore** but has no environment data to access. Exact behavior pending product confirmation. |
-| User | Specific environments | Disabled | The user can work only within the selected environments and cannot open **Explore** |
-| User | Specific environments | Enabled | The user can work only within the selected environments and can open **Explore** |
-| User | All current and future environments | Enabled or disabled | The user keeps **User** permissions across all current and future environments; **Explore** still follows the checkbox state |
-| Read-only | None selected | Disabled | The user keeps the **Read-only** role but has no environment access by default |
-| Read-only | None selected | Enabled | The user can open **Explore** but has no environment data to access. Exact behavior pending product confirmation. |
-| Read-only | Specific environments | Disabled | The user can view data only for the selected environments and cannot open **Explore** |
-| Read-only | Specific environments | Enabled | The user can view data only for the selected environments and can open **Explore** |
-| Read-only | All current and future environments | Enabled or disabled | The user keeps **Read-only** permissions across all current and future environments; **Explore** still follows the checkbox state |
-
-<Note>The behavior when **Explore access** is enabled but no environments are selected is pending product confirmation. Confirm with engineering before removing the above placeholder rows.</Note>
+| Role | Environment scope | Result |
+| --- | --- | --- |
+| User | None selected | The user keeps the **User** role but has no environment access by default. If **Explore access** is enabled, the user can open **Explore** but has no environment data to access (pending product confirmation). |
+| User | Specific environments | The user can work only within the selected environments. **Explore** remains unavailable unless **Explore access** is enabled. |
+| Read-only | None selected | The user keeps the **Read-only** role but has no environment access by default. If **Explore access** is enabled, the user can open **Explore** but has no environment data to access (pending product confirmation). |
+| Read-only | Specific environments | The user can view data only for the selected environments. **Explore** remains unavailable unless **Explore access** is enabled. |
+| Read-only | All current and future environments | The user keeps **Read-only** permissions across all current and future environments. **Explore** follows the **Explore access** setting. |
 
 ## What users experience
 
 After you save ETAC settings, scoped users see only the data and navigation options allowed by both their role and ETAC configuration.
 
-- On **Attack Paths**, **Posture**, and related analysis pages, users see only authorized environments.
-- In **Explore**, users can access only the environments allowed by ETAC, and only if **Explore access** is enabled.
-- **Administration** does not become available to **User** or **Read-only** roles through ETAC.
+- On the **Attack Paths** and **Posture** pages, users can see data from authorized environments only. Filters do not include unauthorized environments.
 
-See [Administer Users and Roles](/manage-bloodhound/auth/users-and-roles) for baseline role permissions.
+- On the **Explore** page, users can access data from assigned environments only. If a search returns results from unauthorized environments, the graph shows subset of results from authorized environments only, and a message indicates that role-based access filtering is applied. Objects from unauthorized environments are hidden in the graph.
+
+  <Frame>
+    <img
+      src="/images/manage/etac-hidden-objects.png"
+      alt="A view of the graph on the Explore page with ETAC filtering applied, showing hidden objects from unauthorized environments"
+    />
+  </Frame>
+
+- On the **Privilege Zones** page, users receive a _Permission Denied!_ message when they try to access the page. Users with some environments selected can access the page but can only see and manage zones that contain objects from their authorized environments.
+
+- Access to all other pages is unaffected, but the baseline [permissions](/manage-bloodhound/auth/users-and-roles) of the assigned role still apply.
