@@ -19,16 +19,14 @@ sidebarTitle: "2026-03-23"
   The [Privilege Zones](/analyze-data/privilege-zones/overview) feature is now generally available in BloodHound, providing a supported workflow for organizing objects by privilege level and monitoring violations of your network tiering model.
 </Update>
 
-<Update label="BloodHound" description="Breaking Change" tags={["OpenGraph"]}>
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
   {/*BED-7451*/}
 
-  ## `objectid` is Now a Reserved Node Property
+  ## Property-Based Edge Matching for OpenGraph
 
-  OpenGraph payloads that include `objectid` in a node's `properties` object will now **fail upload validation**.
+  Link nodes by unique database identifiers or dynamically match them using specific attribute values.
 
-  The new [property-based edge matching](/opengraph/schema#edge-endpoint-matching) (`match_by: "property"`) enables hybrid edge creation across data sources by letting collectors identify external nodes using cross-system attributes (such as email, username, or hostname) without needing to know the external system's internal ID. To keep node identity unambiguous for this matching strategy, `objectid` is now [reserved](/opengraph/schema#reserved-property-objectid) and may not be defined in a node's `properties` object.
-
-  The root-level `id` field already serves as the unique identifier for every node. BloodHound automatically maps this value to `objectid` internally upon ingestion. Remove any `objectid` keys from your node `properties` objects and rely solely on the root-level `id` field.
+  New [property-based edge matching](/opengraph/schema#edge-endpoint-matching) (`match_by: "property"`) enables hybrid edge creation by letting collectors identify external nodes using cross-system attributes, such as email, username, or hostname.
 
 </Update>
 
@@ -48,6 +46,21 @@ sidebarTitle: "2026-03-23"
   Previously, BloodHound Enterprise immediately deleted OpenGraph nodes that were not connected by at least one edge during the reconciliation process that runs after ingestion.
   
   Now, disconnected nodes are subject to [reconciliation and retention](/collect-data/enterprise-collection/data-retention) settings. This enables more flexible multi-step OpenGraph workflows where you upload nodes and edges in separate data payloads, without the risk of losing data after ingestion.
+</Update>
+
+<Update label="BloodHound" description="Breaking Change" tags={["OpenGraph"]}>
+  {/*BED-7451*/}
+
+  ## `objectid` is Now a Reserved Node Property
+
+  <Warning>
+    OpenGraph payloads that include `objectid` in a node's `properties` object will now fail upload validation.
+  </Warning>
+
+  To keep node identity unambiguous for property-based endpoint matching workflows, `objectid` is now [reserved](/opengraph/schema#reserved-property-objectid) and may not be defined in a node's `properties` object.
+
+  The root-level `id` field already serves as the unique identifier for every node. BloodHound automatically maps this value to `objectid` internally upon ingestion. Remove any `objectid` keys from your node `properties` objects and rely solely on the root-level `id` field.
+
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
