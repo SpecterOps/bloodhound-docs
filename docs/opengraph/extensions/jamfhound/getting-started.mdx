@@ -7,7 +7,12 @@ description: Learn how to get started with JamfHound, an OpenGraph extension and
 
 ## Prerequisites
 
-Before you begin, [configure and run](/opengraph/extensions/jamfhound/collect-data) the JamfHound collector against your JAMF Pro tenant to generate a data payload for BloodHound.
+Before you begin, ensure that the following prerequisites are met:
+
+| Prerequisite | Description |
+| --- | --- |
+| [Ensure graph database is PostgreSQL](/opengraph/requirements#version-requirements) | For best performance, BloodHound requires PostgreSQL as the graph database rather than Neo4j |
+| [Configure and run the collector](/opengraph/extensions/jamfhound/collect-data) | Collects data from your JAMF Pro tenant and generates JSON files for upload to BloodHound |
 
 ## Register the Extension (BloodHound Enterprise Only)
 
@@ -34,6 +39,8 @@ Upload the generated `Collection_xx_xx/JAMFcollection.json` file from the output
 JamfHound provides [custom Cypher queries](/opengraph/extensions/jamfhound/reference/queries) to help you identify attack paths and misconfigurations in your JAMF Pro tenant. These queries are included in the `custom-queries` directory of the JamfHound extension.
 
 To use these queries, you must first [import](/analyze-data/explore/cypher-search#import-and-export) the `custom-queries/*.json` files into BloodHound. You can then run the queries on the **Explore** page.
+
+<Note>Cypher queries that reference node or edge kinds not present in the database will fail without the extension schema (for example: `failed to translate kinds: unable to map kinds: Okta_ApiServiceIntegration`). Community Edition users can work around this by removing the unrecognized node and edge kinds from the queries until the extension schema becomes available for BloodHound Community Edition.</Note>
 
 <Tip>JamfHound also provides [specialized queries](/opengraph/extensions/jamfhound/reference/privilege-zone-rules) in a separate `PrivilegeZoneRules` directory for creating or updating [Cypher-based](/analyze-data/privilege-zones/rules#cypher) Privilege Zone rules.</Tip>
 
