@@ -8,34 +8,51 @@ sidebarTitle: Environment Targeted Access Control
 
 Environment Targeted Access Control (ETAC) helps you apply least-privilege access in BloodHound Enterprise. Use ETAC to limit which environments **User** and **Read-only** user roles can access.
 
-## Before you begin
-
-- ETAC applies only to **User** and **Read-only** roles.
-- ETAC settings appear when you create or edit a user with one of those roles.
-- ETAC is a premium add-on and may not be available in every tenant.
-
-<Note>
-Roles still define the baseline actions a user can perform. ETAC further limits which environments those actions apply to.
-</Note>
-
 ## How ETAC works
 
-ETAC adds environment scoping to the baseline permissions granted by the assigned role.
+ETAC adds environment scoping to the baseline permissions granted by the assigned role. This can be useful for large, complex environments where users only need access to a subset of environments to perform their work.
 
-- If you select no environments, the user has no environment access by default.
-- If you select specific environments, the user can access data only for those environments.
+- ETAC is a premium add-on and may not be available in every tenant.
+- ETAC applies to **User** and **Read-only** roles only. ETAC settings appear when you create or edit a user with one of those roles.
+- If you do not select any environments, the user has no environment access by default.
+- If you select specific environments, the user can access data for those environments only.
 
-<Tip>Use ETAC when a **User** or **Read-only** account should see only the environments that user owns or supports.</Tip>
+<Note>
+Roles still define the baseline [permissions](/manage-bloodhound/auth/users-and-roles#user-role-definitions) that control which actions a user can perform. ETAC further limits which environments those actions apply to.
+</Note>
+
+## What users experience
+
+After you save ETAC settings, scoped users see only the data and navigation options allowed by both their role and ETAC configuration.
+
+- On the **Attack Paths** and **Posture** pages, users can see data from authorized environments only. Filters do not include unauthorized environments.
+
+- On the **Explore** page, users can access data from assigned environments only. If a search returns results from unauthorized environments, the graph shows subset of results from authorized environments only, and a message indicates that role-based access filtering is applied. Objects from unauthorized environments are hidden in the graph.
+
+  <Frame>
+    <img
+      src="/images/manage/etac-hidden-objects.png"
+      alt="A view of the graph on the Explore page with ETAC filtering applied, showing hidden objects from unauthorized environments"
+    />
+  </Frame>
+
+- On the **Privilege Zones** page, users receive a _Permission Denied!_ message when they try to access the page. Users with some environments selected can access the page but can only see and manage zones that contain objects from their authorized environments.
+
+- Access to all other pages is unaffected, but the baseline [permissions](/manage-bloodhound/auth/users-and-roles#user-role-definitions) of the assigned role still apply.
 
 ## Configure ETAC for a user
 
-Use the create or edit user workflow to configure ETAC for an eligible role and assign environments in one flow.
+Use the create or edit user workflow to configure ETAC for an eligible role and assign environments.
 
 <Steps>
-  <Step title="Open the user management workflow">
-    Go to **Settings** <Icon icon="gear" iconType="solid" /> <Icon icon="arrow-right" iconType="solid" /> **Administration** <Icon icon="arrow-right" iconType="solid" /> **Manage Users**.
+  <Step title="Open the Manage Users page">
+    In the left menu, click **Administration** > **Manage Users**.
+  </Step>
+  <Step title="Create or edit a user">
+    To create a new user, click **Create User**.
+    
+    To edit an existing user, click the hamburger menu next to the user record in the list and select **Update User**.
 
-    Create a new user, or edit an existing user.
   </Step>
   <Step title="Assign an eligible role">
     In the **Role** field, select **User** or **Read-only**.
@@ -59,54 +76,16 @@ Use the create or edit user workflow to configure ETAC for an eligible role and 
 
   </Step>
   <Step title="Select environments manually">
-    Choose one or more environments from the list to grant access only to those environments.
+    Choose one or more environments from the list to grant user access to the data in those environments only.
 
-    If you select some but not all environments, **Select All Environments** becomes indeterminate.
+    <Tip>
+      Use the search box to filter the list when you need to find a specific environment quickly.
+    </Tip>
 
-    If you do not select any environments, the user does not receive environment access by default.
-  </Step>
-  <Step title="Use Select All Environments when needed">
-    Turn on **Select All Environments** to select every listed environment.
-
-    Turn it off to clear the selections. If the control is indeterminate, selecting it changes the state to all selected.
-  </Step>
-  <Step title="Search the environment list">
-    Use the search box to filter the list when you need to find a specific environment quickly.
   </Step>
   <Step title="Save the user changes">
-    Save or confirm the user changes to persist the ETAC settings.
+    Click **Save** to create or update the user record.
 
     The user can access only the environments and pages allowed by the saved configuration.
   </Step>
 </Steps>
-
-## Effective access reference
-
-ETAC changes where eligible roles can use their baseline permissions. It does not turn a **User** into an administrator or expand **Read-only** permissions beyond read access.
-
-| Role | Environment scope | Result |
-| --- | --- | --- |
-| User | None selected | The user keeps the **User** role but has no environment access by default. If **Explore access** is enabled, the user can open **Explore** but has no environment data to access (pending product confirmation). |
-| User | Specific environments | The user can work only within the selected environments. **Explore** remains unavailable unless **Explore access** is enabled. |
-| Read-only | None selected | The user keeps the **Read-only** role but has no environment access by default. If **Explore access** is enabled, the user can open **Explore** but has no environment data to access (pending product confirmation). |
-| Read-only | Specific environments | The user can view data only for the selected environments. **Explore** remains unavailable unless **Explore access** is enabled. |
-| Read-only | All current and future environments | The user keeps **Read-only** permissions across all current and future environments. **Explore** follows the **Explore access** setting. |
-
-## What users experience
-
-After you save ETAC settings, scoped users see only the data and navigation options allowed by both their role and ETAC configuration.
-
-- On the **Attack Paths** and **Posture** pages, users can see data from authorized environments only. Filters do not include unauthorized environments.
-
-- On the **Explore** page, users can access data from assigned environments only. If a search returns results from unauthorized environments, the graph shows subset of results from authorized environments only, and a message indicates that role-based access filtering is applied. Objects from unauthorized environments are hidden in the graph.
-
-  <Frame>
-    <img
-      src="/images/manage/etac-hidden-objects.png"
-      alt="A view of the graph on the Explore page with ETAC filtering applied, showing hidden objects from unauthorized environments"
-    />
-  </Frame>
-
-- On the **Privilege Zones** page, users receive a _Permission Denied!_ message when they try to access the page. Users with some environments selected can access the page but can only see and manage zones that contain objects from their authorized environments.
-
-- Access to all other pages is unaffected, but the baseline [permissions](/manage-bloodhound/auth/users-and-roles) of the assigned role still apply.
