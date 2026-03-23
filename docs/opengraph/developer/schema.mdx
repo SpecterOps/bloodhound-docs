@@ -1,6 +1,6 @@
 ---
 title: OpenGraph Schema
-sidebarTitle: OpenGraph Schema
+sidebarTitle: Schema
 description: "Description of the OpenGraph JSON Schema"
 ---
 
@@ -10,25 +10,32 @@ description: "Description of the OpenGraph JSON Schema"
   alt="Applies to BloodHound Enterprise and CE"
 />
 
-# Schema
+This page explains the JSON payload structure and minimum JSON schema requirements that BloodHound uses to ingest OpenGraph nodes and edges.
 
-In this section, you will find all the information to create a JSON file that BloodHound can ingest and use to display your Nodes and Edges.
+Terms used on this page:
 
-The most up-to-date JSON Schema can always be found in our CE repository. Currently, the location of the node and edge schema files in our source code can be found [here](https://github.com/SpecterOps/BloodHound/tree/main/cmd/api/src/services/upload/jsonschema).
+- **Generic graph data** is OpenGraph data that conforms only to the minimum required node and edge schemas used by data payloads, as described on this page.
+- **Structured graph data** is OpenGraph data that relies on an extension definition schema outside the payload itself to enrich the raw data and provide enhanced functionality.
 
-# Ingesting Generic Formatted Data
+See [Graph Structure](/opengraph/extensions/manage) for more details on the differences between generic and structured graph data, as well as guidance on which type to use for your project.
 
-## File Requirements
+This page focuses on the JSON requirements for OpenGraph data payloads.
+
+<Tip>You can find the latest node and edge schemas in the BloodHound [source code](https://github.com/SpecterOps/BloodHound/tree/main/cmd/api/src/services/upload/jsonschema) on GitHub.</Tip>
+
+## Ingesting OpenGraph Data
+
+### File Requirements
 
 Acceptable formats: `.json`, `.zip`
 
-You can mix file types in a single upload (e.g. Sharphound + Generic).
+You can mix file types in a single upload (e.g. SharpHound + OpenGraph).
 
-Compressed ZIPs containing multiple file types are supported.
+Compressed ZIP files are supported, including ZIP files with multiple payload files, but ZIP files inside ZIP files (nested ZIPs) are not supported.
 
-## JSON Format
+### Data Payload Structure
 
-The standard BloodHound UI upload screen now accepts files in a generic format. You can continue using it as before.
+The standard BloodHound UI upload screen accepts all OpenGraph payloads, including both generic and structured graph data.
 
 At minimum, your JSON file should have these elements:
 
@@ -41,11 +48,11 @@ At minimum, your JSON file should have these elements:
 }
 ```
 
-The `nodes` and `edges` must conform to our JSON Schema, see details below. The validation of the data occurs at upload time.
+The `nodes` and `edges` must conform to the minimum JSON schemas (see details below). BloodHound validates that the JSON is well-formed and that nodes and edges meet these schema requirements, but it does not enforce additional structure or constraints beyond them.
 
-When ingest completes, the generic data will be available via **Cypher search ONLY**. Generic data is not searchable via the pathfinding feature (yet).
+When ingest completes, you can [search](/analyze-data/explore/search) OpenGraph data.
 
-**Entity Panels**: clicking on a generic node or edge will only render the entity’s property bag. At this time there is no support for defining entity panels for generic entities.
+**Entity Panels**: Clicking on an OpenGraph node or edge will currently display the full list of the entity's properties and their values. Future enhancements will enable OpenGraph extension authors to define structured and organized entity panel representations.
 
 ## Nodes
 
@@ -61,7 +68,7 @@ When ingest completes, the generic data will be available via **Cypher search ON
 
 - Property names must be lowercase. Property names in BloodHound are case-sensitive, which means `exampleid` and `ExampleID` are treated as two distinct properties on the same node. This can cause issues when parsing API responses in languages that treat JSON keys as case-insensitive (for example, PowerShell and some .NET-based tools).
 
-#### Reserved Property: `objectid`
+### Reserved Property: `objectid`
 
 The property name `objectid` is reserved and **must not** be included in the `properties` object of a node definition.
 
@@ -464,11 +471,11 @@ If an edge kind does not meet the allowed pattern, BloodHound returns a schema v
 }
 ```
 
-### Post-processing
+#### Post-processing
 
-Post-processing in BloodHound refers to the analysis phase where the system creates certain edges after ingesting data to identify attack paths.
+Post-processing in BloodHound refers to a series of steps during analysis phase where the system creates specific edges after ingesting data to enrich the graph and more accurately reflect the graph's state.
 
-After ingesting data, BloodHound analyzes the graph state and adds edges it considers useful. BloodHound regenerates "post-processed" edges after it builds a complete graph. Before regenerating post-processed edges, BloodHound deletes any existing ones. As a result, BloodHound removes any post-processed edges that you add directly to an OpenGraph payload.
+After ingesting data, BloodHound analyzes the graph state and adds edges that are essential to accurately represent the environment and support attack path analysis. BloodHound regenerates "post-processed" edges after it builds a complete graph. Before regenerating post-processed edges, BloodHound deletes any existing ones. As a result, BloodHound removes any post-processed edges that you add directly to an OpenGraph payload.
 
 <Accordion title="Show post-processed edges">
 BloodHound creates the following edges during post-processing:
@@ -557,7 +564,7 @@ See the following example OpenGraph payload that produces the effect:
 
 ## Optional Metadata Field
 
-You can optionally include a metadata object at the top level of your JSON payload. This metadata currently supports a single field:
+You can optionally include a metadata object at the top level of your data payload. This metadata currently supports a single field:
 
     - `source_kind`: a string that applies to all nodes in the file, used to attribute a source to ingested nodes (e.g.  Github, Snowflake, MSSQL). This is useful for tracking where a node originated. We internally use this concept already for AD/Azure, using the labels “Base” and “AZBase” respectively.
 
@@ -577,7 +584,7 @@ Example:
 
 If present, the `source_kind` will be added to the `kinds` list of all nodes in the file during ingest. This feature is optional.
 
-## Minimal Working JSON
+## Minimal Viable Data Payload
 
 The following is a minimal example payload that conforms to the node and edge schemas above. You can use this as a starting point to build your own OpenGraph. Copy and paste the following example into a new `.json` file or <a href="/assets/opengraph/opengraph-minimal.json" download>download this example file</a>.
 
