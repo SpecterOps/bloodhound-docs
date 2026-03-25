@@ -1,67 +1,94 @@
 ---
-title: Understand Findings and Remediation
-description: Learn how to interpret findings, compare exposure and impact, and prioritize remediation in BloodHound Enterprise.
-sidebarTitle: Attack Paths
+title: Attack Paths
+description: Understand how BloodHound Enterprise surfaces findings, prioritizes risk, and helps you focus remediation.
 ---
+
+import PostProcessedEdges from '/snippets/analysis/post-processed-edges.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-Findings help you decide where to focus remediation work first. This page explains what findings represent, how they differ from attack paths, and how to use exposure and impact to prioritize work.
+The **Attack Paths** page in BloodHound Enterprise provides a detailed view of the specific risks in your environment where a lower-privileged principal can gain access to a privileged asset.
 
-## Understand findings and attack paths
+These risks are represented as findings, which includes prioritization data such as exposure and impact metrics to help you focus remediation efforts where they matter most.
 
-An **attack path** is a route of permissions and relationships that an attacker can use to move through your environment.
+The **Attack Paths** page combines the key views needed for prioritization:
 
-A **finding** is a specific risk instance that BloodHound identifies from those routes.
+- **Metatree visualization**: an aggregate graph view that highlights bottlenecks and high-leverage remediation points for the selected environment.
+- **Attack Paths data**: an expandable list of Attack Paths showing a detailed finding description, severity, principals involved, impact, and remediation guidance.
 
-One finding can include one or more attack paths. This is why attack path counts and finding counts can differ.
+>**DELETE ME**: Add an abstract image rather than an actual screenshot to avoid revealing findings.
 
-## Understand relationship, list, and hygiene findings
+## Attack Paths and findings
 
-BloodHound groups findings into types so you can reason about risk faster:
+An **Attack Path** is a chain of abusable privileges and user behaviors that creates direct or indirect connections between principals.
 
-* **Relationship-based findings** are tied to connections between assets.
-* **List-based findings** are tied to risky properties on an asset.
-* **Hygiene findings** are broad cleanup risks that can increase overall exposure.
+A **finding** represents specific principals and relationships between principals that can be abused to reach a privileged asset.
 
-These types help you separate structural access risks from configuration risks.
+This distinction matters in day-to-day work:
 
-## Understand zones and boundaries
+- You remediate findings.
+- You track progress using both finding count and Attack Path count.
 
-Findings are evaluated in the context of your privilege model, including Tier Zero and additional Privilege Zones.
+<Tip>
+  See [Posture](/analyze-data/findings/posture) for more on tracking remediation progress over time.
+</Tip>
 
-In practical terms, this means:
+### Finding types
 
-* A finding can be high priority in one zone and lower priority in another.
-* Cross-zone access routes are important because they can become stepping stones to higher-privilege assets.
+BloodHound Enterprise groups findings into types to help you separate structural access risks from principal-level configuration risks.
 
-Use zone filters to understand where remediation work will reduce risk the most.
+- **List-based finding**—A finding for a specific principal where the vulnerability is related to the principal itself, such as a misconfiguration. Because of this nature, list-based findings do not necessarily have an exposure metric, but they will have an metric.
 
-## Use exposure and impact together
+- **Relationship-based finding**—A finding for a pair of principals—a target that is privileged (such as belonging to Tier Zero) and a source/origin that is not—that can be compromised by one or more connections between principals. Each relationship-based finding may be composed of one or many individual Attack Paths.
 
-Use both metrics when you prioritize remediation:
+  A relationship-based finding can have an exposure metric (the exposure risk of the source/origin principal being compromised) and an impact metric (the impact risk of the target principal being compromised).
 
-* **Exposure** answers: how many principals can reach a risky condition.
-* **Impact** answers: how much of your environment could be affected if that condition is abused.
+- **Hygiene**—A tier-agnostic finding that identifies issues not tied to a specific privilege tier. Examples include dangerous edges originating from broadly populated default groups. Hygiene findings are displayed separately in a dedicated filter view on the **Attack Path** and **Posture** pages.
 
-In general, findings with high exposure and high impact should be addressed first.
+### Exposure and impact
 
-## Decide when to remediate or accept
+Each finding includes two core prioritization metrics:
 
-Remediate a finding when you are ready to remove the risk.
+- **Exposure**: how many principals can reach a privileged asset through one or more Attack Paths.
+- **Impact**: how much of your environment could be affected if that asset is compromised.
 
-Accept a finding when the risk is known and temporarily tolerated, such as while waiting for operational changes to complete.
+Use these metrics as a pair. Findings with high exposure and high impact are typically the highest-priority remediation targets.
 
-Acceptance is not the same as remediation. It helps you manage workflow, while remediation reduces risk.
+## Analysis process
 
-For step-by-step instructions, see [Accept Findings](/analyze-data/findings/risk-acceptance).
+BloodHound Enterprise's analysis process includes several key steps that work together to surface findings and prioritize risk.
 
-## Measure progress over time
+### Metatree analysis
 
-Track progress in the [Posture Page](/analyze-data/findings/posture):
+BloodHound Enterprise generates one metatree per environment, such as an Active Directory domain or Azure tenant. The metatree compresses complex graph relationships into a compact model so you can quickly spot where many risky paths converge.
 
-* Use finding trends to monitor risk reduction.
-* Use attack path trends to monitor how many routes remain.
-* Use date filters consistently so comparisons are meaningful.
+<Note>
+[Exposure and impact](#exposure-and-impact) metrics are calculated from this analysis and surfaced with findings.
+</Note>
 
-As findings and attack paths trend down over time, your posture improves.
+### Edges and zone boundaries
+
+Attack Path analysis is edge-driven. BloodHound evaluates how traversable relationships (edges) connect principals across privilege boundaries.
+
+This includes boundaries between Tier Zero and user-defined [Privilege Zones](/analyze-data/privilege-zones/overview). A path that crosses zones can represent a stepping stone into higher-privilege assets, which is why zone-specific findings can differ in severity and priority.
+
+### Post-processing and complex edges
+
+BloodHound does not rely only on directly collected relationships. During **post-processing**, it derives additional relationships that are relevant to Attack Path analysis.
+
+One result is a **complex edge**: a derived edge that represents multiple underlying privileges working together. This helps BloodHound surface Attack Paths that are not visible from any single relationship alone.
+
+For example, the [DCSync](/resources/edges/dc-sync) edge requires a combination of permissions that, when held together, create an abusable path. BloodHound models this as a complex edge, which allows it to surface Attack Paths that would otherwise be invisible if analysis relied only on directly collected relationships.
+
+<PostProcessedEdges />
+
+## Remediation and risk acceptance
+
+After reviewing findings on the **Attack Paths** page, you can:
+
+- **Remediate** to sever the edges that create the risk and improve your environment's security posture.
+- **Accept** when risk is known and temporarily tolerated.
+
+For acceptance workflow steps, see [Risk Acceptance](/analyze-data/findings/risk-acceptance).
+
+To track remediation progress over time, see [Posture](/analyze-data/findings/posture).
