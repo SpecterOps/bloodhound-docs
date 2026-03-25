@@ -69,11 +69,11 @@ The automatic process by which BloodHound includes additional objects in a zone 
 
 ## Exposure
 
-A risk measurement that quantifies the extent to which principals have [Attack Paths](#attack-path) to Tier Zero objects. It encompasses both principals with one-step paths (`UserA -[ForceChangePassword]-> TierZero`), and multi-step paths (`UserA -[ForceChangePassword]-> UserB -[GenericAll]-> TierZero`). Exposure is measured in two ways:
+A risk measurement that quantifies the extent to which principals can reach a privileged asset through one or more [Attack Paths](#attack-path). It encompasses both principals with one-step paths (`UserA -[ForceChangePassword]-> TierZero`), and multi-step paths (`UserA -[ForceChangePassword]-> UserB -[GenericAll]-> TierZero`). Exposure is measured in two ways:
 
-- **Exposure count**—The number of principals that have an attack path to a Tier Zero object.
+- **Exposure count**—The number of principals that can reach a privileged asset through one or more Attack Paths.
 
-- **Exposure percentage**—The percentage of principals in an environment with Attack Paths to Tier Zero objects.
+- **Exposure percentage**—The percentage of principals in an environment that have at least one Attack Path to a privileged asset.
 
 BloodHound Enterprise calculates exposure for all [choke points](#choke-point).
 
@@ -90,6 +90,8 @@ There are two types of findings in BloodHound:
 - **Relationship-based finding**—A finding for a pair of [principals](#principal)—a target that is privileged (such as belonging to Tier Zero) and a source/origin that is not—that can be compromised by one or more connections between principals. Each relationship-based finding may be composed of one or many individual [Attack Paths](#attack-path).
 
   A relationship-based finding can have an [exposure](#exposure) metric (the exposure risk of the source/origin principal being compromised) and an [impact](#impact) metric (the impact risk of the target principal being compromised).
+
+- **Hygiene**—A tier-agnostic finding that identifies cleanup items not tied to a specific privilege tier. Examples include dangerous edges originating from broadly populated default groups. Hygiene findings are displayed separately on the **Posture** page rather than attributed to a specific tier.
 
 ## FOSS
 
@@ -120,6 +122,10 @@ The schema-level classification or label applied to [nodes](#node) in the [graph
 ## Label
 
 A flexible way to categorize objects for easier searching and filtering. Unlike [zones](#zone), labels are not used in risk analysis and do not represent hierarchical privilege levels, making them useful for organizational purposes without affecting attack path calculations.
+
+## Metatree
+
+An aggregate view of the attack graph for a single environment displayed on the Attack Paths page (such as an Active Directory domain or Azure tenant). The metatree simplifies large volumes of nodes and edges into a compact visualization optimized for readability, showing bottlenecks and key exposure points at a glance. BloodHound Enterprise computes exposure and impact metrics during metatree generation.
 
 ## Node
 
@@ -173,7 +179,7 @@ Refers to a dedicated instance of BloodHound that contains its own data, configu
 
 ## Tier Zero/High Value
 
-The most critical and sensitive objects in the network, typically including domain controllers and other core infrastructure components. The term stems from [tiering](#tiering%2Ftier-model).
+The most critical and sensitive objects in the network, typically including domain controllers and other core infrastructure components. The term stems from [tiering](#tiering%2Ftier-model). Tier Zero is the highest-priority tier in the [Privilege Zones](#privilege-zone) model.
 
 ## Tiering/Tier Model
 
