@@ -1,27 +1,47 @@
 ---
 title: Posture
-description: Track security posture, attack path severity, and remediation progress over time with BloodHound Enterprise's risk visualization dashboard.
+description: Learn how to use the Posture page to track your organization's risk posture over time and measure the impact of your remediation efforts.
 ---
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-The **Posture** page is the primary reporting dashboard that helps you understand and track your organization's security posture over time. It aggregates data from findings to provide insights about where the biggest risks originate and how your remediation efforts are reducing risk.
+While the [Attack Paths](/analyze-data/findings/attack-paths) page helps you investigate and remediate specific findings related to Attack Paths, the **Posture** page provides a high-level view of your organization's security posture over time.
 
-Filter the view by environment, tier zero, hygiene, and time range to assess your overall risk.
+It aggregates Attack Path data to provide insights about where the biggest risks originate and how your remediation efforts are reducing risk.
 
-<Note>
-Hygiene refers to findings such as dangerous edges from broadly populated default groups, and are not attributed to any specific privilege tier.
-</Note>
+<Frame>
+  <img src="/images/posture_page/page-filter.png" alt="A view of the Posture page filter options" />
+</Frame>
 
-The time range filter allows you to compare posture trends between analysis runs. For example, you can compare the current state of your environment to a previous point in time to see how your risk posture has changed.
+## Filters
+
+You can filter the posture view by environment, privilege zone, hygiene, and time range to assess your overall risk and compare trends over time. 
+
+Use these filters to focus on specific areas of interest or to track the impact of remediation efforts. For example, you can filter by a specific environment to see how posture has changed in that environment over time, or filter by [hygiene](/analyze-data/findings/attack-paths#hygiene) findings to track trends in tier-agnostic risks.
+
+### Environment
+
+The environment filter allows you to view posture trends for a specific platform, such as an Active Directory domain or Azure tenant. 
+
+This can help you understand how posture is changing within that environment and identify areas that may require additional attention.
+
+You can also filter on severity levels to focus on trends in high-risk Attack Paths. For example, you can filter to show only **CRITICAL** Attack Paths to see how the most severe risks are changing over time.
+
+### Date range
+
+The date range filter allows you to compare posture trends between analysis runs. For example, you can compare the current state of your environment to a previous point in time to see how your risk posture has changed.
+
+Choose from preset ranges or set a custom range to compare specific analysis runs. Custom date ranges include a time picker, so you can set exact start and end times.
 
 <Tip>
   For meaningful trend comparisons, use the same filter scope and similar date ranges across reviews. Custom date ranges include a time picker, so you can set exact start and end times.
 </Tip>
 
-<Frame>
-  <img src="/images/posture_page/page-filter.png" alt="A view of the Posture page filter options" />
-</Frame>
+### Chart scale
+
+The chart scale filter allows you to adjust the scale of the posture graphs to better visualize trends. For example, if you have a large number of findings, you may want to use a logarithmic scale to better see changes over time.
+
+The linear scale shows consistent ranges clearly, while the logarithmic scale highlights outliers and wide variations in the data.
 
 ## Interpreting Posture
 
@@ -29,14 +49,14 @@ The **Posture** page tracks how your risk posture changes between analysis runs.
 
 When reviewing posture trends, consider the following:
 
-* **Attack Paths**—Represent the routes that can be abused to reach a privileged asset (such as a domain controller). Each attack path is made up of one or more edges between principals.
-* **Findings**—Represent specific principals and relationships between principals that can be abused to reach a privileged asset. Each finding can be made up of one or more attack paths. This is why attack path counts and finding counts can differ.
+* **Attack Paths**—Represent chains of abusable privileges and user behaviors that create direct or indirect connections between principals. Each attack path is made up of one or more edges.
+* **Findings**—Represent specific principals and relationships between principals that can be abused to reach a privileged asset. Each finding can be composed of one or more attack paths, so finding counts and Attack Path counts can differ.
 
 ## Attack Paths
 
 The **Attack Paths** table shows attack paths with active findings in the selected date range. This list can also include attack paths that were fully resolved (by your remediation efforts) or deprecated (by SpecterOps) during the same range.
 
-Each Attack Path shows:
+This table is designed for trend tracking and reporting. For per-finding details such as description, impacted principals, exposure/impact metrics, and remediation guidance, use the [Attack Paths](/analyze-data/findings/attack-paths) page.
 
 | Column       | Description                                                                                                  |
 | ------------ | ------------------------------------------------------------------------------------------------------------ |
@@ -54,9 +74,9 @@ Each Attack Path shows:
   <img src="/images/posture_page/attack-paths.png" alt="A view of the Attack Paths table on the Posture page" />
 </Frame>
 
-BloodHound Enterprise calculates the severity from percentage of users and computers that can abuse the Attack Path. For example, a **CRITICAL** attack path is one that is abusable by 95% - 100% of all users and computers in the environment.
+BloodHound Enterprise calculates severity from the percentage of users and computers that can abuse the Attack Path. For example, a **CRITICAL** Attack Path is abusable by 95% to 100% of all users and computers in the environment.
 
-The different severity rankings and exposure levels are:
+The severity levels map to the following exposure percentages:
 
 * **CRITICAL**: 95%-100%
 * **HIGH**: 80%-94%
@@ -71,7 +91,7 @@ These are expressed with colors in the Severity column.
 
 ## Attack Path Summary
 
-The **Attack Path Summary** includes a "plain English" description of the risk held within the applied filter on the selected end date; and the change in Attack Paths, Findings, and Tier Zero Objects within the selected time frame.
+This section provides a summary of risk within the applied filter on the selected end date, including the change in Attack Paths, findings, and Tier Zero objects within the selected time frame.
 
 <Frame>
   <img src="/images/posture_page/attack-path-summary.png" alt="A view of the Attack Path Summary panel on the Posture page" />
@@ -83,7 +103,7 @@ This series of visualizations shows posture over time. They provide insights abo
 
 * **Total Tier Zero Attack Path Exposure** - This graph represents the trend (by percentage) of overall exposure of your Tier Zero Privilege Zone within the selected filter parameters over time.
 
-  This risk represents the percentage of principals within the environment (and trusted/connected environments) that can compromise the Tier Zero Privilege Zone.
+  This trend represents the percentage of principals within the environment (and trusted or connected environments) that can compromise the Tier Zero Privilege Zone.
 
   <Frame>
     <img src="/images/posture_page/total-exposure-graph.png" alt="A view of the Total Tier Zero Attack Path Exposure graph on the Posture page" />
