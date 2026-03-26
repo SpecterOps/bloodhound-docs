@@ -1,0 +1,157 @@
+---
+title: Integrate BloodHound Enterprise with Microsoft Sentinel
+description: Install, configure, and verify the Microsoft Sentinel integration for BloodHound Enterprise.
+sidebarTitle: Install and configure
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+The BloodHound Enterprise integration for Microsoft Sentinel ingests attack path and security telemetry into Microsoft Sentinel so you can investigate findings as incidents and dashboards.
+
+Use this integration to:
+
+- Convert BloodHound attack path findings into Microsoft Sentinel incidents
+- Visualize attack paths, audit logs, posture, and Tier Zero assets in Sentinel dashboards
+- Scope ingestion by environment and finding type for targeted monitoring
+
+## How the integration works
+
+At a high level, the integration follows this flow:
+
+1. Azure Function App polls the BloodHound Enterprise API on a schedule.
+1. Data Collection Rules (DCR) transform records into Sentinel-compatible schema.
+1. Data is written to custom log tables in Log Analytics.
+1. Analytics Rules evaluate custom log data and create incidents.
+1. Dashboards visualize attack path, audit, posture, and Tier Zero data.
+
+For deeper architecture and data model details, see [Microsoft Sentinel integration reference](/integrations/microsoft/sentinel/reference).
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- Active Azure subscription with permissions to deploy resources
+- Microsoft Sentinel workspace (Log Analytics Workspace) in a target resource group
+- BloodHound Enterprise tenant
+- BloodHound Enterprise [non-personal API key/ID pair](/integrations/bloodhound-api/working-with-api#create-a-non-personal-api-key%2Fid-pair)
+- Microsoft Entra ID application with **Monitoring Metrics Publisher** on the target resource group
+
+## Deployment considerations
+
+- **One connector per BloodHound instance:** Deploy one Function App per BloodHound Enterprise instance.
+- **Data scope controls:** `Selected BloodHound Environments` and `Selected Finding Types` determine what data is ingested.
+- **Initial history window:** `Lookup Days` controls first-run backfill.
+- **Deduplication behavior:** Re-polled events are consolidated so dashboards prioritize the latest event state.
+
+## Configure the integration
+
+<Steps>
+  <Step title="Create a Log Analytics Workspace">
+    1. Log in to the [Azure Portal](https://portal.azure.com/).
+    1. Go to **Log Analytics Workspaces** and click **Create**.
+    1. Select subscription and resource group, then enter a workspace name.
+    1. Complete deployment.
+    1. Go to **Microsoft Sentinel** and associate the workspace.
+
+    <Note>Record workspace name and region. You need both for template deployment.</Note>
+  </Step>
+
+  <Step title="Register a Microsoft Entra ID application">
+    1. Open [Microsoft Entra ID](https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/Overview).
+    1. Go to **App registrations** > **New registration**.
+    1. Enter an app name and choose **Accounts in this organizational directory only**.
+    1. Save the **Application (client) ID** and **Directory (tenant) ID**.
+    1. Under **Certificates & secrets**, create a client secret and save its value immediately.
+  </Step>
+
+  <Step title="Assign required Azure role to the app">
+    1. Open your resource group.
+    1. Go to **Access control (IAM)** > **Add role assignment**.
+    1. Assign **Monitoring Metrics Publisher** to the Entra application.
+  </Step>
+
+  <Step title="Deploy the main template (dashboards and analytics rules)">
+    1. Launch deployment: [Deploy main template](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmetron-labs%2FAzure-Sentinel%2Fbloodhound%2FSolutions%2FBloodHound%2520Enterprise%2FPackage%2FmainTemplate.json).
+    1. Select subscription and resource group.
+    1. Enter workspace name and location.
+    1. Review and create.
+  </Step>
+
+  <Step title="Deploy the data connector template">
+    1. Launch deployment: [Deploy data connector template](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmetron-labs%2FAzure-Sentinel%2Fbloodhound%2FSolutions%2FBloodHound%2520Enterprise%2FData%2520Connectors%2Fazuredeploy_BloodHoundEnterprise_FunctionApp.json).
+    1. Enter deployment parameters.
+
+    | Parameter | Description |
+    |---|---|
+    | **Subscription** | Target Azure subscription |
+    | **Resource Group** | Target resource group |
+    | **Function App Name** | Unique connector function app name |
+    | **Log Analytics Workspace Name** | Sentinel workspace name |
+    | **BloodHound Tenant Domain** | BloodHound Enterprise URL |
+    | **BloodHound Token ID** | BloodHound API token ID |
+    | **BloodHound Token Key** | BloodHound API token key |
+    | **Microsoft Entra ID App ID** | Client ID from app registration |
+    | **Microsoft Entra ID App Secret** | Client secret from app registration |
+    | **Lookup Days** | Initial historical backfill window |
+    | **Selected BloodHound Environments** | Comma-separated environments or `All` |
+    | **Selected Finding Types** | Comma-separated findings or `All` |
+
+    1. Review and create.
+
+    <Note>To connect multiple BloodHound instances, repeat this deployment with a unique Function App name for each instance.</Note>
+  </Step>
+
+  <Step title="Deploy connector code to the Function App">
+    1. Open the deployed Function App.
+    1. Go to **Deployment Center**.
+    1. Select **Publish files**.
+    1. Download and upload connector package: [BloodHoundAzureFunction.zip](https://github.com/metron-labs/Azure-Sentinel/blob/bloodhound/Solutions/BloodHound%20Enterprise/Data%20Connectors/BloodHoundDataConnector/BloodHoundAzureFunction.zip?raw=true).
+    1. Save deployment.
+
+    <Note>Initial manual execution is still required to prime ingestion.</Note>
+  </Step>
+</Steps>
+
+## Verify the integration
+
+Complete verification before operational use.
+
+### Start the Function App
+
+1. Open your Function App in Azure Portal.
+1. On **Overview**, click **Start** if needed.
+
+### Verify connector resources
+
+Confirm the following resources exist and are healthy:
+
+- Function App and deployed functions
+- Key Vault entries for connector secrets
+- Data Collection Endpoint (DCE)
+- Data Collection Rule (DCR)
+- Custom log tables in Log Analytics
+
+### Verify data ingestion
+
+1. Open Log Analytics Workspace > **Logs**.
+1. Query the custom tables and confirm rows are present:
+   - `BHEAttackPathsData_CL`
+   - `BHEAttackPathsTimelineData_CL`
+   - `BHEAuditLogsData_CL`
+   - `BHEFindingTrendsData_CL`
+   - `BHEPostureHistoryData_CL`
+   - `BHETierZeroAssetsData_CL`
+
+### Activate dashboards and analytics rules
+
+1. In Microsoft Sentinel, go to **Workbooks** and activate the BloodHound templates.
+1. Go to **Configuration** > **Analytics** > **Rule templates** and create/enable the BloodHound rules.
+1. Confirm BloodHound incidents begin appearing under **Incidents**.
+
+<Tip>If tables are empty, review Function App execution logs and validate token/secret configuration first.</Tip>
+
+## Next steps
+
+- Continue with [Use the Microsoft Sentinel integration](/integrations/microsoft/sentinel/use).
+- Review [Microsoft Sentinel integration reference](/integrations/microsoft/sentinel/reference) for architecture and data model details.
+- Azure Marketplace packaging is planned context for this integration, but the setup above is the current supported deployment path.
