@@ -1,6 +1,6 @@
 ---
 title: Attack Paths
-description: Understand how BloodHound Enterprise surfaces findings, prioritizes risk, and helps you focus remediation.
+description: Learn how to interpret Attack Path findings and use them to prioritize remediation efforts.
 ---
 
 import PostProcessedEdges from '/snippets/analysis/post-processed-edges.mdx';
@@ -11,14 +11,15 @@ The **Attack Paths** page in BloodHound Enterprise provides a detailed view of t
 
 These risks are represented as findings, which includes prioritization data such as exposure and impact metrics to help you focus remediation efforts where they matter most.
 
-The **Attack Paths** page combines the key views needed for prioritization:
+The **Attack Paths** page combines two key views needed for prioritization:
 
-- **Metatree visualization**: an aggregate graph view that highlights bottlenecks and high-leverage remediation points for the selected environment.
-- **Attack Paths data**: an expandable list of Attack Paths showing a detailed finding description, severity, principals involved, impact, and remediation guidance.
+- **Metatree visualization**: An aggregate view of the graph for a selected environment and privilege zone. This view simplifies large volumes of nodes and edges into a compact visualization optimized for readability, showing bottlenecks and key exposure points at a glance.
 
->**DELETE ME**: How much can we show? Should we use an abstract image rather than an actual screenshot to avoid revealing findings?
+- **Attack Paths data**: An expandable list of Attack Paths showing a detailed finding description, severity, principals involved, impact, and remediation guidance.
 
-## Attack Paths and findings
+>**DELETE ME**: Would like to use some kind of visual. How much of the UI can we show? Should we use an abstract image rather than an actual screenshot to avoid revealing findings?
+
+## Findings
 
 An **Attack Path** is a chain of abusable privileges and user behaviors that creates direct or indirect connections between principals.
 
@@ -39,27 +40,31 @@ BloodHound Enterprise groups findings into types to help you separate structural
 
 #### List-based finding
 
-A finding for a specific principal where the vulnerability is related to the principal itself, such as a misconfiguration. Because of this nature, list-based findings do not necessarily have an exposure metric, but they will have an metric.
+A finding for a specific principal where the vulnerability is related to the principal itself, such as a misconfiguration. Because of this nature, list-based findings do not necessarily have an exposure metric, but they will have an impact metric.
 
 #### Relationship-based finding
 
 A finding for a pair of principals—a target that is privileged (such as belonging to Tier Zero) and a source/origin that is not—that can be compromised by one or more connections between principals. Each relationship-based finding may be composed of one or many individual Attack Paths.
 
-A relationship-based finding can have an exposure metric (the exposure risk of the source/origin principal being compromised) and an impact metric (the impact risk of the target principal being compromised).
+A relationship-based finding can have an exposure metric and an impact metric.
 
 #### Hygiene
 
-A tier-agnostic finding that identifies issues not tied to a specific privilege tier. Examples include dangerous edges originating from broadly populated default groups. Hygiene findings are displayed separately in a dedicated filter view on the **Attack Path** and **Posture** pages.
+A tier-agnostic finding that identifies issues not tied to a specific privilege tier. Similar to list-based findings, hygiene findings are related to specific principals and do not have an exposure metric. However, they do have an impact metric that quantifies the potential blast radius if the finding is abused.
+
+Examples include dangerous edges originating from broadly populated default groups. Hygiene findings are displayed separately in a dedicated filter view on the **Attack Path** and **Posture** pages.
 
 ### Exposure and impact
 
-Each finding includes exposure and impact metrics. Use these metrics as together when prioritizing remediation efforts.
+Each finding includes exposure and impact metrics. Use these metrics together when prioritizing remediation efforts.
 
 Findings with high exposure and high impact are typically the highest-priority remediation targets.
 
 #### Exposure
 
-A risk measurement that quantifies the extent to which principals can reach a privileged asset through one or more Attack Paths. It encompasses both principals with one-step paths (`UserA -[ForceChangePassword]-> TierZero`), and multi-step paths (`UserA -[ForceChangePassword]-> UserB -[GenericAll]-> TierZero`). Exposure is measured in two ways:
+A risk measurement that quantifies the extent to which principals can reach a privileged asset through one or more Attack Paths. It encompasses both principals with one-step paths (`UserA -[ForceChangePassword]-> TierZero`), and multi-step paths (`UserA -[ForceChangePassword]-> UserB -[GenericAll]-> TierZero`).
+
+Exposure is measured in two ways:
 
 - **Exposure count**—The number of principals that can reach a privileged asset through one or more Attack Paths.
 
@@ -67,13 +72,19 @@ A risk measurement that quantifies the extent to which principals can reach a pr
 
 #### Impact
 
-A risk measurement that quantifies potential blast radius if a finding is abused. Specifically:
+A risk measurement that quantifies potential blast radius if a finding is abused.
 
-- **Impact count**—The number of principals/objects that could be compromised through an Attack Path.
+Impact is closely related to exposure, which measures how many principals can reach a privileged asset through one or more Attack Paths (as both count and percentage). 
+
+Impact is measured in two ways:
+
+- **Impact count**—The number of principals that could be compromised through an Attack Path.
 
 - **Impact percentage**—The percentage of the environment that could be impacted by a specific identity vulnerability.
 
-Impact is closely related to exposure, which measures the percentage of principals with a *Tier Zero* Attack Path. Together, these metrics help organizations prioritize remediation by understanding which Attack Paths pose the greatest risk.
+<Note>
+  Together, these metrics help organizations prioritize remediation by understanding which Attack Paths pose the greatest risk.
+</Note>
 
 ## Analysis process
 
@@ -93,17 +104,19 @@ Attack Path analysis is edge-driven. BloodHound evaluates how traversable relati
 
 This includes boundaries between Tier Zero and user-defined [Privilege Zones](/analyze-data/privilege-zones/overview). A path that crosses zones can represent a stepping stone into higher-privilege assets, which is why zone-specific findings can differ in severity and priority.
 
-### Post-processing and complex edges
+### Post-processing
 
-BloodHound does not rely only on directly collected relationships. During **post-processing**, it derives additional relationships that are relevant to Attack Path analysis.
+BloodHound does not rely only on directly collected relationships. During **post-processing**, it derives additional relationships that are relevant to Attack Path analysis. One result is a **complex edge**.
 
-One result is a **complex edge**: a derived edge that represents multiple underlying privileges working together. This helps BloodHound surface Attack Paths that are not visible from any single relationship alone.
+A complex edge is a derived relationship between two nodes that represents multiple underlying privileges or behaviors working together.
+
+BloodHound uses complex edges to show Attack Paths that are not visible from a single relationship alone. For example, some attack techniques require a combination of permissions before they can be abused.
 
 For example, the [DCSync](/resources/edges/dc-sync) edge requires a combination of permissions that, when held together, create an abusable path. BloodHound models this as a complex edge, which allows it to surface Attack Paths that would otherwise be invisible if analysis relied only on directly collected relationships.
 
 <PostProcessedEdges />
 
-## Remediation and risk acceptance
+## Remediation
 
 After reviewing findings on the **Attack Paths** page, you can:
 

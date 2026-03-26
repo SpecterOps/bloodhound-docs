@@ -75,29 +75,33 @@ The automatic process by which BloodHound includes additional objects in a zone 
 
 ## Exposure
 
-A risk measurement that quantifies the extent to which principals can reach a privileged asset through one or more [Attack Paths](#attack-path). It encompasses both principals with one-step paths (`UserA -[ForceChangePassword]-> TierZero`), and multi-step paths (`UserA -[ForceChangePassword]-> UserB -[GenericAll]-> TierZero`). Exposure is measured in two ways:
+A risk measurement that quantifies the extent to which principals can reach a privileged asset through one or more Attack Paths. It encompasses both principals with one-step paths (`UserA -[ForceChangePassword]-> TierZero`), and multi-step paths (`UserA -[ForceChangePassword]-> UserB -[GenericAll]-> TierZero`).
+
+Exposure is measured in two ways:
 
 - **Exposure count**—The number of principals that can reach a privileged asset through one or more Attack Paths.
 
 - **Exposure percentage**—The percentage of principals in an environment that have at least one Attack Path to a privileged asset.
 
-BloodHound Enterprise calculates exposure for all [choke points](#choke-point).
-
 ## Finding
 
-A specific instance of a vulnerability that an attacker could abuse to gain access to, and eventually take control of, a network. A finding is what you prioritize and track for remediation and is not the same as an [Attack Path](#attack-path).
+A specific instance of a vulnerability that an attacker could abuse to gain access to, and eventually take control of, a network. A finding is what you prioritize and track for remediation and is not the same as an Attack Path.
 
-An attack path is the route. A finding is the identified risk instance tied to that route. Each finding can be categorized as a specific [Attack Path](#attack-path) type.
+An attack path is the route. A finding is the identified risk instance tied to that route. Each finding can be categorized as a specific Attack Path type.
 
 There are three types of findings in BloodHound Enterprise:
 
-- **List-based finding**—A finding for a specific [principal](#principal) where the vulnerability is related to the principal itself, such as a misconfiguration. Because of this nature, list-based findings do not necessarily have an [exposure](#exposure) metric, but they will have an [impact](#impact) metric.
+- **List-based finding**—A finding for a specific principal where the vulnerability is related to the principal itself, such as a misconfiguration.
 
-- **Relationship-based finding**—A finding for a pair of [principals](#principal)—a target that is privileged (such as belonging to Tier Zero) and a source/origin that is not—that can be compromised by one or more connections between principals. Each relationship-based finding may be composed of one or many individual [Attack Paths](#attack-path).
+  Because of this nature, list-based findings do not necessarily have an exposure metric, but they will have an impact metric.
 
-  A relationship-based finding can have an [exposure](#exposure) metric (the exposure risk of the source/origin principal being compromised) and an [impact](#impact) metric (the impact risk of the target principal being compromised).
+- **Relationship-based finding**—A finding for a pair of principals—a target that is privileged (such as belonging to Tier Zero) and a source/origin that is not—that can be compromised by one or more connections between principals. Each relationship-based finding may be composed of one or many individual Attack Paths.
+
+  A relationship-based finding can have an exposure metric and an impact metric.
 
 - **Hygiene**—A tier-agnostic finding that identifies issues not tied to a specific privilege tier. Examples include dangerous edges originating from broadly populated default groups. Hygiene findings are displayed separately in a dedicated filter view on the **Attack Path** and **Posture** pages.
+
+  Examples include dangerous edges originating from broadly populated default groups. Hygiene findings are displayed separately in a dedicated filter view on the **Attack Path** and **Posture** pages.
 
 ## FOSS
 
@@ -113,13 +117,19 @@ An audit log in Zone Builder that tracks changes made to zones and labels over t
 
 ## Impact
 
-A risk measurement that quantifies potential blast radius if a finding is abused. Specifically:
+A risk measurement that quantifies potential blast radius if a finding is abused.
 
-- **Impact count**—The number of principals/objects that could be compromised through an Attack Path.
+Impact is closely related to exposure, which measures how many principals can reach a privileged asset through one or more Attack Paths (as both count and percentage).
+
+Impact is measured in two ways:
+
+- **Impact count**—The number of principals that could be compromised through an Attack Path.
 
 - **Impact percentage**—The percentage of the environment that could be impacted by a specific identity vulnerability.
 
-Impact is closely related to [exposure](#exposure), which measures the percentage of principals with a *Tier Zero* Attack Path. Together, these metrics help organizations prioritize remediation by understanding which Attack Paths pose the greatest risk.
+<Note>
+  Together, these metrics help organizations prioritize remediation by understanding which Attack Paths pose the greatest risk.
+</Note>
 
 ## Kind
 
@@ -131,7 +141,7 @@ A flexible way to categorize objects for easier searching and filtering. Unlike 
 
 ## Metatree
 
-An aggregate view of the attack graph for a single environment displayed on the Attack Paths page (such as an Active Directory domain or Azure tenant). The metatree simplifies large volumes of nodes and edges into a compact visualization optimized for readability, showing bottlenecks and key exposure points at a glance. BloodHound Enterprise computes exposure and impact metrics during metatree generation.
+An aggregate view of the graph for a selected environment and privilege zone displayed on the Attack Paths page. This view simplifies large volumes of nodes and edges into a compact visualization optimized for readability, showing bottlenecks and key exposure points at a glance.
 
 ## Node
 
