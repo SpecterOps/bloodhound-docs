@@ -1,6 +1,6 @@
 ---
 title: Microsoft Sentinel Integration Reference
-description: Reference architecture, data model, and ingestion behavior for the BloodHound Enterprise Microsoft Sentinel integration.
+description: Technical reference for the BloodHound Enterprise and Microsoft Sentinel integration, including architecture, data model, and operational context.
 sidebarTitle: Integration reference
 ---
 
@@ -10,52 +10,83 @@ This page provides implementation context for the BloodHound Enterprise and Micr
 
 ## Integration architecture
 
-The integration uses Azure-native components to ingest, normalize, and operationalize BloodHound data:
+The integration uses the following Azure-native components in sequence:
 
-1. **Azure Function App** polls BloodHound Enterprise API endpoints.
-1. **Data Collection Rule (DCR)** transforms payloads into Sentinel-compatible schema.
-1. **Log Analytics custom tables** store normalized records.
-1. **Analytics Rules** evaluate those records and generate incidents.
-1. **Sentinel dashboards** visualize findings, posture, audits, and Tier Zero exposure.
+1. **CCP (Codeless Connector Platform)** periodically polls BloodHound Enterprise API endpoints on a configurable schedule.
+1. **Data Collection Rules (DCR)** act as an ETL pipeline, filtering and transforming raw BloodHound data into a Sentinel-compatible schema.
+1. **Custom log tables** store the transformed records in the Log Analytics Workspace.
+1. **Analytics Rules** evaluate the custom log data using KQL queries and automatically generate Sentinel incidents for BloodHound findings.
+1. **Workbooks** surface the custom log data as interactive dashboards for security analysts.
+
+## Components
+
+### Codeless Connector Platform (CCP)
+
+The CCP is an ARM template deployed as part of the data connector. It handles periodic data retrieval from the BloodHound Enterprise API with no additional service installation requirements. Connectors built on CCP include native Azure health monitoring.
+
+The CCP accepts the following configuration parameters at deployment:
+
+| Parameter | Description |
+|---|---|
+| **BloodHound Enterprise Domain** | BloodHound Enterprise tenant URL |
+| **Token ID** | BloodHound API token ID |
+| **Token Key** | BloodHound API token key |
+| **Frequency of Polling** | How often the connector polls BloodHound Enterprise |
+| **Selected Environments** | Which BloodHound environments to ingest data from |
+| **Selected Finding Types** | Which attack path finding types to ingest |
+
+The same configuration repeats for each BloodHound Enterprise tenant when connecting multiple instances.
+
+### Data Collection Rules (DCR)
+
+DCRs process and normalize raw BloodHound API responses before writing them to custom log tables. DCRs also enforce deduplication: when the same record is polled multiple times, only the latest instance is retained based on event timestamp.
+
+### Custom log tables
+
+Normalized BloodHound data is stored as flattened records in Log Analytics custom tables. These tables are queryable with KQL and serve as the data source for Analytics Rules and Workbooks.
+
+### Analytics Rules
+
+Analytics Rules are KQL queries that run against custom log tables and automatically create Sentinel incidents for BloodHound findings. Rule templates are deployed with the main Sentinel template and must be activated before incidents are generated.
+
+### Workbooks (dashboards)
+
+Workbooks are interactive Sentinel dashboards that visualize BloodHound data using KQL queries and standard Sentinel chart types. The integration includes the following dashboards:
+
+- **Attack Path — Overview:** Summary view with remediation doc links, and exposure and impact values per attack path.
+- **Attack Path — Details:** Granular view of individual attack path findings and attributes.
+- **Audit Logs:** Event and activity data from BloodHound Enterprise.
+- **Posture:** Security posture metrics and historical trends.
+- **Tier Zero Assets:** Tier Zero asset inventory and associated context.
+
+All dashboards support the following capabilities:
+
+- Display data from multiple BloodHound environments simultaneously.
+- Each event includes a field that identifies its source environment.
+- Multi-select environment filter to show or hide data per environment.
+- Deduplication by event timestamp so dashboards reflect the latest state of each event.
 
 ## Data model (custom tables)
 
-The integration writes to the following custom tables:
+The integration writes to the following custom tables in the Log Analytics Workspace:
 
 | Table | Purpose |
 |---|---|
 | `BHEAttackPathsData_CL` | Current attack path findings and attributes |
-| `BHEAttackPathsTimelineData_CL` | Attack path state/timeline history |
-| `BHEAuditLogsData_CL` | Audit/event activity from BloodHound |
+| `BHEAttackPathsTimelineData_CL` | Attack path state and timeline history |
+| `BHEAuditLogsData_CL` | Audit and event activity from BloodHound Enterprise |
 | `BHEFindingTrendsData_CL` | Trend-oriented finding summaries |
 | `BHEPostureHistoryData_CL` | Posture and historical posture metrics |
 | `BHETierZeroAssetsData_CL` | Tier Zero asset inventory and related context |
 
-## Incident generation model
+## Multi-instance deployment
 
-Incidents are generated by Microsoft Sentinel Analytics Rules that query BloodHound custom tables.
+Each BloodHound Enterprise tenant requires a separate data connector deployment. Configure environment and finding type scope at deployment time via the `Selected Environments` and `Selected Finding Types` parameters.
 
-- Rule templates are deployed with the main Sentinel template.
-- Incidents begin after rules are created/enabled.
-- Incident volume and fidelity depend on data scope settings and polling cadence.
+## Operational limitations
 
-## Polling and deduplication behavior
-
-- Data ingestion is polling-based through Azure Function triggers.
-- `Lookup Days` controls initial backfill scope.
-- Re-polled records are deduplicated using timestamp/state semantics so dashboards and incidents favor the latest event state.
-
-## Multi-instance and environment mapping
-
-- Deploy one Function App per BloodHound Enterprise instance.
-- Environment tagging enables multi-environment filtering in dashboards.
-- Configure scope at deployment with selected environments and finding types.
-
-## Operational limitations and non-goals
-
-- Connector health should be validated through Azure monitoring and logs.
-- Test connectivity and on-demand ingest are not primary workflow actions in this deployment model.
-- Azure Marketplace packaging is future context; current deployment follows ARM template and Function App package flow.
+- Test connectivity and on-demand ingest are not supported by this connector. Use Azure Log Monitoring and Health Monitoring to validate connector status and diagnose errors.
+- Azure Marketplace packaging is planned for a future release. Current deployment uses ARM templates deployed directly from Azure Portal.
 
 ## Related pages
 
