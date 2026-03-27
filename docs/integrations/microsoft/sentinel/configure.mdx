@@ -86,7 +86,6 @@ Follow the steps below to deploy and configure the Microsoft Sentinel integratio
 
     1. Click the following link to open a preloaded ARM template in the Azure Portal: [Deploy to Azure](https://portal.azure.com/%23create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmetron-labs%2FAzure-Sentinel%2Fbloodhound%2FSolutions%2FBloodHound%2520Enterprise%2FPackage%2FmainTemplate.json).
     1. Confirm the template opens on the **Custom deployment** page.
-    1. Continue with the deployment parameters in the next step.
 
        <Frame>
           <img src="/images/integrations/microsoft/sentinel/image14.png" alt="Customize deployment template"/>
@@ -94,7 +93,7 @@ Follow the steps below to deploy and configure the Microsoft Sentinel integratio
 
   </Step>
   <Step title="Configure deployment parameters">
-    Fill in the deployment parameters using the information from previous steps and your environment:
+    Fill in the deployment parameters for the workbook and analytics rules template using the information from previous steps and your environment.
 
     1. Select the target subscription and resource group, then enter deployment parameters such as workspace name and workspace location.
 
@@ -103,6 +102,8 @@ Follow the steps below to deploy and configure the Microsoft Sentinel integratio
     1. Click **Create** to deploy the workbook and data connector resources.
   </Step>
   <Step title="Verify the deployment">
+    Verify the workbook and analytics rules deployment before deploying the data connector template:
+
     1. In the Azure Portal, open **Microsoft Sentinel** and select the workspace where you deployed the template.
     1. Go to **Workbooks** under **Threat management**.
     1. If prompted to continue in Microsoft Defender, select the link to open **Microsoft Defender portal**.
@@ -139,24 +140,108 @@ Follow the steps below to deploy and configure the Microsoft Sentinel integratio
           <img src="/images/integrations/microsoft/sentinel/image20.jpeg" alt="Verify Data Connector"/>
        </Frame>
   </Step>
-  <Step title="Configure the data connector">
-    After deployment, configure the data connector with your BloodHound Enterprise API credentials and settings:
+  <Step title="Deploy the data connector template">
+    After deploying the workbook and analytics rules template, configure the data connector with your BloodHound Enterprise API credentials and settings.
 
     1. Log in to the Azure Portal with an account that has the **Owner** role on the resource group.
     1. Click the following link to open a preloaded ARM template in the Azure Portal: [Deploy to Azure](https://portal.azure.com/%23create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmetron-labs%2FAzure-Sentinel%2Fbloodhound%2FSolutions%2FBloodHound%2520Enterprise%2FData%2520Connectors%2Fazuredeploy_BloodHoundEnterprise_FunctionApp.json).
     1. Confirm the template opens on the **Custom deployment** page.
-    1. Fill in the deployment parameters:
+
+       <Frame>
+          <img src="/images/integrations/microsoft/sentinel/image21.png" alt="Customize deployment template"/>
+       </Frame>
+  </Step>
+  <Step title="Configure data connector parameters">
+    Fill in the deployment parameters:
+
+    | Parameter Name | Description |
+    |---|---|
+    | Subscription | The Azure subscription to deploy the resources to. |
+    | Resource Group | The name of the resource group where the resources will be deployed. |
+    | Function App Name | The name of the Azure Function App. This must be unique across Azure, since each instance requires its own Function App (for example, BloodHoundEnterprise-Maple). |
+    | Log Analytics Workspace Name | The name of the existing Log Analytics Workspace where you want to create a Data Collection Endpoint (DCE) and Data Collection Rule (DCR) for custom tables. |
+    | Bloodhound Tenant Domain | The URL for the BloodHound Enterprise tenant domain. |
+    | Bloodhound Token ID Secret Value | The value for the **BloodHound token ID**. This value will be stored in an Azure Key Vault secret. |
+    | Bloodhound Token Key Secret Value | The value for the **BloodHound token key**. This value will be stored in an Azure Key Vault secret. |
+    | Microsoft Entra Id Application App Id | The unique identifier for the Microsoft Entra ID application. This ID, also known as the **Client ID**, is used to authenticate your application to the Microsoft identity platform. |
+    | Microsoft Entra ID Application App Secret | A confidential secret generated for your Microsoft Entra ID application. This secret, also known as the **Client Secret**, is used along with the App ID to prove the application's identity when requesting an access token. |
+    | Lookup Days | Specifies the number of days in the past for which the system should fetch data. A higher value means more historical data will be retrieved, which increases the time and compute resources required during the first iteration when setting up the system. This parameter sets the default lookback period when no previous timestamp is available. |
+    | Selected Bloodhound Environments | The selected BloodHound environments from which you want to fetch data. These should be provided as comma-separated values (e.g., Ghost.Corp, Phantom.Corp). The default value is **All**. |
+    | Selected Finding Types | The selected Finding Types from which you want to fetch data. These should be provided as comma-separated values (e.g., T0MarkSensitive, T0GenericAll). The default value is **All**. |
+
+    1. Select the target subscription and resource group, then enter deployment parameters such as workspace name and workspace location.
+
+    1. Click **Review + create**.
+
+    1. Click **Create** to deploy the workbook and data connector resources.
+  </Step>
+  <Step title="Deploy the data connector code">
+    The ARM template will deploy the necessary Azure resources for the data connector, but you will also need to deploy the Azure Function code that fetches data from BloodHound Enterprise and ingests it into Microsoft Sentinel.
+
+    1. Download the `BloodHoundAzureFunction.zip` archive from the [GitHub repository](https://github.com/metron-labs/Azure-Sentinel/blob/bloodhound/Solutions/BloodHound%20Enterprise/Data%20Connectors/BloodHoundDataConnector/BloodHoundAzureFunction.zip?raw=true).
+
+    1. Open your Function App in Azure Portal.
+
+    1. In the left menu, select **Deployment Center** under the **Deployment** section.
+
+       You will see multiple options for deployment, including:
+
+        - **GitHub**: Connect your GitHub repository for continuous deployment.
+        - **Azure Repos**: Connect your Azure DevOps repository for continuous deployment.
+        - **Publish files**: Manually upload your function code for one-time deployment.
+
+    1. Select **Publish files**, select the downloaded `BloodHoundAzureFunction.zip` archive, and click **Save**.
+
+       <Frame>
+          <img src="/images/integrations/microsoft/sentinel/image22.jpeg" alt="Publish files"/>
+       </Frame>
+
+       After deployment, you should see the function code in the **Functions** section of your Function App.
+  </Step>
+  <Step title="Verify the deployment">
+    After deploying the Azure Function code, manually run each function to verify that the functions are running correctly and able to fetch data from BloodHound Enterprise and push it into the custom tables in your Log Analytics Workspace.
+
+    1. Navigate to the **Overview** page of your Function App and select one of the deployed functions.
+
+       <Frame>
+          <img src="/images/integrations/microsoft/sentinel/image23.jpeg" alt="Test/Run"/>
+       </Frame>
+
+    1. Click the **Code + Test** tab.
+
+    1. Click **Test/Run**.
+
+    1. Click **Run** to execute the function.
+
+       <Frame>
+          <img src="/images/integrations/microsoft/sentinel/image24.jpeg" alt="Run function"/>
+       </Frame>
+
+    1. Monitor the execution logs to confirm that the function is running successfully and fetching data from BloodHound Enterprise.
+
+       You should see log entries indicating successful execution and data retrieval for each finding type.
+
+        <Accordion title="Show example">
+        ```log
+        2025-10-31T08:57:55Z [Information] Collecting asset details for finding type: AzureT0MGGrantAppRoles
+        2025-10-31T08:57:55Z [Information] Making GET request to https://<your-tenant>.bloodhoundenterprise.io/api/v2/assets/findings/AzureT0MGGrantAppRoles/title.md
+        2025-10-31T08:57:55Z [Information] Response status code: 200
+        2025-10-31T08:57:56Z [Information] Making GET request to https://<your-tenant>.bloodhoundenterprise.io/api/v2/assets/findings/AzureT0MGGrantAppRoles/short_description.md
+        2025-10-31T08:57:56Z [Information] Response status code: 200
+        2025-10-31T08:57:56Z [Information] Making GET request to https://<your-tenant>.bloodhoundenterprise.io/api/v2/assets/findings/AzureT0MGGrantAppRoles/short_remediation.md
+        2025-10-31T08:57:57Z [Information] Response status code: 200
+        2025-10-31T08:57:57Z [Information] Making GET request to https://<your-tenant>.bloodhoundenterprise.io/api/v2/assets/findings/AzureT0MGGrantAppRoles/long_remediation.md
+        2025-10-31T08:57:57Z [Information] Response status code: 200
+        ```
+        </Accordion>
+
+    1. Repeat this one-time manual process for each deployed function to ensure all functions are working correctly.
   </Step>
 </Steps>
 
 ## Validate the integration
 
 Complete verification before operational use.
-
-### Start the Function App
-
-1. Open your Function App in Azure Portal.
-1. On **Overview**, click **Start** if needed.
 
 ### Verify connector resources
 
