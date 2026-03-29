@@ -1,0 +1,97 @@
+---
+title: AzureHound Data Collection and Permissions
+sidebarTitle: Collection Permissions
+description: "Learn about AzureHound least-privilege permissions for collecting required and optional data for the BloodHound Graph."
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+AzureHound CE and AzureHound Enterprise collect the same data by utilizing the [AzureHound CE](https://github.com/SpecterOps/AzureHound) collection code, maintained by the BloodHound Enterprise Engineering team.
+
+AzureHound collects two categories of data:
+
+- **Entra ID** — users, groups, applications, service principals, devices, and role assignments via the [Microsoft Graph API](https://learn.microsoft.com/en-us/graph/overview)
+- **Azure Resource Manager (ARM)** — subscriptions, management groups, resource groups, VMs, key vaults, and other Azure resources via the [ARM REST API](https://learn.microsoft.com/en-us/rest/api/azure/)
+
+This article details the least-privilege permissions required for each data type.
+
+<Information>The AzureHound service principal does not require the `Directory.Read.All` Microsoft Graph permission, the `Reader` Azure role on all subscriptions, and the `Directory Readers` Entra ID role. These built-in permissions and roles grant more access than AzureHound needs. You can follow the least-privilege guidance below instead.</Information>
+
+
+## Entra ID
+
+Information about Entra ID objects and their relationships is necessary to identify attack paths within your Azure tenant.
+
+This information includes:
+
+* Tenant/organization information.
+* Users and their properties (account status, sign-in activity, on-premises sync status).
+* Groups, group memberships, and group owners.
+* Applications, application owners, and federated identity credentials.
+* Service principals, service principal owners, and app role assignments.
+* Devices and device registered owners.
+* Entra ID role definitions, active role assignments, and PIM eligible role assignments.
+* Role management policy assignments.
+
+**Collection Method:** AzureHound collects this information via GET requests to the [Microsoft Graph API](https://learn.microsoft.com/en-us/graph/overview) (`https://graph.microsoft.com`), using both `v1.0` and `beta` endpoints.
+
+**Default Permissions:** A service principal with no explicit Microsoft Graph application permissions cannot read any Entra ID objects. Application permissions must be explicitly granted on the app registration and admin-consented before the service principal can access directory data. The default `User.Read` delegated permission granted to all new app registrations does not apply to AzureHound and can be removed.
+
+**Least-Privileged Option:** Grant the following granular Microsoft Graph **application** permissions:
+
+| Permission | Required | Reason |
+|---|---|---|
+| `User.Read.All` | Yes | Enumerate users and user properties |
+| `GroupMember.Read.All` | Yes | Enumerate groups, group owners, and group members |
+| `Application.Read.All` | Yes | Enumerate applications, app owners, federated identity credentials, service principals, service principal owners, and app role assignments |
+| `Device.Read.All` | Yes | Enumerate devices and device registered owners |
+| `Organization.Read.All` | Yes | Read tenant/organization information |
+| `RoleManagement.Read.Directory` | Yes | Enumerate Entra ID role definitions, role assignments, PIM eligible role assignments, and role management policy assignments |
+| `AdministrativeUnit.Read.All` | Yes | Populate Administrative Unit properties on AU-scoped role assignments |
+| `AuditLog.Read.All` | Optional | Collect `signInActivity` (last sign-in timestamps) on user objects. AzureHound gracefully degrades if this permission is missing. |
+
+All permissions must be granted as **application** permissions (not delegated) and require admin consent. The `Directory Readers` Entra ID role is **not required** when using application-based authentication, as access is controlled entirely by Graph application permissions.
+
+Granting broad permissions (`Directory.Read.All`, `RoleManagement.Read.All`) instead of their granular equivalents can automatically cover any new permissions AzureHound requires in the future — for example, if AzureHound adds support for Defender role management, `RoleManagement.Read.All` will include that scope. The trade-off is between least-privilege and least-maintenance. The hierarchy below shows which broad permission covers each granular one:
+
+- `Directory.Read.All`
+  - `User.Read.All`
+  - `Group.Read.All`
+    - `GroupMember.Read.All`
+  - `Application.Read.All`
+  - `Device.Read.All`
+  - `Organization.Read.All`
+  - `AdministrativeUnit.Read.All`
+- `RoleManagement.Read.All`
+  - `RoleManagement.Read.Directory`
+- `AuditLog.Read.All`
+
+## Azure Resource Manager
+
+Information about Azure resources and their RBAC role assignments is necessary to identify attack paths that cross from Entra ID into Azure infrastructure.
+
+This information includes:
+
+* Subscriptions and tenants.
+* Management groups and their hierarchy (descendants).
+* Resource groups.
+* Virtual machines and VM scale sets.
+* Key vaults and key vault access policies.
+* Web apps and function apps.
+* Automation accounts.
+* Logic apps.
+* Container registries.
+* Managed clusters (AKS).
+* RBAC role assignments at every resource scope (management group, subscription, resource group, and individual resources).
+
+**Collection Method:** AzureHound collects this information via GET requests to the [ARM REST API](https://learn.microsoft.com/en-us/rest/api/azure/) (`https://management.azure.com`).
+
+**Default Permissions:** Azure RBAC is deny-by-default. A service principal with no explicit role assignments cannot read any Azure resources. All resource reads (resource groups, VMs, key vaults, role assignments, etc.) require an explicit RBAC role assignment.
+
+**Least-Privileged Option:** Create a custom Azure RBAC role with only the specific actions AzureHound requires, and assign it at the **Tenant Root Management Group** so that all actions propagate to every scope where AzureHound collects — management groups, subscriptions, resource groups, and individual resources. If assigned at a lower scope (e.g., a single subscription), AzureHound will fail to read resources outside that scope.
+
+You can create the role manually in the Azure portal or use the JSON definition below. Replace `<tenantRootGroupId>` with your [Tenant Root Management Group ID](https://learn.microsoft.com/en-us/azure/governance/management-groups/overview#root-management-group-for-each-directory) (this is your Entra ID tenant ID).
+
+<a href="/assets/arm-azurehound-reader-role.json" download>Download `arm-azurehound-reader-role.json`</a>
+
+<Information>Key vault access policies are extracted from the vault properties returned by `Microsoft.KeyVault/vaults/read` — this is a management plane operation only. AzureHound does not access the Key Vault data plane and cannot read secrets, keys, or certificates. It only reads vault metadata to determine *who has access* to the vault, not the vault contents themselves.</Information>
