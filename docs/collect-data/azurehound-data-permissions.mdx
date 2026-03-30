@@ -88,10 +88,10 @@ This information includes:
 
 **Default Permissions:** Azure RBAC is deny-by-default. A service principal with no explicit role assignments cannot read any Azure resources. All resource reads (resource groups, VMs, key vaults, role assignments, etc.) require an explicit RBAC role assignment.
 
-**Least-Privileged Option:** Create a custom Azure RBAC role with only the specific actions AzureHound requires, and assign it at the **Tenant Root Management Group** so that all actions propagate to every scope where AzureHound collects — management groups, subscriptions, resource groups, and individual resources. If assigned at a lower scope (e.g., a single subscription), AzureHound will fail to read resources outside that scope.
+**Least-Privileged Option:** Create a custom Azure RBAC role with only the specific actions AzureHound requires, and assign it at the **Tenant Root Management Group** so that all actions propagate to every scope where AzureHound collects — management groups, subscriptions, resource groups, and individual resources. If assigned at a lower scope (e.g., a single subscription), AzureHound will not be able to read resources outside that scope and no error will be logged as the resources are invisible to the service principal.
 
 You can create the role manually in the Azure portal or use the JSON definition below. Replace `<tenantRootGroupId>` with your [Tenant Root Management Group ID](https://learn.microsoft.com/en-us/azure/governance/management-groups/overview#root-management-group-for-each-directory) (this is your Entra ID tenant ID).
 
-<a href="/assets/arm-azurehound-reader-role.json" download>Download `arm-azurehound-reader-role.json`</a>
+<a href="/assets/arm-azurehound-reader-role.json" download>Download 'arm-azurehound-reader-role.json'</a>
 
 <Information>Key vault access policies are extracted from the vault properties returned by `Microsoft.KeyVault/vaults/read` — this is a management plane operation only. AzureHound does not access the Key Vault data plane and cannot read secrets, keys, or certificates. It only reads vault metadata to determine *who has access* to the vault, not the vault contents themselves.</Information>
