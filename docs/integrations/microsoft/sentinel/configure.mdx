@@ -243,129 +243,126 @@ Follow the steps below to deploy and configure the Microsoft Sentinel integratio
 
 Complete verification before operational use.
 
-### Verify connector resources
+<Steps>
+  <Step title="Verify connector resources">
+    1. In Azure Portal, open **Function App** and confirm your deployed app exists and all BloodHound functions are listed.
 
-1. In Azure Portal, open **Function App** and confirm your deployed app exists and all BloodHound functions are listed.
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image26.png" alt="Verify Function App"/>
+       </Frame>
 
-   <Frame>
-      <img src="/images/integrations/microsoft/sentinel/image26.png" alt="Verify Function App"/>
-   </Frame>
+    1. Open **Key Vault** and confirm the connector vault exists and includes the expected secrets.
 
-1. Open **Key Vault** and confirm the connector vault exists and includes the expected secrets.
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image27.jpeg" alt="Verify Key Vault"/>
+       </Frame>
 
-   <Frame>
-      <img src="/images/integrations/microsoft/sentinel/image27.jpeg" alt="Verify Key Vault"/>
-   </Frame>
+    1. Open **Data Collection Endpoints** and confirm the BloodHound endpoint exists.
 
-1. Open **Data Collection Endpoints** and confirm the BloodHound endpoint exists.
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image28.jpeg" alt="Verify Data Collection Endpoints"/>
+       </Frame>
 
-   <Frame>
-      <img src="/images/integrations/microsoft/sentinel/image28.jpeg" alt="Verify Data Collection Endpoints"/>
-   </Frame>
+    1. Open **Data Collection Rules** and confirm the BloodHound rules exist.
 
-1. Open **Data Collection Rules** and confirm the BloodHound rules exist.
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image29.jpeg" alt="Verify Data Collection Rules"/>
+       </Frame>
 
-   <Frame>
-      <img src="/images/integrations/microsoft/sentinel/image29.jpeg" alt="Verify Data Collection Rules"/>
-   </Frame>
+    1. Open your Log Analytics workspace and confirm these custom tables exist:
+       - `BHEAttackPathsData_CL`
+       - `BHEAttackPathsTimelineData_CL`
+       - `BHEAuditLogsData_CL`
+       - `BHEFindingTrendsData_CL`
+       - `BHEPostureHistoryData_CL`
+       - `BHETierZeroAssetsData_CL`
 
-1. Open your Log Analytics workspace and confirm these custom tables exist:
-   - `BHEAttackPathsData_CL`
-   - `BHEAttackPathsTimelineData_CL`
-   - `BHEAuditLogsData_CL`
-   - `BHEFindingTrendsData_CL`
-   - `BHEPostureHistoryData_CL`
-   - `BHETierZeroAssetsData_CL`
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image30.jpeg" alt="Verify Custom Tables"/>
+       </Frame>
+  </Step>
+  <Step title="Verify data connector ingestion">
+    Complete these steps to start your Azure Function App and begin ingesting BloodHound Enterprise data into custom tables.
 
-   <Frame>
-      <img src="/images/integrations/microsoft/sentinel/image30.jpeg" alt="Verify Custom Tables"/>
-   </Frame>
+    1. Open your **Function App** and start it from **Overview** if it is stopped.
+    1. Open your Log Analytics workspace and click **Logs**.
+    1. Verify that you can see custom logs.
 
-### Verify data connector ingestion
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image31.png" alt="Verify Custom Logs"/>
+       </Frame>
+  </Step>
+  <Step title="Activate dashboards and analytics rules">
+    1. In Microsoft Sentinel, go to **Workbooks**. You must save each workbook before editing or operational use.
 
-Complete these steps to start your Azure Function App and begin ingesting BloodHound Enterprise data into custom tables.
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image32.png" alt="Activate Dashboards"/>
+       </Frame>
 
-1. Open your **Function App** and start it from **Overview** if it is stopped.
-1. Open your Log Analytics workspace and click **Logs**.
-1. Verify that you can see custom logs.
+    1. To save each workbook, double-click the workbook, then click **Save** in the modal that displays.
 
-    <Frame>
-        <img src="/images/integrations/microsoft/sentinel/image31.png" alt="Verify Custom Logs"/>
-    </Frame>
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image33.png" alt="Save Workbook"/>
+       </Frame>
 
-### Activate dashboards and analytics rules
+    1. Open each workbook to confirm it loads data correctly. If you see errors, review the function execution logs and ensure the data connector is ingesting data into the custom tables.
 
-1. In Microsoft Sentinel, go to **Workbooks**. You must save each workbook before editing or operational use.
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image34.jpeg" alt="Verify Workbook Data"/>
+       </Frame>
+  </Step>
+  <Step title="Verify analytics rules">
+    1. In the Sentinel workspace, navigate to **Configuration** > **Analytics** > **Rule templates**.
 
-    <Frame>
-        <img src="/images/integrations/microsoft/sentinel/image32.png" alt="Activate Dashboards"/>
-    </Frame>
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image35.jpeg" alt="Verify Analytics Rules"/>
+       </Frame>
 
-1. To save each workbook, double-click the workbook, then click **Save** in the modal that displays.
+    1. To generate incidents, create and save each **Analytics rule**. Select any rule to open the right-side panel, then click **Create rule**.
 
-    <Frame>
-        <img src="/images/integrations/microsoft/sentinel/image33.png" alt="Save Workbook"/>
-    </Frame>
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image36.png" alt="Save Analytics Rule"/>
+       </Frame>
 
-1. Open each workbook to confirm it loads data correctly. If you see errors, review the function execution logs and ensure the data connector is ingesting data into the custom tables.
+    1. Click **Next: Set rule logic** and keep the default values.
 
-   <Frame>
-      <img src="/images/integrations/microsoft/sentinel/image34.jpeg" alt="Verify Workbook Data"/>
-   </Frame>
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image37.jpeg" alt="Set Rule Logic"/>
+       </Frame>
 
-### Verify analytics rules
+    1. Click **Next: Incident settings** and keep the default values.
 
-1. In the Sentinel workspace, navigate to **Configuration** > **Analytics** > **Rule Template**.
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image38.jpeg" alt="Incident Settings"/>
+       </Frame>
 
-   <Frame>
-      <img src="/images/integrations/microsoft/sentinel/image35.jpeg" alt="Verify Analytics Rules"/>
-   </Frame>
+    1. Click **Next: Automated response** and keep the default values.
 
-1. You must save **Analytics Rules** to generate incidents. To save, click on any **Analytics Rule** to open a modal on the right-hand side where you will see the **Create Rule** button.
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image39.jpeg" alt="Automated Response"/>
+       </Frame>
 
-    <Frame>
-        <img src="/images/integrations/microsoft/sentinel/image36.png" alt="Save Analytics Rule"/>
-    </Frame>
+    1. Click **Next: Review + Create** and keep the default values.
 
-1. Click **Next: Set rule logic** and keep the default values.
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image40.jpeg" alt="Review + Create"/>
+       </Frame>
 
-   <Frame>
-      <img src="/images/integrations/microsoft/sentinel/image37.jpeg" alt="Set Rule Logic"/>
-   </Frame>
+    1. Click **Save**.
 
-1. Click **Next: Incident Settings** and keep the default values.
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image41.png" alt="Save Analytics Rule"/>
+       </Frame>
 
-   <Frame>
-      <img src="/images/integrations/microsoft/sentinel/image38.jpeg" alt="Incident Settings"/>
-   </Frame>
+    1. Repeat this process for each **Analytics rule**. Incidents are generated only after the rules are created and saved.
 
-1. Click **Next: Automated response** and keep the default values.
+    1. To check incidents after rules are created, navigate to **Investigation & Responses** > **Incidents & Alerts** > **Incidents**.
 
-   <Frame>
-      <img src="/images/integrations/microsoft/sentinel/image39.jpeg" alt="Automated Response"/>
-   </Frame>
-
-1. Click **Next: Review + Create** and keep the default values.
-
-   <Frame>
-      <img src="/images/integrations/microsoft/sentinel/image40.jpeg" alt="Review + Create"/>
-   </Frame>
-
-1. Click **Save**.
-
-   <Frame>
-      <img src="/images/integrations/microsoft/sentinel/image41.png" alt="Save Analytics Rule"/>
-   </Frame>
-
-1. After you save the workbook, it will appear in the **Active rule tab**.
-
-1. Repeat this process for each **Analytics rule**. Incidents are generated only after the rules are created and saved.
-
-1. To check the incidents after analytics rules are created, navigate to **Investigation & Responses** > **Incidents & Alerts** > **Incidents**.
-
-   <Frame>
-      <img src="/images/integrations/microsoft/sentinel/image42.jpeg" alt="Incidents & Alerts"/>
-   </Frame>
+       <Frame>
+         <img src="/images/integrations/microsoft/sentinel/image42.jpeg" alt="Incidents & Alerts"/>
+       </Frame>
+  </Step>
+</Steps>
 
 ## Next steps
 
