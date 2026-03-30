@@ -1,5 +1,3 @@
-import { useEffect, useMemo, useState } from 'react';
-
 // Must use arrow function syntax in Mintlify snippets
 export const GitHubJsonCodeblock = ({
   sourceUrl,
