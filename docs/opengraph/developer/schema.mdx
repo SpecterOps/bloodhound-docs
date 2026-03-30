@@ -4,7 +4,7 @@ sidebarTitle: Schema
 description: "Description of the OpenGraph JSON Schema"
 ---
 
-import { GitHubJsonCodeblock } from '/snippets/opengraph/github-json-codeblock.jsx';
+import { GitHubJsonCodeblock } from "/snippets/opengraph/github-json-codeblock.jsx";
 
 <img
   noZoom
@@ -23,7 +23,11 @@ See [Graph Structure](/opengraph/extensions/manage) for more details on the diff
 
 This page focuses on the JSON requirements for OpenGraph data payloads.
 
-<Tip>You can find the latest node and edge schemas in the BloodHound [source code](https://github.com/SpecterOps/BloodHound/tree/main/cmd/api/src/services/upload/jsonschema) on GitHub.</Tip>
+<Tip>
+  You can find the latest node and edge schemas in the BloodHound [source
+  code](https://github.com/SpecterOps/BloodHound/tree/main/cmd/api/src/services/upload/jsonschema)
+  on GitHub.
+</Tip>
 
 ## Ingesting OpenGraph Data
 
@@ -55,6 +59,23 @@ The `nodes` and `edges` must conform to the minimum JSON schemas (see details be
 When ingest completes, you can [search](/analyze-data/explore/search) OpenGraph data.
 
 **Entity Panels**: Clicking on an OpenGraph node or edge will currently display the full list of the entity's properties and their values. Future enhancements will enable OpenGraph extension authors to define structured and organized entity panel representations.
+
+### OpenGraph JSON Schema
+
+You have the option to add a schema to your JSON document to ensure your JSON document meets the expected format for OpenGraph payloads
+
+```json
+{
+  "$schema": "https://bloodhound.specterops.io/assets/opengraph/schema.json"
+}
+```
+
+Most editors will ask you to allow-list external domains for JSON schemas. You'll need to add the schema URI as hosted in the docs as well as a reference to where these schemas are stored in GitHub.
+
+```
+https://bloodhound.specterops.io/assets/opengraph/schema.json
+https://raw.githubusercontent.com/SpecterOps/chow/refs/heads/main/pkg/validator/jsonschema/
+```
 
 ## Nodes
 
@@ -126,7 +147,8 @@ BloodHound enforces this pattern for edge kinds:
 Edges in OpenGraph data define relationships between nodes using a `start` endpoint and an `end` endpoint. You can control how BloodHound resolves each endpoint using one of two matching strategies in the `match_by` field. This flexibility allows you to link nodes based on their unique database identifiers or by dynamically finding them based on specific attribute values.
 
 <Note>
-  Use identifier matching when possible. Property matching is more flexible, but it is slower and should be used only when you cannot match by node ID.
+  Use identifier matching when possible. Property matching is more flexible, but
+  it is slower and should be used only when you cannot match by node ID.
 </Note>
 
 #### Match by Identifier
@@ -136,7 +158,9 @@ This is the default and most common method for defining edges. It resolves the e
 To use this strategy, set the `match_by` property to either `"id"` or `"name"`.
 
 <Note>
-  `"name"` is deprecated and will be removed in future versions; using `"property"` with a single equality matcher is the recommended approach for name-based lookups.
+  `"name"` is deprecated and will be removed in future versions; using
+  `"property"` with a single equality matcher is the recommended approach for
+  name-based lookups.
 </Note>
 
 - **`match_by`:** Set to `"id"` to match the node's unique object identifier, or `"name"` to match the node's name string.
