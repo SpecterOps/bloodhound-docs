@@ -1,17 +1,27 @@
 ---
 title: Configure API Key Expiration
-description: Configure BloodHound Enterprise API key expiration and understand how policy changes affect existing keys.
+description: Configure BloodHound Enterprise API key expiration and understand how policy changes affect existing API credentials.
 ---
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-Use API key expiration to reduce long-lived credentials and support internal compliance requirements.
+BloodHound Enterprise supports [API key expiration](/manage-bloodhound/auth/api-key-expiration) to help you align with internal security and compliance requirements. API key expiration controls how long API tokens remain valid.
 
-This setting applies to all API key types in BloodHound Enterprise:
+Expiration applies equally to all three API token types:
 
-- **Personal keys** — created by individual users for API access.
-- **Non-personal keys** — created for integrations such as Splunk, ServiceNow, and Cortex XSOAR.
-- **Collector keys** — created for SharpHound Enterprise and AzureHound Enterprise data collectors.
+- **Personal API tokens and Token IDs** — created by individual users for API access.
+- **Non-personal API tokens and Token IDs** — created for integrations such as Splunk, ServiceNow, and Cortex XSOAR.
+- **Collector API tokens and Token IDs** — created for SharpHound Enterprise and AzureHound Enterprise data collectors.
+
+| Setting or action | Behavior |
+| --- | --- |
+| Default validity period | New tokens expire after 90 days by default. |
+| Custom validity period | Administrators can set token validity from 1 to 365 days. |
+| Feature turned on | Existing tokens receive expiration based on the configured value. New tokens follow the same policy. |
+| Validity period changed | Each token keeps the earlier of its current expiration and now + configured days. |
+| Feature turned off | Expiration enforcement stops, expiration dates are cleared, and tokens no longer expire. |
+
+Use API key expiration to reduce long-lived credentials and support internal compliance requirements. When API key expiration is enabled, plan to rotate API tokens and update integration configurations before they expire to prevent disruptions.
 
 ## Before you begin
 
@@ -44,18 +54,18 @@ This setting applies to all API key types in BloodHound Enterprise:
 
 | Setting or action | Behavior |
 | --- | --- |
-| Default validity period | New API keys expire after 90 days. |
+| Default validity period | New API tokens expire after 90 days. |
 | Custom validity period | Administrators can set a value from 1 to 365 days. |
-| Feature turned on | Existing API keys are updated to expire based on the current policy. New keys follow the same policy. |
-| Validity period changed | Each key keeps the earlier of its current expiration and now + configured days. |
-| Feature turned off | Expiration checks stop, expiration dates are cleared, and keys no longer expire. |
+| Feature turned on | Existing API tokens are updated to expire based on the current policy. New tokens follow the same policy. |
+| Validity period changed | Each token keeps the earlier of its current expiration and now + configured days. |
+| Feature turned off | Expiration checks stop, expiration dates are cleared, and tokens no longer expire. |
 
 <Warning>
-Disabling API key expiration removes expiration dates from existing keys. Re-enabling expiration later applies a new expiration policy again.
+Disabling API key expiration removes expiration dates from existing API tokens. Re-enabling expiration later applies a new expiration policy again.
 </Warning>
 
 ## Rotate keys manually
 
-BloodHound only shows a key value when you create it. If you lose a key value or a key expires, you must create a replacement key and update the dependent integration.
+BloodHound only shows the API token and Token ID when you create them. If you lose either value or a token expires, you must create a replacement and update the dependent integration.
 
 For API key creation steps, see [Work With the BloodHound API](/integrations/bloodhound-api/working-with-api).
