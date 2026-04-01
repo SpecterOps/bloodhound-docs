@@ -1,0 +1,81 @@
+---
+title: OpenHound for BloodHound Community Edition
+sidebarTitle: Community
+description: "Learn about the OpenHound framework for BHCE."
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+OpenHound for BloodHound Community edition can be used as a standalone CLI application to run the built-in collectors or
+custom collectors. The configuration of OpenHound can be done through environment variables, configuration files or a
+combination of both. For more information on configuration, see the [Configuration](configuration.md) section of the
+documentation.
+
+## Installing the OpenHound CLI
+
+OpenHound is typically installed and executed inside a dedicated Python virtual environment. We recommend using a Python
+package and project manager such as [uv](https://docs.astral.sh/uv/) to manage the virtual environment and dependencies.
+When using `uv`, you can install OpenHound by running the following command in your terminal:
+
+```bash
+uv tool install openhound
+```
+
+The core installation of OpenHound does not include any collectors. However, the following collectors are available as
+additional packages that can be installed along with the core OpenHound package:
+
+- Okta
+- Jamf
+- Github
+
+You can specify which collector(s) to include by adding the collector name as an extra dependency with the install
+command. You can specify one or more collectors by separating them with a comma. For example, to install OpenHound with
+the Okta, Jamf and Github collectors, you can run the following command:
+
+```bash
+uv tool install "openhound[okta,jamf,github]"
+```
+
+An alias to install all the built-in collectors is available via `openhound[all]`.
+
+## CLI Commands
+
+The openhound command supports several subcommands for running collectors, managing configurations, generating
+documentation and more.
+
+### Collect
+
+The `collect` subcommand is used to start the collection process. You start collection by specifying the collector name
+and output directory. For example, to run the Okta collector and save the output in the `output` directory, you can run
+the following command:
+
+```bash
+openhound collect okta ./output
+```
+
+OpenHound will then run the Okta collector and save the collected data in the ./output/okta directory. The collected
+data will be saved in a jsonl compressed format and can be processed and converted to OpenGraph using the `preproc`
+and `convert` subcommands.
+
+### Preprocess
+
+The `preproc` subcommand is used to preprocess the collected data before converting data to OpenGraph. This includes
+tasks such as generating a DuckDB lookup file and creating materialized tables. This phase is optional and not used by
+every collector.
+
+```bash
+openhound preproc okta ./output/okta ./lookup.duckdb
+```
+
+This will preprocess the collected data in the `./output/okta` directory and save the generated DuckDB lookup file as
+`./lookup.duckdb`. The preprocessed data can then be used as a lookup database in the convert phase to generate the
+OpenGraph output (if required).
+
+### Convert
+
+The `convert` subcommand is used to convert the collected data to OpenGraph format. This phase converts the raw data to
+nodes and edges and save them as an OpenGraph compatible json file for BloodHound.
+
+```bash
+openhound convert okta ./output/okta --output-path=./output/okta/graph.json
+```

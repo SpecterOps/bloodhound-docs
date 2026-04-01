@@ -1,0 +1,93 @@
+---
+title: OpenHound Configuration
+sidebarTitle: Configuration
+description: "Learn about configuring the OpenHound framework."
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+Configuring OpenHound works similarly for both the containerized service and the standalone CLI application. The
+configuration can be done through environment variables, configuration files or a combination of both. The configuration
+is organized into sections based on the component or feature.
+
+## Configuration management
+
+OpenHound uses DLT's configuration management system which allows you to set configuration parameters in a
+`.dlt/config.toml` file or via environment variables. The configuration is organized into sections based on the
+component or feature. For example, logging related configurations are saved the `[runtime]` section. Each collector
+source can also have its own section for source-specific configurations, which are described in
+the [Collector configuration](...) section. Each configuration parameter can be overridden by a
+collector-specific parameter. For example, a default worker count can be set in the global `[extract]` section, but a
+specific collector can override it by setting the `workers` parameter in its own `[sources.source.<collector>]` section.
+
+## Common configuration parameters
+
+### Log rotation
+
+OpenHound implements both **time-based** and **size-based** log rotation. When a log is rotated, the date/time will be
+appended to the file name, ex. `openhound.log.2026-02-19_00` or `openhound.log.2026-02-19`. When rotation occurs based
+on the file size and happens within the same period/interval, the minutes and seconds are also added for uniqueness ex.
+`openhound.log.2026-02-19_00-15-23`. Additionally, a seperate log file is created for each collector source, which is
+named `ext_<collector>.log` and follows the same rotation pattern as the main log file.
+
+The following configuration options are supported by setting the parameters in `.dlt/config.toml` or via environment
+variables:
+
+| Runtime option     | Environment Variable      | Description                                                                                                                   | Default Value   |
+|--------------------|---------------------------|-------------------------------------------------------------------------------------------------------------------------------|-----------------|
+| `log_level`        | RUNTIME__LOG_LEVEL        | Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)                                                                             | INFO            |
+| `log_rotate_when`  | RUNTIME__LOG_ROTATE_WHEN  | The time based rotation settings. S for seconds, H for hours, D for days and 'midnight' for rotating at midnight              | midnight        |
+| `log_interval`     | RUNTIME__LOG_INTERVAL     | Rotate every X unit of seconds, hours, days etc. Ignored when rotate_when is 'midnight'                                       | 1               |
+| `log_max_bytes`    | RUNTIME__LOG_MAX_BYTES    | The size based rotation settings. Rotate the files after an item exceeds the specified byte size. 0 means rotate by time only | 10485760 (10MB) |
+| `log_backup_count` | RUNTIME__LOG_BACKUP_COUNT | The amount of files to keep before deleting the oldest.                                                                       | 14              |
+
+
+### Data writing parameters
+
+The following parameters are configured under the `[data_writer]` section in the configuration file. The extract and
+normalize phase of the pipeline can have its own data writer configuration,
+which can be overridden by setting the: `data_writer` parameter in the corresponding section. For example, the `extract`
+phase can have its own data writer configuration by setting the `data_writer` parameter in the `[extract]` section to a
+different value than the global `[data_writer]` section.
+
+*Note*: the file_max_items/file_max_bytes parameter directly influences the performance and memory use of the pipeline.
+Edges and nodes are processed in batches and the amount of processed items is determined by the file_max_items
+parameter. Setting it too low can result in a large amount of small files and increased overhead with less memory usage,
+while setting it too high can result in increased memory use and slower performance. It is recommended to experiment
+with different values to find the optimal configuration which typically depends on the size of your environment.
+
+| Data writer option | Environment Variable          | Description                                                                       | Default Value   |
+|--------------------|-------------------------------|-----------------------------------------------------------------------------------|-----------------|
+| `buffer_max_items` | DATA_WRITER__BUFFER_MAX_ITEMS | The maximum amount of items to keep in memory before writing to disk.             | 10_000          |
+| `file_max_items`   | DATA_WRITER__FILE_MAX_ITEMS   | The maximum amount of items to write to a single file before creating a new file. | 100_000         |
+| `file_max_bytes`   | DATA_WRITER__FILE_MAX_BYTES   | The maximum amount of bytes to write to a single file before creating a new file. | 1_000_000 (1MB) |
+
+### Extract parameters
+
+The following parameters are configured under the `[extract]` section in the configuration file. This is typically
+configured on a per-collector basis depending on the amount of concurrent API
+calls allowed for a service.
+
+| Extract option | Environment Variable | Description                                                       | Default Value |
+|----------------|----------------------|-------------------------------------------------------------------|---------------|
+| `workers`      | EXTRACT__WORKERS     | The amount of concurrent workers used during the collection phase | 1             |
+
+### Normalize parameters
+
+The following parameters are configured under the `[normalize]` section in the configuration file.
+
+| Normalize option | Environment Variable    | Description                                                              | Default Value |
+|------------------|-------------------------|--------------------------------------------------------------------------|---------------|
+| `workers`        | NORMALIZE__WORKERS      | The amount of concurrent workers used during the DLT normalization phase | 1             |
+| `start_method`   | NORMALIZE__START_METHOD | The subprocess starting method (relevant for OS)                         | fork          |
+
+### Load parameters
+
+The following parameters are configured under the `[load]` section in the configuration file.
+
+| Load option                | Environment Variable           | Description                                                                                                     | Default Value |
+|----------------------------|--------------------------------|-----------------------------------------------------------------------------------------------------------------|---------------|
+| `delete_completed_jobs`    | LOAD__DELETE_COMPLETED_JOBS    | Whether to delete completed jobs after a pipeline has completed.                                                | true          |
+| `truncate_staging_dataset` | LOAD__TRUNCATE_STAGING_DATASET | Whether to truncate the staging dataset after loading data into the destination.                                | true          |
+| `workers`                  | LOAD__WORKERS                  | The amount of concurrent workers used during the loading phase, is when uploading data to BloodHound Enterprise | 1             |
+
