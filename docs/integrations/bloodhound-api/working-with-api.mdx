@@ -36,7 +36,7 @@ The BloodHound API accepts two forms of authentication:
 
 - A JSON Web Token (JWT) is generated during login using your email address, password, and 2FA token (or through a SAML- or OIDC-based authentication flow). JWTs remain active for 8 hours and are primarily used for end-user access to the web application.
 
-- An API token and token ID pair is generated in the Administration interface. API tokens are primarily used for integrations and automation.å
+- An API token and token ID pair is generated in the Administration interface. API tokens are primarily used for integrations and automation.
 
 There are two methods for creating API tokens in BloodHound, each serving a different purpose:
 
@@ -136,8 +136,8 @@ After you have an API token and token ID, you can call the BloodHound API.
 
 For quick tests or one-time calls, the JWT used by your browser may be the simplest route. The API accepts calls using the following header structure in the HTTP request:
 
-```
-'Authorization': Bearer $JWT_TOKEN
+```http
+Authorization: Bearer $JWT_TOKEN
 ```
 
 If you open the **Network** tab in your browser, you'll see calls against the API made using this structure.
@@ -154,10 +154,10 @@ For long-running API integrations, BloodHound's API uses hash-based message auth
 
 Calls against the API must include the following headers in the HTTP request:
 
-```
-'Authorization': bhesignature $TOKEN_ID
-'RequestDate': $RFC3339_DATETIME
-'Signature': $BASE64ENCODED_HMAC_SIGNATURE
+```http
+Authorization: bhesignature $TOKEN_ID
+RequestDate: $RFC3339_DATETIME
+Signature: $BASE64ENCODED_HMAC_SIGNATURE
 ```
 
 By validating the hash signature against the request, the API can ensure that calls were made by the original requestor, within a reasonable timeframe, against the proper API endpoint, including the original content body, and that no replay or content modification has occurred.
