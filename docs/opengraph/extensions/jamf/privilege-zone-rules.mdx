@@ -1,0 +1,45 @@
+---
+title: Privilege Zone Rules
+description: "Default Privilege Zone rules for the JamfHound extension"
+icon: "gem"
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+The following Cypher rules define the default Privilege Zone for the JamfHound extension.
+Each rule is defined in a JSON file located in the [PrivilegeZoneRules](https://github.com/SpecterOps/JAMFHound_Internal/tree/main/Src/PrivilegeZoneRules) directory of the JamfHound repository.
+
+## Tenant
+
+Tenant nodes in JAMF Pro.
+
+```cypher
+MATCH (n:jamf_Tenant)
+RETURN n
+```
+
+This rule is defined in the [tenant.json](https://github.com/SpecterOps/JAMFHound_Internal/tree/main/Src/PrivilegeZoneRules/tenant.json) file.
+
+## Tier Zero Principals
+
+Accounts and group principals with 'Full Access' administrator privileges in the tenant and 'SSO' configuration if enabled.
+
+```cypher
+MATCH (n)
+WHERE n.Tier = 0
+RETURN n
+```
+
+This rule is defined in the [tier0-principals.json](https://github.com/SpecterOps/JAMFHound_Internal/tree/main/Src/PrivilegeZoneRules/tier0-principals.json) file.
+
+## Tier One Principals
+
+Other devices and principals without granted tenant administrator permissions.
+
+```cypher
+MATCH (n)
+WHERE n.Tier = 1
+RETURN n
+```
+
+This rule is defined in the [tier1-principals.json](https://github.com/SpecterOps/JAMFHound_Internal/tree/main/Src/PrivilegeZoneRules/tier1-principals.json) file.
+
