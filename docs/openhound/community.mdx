@@ -7,9 +7,8 @@ description: "Learn about the OpenHound framework for BHCE."
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 OpenHound for BloodHound Community edition can be used as a standalone CLI application to run the built-in collectors or
-custom collectors. The configuration of OpenHound can be done through environment variables, configuration files or a
-combination of both. For more information on configuration, see the [Configuration](configuration.md) section of the
-documentation.
+custom collectors from the community. The configuration of OpenHound can be done through environment variables, configuration files or a
+combination of both. Visit the [configuration](/openhound/configuration) page for more information on how to set up the configuration for OpenHound.
 
 ## Installing the OpenHound CLI
 
@@ -40,42 +39,42 @@ An alias to install all the built-in collectors is available via `openhound[all]
 
 ## CLI Commands
 
-The openhound command supports several subcommands for running collectors, managing configurations, generating
-documentation and more.
+The openhound command supports several subcommands for running collectors and converting data to the OpenGraph format. 
 
 ### Collect
 
-The `collect` subcommand is used to start the collection process. You start collection by specifying the collector name
-and output directory. For example, to run the Okta collector and save the output in the `output` directory, you can run
-the following command:
+The `collect` subcommand is used to start the collection process. You can start the collecting data by specifying the collector name
+and output directory. For example, to run the Okta collector and save the output in the `output` directory:
 
 ```bash
 openhound collect okta ./output
 ```
 
-OpenHound will then run the Okta collector and save the collected data in the ./output/okta directory. The collected
-data will be saved in a jsonl compressed format and can be processed and converted to OpenGraph using the `preproc`
+OpenHound will then run the Okta collector and save the collected resources in the `./output/okta`. The collected
+resources will be saved in a jsonl compressed format and can be processed and converted to OpenGraph using the `preproc`
 and `convert` subcommands.
 
 ### Preprocess
 
-The `preproc` subcommand is used to preprocess the collected data before converting data to OpenGraph. This includes
-tasks such as generating a DuckDB lookup file and creating materialized tables. This phase is optional and not used by
-every collector.
+The `preproc` subcommand preprocesses collected resources before they are converted into OpenGraph data. During this phase, OpenHound imports raw data into a DuckDB database and creates materialized tables to support efficient lookups for transformations.
+This phase is optional and is only required for collectors that depend on preprocessed data. The following command preprocesses Okta resources from the `./output/okta` directory and generates a DuckDB lookup database at `./lookup.duckdb`:
+
+
 
 ```bash
 openhound preproc okta ./output/okta ./lookup.duckdb
 ```
 
-This will preprocess the collected data in the `./output/okta` directory and save the generated DuckDB lookup file as
-`./lookup.duckdb`. The preprocessed data can then be used as a lookup database in the convert phase to generate the
+The preprocessed data can then be used as a lookup database in the convert phase to generate the
 OpenGraph output (if required).
 
 ### Convert
 
-The `convert` subcommand is used to convert the collected data to OpenGraph format. This phase converts the raw data to
-nodes and edges and save them as an OpenGraph compatible json file for BloodHound.
+The `convert` subcommand transforms collected resources into the OpenGraph format. This phase converts the raw data to
+nodes and edges and save them as OpenGraph compatible json files that you can upload to BloodHound. The following command converts the collected Okta resources from the `./output/okta` directory and saves the OpenGraph files in the `./graph/okta` directory:
 
 ```bash
-openhound convert okta ./output/okta --output-path=./output/okta/graph.json
+openhound convert okta ./output/okta ./graph/okta/
 ```
+
+OpenHound will automatically split each graph into multiple files based on source node and chunk size to optimize file uploads for BloodHound.
