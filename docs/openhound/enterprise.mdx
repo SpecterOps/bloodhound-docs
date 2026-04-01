@@ -6,6 +6,7 @@ description: "Learn about the OpenHound framework for BHE."
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise"/>
 
+<Note>Reach out to your SpecterOps account manager to get started with OpenHound for BloodHound Enterprise.</Note>
 
 OpenHound for BloodHound Enterprise is deployed as a container and can be run in different environments, such
 as:
@@ -16,9 +17,9 @@ as:
 - **Managed Kubernetes service** such as Amazon EKS, Google GKE, or Azure AKS.
 
 The configuration of OpenHound can be done through environment variables, configuration files or a combination of both. For more information on configuration, see
-the [Configuration](configuration.md) section of the documentation.
+the [Configuration](configuration.md) section of the documentation. 
 
-The OpenHound container image includes the collectors for Github, Jamf and Okta by default.
+The OpenHound container image can be found on [Docker Hub](https://hub.docker.com/r/specterops/openhound) and includes the collectors for Github, Jamf and Okta by default.
 
 ## Deployment process
 
@@ -34,6 +35,56 @@ To deploy OpenHound and run a collector:
    or [Create
    a data collection schedule](https://bloodhound.specterops.io/collect-data/enterprise-collection/collection-schedule)
 
+
+## Deployment examples
+
+### Kubernetes
+A Helm chart is available for deploying OpenHound in a Kubernetes cluster. The chart can be found in the [OpenHound GitHub repository](https://github.com/specterops/openhound).
+
+
+
+
+### Docker/Podman Compose
+[Docker compose](https://docs.docker.com/compose/) is a tool to define and run multiple containerized applications. A similar approach can be used with Podman.
+
+To get started, create a `config.toml` and `secrets.toml` file with the necessary configuration parameters on the host machine. Below is an example of a `docker-compose.yml` file to deploy OpenHound using Docker Compose, which mounts the configuration files and sets the necessary `DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME` variable to run each individual collector.
+
+```yaml
+x-scheduler: &scheduler
+  image: openhound:<version>
+  command: [ "python", "src/scheduler.py" ]
+  restart: unless-stopped
+  volumes:
+   - ${HOME}/.dlt:/home/nonroot/.dlt
+
+  # These environment variables can also be set inside the ~/.dlt/config.toml file 
+  # and act as an example. Configuring openhound can be done using environment variables,
+  # configuration files or a combination of both.
+  environment: &env
+    LOG_LEVEL: INFO
+    EXTRACT__WORKERS: 8
+
+services:
+  openhound-jamf:
+    <<: *scheduler
+    environment:
+      <<: *env
+      DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME: jamf
+
+  openhound-okta:
+    <<: *scheduler
+    environment:
+      <<: *env
+      DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME: okta
+
+  openhound-github:
+    <<: *scheduler
+    environment:
+      <<: *env
+      DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME: github
+```
+
+
 ## Server/container requirements
 
 ### Hardware
@@ -48,3 +99,6 @@ To deploy OpenHound and run a collector:
 persistence is not required. However, it is recommended to have a persistent storage for the logs for troubleshooting.
 The logs are stored in the `/.local/share/openhound/logs` directory and can be configured to rotate based on time or
 file size.
+
+
+## Deployment
