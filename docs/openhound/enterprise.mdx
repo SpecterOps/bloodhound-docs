@@ -36,15 +36,46 @@ To deploy OpenHound and run a collector:
    a data collection schedule](https://bloodhound.specterops.io/collect-data/enterprise-collection/collection-schedule)
 
 
+## Enterprise collector configuration
+
+### Minimum configuration parameters
+The following parameters must be set in the `[destination.bloodhoundenterprise]` section of the configuration file or via environment variables to run OpenHound and have it upload data to BloodHound Enterprise.
+
+
+| Runtime option     | Environment Variable      | Description |
+|--------------------|---------------------------|------------------------------|
+| `token_key`        | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_KEY | The API token key for authenticating with BloodHound Enterprise.|
+| `token_id`  | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_ID  | The API token ID for authenticating with BloodHound Enterprise. | 
+| `url`     | DESTINATION__BLOODHOUNDENTERPRISE__URL | The URL of the BloodHound Enterprise instance. | 
+| `interval`    | DESTINATION__BLOODHOUNDENTERPRISE__INTERVAL | The interval at which OpenHound will check for available jobs. |
+
+### Collector-specific configuration parameters
+Each collector may have additional required or optional configuration parameters that are specific to the data source being collected. These parameters can also be set in the configuration file or via environment variables. For more information on collector-specific configuration, visit the configuration documentation page for each collector using the links below.
+<CardGroup cols={3}>
+
+  <Card title="Github" icon="cog" href="/openhound/collectors/githound/overview" horizontal iconType="solid">
+    View the configuration parameters for the Github collector.
+  </Card>
+
+  <Card title="Jamf" icon="cog" href="/openhound/collectors/jamf/collect-data#configure-openhound" horizontal iconType="solid">
+    View the configuration parameters for the Jamf collector.
+  </Card>
+
+  <Card title="Okta" icon="cog" href="/openhound/collectors/oktahound/overview" horizontal iconType="solid">
+      View the configuration parameters for the Okta collector.
+  </Card>
+
+</CardGroup>
+
+
+
 ## Deployment examples
 
 ### Kubernetes
 A Helm chart is available for deploying OpenHound in a Kubernetes cluster. The chart can be found in the [OpenHound GitHub repository](https://github.com/specterops/openhound).
 
 
-
-
-### Docker/Podman Compose
+### Compose
 [Docker compose](https://docs.docker.com/compose/) is a tool to define and run multiple containerized applications. A similar approach can be used with Podman.
 
 To get started, create a `config.toml` and `secrets.toml` file with the necessary configuration parameters on the host machine. Below is an example of a `docker-compose.yml` file to deploy OpenHound using Docker Compose, which mounts the configuration files and sets the necessary `DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME` variable to run each individual collector.
@@ -99,6 +130,3 @@ services:
 persistence is not required. However, it is recommended to have a persistent storage for the logs for troubleshooting.
 The logs are stored in the `/.local/share/openhound/logs` directory and can be configured to rotate based on time or
 file size.
-
-
-## Deployment
