@@ -1,23 +1,21 @@
 ---
-title: Run the Collector
-description: Run the OktaHound collector to gather data from your Okta organization.
+title: Configure the collector
+description: Configure the Okta collector to gather data from your Okta organization.
 ---
+<Tip>Okta enforces API [rate limits](https://developer.okta.com/docs/reference/rl-global-mgmt/) by default. OpenHound is configured to retry each HTTP request up to 10 times with increasing delays.</Tip>
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-<Callout icon="bullhorn" color="#FFC107">
-  The OktaHound collector is currently in **beta**. It will be replaced by a generic OpenGraph collector in a future release.
-</Callout>
+This page covers configuring the Okta collector for your Okta organization.
 
-This page covers downloading, configuring, and running the **beta** OktaHound collector against your Okta organization.
+## Prerequisites
 
-## Authentication Options
-
-Okta supports multiple authentication methods for applications like the OktaHound collector to access the Okta API:
+* OpenHound installed with the Okta collector included. Follow the [OpenHound installation instructions](/openhound/installation) to set up OpenHound.
+* An Okta account with permissions to access the Okta API. See the options below for recommended roles and permissions.
 
 ### OAuth 2.0 Service Application (Recommended)
 
-Register OktaHound as a [service application](/opengraph/extensions/oktahound/okta-app-registration) in Okta.
+Register the Okta collector as a [service application](/openhound/collectors/okta/okta-app-registration) in Okta.
 
 Grant the application limited read-only permissions, then configure authentication with either a symmetric client secret or an asymmetric RSA public/private key pair.
 
@@ -25,74 +23,22 @@ Use an RSA public/private key pair when possible, because it provides stronger s
 
 ### API Token (SSWS)
 
-The OktaHound collector can also authenticate using API tokens (also known as SSWS tokens) associated with specific Okta Super Administrator accounts.
+The Okta collector can also authenticate using API tokens (also known as SSWS tokens) associated with specific Okta Super Administrator accounts.
 This is the least secure option, but the easiest one to set up.
 
-## Download the Collector
 
-Download the latest **beta** release of OktaHound specific to your operating system from the [releases page](https://github.com/SpecterOps/OktaHound/releases) on GitHub and extract the archive.
+## Configure OpenHound
 
-## Configure Authentication
+The following OpenHound configuration parameters are required to run the Okta collector. These can either be set
+via the `[sources.source.okta]` section of the secrets file or via environment variables.
 
-Rename the `okta.sample.oauth.yaml` template file to `okta.yaml` and fill in the Okta organization URI, client ID, and private key from the [application registration process](/opengraph/extensions/oktahound/okta-app-registration).
+| Parameter Name | Environment Variable            | Description                                                                        |
+|----------------|---------------------------------|------------------------------------------------------------------------------------|
+| `client_id`     | SOURCES__SOURCE__OKTA__CLIENT_ID | The client ID of the Okta service application used to authenticate to the Okta API. |
+| `base_url`     | SOURCES__SOURCE__OKTA__BASE_URL | The base URL of the Okta organization. For example: `https://spectoropspreview.oktapreview.com`. |
+| `private_key_path` | SOURCES__SOURCE__OKTA__PRIVATE_KEY_PATH | The path to the RSA private key used for authentication. |
 
-<Note>You must convert the private key from JSON to YAML.</Note>
 
-```yaml
-okta:
-  client:
-    oktaDomain: "https://TODO.okta.com"
-    authorizationMode: "PrivateKey"
-    clientId: "TODO"
-    privateKey:
-      "d": "TODO"
-      "p": "TODO"
-      "q": "TODO"
-      "dp": "TODO"
-      "dq": "TODO"
-      "qi": "TODO"
-      "kty": "RSA"
-      "e": "AQAB"
-      "kid": "TODO"
-      "n": "TODO"
-```
+## Running OpenHound and Collecting Data
+After you set the required configuration parameters, [run](/openhound/community#collect) OpenHound to start the Okta collector and collect data from your Okta organization. The collector will generate JSON files in the output directory that can be uploaded to BloodHound for analysis.
 
-If you choose API token authentication (not recommended), rename `okta.sample.token` to `okta.yaml`, then set the Okta organization URI and API token:
-
-```yaml
-okta:
-  client:
-    oktaDomain: "https://TODO.okta.com"
-    authorizationMode: "SSWS"
-    token: "TODO"
-```
-
-## Run the Collector
-
-Run the following command to start collecting data from your Okta organization:
-
-```shell
-OktaHound collect --output ./output --verbosity Trace
-```
-
-## Command Line Options
-
-The `collect` subcommand supports the following options:
-
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--output` | `-o` | `./output` | Path to the OpenGraph output directory |
-| `--domain` | `-d` | | Okta domain URL (e.g. `https://contoso.okta.com`). Overrides `okta.yaml` setting if provided. |
-| `--token` | `-t` | | SSWS API token. Overrides `okta.yaml` setting if provided. |
-| `--skip-mfa` | | | Skip collecting user authentication factors (MFA) |
-| `--zip` | `-z` | | Compress each exported JSON output file after it is written |
-| `--export-ad-nodes` | `-a` | | Export the Active Directory subgraph output file |
-| `--verbosity` | `-v` | `Information` | Set output verbosity (`Trace`, `Debug`, `Information`, `Warning`, `Error`, `Critical`) |
-
-## API Rate Limiting
-
-Okta [enforces API rate limits](https://developer.okta.com/docs/reference/rl-global-mgmt/) to mitigate denial-of-service attacks.
-
-The OktaHound collector sometimes hits the limit of 20 calls per second to the `/api/v1/apps/*` and `/oauth2/v1/clients/*` endpoints for the **Integrator Free Plan**.
-
-<Tip>By default, the client is configured to retry each HTTP request up to 3 times with increasing delays, which effectively mitigates this problem.</Tip>
