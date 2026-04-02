@@ -6,16 +6,19 @@ description: "Learn about configuring the OpenHound framework."
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-OpenHound uses DLT's [configuration management](https://dlthub.com/docs/general-usage/credentials/setup) system which allows you to set configuration parameters in configuration files, environment variables, or a combination of both. The following sections provide an overview of commonly used configuration parameters for OpenHound and how to set them up for your deployment. 
-Configuring OpenHound works similarly for both the containerized service and the standalone CLI application.
+OpenHound uses [DLT configuration management](https://dlthub.com/docs/general-usage/credentials/setup), which lets you set parameters through configuration files, environment variables, or both.
+
+The following sections cover common OpenHound parameters and how to configure them for your deployment.
+You configure OpenHound in nearly the same way whether you run it as a containerized service or as a standalone CLI application.
 
 
 ## Configuration management
 
 OpenHound and DLT use a TOML-based configuration layout that organizes settings into sections based on the component or feature. Each top-level section defines defaults for a specific phase during the collection/conversion pipeline.
-The syntax allows for nested sections, collector-specific configurations and collector-specific overrides. For example,  the `[extract]` parallel worker count can be set globally for all collectors, but can also be increased/decreased for a specific collector.
 
-The below sample configuration sets the global runtime, normalize and load values and overrides the extract worker count for the Okta and Github collectors.
+The syntax allows for nested sections, collector-specific configurations, and collector-specific overrides. For example,  the `[extract]` parallel worker count can be set globally for all collectors, but can also be increased/decreased for a specific collector.
+
+The following sample configuration sets global values for runtime, normalize, and load, then overrides the extract worker count for the Okta and GitHub collectors.
 
 ```toml Example ~/.dlt/config.toml
 [runtime]
@@ -55,37 +58,41 @@ The following parameters must be set in the `[destination.bloodhoundenterprise]`
 
 
 ## Collector-specific configuration parameters
-Each collector may have additional required or optional configuration parameters that are specific to the data source being collected. These parameters can also be set in the configuration file or via environment variables. For more information on collector-specific configuration, visit the configuration documentation page for each collector using the links below.
+
+Each collector may have additional required or optional configuration parameters that are specific to the data source being collected. These parameters can also be set in the configuration file or via environment variables.
+
+For more information on collector-specific configuration, visit the configuration documentation page for each collector using the links below.
+
 <CardGroup cols={3}>
 
-  <Card title="Github" icon="cog" href="openhound/collectors/github/collect-data#configure-openhound" horizontal iconType="solid">
+  <Card title="Github" href="openhound/collectors/github/collect-data#configure-openhound">
     View the configuration parameters for the Github collector.
   </Card>
 
-  <Card title="Jamf" icon="cog" href="/openhound/collectors/jamf/collect-data#configure-openhound" horizontal iconType="solid">
+  <Card title="Jamf" href="/openhound/collectors/jamf/collect-data#configure-openhound" >
     View the configuration parameters for the Jamf collector.
   </Card>
 
-  <Card title="Okta" icon="cog" href="/openhound/collectors/okta/collect-data#configure-openhound" horizontal iconType="solid">
+  <Card title="Okta" href="/openhound/collectors/okta/collect-data#configure-openhound" >
       View the configuration parameters for the Okta collector.
   </Card>
 
 </CardGroup>
 
-
-
 ## Common configuration parameters
+
 The following parameters are common for all OpenHound deployments and collectors. 
 
 ### Log rotation
 
-OpenHound implements both time-based and size-based log rotation. When a log is rotated, a timestamp is appended to the filename (for example, openhound.log.2026-02-19) and rotated files are compressed using gzip to reduce disk usage.
+OpenHound implements both time-based and size-based log rotation. When a log is rotated, a timestamp is appended to the filename (for example, `openhound.log.2026-02-19`) and rotated files are compressed using `gzip` to reduce disk usage.
 
 By default, OpenHound maintains two types of log files:
-- A global client log (openhound.log) that captures logs for the overall OpenHound service;
-- Collector-specific logs (ext_collector_name.log) that capture logs for individual collectors.
 
-The following log configuration options are supported by setting the parameters in `[runtime]` section or via environment
+- A global client log (`openhound.log`) that captures logs for the overall OpenHound service
+- Collector-specific logs (`ext_collector_name.log`) that capture logs for individual collectors
+
+The following log configuration options are supported by setting the parameters in the `[runtime]` section or via environment
 variables:
 
 | Runtime option     | Environment Variable      | Description                                                                                                                   | Default Value   |
@@ -98,6 +105,7 @@ variables:
 
 
 ### Data writing parameters
+
 The data writing parameters specify when and how in-memory data is written to disk during the collection and normalization phase.
 
 The following parameters are configured under the `[data_writer]` section in the configuration file and define the default data writer behavior for the pipeline. Individual pipeline phases, such as the extract and normalize phase, or each individual source can have their own overrides by specifying a different `data_writer` value in the corresponding section.
@@ -119,10 +127,10 @@ file_max_items=100000
 file_max_items=50000
 ```
 
-**Note**: The data writer parameters parameters directly influence the performance and memory use of the collection/conversion pipeline.
-Edges and nodes are processed in batches and the amount of processed items is determined by the data writer parameters. Setting these parameters too low can result in a large amount of small files and increased overhead with less memory usage,
-while setting them too high can result in increased memory use and slower performance. It is recommended to experiment
-with different values to find the optimal configuration which typically depends on the size of your environment.
+<Note>The `data_writer` parameters directly influence the performance and memory use of the collection/conversion pipeline.
+Edges and nodes are processed in batches and the amount of processed items is determined by the `data_writer` parameters. Setting these parameters too low can result in a large amount of small files and increased overhead with less memory usage,
+while setting them too high can result in increased memory use and slower performance. We recommend experimenting
+with different values to find the optimal configuration, which typically depends on the size of your environment.</Note>
 
 
 ### Extract parameters
@@ -140,10 +148,10 @@ workers=5
 
 [sources.source.okta.extract]
 workers=10
-
 ```
 
 ### Normalize parameters
+
 The normalize phase is responsible for converting data times and handling schema evolutions. It standardizes column/table names to be snake_case and is executed automatically between the extract and load phase.
 
 The following parameters are configured under the `[normalize]` section in the configuration file. The normalization phase can also have its own [data writer](/openhound/configuration#data-writing-parameters) configuration by setting the `data_writer` parameter in the `[normalize]` section, which will override the global data writer settings.
@@ -155,7 +163,7 @@ The following parameters are configured under the `[normalize]` section in the c
 
 ### Load parameters
 
-The load phase is responsible for loading the converted OpenGraph files into the destination, which is either set a local file system or BloodHound Enterprise. 
+The load phase is responsible for loading the converted OpenGraph files into the destination, which is either set to local file system or BloodHound Enterprise. 
 
 The following parameters are configured under the `[load]` section in the configuration file.
 

@@ -11,12 +11,12 @@ description: "Learn about the OpenHound framework for BloodHound Enterprise."
 OpenHound for BloodHound Enterprise is deployed as a container and can be run in different environments, such
 as:
 
-- **Bare-metal or virtual Linux server** using Docker or Podman (e.g., Ubuntu, RHEL);
-- **Cloud-native container service** such as AWS Fargate;
-- **Self-managed Kubernetes cluster** on-premises or in the cloud;
-- **Managed Kubernetes service** such as Amazon EKS, Google GKE, or Azure AKS.
+- **Bare-metal or virtual Linux server** using Docker or Podman (e.g., Ubuntu, RHEL)
+- **Cloud-native container service** such as AWS Fargate
+- **Self-managed Kubernetes cluster** on-premises or in the cloud
+- **Managed Kubernetes service** such as Amazon EKS, Google GKE, or Azure AKS
 
-The OpenHound container image can be found on [Docker Hub](https://hub.docker.com/r/specterops/openhound) and includes the collectors for Github, Jamf and Okta by default.
+The OpenHound container image is available on [Docker Hub](https://hub.docker.com/r/specterops/openhound) and includes the collectors for Github, Jamf, and Okta by default.
 
 ## Deployment process
 
@@ -24,14 +24,18 @@ To deploy OpenHound and run a collector:
 
 <Steps>
   <Step title="Provision the environment">
-    Provision a server with container (docker/podman) support, a Kubernetes cluster, or cloud-native container service to run OpenHound. Ensure that the
+    Provision a server with container (docker/podman) support, a Kubernetes cluster, or cloud-native container service to run OpenHound.
+    
+    Ensure that the
    environment meets the system requirements listed below.
   </Step>
   <Step title="Create an OpenHound collector client">
     Register an OpenHound collector [client](/collect-data/enterprise-collection/create-collector) on your BloodHound Enterprise instance to obtain the necessary API credentials for OpenHound to upload data.
   </Step>
   <Step title="Deploy OpenHound">
-    Deploy the OpenHound container and configure the required parameters using the configuration file or environment variables. For more details on the required parameters, visit the [configuration](/openhound/configuration) page as well as the collector-specific configuration pages in the [collectors](/openhound/enterprise#collector-specific-configuration-parameters) section.
+    Deploy the OpenHound container and configure the required parameters using the configuration file or environment variables.
+    
+    For more details on the required parameters, visit the [configuration](/openhound/configuration) page as well as the collector-specific configuration pages in the [collectors](/openhound/enterprise#collector-specific-configuration-parameters) section.
   </Step>
   <Step title="Run the collector">
     Run an [On Demand](/collect-data/enterprise-collection/on-demand-scan) scan or create a data collection [schedule](/collect-data/enterprise-collection/collection-schedule) to start the collector and collect data from your environment.
@@ -58,15 +62,15 @@ Each collector requires additional configuration parameters that are unique to i
 
 <CardGroup cols={3}>
 
-  <Card title="Github" icon="cog" href="/openhound/collectors/github/collect-data#configure-openhound" horizontal iconType="solid">
+  <Card title="Github" href="/openhound/collectors/github/collect-data#configure-openhound">
     View the required configuration parameters for the Github collector.
   </Card>
 
-  <Card title="Jamf" icon="cog" href="/openhound/collectors/jamf/collect-data#configure-openhound" horizontal iconType="solid">
+  <Card title="Jamf" href="/openhound/collectors/jamf/collect-data#configure-openhound">
     View the required configuration parameters for the Jamf collector.
   </Card>
 
-  <Card title="Okta" icon="cog" href="/openhound/collectors/okta/collect-data#configure-openhound" horizontal iconType="solid">
+  <Card title="Okta" href="/openhound/collectors/okta/collect-data#configure-openhound">
       View the required configuration parameters for the Okta collector.
   </Card>
 
@@ -77,13 +81,15 @@ Each collector requires additional configuration parameters that are unique to i
 ## Deployment examples
 
 ### Kubernetes
-A Helm chart is available for deploying OpenHound in a Kubernetes cluster. The chart can be found in the [OpenHound GitHub repository](https://github.com/specterops/openhound).
+A Helm chart is available for deploying OpenHound in a Kubernetes cluster. The chart is available in the [OpenHound GitHub repository](https://github.com/specterops/openhound).
 
 
 ### Compose
 [Docker compose](https://docs.docker.com/compose/) is a tool to define and run multiple containerized applications. A similar approach can be used with Podman.
 
-To get started, create a `config.toml` and `secrets.toml` file with the necessary configuration parameters on the host machine. Below is an example of a `docker-compose.yml` file to deploy OpenHound using Docker Compose, which mounts the configuration files and sets the necessary `DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME` variable to run each individual collector.
+To get started, create a `config.toml` and `secrets.toml` file with the necessary configuration parameters on the host machine.
+
+Below is an example of a `docker-compose.yml` file to deploy OpenHound using Docker Compose, which mounts the configuration files and sets the necessary `DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME` variable to run each individual collector.
 
 ```yaml
 x-scheduler: &scheduler
@@ -131,7 +137,9 @@ services:
 | Memory    | 4 GB                | 8 GB or more            |
 | *Storage  | 50 GB               | 80 GB or more          |
 
-*Note*: The requirements vary depending on the size of the environment being collected/converted. Container storage
+<Note>
+The requirements vary depending on the size of the environment being collected/converted. Container storage
 persistence is not required. However, it is recommended to have a persistent storage for the logs for troubleshooting.
 The logs are stored in the `~/.local/share/openhound/logs` directory and can be configured to rotate based on time or
 file size.
+</Note>
