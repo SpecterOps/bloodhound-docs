@@ -5,13 +5,13 @@ description: Common issues and solutions when running the GitHound collector.
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-This guide covers common issues encountered when running GitHound and how to resolve them.
+This guide covers common issues encountered when running the GitHub collector and how to resolve them.
 
 ## Authentication Errors
 
 ### "Bad credentials" or 401 Unauthorized
 
-- The Personal Access Token (PAT) may have expired or been revoked. Generate a new [Fine-grained PAT](/opengraph/extensions/githound/configure-pat).
+- The Personal Access Token (PAT) may have expired or been revoked. Generate a new [Fine-grained PAT](/openhound/collectors/github/configure-pat).
 - Verify the token has all required repository and organization permissions.
 - Ensure the token is scoped to **All repositories**.
 
@@ -32,18 +32,10 @@ This guide covers common issues encountered when running GitHound and how to res
 
 This error indicates insufficient GitHub App permissions. Verify:
 
-- The app has all required permissions listed in [Configure a GitHub App Installation](/opengraph/extensions/githound/configure-app).
+- The app has all required permissions listed in [Configure a GitHub App Installation](/openhound/collectors/github/configure-app).
 - The app is installed on your target organization.
 - The app has access to all repositories (or the specific repositories you need).
 
-### JWT Token Expired
-
-GitHub App JWTs expire after 10 minutes. If you encounter authentication errors during a long collection, regenerate the session and resume:
-
-```powershell
-$jwt = New-GitHubJwtSession -OrganizationName "YourOrgName" -ClientId "your-client-id" -PrivateKeyPath "./your-app.pem" -AppId 123456789
-Invoke-GitHound -Session $jwt -Resume
-```
 
 ### Private Key Issues
 
@@ -67,59 +59,8 @@ For small to medium environments (< 500 repos), the built-in rate limit handling
 
 For large environments (500+ repos):
 
-1. Use the [App Installation method](/opengraph/extensions/githound/configure-app) for 3x higher rate limits (15,000/hour vs 5,000/hour).
+1. Use the [App Installation method](/openhound/collectors/github/configure-app) for 3x higher rate limits (15,000/hour vs 5,000/hour).
 2. Run collection during off-peak hours.
-3. Use the [manual step-by-step collection](/opengraph/extensions/githound/collect-data#manual-step-by-step-collection) process for maximum control.
-
-## Crash Recovery
-
-### PowerShell Crashed or Terminal Closed
-
-`Invoke-GitHound` writes a per-step output file after each collection function completes. To resume from where you left off:
-
-```powershell
-Invoke-GitHound -Session $session -Resume
-```
-
-The `-Resume` flag detects existing per-step files on disk and skips completed steps. Collection resumes from the first incomplete step.
-
-**What gets preserved:**
-
-- Any step that fully completed has its output file on disk (e.g., `githound_Organization_*.json`, `githound_User_*.json`).
-- Functions with internal checkpointing (RepositoryRole, Workflow, Secret) save intermediate chunk files, so they can resume mid-function.
-- `Git-HoundBranch` saves per-page checkpoint files but will re-run from scratch if interrupted mid-function.
-
-To start completely fresh and ignore any existing files, run without the `-Resume` flag:
-
-```powershell
-Invoke-GitHound -Session $session
-```
-
-### Corrupt or Truncated Output Files
-
-If `ConvertFrom-Json` errors occur or resume skips a step with incomplete data, delete the corrupt per-step file and re-run with `-Resume`:
-
-```powershell
-Remove-Item ./githound_Repository_*.json
-Invoke-GitHound -Session $session -Resume
-```
-
-## Collection Errors
-
-### "Cannot index into a null array"
-
-A collection function returned no data, likely due to a network interruption or permission issue. Run the specific function individually to diagnose:
-
-```powershell
-$org = Git-HoundOrganization -Session $session
-$org  # Check if data was returned
-```
-
-### Empty or Partial Collection
-
-- Verify all required PAT permissions are configured.
-- Use the step-by-step collection process to identify which function is failing.
-- Check that GitHub Actions is enabled for the organization if workflow/environment data is missing.
 
 ## Large Environment Issues
 
@@ -127,9 +68,8 @@ $org  # Check if data was returned
 
 For organizations with thousands of repositories, a full collection can take several hours.
 
-1. Use the [App Installation method](/opengraph/extensions/githound/configure-app) for higher rate limits.
+1. Use the [App Installation method](/openhound/collectors/github/configure-app) for higher rate limits.
 2. Run collection during off-peak hours.
-3. Use `-Resume` to pick up where you left off if collection is interrupted.
 
 ### Memory Issues
 
@@ -152,16 +92,6 @@ For organizations with thousands of repositories, a full collection can take sev
 - A GitHub Enterprise license is required for SAML identity data.
 
 ## BloodHound Import Issues
-
-### "Invalid JSON" Error
-
-Validate the JSON file before uploading:
-
-```powershell
-Get-Content ./githound_*.json | ConvertFrom-Json
-```
-
-If validation fails, re-run the collection or use `-Resume` to regenerate the affected step.
 
 ### Nodes or Edges Not Appearing
 
