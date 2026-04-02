@@ -1,9 +1,9 @@
 ---
 title: Configure API Key Expiration
-description: Learn how to configure API key expiration in BloodHound Enterprise to enhance security and meet compliance requirements.
+description: Learn how to configure API key expiration in BloodHound to enhance security and meet compliance requirements.
 ---
 
-<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 API key expiration controls how long API tokens remain valid. Use API key expiration to reduce long-lived credentials and support internal security and compliance requirements.
 
@@ -13,17 +13,17 @@ API key expiration applies to the following:
 |------------------------------------------------------------------------------|------------------------------------------------------------------------|
 | [Personal API tokens](/integrations/bloodhound-api/working-with-api#personal-api-tokens)         | Created by individual users for API access.                              |
 | [Non-personal API tokens](/integrations/bloodhound-api/working-with-api#non-personal-api-tokens) | Created for integrations such as Splunk, ServiceNow, and Cortex XSOAR.   |
-| [Collector client API tokens](/collect-data/enterprise-collection/create-collector)               | Created for SharpHound Enterprise and AzureHound Enterprise data collectors. |
+| [Collector client API tokens](/collect-data/enterprise-collection/create-collector)               | Created for AzureHound, SharpHound, and OpenHound data collectors. |
 
 ## Before you begin
 
 Before configuring API key expiration, consider the following:
 
-- API key expiration is not enabled by default and must be turned on by a user with the **Administrator** role in BloodHound Enterprise.
+- API key expiration is not enabled by default and must be turned on by a user with the **Administrator** role in BloodHound.
 - Only users with the **Administrator** role can configure API key expiration.
-- After enabling API key expiration, all existing API keys will be set to expire based on the configured validity period.
-- BloodHound Enterprise does not automatically rotate API keys.
-- Organizations should plan manual key rotation for all integrations and collector clients before changing this setting.
+- After enabling API key expiration, **all** existing and new API keys will be set to expire based on the configured rotation period.
+- BloodHound does not send API key expiration notifications.
+- Organizations should plan manual key rotation and internal expiration notifications for all integrations and collector clients before changing this setting.
 
 ## Configure
 
@@ -31,9 +31,9 @@ The following table summarizes how API key expiration settings and actions affec
 
 | Setting or action | Behavior |
 | --- | --- |
-| Feature enabled | New tokens expire according to the default of custom rotation period. Existing tokens **are not** affected. |
-| Default rotation period | New tokens expire after 90 days by default. |
-| Custom rotation period | New tokens expire after the configured number of days (between 1 and 365). |
+| Feature enabled | Existing and new tokens expire according to the current default or custom rotation period. |
+| Default rotation period | Tokens expire after 365 days by default. |
+| Custom rotation period | Tokens expire after the configured number of days (between 1 and 365). |
 | Rotation period changes | Each token keeps the earlier of its current expiration and now + configured days. |
 | Feature disabled | Expiration enforcement stops immediately, expiration dates are cleared, and tokens no longer expire. |
 
@@ -41,7 +41,7 @@ To enable and configure API key expiration:
 
 <Steps>
   <Step title="Navigate to the configuration">
-    1. Log in to BloodHound Enterprise as a user with the **Administrator** role.
+    1. Log in to BloodHound as a user with the **Administrator** role.
 
     1. In the left menu, click **Administration** > **BloodHound Configuration**.
   </Step>
@@ -49,13 +49,13 @@ To enable and configure API key expiration:
     Toggle the setting for API key expiration.
 
         <Frame>
-          <img src="/images/admin/enable-api-key-expiration.png" alt="API key expiration setting in BloodHound Enterprise admin settings"/>
+          <img src="/images/admin/enable-api-key-expiration.png" alt="API key expiration setting in BloodHound admin settings"/>
         </Frame>
   </Step>
   <Step title="Set the rotation period for API keys">
     Enter the number of days (between 1 and 365) for API keys to remain valid.
     
-    This value will apply to all new keys going forward. Keys created before enabling the feature are not affected.
+    This value applies to existing and new keys.
   </Step>
   <Step title="Save changes and confirm modal">
     Click **Save Settings** and confirm the modal that appears, which explains how existing keys will be affected by this change.
@@ -68,9 +68,13 @@ To enable and configure API key expiration:
 
 ## Rotate keys
 
-After API key expiration is enabled, Administrators must manually rotate keys before they expire to maintain uninterrupted access to the BloodHound Enterprise API. This involves regenerating API tokens and updating any integrations or collector clients that use the expiring keys with the new credentials.
+After API key expiration is enabled, Administrators must manually rotate keys before they expire to maintain uninterrupted access to the BloodHound API. This involves regenerating API tokens and updating any integrations or collector clients that use the expiring keys with the new credentials.
 
-Administrators can monitor expiration dates in the **Manage Clients** page for collector clients and in the **API Key Management** page for personal and non-personal API tokens. Both pages display expiration dates, allowing administrators to proactively manage key rotation.
+Administrators can monitor expiration dates in the **Manage Clients** page for collector clients and in the **API Key Management** page for personal and non-personal API tokens.
+
+<Tip>
+  We recommend setting external reminders so keys are rotated before they expire and to avoid service interruption.
+</Tip>
 
 ### Personal/non-personal API tokens
 
@@ -97,7 +101,11 @@ Administrators can rotate personal and non-personal API tokens for all users fro
 
     1. Click **Create Token**, give it a descriptive name, and click **Save**.
 
-    1. Save the API token and token ID and click **Close**.
+    1. Save the API token and token ID in a secure location (for example, a secrets manager or enterprise password vault) and click **Close**.
+    
+       <Warning>
+         Do not store these values in cleartext files. 
+       </Warning>
 
     1. Update the dependent integration configuration with the new API token and token ID.
   </Step>
@@ -124,8 +132,8 @@ Administrators can rotate API tokens for collector clients from the **Manage Cli
 
     1. Confirm the modal that appears, which explains that regenerating authentication invalidates the current client credentials.
 
-    1. Save the API token and token ID and click **Close**.
+    1. Save the API token and token ID in a secure location (for example, a secrets manager or enterprise password vault). Do not store these values in cleartext files. Then click **Close**.
 
-    1. Update the dependent [AzureHound](/install-data-collector/install-azurehound/create-configuration) or [SharpHound](/install-data-collector/install-sharphound/local-configuration#auth-json) configuration with the new API token and token ID.
+    1. Update the dependent [AzureHound](/install-data-collector/install-azurehound/create-configuration), [SharpHound](/install-data-collector/install-sharphound/local-configuration#auth-json), or OpenHound configuration with the new API token and token ID.
   </Step>
 </Steps>
