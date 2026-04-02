@@ -7,13 +7,13 @@ description: '[Repository - Computed] Role can create new branches in this repos
 
 ## Edge Schema
 
-- Source: [GH_RepoRole](/opengraph/extensions/githound/reference/nodes/gh_reporole), [GH_User](/opengraph/extensions/githound/reference/nodes/gh_user), [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team)
-- Destination: [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository)
+- Source: [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole), [GH_User](/opengraph/extensions/github/nodes/gh_user), [GH_Team](/opengraph/extensions/github/nodes/gh_team)
+- Destination: [GH_Repository](/opengraph/extensions/github/nodes/gh_repository)
 - Traversable: ✅
 
 ## General Information
 
-The traversable [GH_CanCreateBranch](/opengraph/extensions/githound/reference/edges/gh_cancreatebranch) edge is a computed edge indicating that a role or actor can create new branches in a repository. Created by `Compute-GitHoundBranchAccess` with no additional API calls, the computation evaluates whether a wildcard (`*`) BPR with push restrictions and `blocks_creations` exists. If no such BPR exists, any write-capable role can create branches. If one exists, admin or `push_protected_branch` permission is required, or the actor must be listed in pushAllowances. Per-actor edges from [GH_User](/opengraph/extensions/githound/reference/nodes/gh_user) or [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team) are only emitted when BPR allowances grant branch creation access beyond what the role provides. Each edge includes a `reason` property and a `query_composition` Cypher query showing the underlying graph evidence.
+The traversable [GH_CanCreateBranch](/opengraph/extensions/github/edges/gh_cancreatebranch) edge is a computed edge indicating that a role or actor can create new branches in a repository. Created by `Compute-GitHoundBranchAccess` with no additional API calls, the computation evaluates whether a wildcard (`*`) BPR with push restrictions and `blocks_creations` exists. If no such BPR exists, any write-capable role can create branches. If one exists, admin or `push_protected_branch` permission is required, or the actor must be listed in pushAllowances. Per-actor edges from [GH_User](/opengraph/extensions/github/nodes/gh_user) or [GH_Team](/opengraph/extensions/github/nodes/gh_team) are only emitted when BPR allowances grant branch creation access beyond what the role provides. Each edge includes a `reason` property and a `query_composition` Cypher query showing the underlying graph evidence.
 
 ## Scenarios
 
@@ -41,7 +41,7 @@ graph LR
 
 ### `push_protected_branch` — Push-protected role bypasses wildcard BPR
 
-A wildcard BPR blocks creations. The [GH_PushProtectedBranch](/opengraph/extensions/githound/reference/edges/gh_pushprotectedbranch) permission bypasses the push gate regardless of `enforce_admins`.
+A wildcard BPR blocks creations. The [GH_PushProtectedBranch](/opengraph/extensions/github/edges/gh_pushprotectedbranch) permission bypasses the push gate regardless of `enforce_admins`.
 
 ```mermaid
 graph LR
@@ -54,7 +54,7 @@ graph LR
 
 ### `push_allowance` — Per-actor push restriction bypass
 
-User or Team listed in the wildcard BPR's `pushAllowances` can create branches. This is a per-actor delta edge — only emitted when the actor's role doesn't already grant [GH_CanCreateBranch](/opengraph/extensions/githound/reference/edges/gh_cancreatebranch).
+User or Team listed in the wildcard BPR's `pushAllowances` can create branches. This is a per-actor delta edge — only emitted when the actor's role doesn't already grant [GH_CanCreateBranch](/opengraph/extensions/github/edges/gh_cancreatebranch).
 
 ```mermaid
 graph LR
