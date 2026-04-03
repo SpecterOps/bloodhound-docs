@@ -5,13 +5,11 @@ description: Learn how to manage the structures that model your OpenGraph data i
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-OpenGraph extensions expand BloodHound's ability to map attack paths beyond Microsoft platforms to other identity providers, developer infrastructure, and device management platforms.
+OpenGraph extensions expand BloodHound's ability to map attack paths beyond Microsoft platforms to other identity providers, developer infrastructure, and device management platforms. For example:
 
-The following extensions use [OpenHound](/openhound/overview)—a standardized, Python-based framework for collecting and converting data from cloud and SaaS platforms into OpenGraph format:
-
-- [OktaHound](/openhound/collectors/okta/overview)
-- [GitHound](/openhound/collectors/github/overview)
-- [JamfHound](/openhound/collectors/jamf/overview)
+- [GitHub](/openhound/collectors/github/overview)
+- [Jamf](/openhound/collectors/jamf/overview)
+- [Okta](/openhound/collectors/okta/overview)
 
 <Tip>See the [OpenGraph Library](/opengraph/library) for a list of more OpenGraph extensions and collectors.</Tip>
 
@@ -62,7 +60,6 @@ See the following table for important terms and definitions related to OpenGraph
 | **Extension** | A modular collection of OpenGraph components, including an extension definition schema, collector, Cypher saved queries, Privilege Zone rules, and findings. |
 | **Extension definition schema** | A file that defines an extension's structure, including node types, edge types, and visual configurations. Enables BloodHound to validate incoming data payloads and produce structured graphs. Both BloodHound Community and BloodHound Enterprise use the same extension definition schema format. |
 | **Generic graph** | OpenGraph data conforming to the basic node, edge, and metadata format required for a data payload, with no associated extension definition schema. |
-| **OpenHound** | A standardized, Python-based framework for building and running OpenGraph collectors that extract, normalize, and load data from cloud and SaaS platforms. |
 | **Structured graph** | OpenGraph data conforming to the basic node, edge, and metadata format required for a data payload _and_ associated with an installed extension definition schema. Structured graphs are fully integrated with BloodHound's features and functionality. |
 
 ## Manage extensions
@@ -94,9 +91,7 @@ Complete the following steps before installing an extension or uploading structu
 	<Step title="Review prerequisites">
 		After you obtain an extension and collector, review the prerequisites in the extension-specific setup documentation.
 		
-		For OpenHound-based collectors (GitHound, OktaHound, JamfHound), see the [OpenHound getting started guide](/openhound/overview) for your edition (Enterprise or Community) and the collector-specific documentation for details on permissions, platform API configuration, and deployment options.
-		
-		For other extension types, review collector permissions and required platform configurations, such as API service application registration.
+		For [OpenHound](/openhound/overview)-based collectors (GitHub, Jamf, and Okta), review edition-specific deployment information (Enterprise or Community) and the collector-specific documentation for details on permissions, platform API configuration, and deployment options.
 	</Step>
 </Steps>
 
@@ -104,61 +99,96 @@ Complete the following steps before installing an extension or uploading structu
 
 The workflow for generic and structured OpenGraph data is largely the same. The main difference is that structured graphs require an Administrator to install the extension during initial setup. After that, Administrators and users follow the same recurring cycle to keep extension data current and use it in BloodHound.
 
+<Note>
+  For [OpenHound](/openhound/overview) collectors (GitHub, Jamf, and Okta), how you deploy the collector determines whether data upload is automatic or manual.
+</Note>
+
 #### Initial setup
 
 The following diagram provides a high-level overview of the recommended workflow to prepare BloodHound for producing structured graphs from OpenGraph extensions.
 
-For **OpenHound-based collectors** (GitHound, OktaHound, JamfHound), the collection process involves three phases: Extract (calling platform APIs), Normalize (standardizing data), and Load (converting to OpenGraph format and uploading or generating files). How you deploy the collector—containerized service for Enterprise or CLI for Community—determines whether upload is automatic or manual.
-
 The initial setup workflow is not strictly linear and not all steps are required. For example, importing Saved Queries and creating extension-specific Privilege Zone rules are optional.
 
 <Note>
-For generic graphs, the workflow is minimal: users may optionally import Saved Queries (if any). Installing an extension definition schema and updating Privilege Zone rules is not required.
+  For generic graphs, the workflow is minimal: users may optionally import Saved Queries (if any). Installing an extension definition schema and updating Privilege Zone rules is not required.
 </Note>
 
 ```mermaid
 flowchart TB
-	subgraph prepare["Configure and Collect"]
+	subgraph prepare[Configure and Run]
 		a["Download extension<br/>and collector"]
-        a-->b["Configure<br/>collector"]
-        b-->c["Run collector<br/>(extract-normalize-load)"]
+        a-->b["Configure<br/> collector"]
+        b-->c["Run<br/>collector"]
     end
 
-	subgraph upload["Upload & Install"]
-		f["Upload data to<br/>BloodHound"]
-        f-->g["Install extension<br/>definition schema"]
-        g-->h["Import Cypher<br/>saved queries"]
-        h-->i["Update Privilege<br/>Zone rules"]
+	subgraph upload[Install Extension]
+		f["Install extension<br/>definition schema"]
+        f-->g["Import Cypher<br/>saved queries"]
+		g-->h["Update Privilege<br/>Zone rules"]
 	end
 
     prepare-->upload
-
-	note["Enterprise: Auto-upload after collection<br/>Community: Manual upload after collection"]
 ```
 
 #### Operational cycle
 
-After initial setup, the following diagram illustrates the recurring cycle of operations to keep extension data current. For OpenHound-based collectors, the main difference is whether upload happens automatically (Enterprise) or requires manual upload (Community):
+After initial setup, the following diagrams illustrate the recurring cycle of operations to keep extension data current.
+
+For OpenHound collectors, the main difference is whether upload happens automatically (Enterprise) or requires manual upload (Community):
+
+**BloodHound Enterprise (containerized)**
 
 ```mermaid
-flowchart TB
-	subgraph enterprise["BloodHound Enterprise<br/>(Containerized)"]
-		direction LR
-		e1["Admin schedules<br/>or runs container"]
-		e2["OpenHound extracts,<br/>normalizes, loads data"]
-		e3["Auto-uploads to<br/>BloodHound API"]
-		e4["User explores<br/>and analyzes"]
-		e1-->e2-->e3-->e4
+sequenceDiagram
+  autonumber
+
+	box rgba(128, 128, 128, 0.14) Human actors
+		actor Admin
+		actor User
 	end
 
-	subgraph community["BloodHound Community<br/>(CLI)"]
-		direction LR
-		c1["User runs<br/>openhound CLI"]
-		c2["Extract, normalize,<br/>load locally"]
-		c3["User uploads<br/>generated files"]
-		c4["User explores<br/>and analyzes"]
-		c1-->c2-->c3-->c4
+	box rgba(96, 96, 96, 0.12) Systems
+		participant CollectorClient as BHE Collector Client
+		participant OpenHound as OpenHound Container
+		participant TargetPlatform as Target Platform
+		participant BloodHound
 	end
+
+	Admin->>CollectorClient: Run on demand or configure schedule
+	CollectorClient->>OpenHound: Trigger collector job
+	OpenHound->>TargetPlatform: Extract data
+	TargetPlatform-->>OpenHound: Return source data
+	OpenHound->>OpenHound: Normalize and load data
+	OpenHound->>BloodHound: Auto-upload data payload
+	BloodHound-->>CollectorClient: Ingest complete
+	User->>BloodHound: Explore and analyze data
+```
+
+**BloodHound Community (CLI)**
+
+```mermaid
+sequenceDiagram
+  autonumber
+
+	box rgba(128, 128, 128, 0.14) Human actors
+		actor Admin
+		actor User
+	end
+
+	box rgba(96, 96, 96, 0.12) Systems
+		participant OpenHound as OpenHound CLI
+		participant TargetPlatform as Target Platform
+		participant BloodHound
+	end
+
+	Admin->>OpenHound: Run openhound CLI
+	OpenHound->>TargetPlatform: Extract data
+	TargetPlatform-->>OpenHound: Return source data
+	OpenHound->>OpenHound: Normalize and load data
+	OpenHound-->>Admin: Generate data files locally
+	Admin->>BloodHound: Upload data files
+	BloodHound-->>Admin: Ingest complete
+	User->>BloodHound: Explore and analyze data
 ```
 
 ### Install an extension
@@ -220,13 +250,16 @@ To delete an extension, click the <Icon icon="trash"/> (trash) icon next to it i
 
 ## Upload data
 
-After an Administrator installs an extension, users can upload data payloads that conform to the extension definition schema and take advantage of structured graph capabilities in BloodHound. 
+After an Administrator installs an extension, users can upload data payloads that conform to the extension definition schema and take advantage of structured graph capabilities in BloodHound.
 
-**For OpenHound-based collectors** (GitHound, OktaHound, JamfHound):
-- **BloodHound Enterprise**: Data automatically uploads to BloodHound after the collector completes the extract-normalize-load pipeline. No manual upload steps are required.
-- **BloodHound Community**: After running the OpenHound CLI and generating data files locally, follow the steps below to manually upload the files.
+For extensions that use OpenHound collectors (GitHub, Jamf, and Okta), how data is uploaded depends on your BloodHound edition:
 
-**For other extension types or manual workflows**, follow these steps to upload and explore structured graph data:
+- **BloodHound Enterprise**: The collector client automatically uploads data after the OpenHound container completes the extract-normalize-load pipeline. No manual upload steps are required.
+- **BloodHound Community**: After running the OpenHound CLI and generating data files locally, follow the manual upload steps below.
+
+  <Note>
+	For extensions that do not use OpenHound collectors, follow the manual upload steps below.
+  </Note>
 
 <Steps>
   <Step title="Upload data">
