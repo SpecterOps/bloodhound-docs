@@ -1,0 +1,29 @@
+---
+title: 'GH_Contains'
+description: 'Container relationship for organizational hierarchy (org contains secrets/variables, repo contains secrets/variables, environment contains secrets/variables)'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Source: [GH_Organization](/opengraph/extensions/githound/reference/nodes/gh_organization), [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository), [GH_Environment](/opengraph/extensions/githound/reference/nodes/gh_environment)
+- Destination: [GH_User](/opengraph/extensions/githound/reference/nodes/gh_user), [GH_Team](/opengraph/extensions/githound/reference/nodes/gh_team), [GH_Repository](/opengraph/extensions/githound/reference/nodes/gh_repository), [GH_OrgRole](/opengraph/extensions/githound/reference/nodes/gh_orgrole), [GH_RepoRole](/opengraph/extensions/githound/reference/nodes/gh_reporole), [GH_TeamRole](/opengraph/extensions/githound/reference/nodes/gh_teamrole), [GH_OrgSecret](/opengraph/extensions/githound/reference/nodes/gh_orgsecret), [GH_AppInstallation](/opengraph/extensions/githound/reference/nodes/gh_appinstallation), [GH_PersonalAccessToken](/opengraph/extensions/githound/reference/nodes/gh_personalaccesstoken), [GH_PersonalAccessTokenRequest](/opengraph/extensions/githound/reference/nodes/gh_personalaccesstokenrequest), [GH_RepoSecret](/opengraph/extensions/githound/reference/nodes/gh_reposecret), [GH_EnvironmentSecret](/opengraph/extensions/githound/reference/nodes/gh_environmentsecret), [GH_SecretScanningAlert](/opengraph/extensions/githound/reference/nodes/gh_secretscanningalert)
+- Traversable: ❌
+
+## General Information
+
+The non-traversable [GH_Contains](/opengraph/extensions/githound/reference/edges/gh_contains) edge represents structural containment within the GitHub resource hierarchy. The organization serves as the top-level container for users, teams, repositories, roles, secrets, app installations, and personal access tokens. Repositories contain their own repo-level secrets, and environments contain environment-scoped secrets. This edge is created by the collector to establish the organizational hierarchy of GitHub resources and is not traversable because containment alone does not imply privilege escalation.
+
+```mermaid
+graph LR
+    node1("GH_Organization SpecterOps")
+    node2("GH_User alice")
+    node3("GH_Team engineering")
+    node4("GH_Repository GitHound")
+    node5("GH_RepoSecret DEPLOY_KEY")
+    node1 -- GH_Contains --> node2
+    node1 -- GH_Contains --> node3
+    node1 -- GH_Contains --> node4
+    node4 -- GH_Contains --> node5
+```

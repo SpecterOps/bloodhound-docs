@@ -7,7 +7,9 @@ description: Search for objects and visualize relationships between them in the 
 
 After [uploading data](/get-started/quickstart/community-edition-quickstart#get-data-into-bloodhound) to BloodHound, use the **Explore** page to search for objects and visualize their relationships. The graph displays <Tooltip headline="nodes" tip="Part of the graph construct and refers to an entity in the network, such as a user, computer, group, or domain. Two nodes can be connected by an edge." cta="See the docs" href="/resources/nodes/overview">nodes</Tooltip> and <Tooltip headline="edges" tip="Part of the graph construct and refers to a relationship between two nodes, such as group membership or session information." cta="See the docs" href="/resources/edges/overview">edges</Tooltip>, helping you understand your environment and identify potential attack paths.
 
-BloodHound supports multiple data sources, including Active Directory, Azure (Entra ID), and other identity services through [OpenGraph](/opengraph/overview). The search methods return results for all data sources.
+BloodHound supports multiple data sources, including Active Directory, Azure (Entra ID), and other identity services through [OpenGraph](/opengraph/overview).
+
+<Note>BloodHound supports all search methods for [structured](/opengraph/extensions/manage#structured-graphs) graphs. If you're exploring [generic](/opengraph/extensions/manage#generic-graphs) graphs, you can use the **Search** and **Cypher** search methods only.</Note>
 
 The **Explore** page provides the following methods for searching for objects and visualizing their relationships:
 
@@ -25,8 +27,6 @@ The **Explore** page provides the following methods for searching for objects an
   </Card>
 </CardGroup>
 
-<Note>BloodHound currently supports the **Search** and **Cypher** search methods for OpenGraph data, with support for Pathfinding coming soon.</Note>
-
 Which method you choose depends on your specific use case and what you're trying to accomplish. This page describes each of the search methods in more detail and provides guidance on when to use each one.
 
 <Tip>You can interact with objects in the [graph](#graph-view) and customize the view to explore the data more effectively, regardless of which search method you use.</Tip>
@@ -43,15 +43,19 @@ Use cases for the search method include:
 * **Investigation prep:** Find starting points for deeper exploration using Pathfinding or Cypher queries
 * **Data validation:** Verify specific objects are present in your environment after data ingestion
 
+### Search by name or object ID
+
 For example, if you want to find a user named "bob", type "bob" in the search box and click the appropriate node from the suggestions.
 
 <Tip>The suggestions display the node type next to each match, making it easy to identify the correct object when multiple objects share similar or identical names. OpenGraph data also displays custom icons configured for node types in this dropdown, which can further help you identify the intended object.</Tip>
 
 <img src="/images/explore/search-bob.gif" alt="An animated view showing how to search for a user named bob in the Explore page" />
 
+### Filter by node type
+
 You can also constrain your search to particular _built-in_ node types (AZ/AD) by prepending your search with the appropriate node label.
 
-<Note>Support for OpenGraph node types are coming at a later date.</Note>
+<Note>Support for filtering by OpenGraph node types is coming at a later date.</Note>
 
 For example, use the following search query to find group nodes that contain the word "admin":
 
@@ -67,9 +71,9 @@ group:admin
 
 ## Pathfinding
 
-The **Pathfinding** tab allows you to discover relationships between objects by finding paths between them. This is particularly useful for investigating potential attack paths in an environment.
+The **Pathfinding** tab allows you to discover relationships between objects by finding paths between them. This is particularly useful for investigating potential attack paths across identity providers and cloud services in a single graph view.
 
-<Note>BloodHound currently supports the **Search** and **Cypher** search methods for OpenGraph data, with support for Pathfinding coming soon.</Note>
+<Note>Pathfinding is available for [structured](/opengraph/extensions/manage#structured-graphs) graphs only.</Note>
 
 Use cases for the pathfinding search method include:
 
@@ -170,7 +174,7 @@ Use the graph visualization options at the bottom of the **Explore** page to cus
       <Tab title="Table">
         Displays objects in a tabular format, showing properties in rows and columns for easy comparison.
 
-        The **Table** layout is available for Cypher searches only and is useful for searching and sorting large sets of data. You can also export the table data as a CSV file for further analysis by clicking the <Icon icon="download" iconType="solid"/> (download) icon.
+        The **Table** layout is available for Cypher searches only and is useful for searching and sorting large sets of data.
 
         <Frame>
           <img
@@ -189,15 +193,21 @@ Use the graph visualization options at the bottom of the **Explore** page to cus
         | **Tier Zero**  | Indicates if the object is part of the Tier Zero privilege zone |
 
         <Tip>
-        - Click **Columns** in the top-right corner of the table to add or remove columns.
         - Click the <Icon icon="ellipsis-vertical" /> (ellipsis) icon in each row to access the [context menu](#context-menu) for that object.
+        - Resize columns to view more or less information as needed by clicking and dragging the edges of the column dividers (or double-clicking the column dividers to auto-size).
         </Tip>
+
+        The table layout provides the following options:
+
+        - **Search**—Quickly identify specific objects among the nodes displayed in the graph
+
+        - **Export**—Download the current graph view as a CSV file for further analysis or sharing
+
+        - **Expand**—Maximize the graph view to fill the screen for better visibility
+
+        - **Columns**—Search, add and remove columns, reset column size, reset defaults, and pin columns in the table layout
       </Tab>
     </Tabs>
-
-1. **Export**—Download the current graph view as a JSON file for further analysis or sharing
-
-1. **Search**—Quickly identify specific objects among the nodes displayed in the graph
 
 <Note>Graph visualization options are available across all search methods. The **Table** layout is available for Cypher searches only.</Note>
 
@@ -211,8 +221,8 @@ Right-click on any node in the graph to access the context menu. Options in the 
 
 * **Set as starting node**—Set the node as the starting point in the **Pathfinding** tab and immediately draw a new graph showing paths between that node and the current ending node
 * **Set as ending node**—Set the node as the ending point in the **Pathfinding** tab and immediately draw a new graph showing paths between the current starting node and that node
-* **Add to/Remove from Tier Zero**—Mark or unmark the node as a member of the Tier Zero privilege zones. Adding is immediate; removing requires manually editing the zone rule to remove the object.
-* **Add to/Remove from Owned**—Mark or unmark the node as compromised in the Privilege Zones page. Adding is immediate; removing requires manually editing the label rule to remove the object.
+* **Add to/Remove from Tier Zero**—Mark or unmark the node as a member of the Tier Zero privilege zone. Adding automatically triggers analysis to tag the object; removing requires manually editing the zone rule to remove the object.
+* **Add to/Remove from Owned**—Mark or unmark the node as compromised in the Privilege Zones page. Adding automatically triggers analysis to tag the object; removing requires manually editing the label rule to remove the object.
 * **Copy**—Copy the node's name, object ID, or a Cypher query to your clipboard for use in other searches or documentation
 
 #### Entity panel
