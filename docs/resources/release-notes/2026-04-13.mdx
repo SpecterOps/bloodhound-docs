@@ -101,41 +101,66 @@ sidebarTitle: "2026-04-13"
 <Update label="BloodHound" description="Enhancement" tags={["Data Collection"]}>
   {/*BED-7717*/}
   {/*BED-7710*/}
-  ## Azure Hybrid Post-Processing Performance and Data Hygiene
+  ## Azure Hybrid Post-Processing and Data Hygiene
 
-  Improve Azure post-processing performance and reduce unnecessary graph churn during hybrid data handling.
+  Improve Azure post-processing and reduce unnecessary graph churn during hybrid data handling.
 
-  This release optimizes role-assignment processing and stops creating placeholder AD objects during Azure ingest and hybrid post-processing so relationships are only created when both Azure and AD context is available.
+  This release optimizes role-assignment processing and stops creating placeholder Active Directory (AD) objects during Azure ingest and hybrid post-processing so relationships are only created when both Azure and AD context is available.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
   {/*BED-5987*/}
   ## HasSession Edge Deletion
 
-  Refresh time-sensitive session data without clearing the entire graph by deleting only **HasSession** edges from **Database Management**.
+  Refresh time-sensitive session data without clearing the entire graph by deleting only **HasSession** edges from the database.
 
   This enhancement adds a dedicated **HasSession** checkbox to the **Database Management** page so you can remove stale session relationships before recollecting updated session data.
+
+  <Frame>
+    <img
+      src="/images/release_notes/9_0_0/has-session-edge-deletion.png"
+      alt="Screenshot of the HasSession edge deletion checkbox on the Database Management page"
+    />
+  </Frame>
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
   {/*BED-7524*/}
   {/*BED-7523*/}
   {/*BED-7539*/}
-  ## Explorer Visual Clarity and Panel Behavior
+  ## Graph Readability Improvements
 
-  Explore graph readability with clearer directional arrows, improved node label presentation, and automatic entity panel dismissal when no node is selected.
+  Explore graph readability with improved node labels, clearer directional arrows, and more intuitive selection behavior:
 
-  These updates make relationship direction easier to interpret at default zoom, improve label readability and truncation behavior, and reclaim workspace by closing the entity panel when selection is cleared.
+  - Node labels now display below nodes and include a second line identifying the source platform and type (for example, _Active Directory | Group_). Long labels are truncated with an ellipsis and show the full text on selection.
+  
+  - Edges now feature higher contrast directional arrows that connect directly to nodes instead of node labels, making it easier to follow relationship paths at default zoom levels.
+  
+  - The Entity panel now closes when clicking on the graph background to clear selection, giving you more space to explore the graph without manually closing the panel.
+
+    <Frame>
+      <img
+        src="/images/release_notes/9_0_0/graph-readability.png"
+        alt="Screenshot of graph readability improvements, including updated node labels and directional arrows"
+      />
+    </Frame>
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
-  {/*BED-7054*/}
   {/*BED-7032*/}
-  ## Cypher Optional Match and Query Timeout Controls
+  ## Cypher Query Timeout Controls
 
-  Build more flexible Explore workflows with improved `OPTIONAL MATCH` behavior and optional query-timeout bypass controls.
+  Take control of long-running Cypher queries with a new option to disable the default query timeout.
 
-  These updates improve parity for null-returning optional match use cases and add UI support for disabling timeout enforcement when configuration permits.
+  For queries that may require more time to execute, you can now [disable](/analyze-data/explore/cypher-search#disable-query-timeout) the default query timeout on a per-query basis. This gives you more control over long-running queries and allows you to retrieve results that may take longer to compute without being prematurely terminated by the timeout.
+
+  <Frame>
+    <img
+      src="/images/release_notes/9_0_0/disable-query-timeout.png"
+      alt="Screenshot of the Cypher query timeout bypass option in the query editor"
+      style={{ width:"100%" }}
+    />
+  </Frame>
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
@@ -234,6 +259,7 @@ sidebarTitle: "2026-04-13"
   - {/*BED-7038*/} Resolved an issue where the Cypher autocomplete dropdown on the **Explore** page rendered in the wrong position and may not be visible.
   - {/*BED-6500*/} Resolved an issue where several prebuilt "Shortest paths..." **Saved Queries** queries could time out and fail to return results.
   - {/*BED-7469*/} Resolved an issue where Cypher queries on PostgreSQL failed with the error `ERROR:  invalid reference to FROM-clause entry for table "s0" (SQLSTATE 42P01)`.
+  - {/*BED-7054*/} Resolved an issue where `OPTIONAL MATCH` clauses could be translated without a valid prior query frame, causing some Cypher queries to return incorrect results.
 
   ## OpenGraph
 
