@@ -11,22 +11,13 @@ sidebarTitle: "2026-04-13"
 
 <Tip>Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.</Tip>
 
-<Update label="BloodHound" description="New Feature" tags={["OpenGraph"]}>
-  {/*BP-2432*/}
-  ## OpenGraph Extension Management
+<Update label="BloodHound" description="New Feature" tags={["Administration"]}>
+  {/*BED-7559*/}
+  ## API Key Expiration
 
-  Use the new **OpenGraph Management** page to upload, view, update, and delete OpenGraph extensions so you can manage structured graph support.
+  Configure automatic expiration for API keys used to authenticate to the BloodHound API to reduce long-lived credentials and support internal security and compliance requirements.
 
-  OpenGraph extensions define the schema for your custom graph data, including node and edge types, properties, and relationships. With the new **OpenGraph Management** page, you can easily manage your OpenGraph extensions in one place and ensure that your custom graph data is properly structured.
-</Update>
-
-<Update label="BloodHound" description="New Feature" tags={["OpenGraph"]}>
-  {/*BED-7665*/}
-  ## OpenGraph Data Validation
-
-  Validate OpenGraph data payloads before uploading them to BloodHound with the new [`chow`](https://github.com/SpecterOps/chow) command-line tool.
-
-  The tool provides actionable context when a payload fails schema checks to help you troubleshoot malformed data faster and reduce ingestion retries.
+  API key expiration applies to personal API tokens, non-personal API tokens used for integrations, and collector client API tokens (AzureHound, SharpHound, OpenHound).
 </Update>
 
 <Update label="OpenHound" description="New Feature" tags={["Data Collection"]}>
@@ -38,17 +29,30 @@ sidebarTitle: "2026-04-13"
   OpenHound is built in Python and powered by the [Data Load Tool (DLT)](https://dlthub.com/docs/intro) library so you can follow a consistent workflow to collect, process, and convert data from external sources into BloodHound-compatible graphs. You can run OpenHound as a containerized service or as a standalone CLI application.
 </Update>
 
-<Update label="BloodHound" description="New Feature" tags={["Administration"]}>
-  {/*BED-7559*/}
-  ## API Key Expiration
+<Update label="BloodHound" description="New Feature" tags={["OpenGraph"]}>
+  {/*BP-2432*/}
+  ## OpenGraph Extension Management
 
-  Configure automatic expiration for API keys used to authenticate to the BloodHound API to reduce long-lived credentials and support internal security and compliance requirements.
+  Use the new **OpenGraph Management** page to upload, view, update, and delete OpenGraph extensions so you can manage [structured](/opengraph/extensions/manage) graph support.
 
-  API key expiration applies to personal API tokens, non-personal API tokens used for integrations, and collector client API tokens (AzureHound, SharpHound, OpenHound).
+  OpenGraph extensions define the schema for your custom graph data, including node and edge types, properties, and relationships. With the new **OpenGraph Management** page, you can manage your extensions in one place and keep custom graph data structured for ingestion.
+
+  This release also exposes OpenGraph Extension Management APIs in the public OpenAPI specification and marks them as experimental so you can evaluate and automate extension workflows with clear API guidance.
+</Update>
+
+<Update label="BloodHound" description="New Feature" tags={["OpenGraph"]}>
+  {/*BED-7665*/}
+  ## OpenGraph Data Validation
+
+  Validate OpenGraph data payloads before uploading them to BloodHound with the new [`chow`](https://github.com/SpecterOps/chow) command-line tool.
+
+  The tool provides actionable context when a payload fails schema checks to help you troubleshoot malformed data faster and reduce ingestion retries.
 </Update>
 
 <Update label="BloodHound" description="New Feature" tags={["OpenGraph"]}>
   {/*BED-6738*/}
+  {/*BED-7651*/}
+  {/*BED-7042*/}
   ## OpenGraph Findings
 
   <img
@@ -60,6 +64,8 @@ sidebarTitle: "2026-04-13"
   See OpenGraph findings in the **Attack Paths** and **Posture** pages so you can prioritize remediation alongside built-in Active Directory and Entra ID data.
 
   OpenGraph integration brings custom graph data into the BloodHound Enterprise findings experience, including the metrics and views you use to understand severity, track exposure, and measure remediation progress over time.
+
+  This release also adds APIs to list extension finding schemas and export OpenGraph attack path details so you can power UI rendering and reporting workflows with extension-specific finding definitions and path data.
 </Update>
 
 <Update label="BloodHound" description="New Feature" tags={["Administration"]}>
@@ -92,14 +98,119 @@ sidebarTitle: "2026-04-13"
   This release adds an [IWA-based authentication](/install-data-collector/install-sharphound/configure-adfs-iwa) path for SharpHound Enterprise deployments that rely on ADFS for Windows-based authentication workflows. With this new feature, SharpHound can seamlessly authenticate with ADFS using IWA, providing a more streamlined and secure authentication experience for users in environments that rely on ADFS for identity management.
 </Update>
 
+<Update label="BloodHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-7717*/}
+  {/*BED-7710*/}
+  ## Azure Hybrid Post-Processing Performance and Data Hygiene
+
+  Improve Azure post-processing performance and reduce unnecessary graph churn during hybrid data handling.
+
+  This release optimizes role-assignment processing and stops creating placeholder AD objects during Azure ingest and hybrid post-processing so relationships are only created when both Azure and AD context is available.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-7524*/}
+  {/*BED-7523*/}
+  {/*BED-7539*/}
+  ## Explorer Visual Clarity and Panel Behavior
+
+  Explore graph readability with clearer directional arrows, improved node label presentation, and automatic entity panel dismissal when no node is selected.
+
+  These updates make relationship direction easier to interpret at default zoom, improve label readability and truncation behavior, and reclaim workspace by closing the entity panel when selection is cleared.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-7054*/}
+  {/*BED-7032*/}
+  ## Cypher Optional Match and Query Timeout Controls
+
+  Build more flexible Explore workflows with improved `OPTIONAL MATCH` behavior and optional query-timeout bypass controls.
+
+  These updates improve parity for null-returning optional match use cases and add UI support for disabling timeout enforcement when configuration permits.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-7002*/}
+  {/*BED-7000*/}
+  ## Table View Sorting and Column Organization
+
+  Work through table data faster with clearer sorting affordances and better control over column layout.
+
+  This release improves sort discoverability and adds stronger column organization workflows for table-heavy analysis tasks.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-7609*/}
+  ## Improved Graph Export Filenames
+
+  Export graph data with more useful filenames to avoid repeated `bh-graph.json` collisions in your downloads.
+
+  This enhancement improves filename behavior so exported graph files are easier to identify and manage across repeated exports.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  {/*BED-7693*/}
+  ## OpenGraph Environment ID Property Standardization
+
+  Standardize OpenGraph payload and node property handling on `environmentid` to align with BloodHound naming conventions.
+
+  This update migrates legacy `environment_id` usage, updates references, and improves consistency for ingestion, indexing, and query behavior.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Accessibility"]}>
+  {/*BED-5843*/}
+  {/*BED-5690*/}
+  ## Accessibility Labels and Non-Text Content
+
+  Improve assistive technology support with clearer component naming and better non-text content labeling across the interface.
+
+  This accessibility work strengthens screen reader compatibility by improving role, state, and value semantics and adding or refining labels for visual UI elements.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
+  {/*BED-7694*/}
+  ## Navigation Bar Modernization
+
+  Use a more predictable navigation experience with improved expand and collapse behavior in the primary sidebar.
+
+  The updated navbar defaults to expanded for new users, supports persistent collapse state, and improves discoverability of menu items and submenus.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
+  {/*BED-6392*/}
+  ## Citrix RDP Support Default for New Environments
+
+  Start new environments with **Citrix RDP Support** enabled by default to reduce setup friction where Citrix patterns are expected.
+
+  This change updates default environment configuration behavior for new tenants without modifying existing environment settings.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Zone Builder"]}>
+  {/*BED-7356*/}
+  ## Privilege Zone Certification Selection Behavior
+
+  Certify principals in Privilege Zones with clearer list selection behavior that stays aligned with the object details panel.
+
+  This update improves checkbox and row interaction handling so selected-object context remains easier to follow during certification workflows.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Posture"]}>
+  {/*BED-7595*/}
+  {/*BED-7594*/}
+  ## Posture Metric Precision and Custom Range Controls
+
+  <img
+    src="/assets/enterprise-edition-pill-tag.svg"
+    alt="BloodHound Enterprise logo"
+    style={{ width: "25%" }}
+  />
+
+  Analyze posture trends with more precise metric display and more reliable custom time-range behavior.
+
+  This release expands how many digits are shown before rounding for key posture metrics and improves custom-range validation and chart alignment to prevent confusing future-time selections and inconsistent trend rendering.
+</Update>
+
 <Update label="BloodHound" tags={["Fixed Issues"]}>
-  ## Cypher and Explore
-
-  - {/*BED-7860*/} Resolved an issue where pressing the space bar in the Cypher query editor on the **Explore** page caused unexpected behavior.
-  - {/*BED-7038*/} Resolved an issue where the Cypher autocomplete dropdown on the **Explore** page rendered in the wrong position and may not be visible.
-  - {/*BED-6500*/} Resolved an issue where several prebuilt "Shortest paths..." **Saved Queries** queries could time out and fail to return results.
-  - {/*BED-7469*/} Resolved an issue where Cypher queries on PostgreSQL failed with the error `ERROR:  invalid reference to FROM-clause entry for table "s0" (SQLSTATE 42P01)`.
-
   ## API and Auth
 
   - {/*BED-7652*/} Resolved an issue where fuzzy search on `GET /api/v2/clients` did not consistently apply across `name`, `hostname`, and `configured_user` fields.
@@ -108,16 +219,23 @@ sidebarTitle: "2026-04-13"
   - {/*BED-7628*/} Resolved an issue where the `/api/v2/graphs/edge-composition` endpoint could return duplicate edges in ESC edge composition results.
   - {/*BED-7731*/} Resolved an issue where the **API Explorer** did not correctly validate operator-prefixed values to query parameters, such as `eq` and `neq`.
 
-  ## Privilege Zones and Posture
+  ## Cypher and Explore
 
-  - {/*BED-7716*/} Resolved an issue where long Privilege Zone rule names without spaces could overflow and stretch layout containers.
-  - {/*BED-7755*/} Resolved an issue preventing **Affected Objects** accordions for GPO objects from expanding on the **Zone Builder** page.
-  - {/*BED-7757*/} Resolved an issue where Large Default Group findings could appear incorrectly under the Tier Zero filter on the **Posture** page.
+  - {/*BED-7860*/} Resolved an issue where pressing the space bar in the Cypher query editor on the **Explore** page caused unexpected behavior.
+  - {/*BED-7038*/} Resolved an issue where the Cypher autocomplete dropdown on the **Explore** page rendered in the wrong position and may not be visible.
+  - {/*BED-6500*/} Resolved an issue where several prebuilt "Shortest paths..." **Saved Queries** queries could time out and fail to return results.
+  - {/*BED-7469*/} Resolved an issue where Cypher queries on PostgreSQL failed with the error `ERROR:  invalid reference to FROM-clause entry for table "s0" (SQLSTATE 42P01)`.
 
   ## OpenGraph
 
   - {/*BED-7612*/} Resolved an issue where [type filtering](/analyze-data/explore/search#filter-by-node-type) for OpenGraph nodes was ignored in search.
   - {/*BED-7747*/} Resolved an issue causing excessive memory use during ingestion of large OpenGraph data payloads.
+
+  ## Privilege Zones and Posture
+
+  - {/*BED-7716*/} Resolved an issue where long Privilege Zone rule names without spaces could overflow and stretch layout containers.
+  - {/*BED-7755*/} Resolved an issue preventing **Affected Objects** accordions for GPO objects from expanding on the **Zone Builder** page.
+  - {/*BED-7757*/} Resolved an issue where Large Default Group findings could appear incorrectly under the Tier Zero filter on the **Posture** page.
 </Update>
 
 <Update label="AzureHound" tags={["Fixed Issues"]}>
