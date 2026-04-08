@@ -35,9 +35,16 @@ sidebarTitle: "2026-04-13"
 
   Use the new **OpenGraph Management** page to upload, view, update, and delete OpenGraph extensions so you can manage [structured](/opengraph/extensions/manage) graph support.
 
-  OpenGraph extensions define the schema for your custom graph data, including node and edge types, properties, and relationships, so ingestion stays consistent and predictable.
+  OpenGraph extensions define the schema for your custom graph data, including node and edge types, icons, properties, and relationships, so ingestion stays consistent and predictable.
 
-  This release also exposes OpenGraph Extension Management APIs in the public OpenAPI specification and marks them as experimental so you can evaluate and automate extension workflows with clear API guidance.
+  This release also exposes experimental OpenGraph Management APIs so you can evaluate and automate extension workflows:
+
+  | Method   | Endpoint                                                                                 | Description                                              |
+  | -------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+  | `GET`    | [/api/v2/extensions](/reference/opengraph-experimental/list-opengraph-extensions-information) | Get a list of all OpenGraph extensions.                      |
+  | `PUT`    | [/api/v2/extensions](/reference/opengraph-experimental/upserts-the-opengraph-extension) | Upserts the OpenGraph extension.                      |
+  | `DELETE` | [/api/v2/extensions/\{extension_id\}](/reference/opengraph-experimental/delete-opengraph-extension) | Delete an OpenGraph extension.                      |
+  | `GET`    | [/api/v2/extension-edges](/reference/opengraph-experimental/list-edge-kinds) | Get a list of all edge kinds across OpenGraph schemas.                      |
 </Update>
 
 <Update label="BloodHound" description="New Feature" tags={["OpenGraph"]}>
@@ -52,11 +59,11 @@ sidebarTitle: "2026-04-13"
     style={{ width: "25%" }}
   />
 
-  See OpenGraph findings in the **Attack Paths** and **Posture** pages so you can prioritize remediation alongside built-in Active Directory and Entra ID data.
+  Analyze OpenGraph findings in the **Attack Paths** and **Posture** pages with the same workflows you already use for Active Directory and Entra ID, so custom graph data becomes part of your standard risk analysis.
 
-  OpenGraph integration brings custom graph data into the BloodHound Enterprise findings experience, including the metrics and views you use to understand severity, track exposure, and measure remediation progress over time.
+  This release makes OpenGraph findings operational in BloodHound Enterprise, so you can surface exposure across system-specific attack paths, triage by severity, and prioritize remediation with the same metrics and trend context used for Active Directory and Entra ID environments.
 
-  This release also adds APIs to list extension finding schemas and export OpenGraph attack path details so you can power UI rendering and reporting workflows with extension-specific finding definitions and path data.
+  OpenGraph findings also provide system-specific remediation guidance using extension-defined finding metadata and path context, so operators can move from identification to action faster.
 </Update>
 
 <Update label="BloodHound" description="New Feature" tags={["Administration"]}>
@@ -145,11 +152,11 @@ sidebarTitle: "2026-04-13"
 
 <Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
   {/*BED-7032*/}
-  ## Cypher Query Timeout Controls
+  ## Cypher Query Timeout Bypass
 
-  Take control of long-running Cypher queries with a new option to disable the default query timeout.
+  Allow individual Cypher queries to run past the default timeout when needed.
 
-  For queries that may require more time to execute, you can now [disable](/analyze-data/explore/cypher-search#disable-query-timeout) the default query timeout on a per-query basis. This gives you more control over long-running queries and allows you to retrieve results that may take longer to compute without being prematurely terminated by the timeout.
+  You can now [disable the query timeout](/analyze-data/explore/cypher-search#disable-query-timeout) on a per-query basis for queries that require extended execution time. The default timeout remains in effect for all other queries.
 
   <Frame>
     <img
@@ -157,15 +164,6 @@ sidebarTitle: "2026-04-13"
       alt="Screenshot of the Cypher query timeout bypass option in the query editor"
     />
   </Frame>
-</Update>
-
-<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
-  {/*BED-7693*/}
-  ## OpenGraph Environment ID Property Standardization
-
-  Use standardized naming conventions by migrating `environment_id` to `environmentid` for consistency with BloodHound graph schema conventions.
-
-  This update improves consistency for OpenGraph ingestion, indexing, and query behavior.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
@@ -192,6 +190,15 @@ sidebarTitle: "2026-04-13"
   Keep hybrid Azure and Active Directory (AD) relationship data cleaner with less unnecessary graph churn during post-processing.
 
   This release optimizes role-assignment processing and stops creating placeholder AD objects during Azure ingest and hybrid post-processing so relationships are only created when both Azure and AD context is available. This significantly improves analysis time for tenants with large Azure environments.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-7612*/}
+  ## OpenGraph Node Type Filtering in Search
+
+  Filter search results by node type to find relevant OpenGraph data faster.
+
+  This enhancement adds support for [node type filtering](/analyze-data/explore/search#filter-by-node-type) for OpenGraph nodes.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
@@ -306,14 +313,13 @@ sidebarTitle: "2026-04-13"
 
   - {/*BED-7860*/} Resolved an issue where pressing the space bar in the Cypher query editor on the **Explore** page caused unexpected behavior.
   - {/*BED-7038*/} Resolved an issue where the Cypher autocomplete dropdown on the **Explore** page rendered in the wrong position and may not be visible.
-  - {/*BED-6500*/} Resolved an issue where several prebuilt "Shortest paths..." **Saved Queries** queries could time out and fail to return results.
-  - {/*BED-7469*/} Resolved an issue where Cypher queries on PostgreSQL failed with the error `ERROR:  invalid reference to FROM-clause entry for table "s0" (SQLSTATE 42P01)`.
+  - {/*BED-6500*/} Resolved an issue where several prebuilt "Shortest paths..." **Saved Queries** queries could hit the default query timeout and fail without returning a graceful timeout response.
+  - {/*BED-7469*/} Resolved an issue where Cypher queries on PostgreSQL using multi-hop graph traversals with variable-length path patterns (for example, `*1..`) could fail, particularly for edges with traversal limits.
   - {/*BED-7054*/} Resolved an issue where `OPTIONAL MATCH` clauses could be translated without a valid prior query frame, causing some Cypher queries to return incorrect results.
 
   ## OpenGraph
 
-  - {/*BED-7612*/} Resolved an issue where [type filtering](/analyze-data/explore/search#filter-by-node-type) for OpenGraph nodes was ignored in search.
-  - {/*BED-7747*/} Resolved an issue causing excessive memory use during ingestion of large OpenGraph data payloads.
+  {/*BED-7747*/} Resolved an issue causing excessive memory use during ingestion of large OpenGraph data payloads.
 
   ## Privilege Zones and Posture
 
