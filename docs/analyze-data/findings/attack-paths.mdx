@@ -3,7 +3,13 @@ title: Attack Paths
 description: Learn how to interpret Attack Path findings and use them to prioritize remediation efforts.
 ---
 
-import PostProcessedEdges from '/snippets/analysis/post-processed-edges.mdx';
+import defAttackPath from '/snippets/terms/attack-path.mdx';
+import defFinding from '/snippets/terms/finding.mdx';
+import defExposure from '/snippets/terms/exposure.mdx';
+import defImpact from '/snippets/terms/impact.mdx';
+import defRelationshipBasedFinding from '/snippets/terms/relationship-based-finding.mdx';
+import defListBasedFinding from '/snippets/terms/list-based-finding.mdx';
+import defHygiene from '/snippets/terms/hygiene.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
@@ -23,9 +29,9 @@ The **Attack Paths** page combines two key views needed for prioritization:
 
 ## Findings
 
-An **Attack Path** is a chain of abusable privileges and user behaviors that creates direct or indirect connections between principals.
+<defAttackPath />
 
-A **finding** is a specific subsection of an Attack Path that BloodHound Enterprise has identified as the best place to mitigate control of critical assets.
+<defFinding />
 
 ### Exposure and impact
 
@@ -35,13 +41,7 @@ Findings with high exposure and high impact are typically the highest-priority r
 
 #### Exposure
 
-A risk measurement that quantifies the extent to which principals can reach a privileged asset through one or more Attack Paths. It encompasses all principals upstream of a finding's source, including any principals that can reach the source through intermediaries.
-
-Exposure is measured in two ways:
-
-- **Exposure count**—The number of principals that can reach a privileged asset through one or more Attack Paths.
-
-- **Exposure percentage**—The percentage of principals in an environment that have at least one Attack Path to a privileged asset.
+<defExposure />
 
 <Note>
   Exposure calculation only includes principals _outside_ the selected zone (and higher zones) that can reach a privileged asset through an Attack Path.
@@ -49,13 +49,7 @@ Exposure is measured in two ways:
 
 #### Impact
 
-A risk measurement that quantifies potential blast radius if a finding is abused.
-
-Impact is measured in two ways:
-
-- **Impact count**—The number of principals that could be compromised through an Attack Path.
-
-- **Impact percentage**—The percentage of the environment that could be impacted by a specific identity vulnerability.
+<defImpact />
 
 <Note>
   Together, these metrics help organizations prioritize remediation by understanding which Attack Paths pose the greatest risk.
@@ -67,63 +61,12 @@ BloodHound Enterprise groups findings into types to help you separate structural
 
 #### Relationship-based finding
 
-A relationship-based finding identifies a directional path from a lower-privileged source principal to a privileged target asset.
-
-The path represents one or more abusable connections (potentially through intermediate principals or objects) through which the source principal can take control of the target. A single finding may include multiple Attack Paths when different intermediate nodes all enable the same type of access from source to target.
-
-Relationship-based findings can have an exposure metric and an impact metric.
+<defRelationshipBasedFinding />
 
 #### List-based finding
 
-A list-based finding identifies a vulnerability in a specific principal where the risk originates from the principal itself (like a misconfiguration).
-
-Because the vulnerability is inherent to the principal and not based on its connection to other principals, there is no exposure to measure.
-
-List-based findings do not have an exposure metric, but they will have an impact metric.
+<defListBasedFinding />
 
 #### Hygiene
 
-A zone-agnostic finding that identifies issues not tied to a specific privilege zone. Similar to list-based findings, hygiene findings are related to specific principals and do not have an exposure metric. However, they do have an impact metric that quantifies the potential blast radius if the finding is abused.
-
-Examples include dangerous relationships originating from broadly populated default groups. Hygiene findings are displayed separately in a dedicated filter view on the **Attack Path** and **Posture** pages.
-
-## Analysis process
-
-BloodHound Enterprise's analysis process includes several key steps that work together to surface findings and prioritize risk.
-
-### Choke point analysis
-
-BloodHound Enterprise generates one choke point view per environment, such as an Active Directory domain or Azure tenant. The choke point view organizes findings by category and shows the number of exposed principals in each, helping you quickly understand where risk concentrates.
-
-<Note>
-[Exposure and impact](#exposure-and-impact) metrics are calculated from this analysis and surfaced with findings.
-</Note>
-
-### Relationships and zone boundaries
-
-Attack Path analysis is relationship-driven. BloodHound evaluates how abusable relationships connect principals across privilege boundaries.
-
-This includes boundaries between Tier Zero and user-defined [Privilege Zones](/analyze-data/privilege-zones/overview). A path that crosses zones can represent a stepping stone into higher-privilege assets, which is why zone-specific findings can differ in severity and priority.
-
-### Post-processing
-
-BloodHound does not rely only on directly collected relationships. During **post-processing**, it derives additional relationships that are relevant to Attack Path analysis. One result is a **complex edge**.
-
-A complex edge is a derived relationship between two nodes that represents multiple underlying privileges or behaviors working together.
-
-BloodHound uses complex edges to show Attack Paths that are not visible from a single relationship alone. For example, some attack techniques require a combination of permissions before they can be abused.
-
-For example, the [DCSync](/resources/edges/dc-sync) edge requires a combination of permissions that, when held together, create an abusable path. BloodHound models this as a complex edge, which allows it to surface Attack Paths that would otherwise be invisible if analysis relied only on directly collected relationships.
-
-<PostProcessedEdges />
-
-## Remediation
-
-After reviewing findings on the **Attack Paths** page, you can:
-
-- **Remediate** to sever the edges that create the risk and improve your environment's security posture.
-- **Accept** when risk is known and temporarily tolerated.
-
-For acceptance workflow steps, see [Risk Acceptance](/analyze-data/findings/risk-acceptance).
-
-To track remediation progress over time, see [Posture](/analyze-data/findings/posture).
+<defHygiene />
