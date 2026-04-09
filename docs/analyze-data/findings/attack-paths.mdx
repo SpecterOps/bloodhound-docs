@@ -7,52 +7,25 @@ import PostProcessedEdges from '/snippets/analysis/post-processed-edges.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-The **Attack Paths** page in BloodHound Enterprise provides a detailed view of the specific risks in your environment where a lower-privileged principal can gain access to a privileged asset.
+The **Attack Paths** page in BloodHound Enterprise gives you a high-level overview of where identity risk exists, how much of your environment is exposed, and which areas need attention first.
 
-These risks are represented as findings, which include prioritization data such as exposure and impact metrics to help you focus remediation efforts where they matter most.
+These risks are represented as findings with exposure and impact metrics that quantify risk, so you can quickly assess overall risk in one place and then use those metrics to inform prioritization as you drill into specific finding types.
 
 The **Attack Paths** page combines two key views needed for prioritization:
 
-- **Metatree visualization**: An aggregate view of the graph for a selected environment and privilege zone. This view simplifies large volumes of nodes and edges into a compact visualization optimized for readability, showing bottlenecks and key exposure points at a glance.
+- **Choke Point view**: An aggregate view of the graph for a selected environment and privilege zone. This view simplifies large volumes of nodes and edges into a compact visualization optimized for readability. It shows the number of exposed principals in each finding category, giving you a quick summary of where risk concentrates in an environment.
 
-- **Attack Paths data**: An expandable list of Attack Paths showing a detailed finding description, severity, principals involved, impact, and remediation plan.
+- **Attack Paths details**: An expandable list of all Attack Paths types detected, showing detailed finding descriptions, severity, principals involved, exposure and impact, and remediation plans for each.
 
->**DELETE ME**: Would like to use some kind of visual. How much of the UI can we show? Should we use an abstract image rather than an actual screenshot to avoid revealing findings?
+<Frame>
+  <img src="/images/attack-paths/page-overview.png" alt="A view of the Attack Paths page that shows an aggregated graph view and attack path details" />
+</Frame>
 
 ## Findings
 
 An **Attack Path** is a chain of abusable privileges and user behaviors that creates direct or indirect connections between principals.
 
-A **finding** represents specific principals and relationships between principals that can be abused to reach a privileged asset.
-
-This distinction matters in day-to-day work:
-
-- You remediate findings.
-- You track progress using both finding count and Attack Path count.
-
-<Tip>
-  See [Posture](/analyze-data/findings/posture) for more on tracking remediation progress over time.
-</Tip>
-
-### Finding types
-
-BloodHound Enterprise groups findings into types to help you separate structural access risks from principal-level configuration risks.
-
-#### List-based finding
-
-A finding for a specific principal where the vulnerability is related to the principal itself, such as a misconfiguration. Because of this nature, list-based findings do not necessarily have an exposure metric, but they will have an impact metric.
-
-#### Relationship-based finding
-
-A finding for a pair of principals—a target that is privileged (such as belonging to Tier Zero) and a source/origin that is not—that can be compromised by one or more connections between principals. Each relationship-based finding may be composed of one or many individual Attack Paths.
-
-A relationship-based finding can have an exposure metric and an impact metric.
-
-#### Hygiene
-
-A tier-agnostic finding that identifies issues not tied to a specific privilege tier. Similar to list-based findings, hygiene findings are related to specific principals and do not have an exposure metric. However, they do have an impact metric that quantifies the potential blast radius if the finding is abused.
-
-Examples include dangerous edges originating from broadly populated default groups. Hygiene findings are displayed separately in a dedicated filter view on the **Attack Path** and **Posture** pages.
+A **finding** is a specific subsection of an Attack Path that BloodHound Enterprise has identified as the best place to mitigate control of critical assets.
 
 ### Exposure and impact
 
@@ -62,7 +35,7 @@ Findings with high exposure and high impact are typically the highest-priority r
 
 #### Exposure
 
-A risk measurement that quantifies the extent to which principals can reach a privileged asset through one or more Attack Paths. It encompasses both principals with one-step paths (`UserA -[ForceChangePassword]-> TierZero`), and multi-step paths (`UserA -[ForceChangePassword]-> UserB -[GenericAll]-> TierZero`).
+A risk measurement that quantifies the extent to which principals can reach a privileged asset through one or more Attack Paths. It encompasses all principals upstream of a finding's source, including any principals that can reach the source through intermediaries.
 
 Exposure is measured in two ways:
 
@@ -70,11 +43,13 @@ Exposure is measured in two ways:
 
 - **Exposure percentage**—The percentage of principals in an environment that have at least one Attack Path to a privileged asset.
 
+<Note>
+  Exposure calculation only includes principals _outside_ the selected zone (and higher zones) that can reach a privileged asset through an Attack Path.
+</Note>
+
 #### Impact
 
 A risk measurement that quantifies potential blast radius if a finding is abused.
-
-Impact is closely related to exposure, which measures how many principals can reach a privileged asset through one or more Attack Paths (as both count and percentage). 
 
 Impact is measured in two ways:
 
@@ -86,21 +61,47 @@ Impact is measured in two ways:
   Together, these metrics help organizations prioritize remediation by understanding which Attack Paths pose the greatest risk.
 </Note>
 
+### Finding types
+
+BloodHound Enterprise groups findings into types to help you separate structural access risks from principal-level configuration risks.
+
+#### Relationship-based finding
+
+A relationship-based finding identifies a directional path from a lower-privileged source principal to a privileged target asset.
+
+The path represents one or more abusable connections (potentially through intermediate principals or objects) through which the source principal can take control of the target. A single finding may include multiple Attack Paths when different intermediate nodes all enable the same type of access from source to target.
+
+Relationship-based findings can have an exposure metric and an impact metric.
+
+#### List-based finding
+
+A list-based finding identifies a vulnerability in a specific principal where the risk originates from the principal itself (like a misconfiguration).
+
+Because the vulnerability is inherent to the principal and not based on its connection to other principals, there is no exposure to measure.
+
+List-based findings do not have an exposure metric, but they will have an impact metric.
+
+#### Hygiene
+
+A zone-agnostic finding that identifies issues not tied to a specific privilege zone. Similar to list-based findings, hygiene findings are related to specific principals and do not have an exposure metric. However, they do have an impact metric that quantifies the potential blast radius if the finding is abused.
+
+Examples include dangerous relationships originating from broadly populated default groups. Hygiene findings are displayed separately in a dedicated filter view on the **Attack Path** and **Posture** pages.
+
 ## Analysis process
 
 BloodHound Enterprise's analysis process includes several key steps that work together to surface findings and prioritize risk.
 
-### Metatree analysis
+### Choke point analysis
 
-BloodHound Enterprise generates one metatree per environment, such as an Active Directory domain or Azure tenant. The metatree compresses complex graph relationships into a compact model so you can quickly spot where many risky paths converge.
+BloodHound Enterprise generates one choke point view per environment, such as an Active Directory domain or Azure tenant. The choke point view organizes findings by category and shows the number of exposed principals in each, helping you quickly understand where risk concentrates.
 
 <Note>
 [Exposure and impact](#exposure-and-impact) metrics are calculated from this analysis and surfaced with findings.
 </Note>
 
-### Edges and zone boundaries
+### Relationships and zone boundaries
 
-Attack Path analysis is edge-driven. BloodHound evaluates how traversable relationships (edges) connect principals across privilege boundaries.
+Attack Path analysis is relationship-driven. BloodHound evaluates how abusable relationships connect principals across privilege boundaries.
 
 This includes boundaries between Tier Zero and user-defined [Privilege Zones](/analyze-data/privilege-zones/overview). A path that crosses zones can represent a stepping stone into higher-privilege assets, which is why zone-specific findings can differ in severity and priority.
 
