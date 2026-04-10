@@ -1,166 +1,124 @@
 ---
 title: Work With the BloodHound API
-description: Learn how to access and use the BloodHound API for integrations, automation, and general exploration.
-sidebarTitle: Work with the API
 ---
-
-import CopyApiToken from '/snippets/auth/copy-api-token.mdx';
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Enterprise and Community Edition badge" />
 
-BloodHound is an API-first product, which means core product functionality runs on the API layer. All data shown in the user interface, all commands sent to SharpHound Enterprise and AzureHound Enterprise collectors, and all uploaded data pass through the BloodHound APIs.
+The BloodHound product family are API-first products, meaning everything functions on the underlying API layer. All data displayed in the portal, all commands given to SharpHound or AzureHound Enterprise collectors, and all data uploaded pass through the BloodHound APIs. Customers may utilize these APIs to extend the use of the BloodHound product to function with other tools in their environment. This article will show how to access the API and include some example use cases.
 
-You can use these APIs to integrate BloodHound with other tools and workflows in your environment.
+## API Documentation
 
-## API Explorer
+Our API reference is available [here](../../reference/).
 
-In addition to the [REST API reference](/reference/overview) on this site, BloodHound provides an **API Explorer** that provides interactive API documentation and testing capabilities.
+Additionally, API documentation is hosted utilizing Swagger behind authentication within your tenant environment. After logging in, you may access it by clicking the cog in the top right corner of your tenant and clicking **API Explorer.**
 
-The **API Explorer** is built using Swagger UI and is accessible from within your tenant after logging in. It allows you to browse available API endpoints, view request and response schemas, and make test API calls directly from the interface.
-
-<Steps>
-  <Step title="Navigate to API Explorer">
-    1. Log in to your BloodHound tenant.
-    1. In the left menu, click **API Explorer**.
-  </Step>
-  <Step title="Explore API Endpoints">
-    1. Browse through the list of available API endpoints categorized by functionality.
-    1. Click an endpoint to view details such as required parameters, request body schema, and response schema.
-    1. Click **Try it out** to make test API calls on your tenant.
-  </Step>
-</Steps>
+<Frame>
+  <img src="/assets/image1-1.png" alt="API Explorer menu in the BloodHound UI" />
+</Frame>
 
 ## Authentication
 
-The BloodHound API accepts two forms of authentication:
+The BloodHound API accepts two forms of authentication, each with its own limitations for security.
 
-- A JSON Web Token (JWT) is generated during login using your email address, password, and 2FA token (or through a SAML- or OIDC-based authentication flow). JWTs remain active for 8 hours and are primarily used for end-user access to the web application.
+* A JWT is generated through the login process using your email address, password, and 2FA token (or SAML-based authentication flow). These JWT tokens are active for 8 hours and are primarily for end-user access to the web-based application.
+* An API key/ID pair is generated within the Administration interface. These do not expire and are primarily for long-term API integrations.
 
-- An API token and token ID pair is generated in the Administration interface. API tokens are primarily used for integrations and automation.
+There are two methods for creating API key/ID pairs, each serving a different purpose:
 
-There are two methods for creating API tokens in BloodHound, each serving a different purpose:
+* Non-personal API key/ID pairs for integrations like [Splunk](/integrations/splunk/siem/install)
+* [Personal API key/ID pairs](#create-a-personal-api-key-and-id-pair) for day-to-day use like [BloodHound Operator](https://www.youtube.com/watch?v=9Og-6_qyw_A)
 
-- Non-personal API tokens and token IDs for [integrations](/integrations), such as Splunk, ServiceNow, and Cortex XSOAR
-- Personal API tokens and token IDs for individual day-to-day use, such as [BloodHound Operator](https://www.youtube.com/watch?v=9Og-6_qyw_A)
+### Create a non-personal API key/ID pair
 
-### API key expiration
+Administrators can create non-personal BloodHound users solely meant for API integrations.
 
-BloodHound Enterprise supports [API key expiration](/manage-bloodhound/auth/api-key-expiration) to help you align with internal security and compliance requirements. This setting controls how long API tokens remain valid.
+1. Log in as a user with the Administrator role.
+2. [Create a new BloodHound user](../../manage-bloodhound/auth/users-and-roles).
+   * Give the user a long and unique password.
+3. ***Optional recommendation:*** Log in as the newly created user and enable MFA.
+4. ***Optional recommendation:*** Securely dispose of the password and MFA configuration as they are not needed for authenticating with a key/ID pair and they can be reset by an Administrator if needed.
+5. As the Administrator, go back to the **Manage Users** page.
+6. On the API user, click the hamburger menu > **Generate / Revoke API Tokens**.
 
-<Note>
-  You must manually create replacement tokens and update all dependent integration configurations before they expire. BloodHound does not automatically rotate API keys.
-</Note>
+<Frame>
+  <img src="/assets/image1-2.png" alt="Generate API Tokens" />
+</Frame>
 
-### Non-personal API tokens
+7. Click **Create Token**.
+8. Give the token a descriptive name and click **Save**.
+9. Save the presented API key/ID pair and click **Close**.
+   * **The API key will never be shown again. If you lose it, you must revoke the previous key and regenerate a new one.**
+10. You may now use this key ID pair for [calling the API](#call-the-api)
 
-Administrators can create dedicated, non-personal BloodHound accounts for API integrations. These accounts are not tied to a specific person and are intended for applications and services that need to interact with the BloodHound API.
+### Create a personal API Key and ID pair
 
-When you create a non-personal API token and token ID for one of these accounts, the roles and permissions assigned to that account determine its API access.
+Create a personal API Key/ID pair from the **My Profile** section.
 
-To create a non-personal API token and token ID:
+1. <p>In the top-right corner click <Icon icon="gear" iconType="solid" /> <Icon icon="arrow-right" iconType="solid" /> **My Profile**.</p>
 
-<Steps>
-  <Step title="Create a new user account">
-    1. Log in as a user with the Administrator role.
+<Frame>
+  <img src="/assets/image1-3.png" alt="Create Token" />
+</Frame>
 
-    1. In the left menu, click **Administration** > **Manage Users**.
+2. Click **API Key Management**.
 
-    1. Click **Create User** and enter the [required information](/manage-bloodhound/auth/users-and-roles).
+<Frame>
+  <img src="/assets/image1-7.png" alt="API Key Management" />
+</Frame>
 
-    1. After creating the user, you may optionally log in as that user to enable MFA.
-    
-       <Note>
-         MFA is not required for API key authentication, but it can provide an additional layer of security for the account.
+3. Click **Create Token**.
 
-         If you choose to enable MFA, securely dispose of the password and MFA configuration after setup, as they are not needed for authenticating with API keys and can be reset by an Administrator if necessary.
-       </Note>
-  </Step>
-  <Step title="Generate an API token">
-    1. Log back in as an Administrator (if not already logged in).
+<Frame>
+  <img src="/assets/image1-4.png" alt="Create Token" />
+</Frame>
 
-    1. In the left menu, click **Administration** > **Manage Users**.
+4. Give the token a descriptive name and click **Save**.
 
-    1. Find the user account you just created, click the hamburger menu, and select **Generate / Revoke API Tokens**.
+<Frame>
+  <img src="/assets/image1-5.png" alt="Create Token" />
+</Frame>
 
-        <Frame>
-          <img src="/images/admin/generate-api-token.png" alt="A view of the API token generation interface" />
-        </Frame>
+5. Save the presented API key/ID pair and click **Close**.
+   * The API key will never be shown again. If you lose it, you must revoke the previous key and regenerate a new one.
 
+<Frame>
+  <img src="/assets/image1-6.png" alt="API Key Pair" />
+</Frame>
 
-    1. Click **Create Token**, give it a descriptive name, and click **Save**.
-
-    1. Save the API token and token ID and click **Close**.
-
-        <CopyApiToken />
-
-    1. Configure the dependent integration with the new API token and token ID.
-  </Step>
-</Steps>
-
-### Personal API tokens
-
-You can create personal API tokens and token IDs for your own use, such as for testing API calls. Personal API tokens are tied to your user account and inherit the permissions of that account.
-
-To create a personal API token and token ID:
-
-<Steps>
-  <Step title="Navigate to API Key Management">
-    1. Log in to your BloodHound tenant.
-
-    1. In the left menu, click **My Profile**.
-
-    1. Click **API Key Management**.
-  </Step>
-  <Step title="Generate an API token">
-    1. Click **Create Token**.
-
-        <Frame>
-          <img src="/images/admin/create-token.png" alt="A view of the API token creation interface" />
-        </Frame>
-
-    1. Give the token a descriptive name and click **Save**.
-
-    1. Save the API token and token ID and click **Close**.
-   
-        <CopyApiToken />
-
-    1. Use the API token and token ID to call the API.
-  </Step>
-</Steps>
+Use this key/ID pair for calling the API.
 
 ## Call the API
 
-After you have an API token and token ID, you can call the BloodHound API.
+Once you have your token, you can call the BloodHound API.
 
 ### Use a JWT/bearer token
 
 For quick tests or one-time calls, the JWT used by your browser may be the simplest route. The API accepts calls using the following header structure in the HTTP request:
 
-```http
-Authorization: Bearer $JWT_TOKEN
+```json
+'Authorization': Bearer $JWT_TOKEN
 ```
 
 If you open the **Network** tab in your browser, you'll see calls against the API made using this structure.
 
+### Use your API Key/ID pair
 
-### Use an API token
+For long-running API integrations, BloodHound's API uses hash-based message authentication code (HMAC) authentication using the API key as the secret key to verify the authenticity and integrity of the request. Calls against the API must include the following in the signed hash:
 
-For long-running API integrations, BloodHound's API uses hash-based message authentication code (HMAC) authentication. The API token is used as the secret key to sign requests, and the token ID is sent as the identifier. Calls against the API must include the following in the signed hash:
-
-* API token
+* API key
 * HTTP method and URI
 * Current time
 * Body content (if applicable to the request)
 
-Calls against the API must include the following headers in the HTTP request:
+Calls against the API would need to include the following headers in the HTTP request:
 
-```http
-Authorization: bhesignature $TOKEN_ID
-RequestDate: $RFC3339_DATETIME
-Signature: $BASE64ENCODED_HMAC_SIGNATURE
+```json
+'Authorization': bhesignature $TOKEN_ID
+'RequestDate': $RFC3339_DATETIME
+'Signature': $BASE64ENCODED_HMAC_SIGNATURE
 ```
 
-By validating the hash signature against the request, the API can ensure that calls were made by the original requestor, within a reasonable timeframe, against the proper API endpoint, including the original content body, and that no replay or content modification has occurred.
+By validating the hash signature against the request, the API can validate that the calls were made by the original requestor, within a reasonable timeframe, against the proper API endpoint, including the original content body, and that no replay or content modification has occurred.
 
 For a complete implementation example, see [`apiclient.py`](https://github.com/SpecterOps/bloodhound-docs/blob/main/docs/assets/apiclient.py) in the `specterops/bloodhound-docs` GitHub repository. The following code snippet from the `apiclient.py` script illustrates the authentication process:
 
