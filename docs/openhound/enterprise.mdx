@@ -76,54 +76,136 @@ Each collector requires additional configuration parameters that are unique to i
 
 </CardGroup>
 
+### Full configuration example
+The following example shows the full configuration for OpenHound with the required parameters for BloodHound Enterprise as well as example parameters for the Jamf collector. The configuration is split into two files: `config.toml` for the non-sensitive OpenHound/DLT configuration parameters and `secrets.toml` for the sensitive credentials and secrets. The configuration files can be provided through compose secrets, Kubernetes Secret and ConfigMap objects or supplied via environment variables.
 
+```toml title="config.toml"
+[runtime]
+http_show_error_body = true
+log_cli_level = "WARNING"
+log_format = "JSON"
+log_rotate_when = "midnight"
+
+[extract]
+workers = 8
+
+[normalize]
+workers = 3
+
+[load]
+delete_completed_jobs = true
+truncate_staging_dataset = true
+```
+
+```toml title="secrets.toml"
+[sources.source.jamf]
+username = "myusername"
+host = "https://tenant.jamfcloud.com"
+password = "mypassword"
+
+[destination.bloodhoundenterprise]
+interval = "300"
+token_key = "client_token_key"
+token_id = "client_token_id"
+url = "https://test.bloodhoundenterprise.io"
+```
 
 ## Deployment examples
 
 ### Kubernetes
-A Helm chart is available for deploying OpenHound in a Kubernetes cluster. The chart is available in the [OpenHound GitHub repository](https://github.com/specterops/openhound).
+An example Helm chart is available in the [OpenHound GitHub repository](https://github.com/specterops/openhound) for deploying OpenHound in a Kubernetes cluster. The chart can be used as a reference implementation for how OpenHound can be run on Kubernetes. The repository also includes the full `README` with instructions for deploying OpenHound and configuring the collector parameters and secrets required to connect to BloodHound Enterprise.
+
+#### Prerequisites
+
+- Kubernetes cluster v1.33+
+- Helm v4.0+
+- The OpenHound repository cloned locally or access to the Helm chart files in the repository
+- A namespace created for OpenHound (e.g., `openhound`)
+
+
+#### ConfigMap / Secret
+
+The chart requires a Kubernetes `ConfigMap` and `Secret` to be pre-created and referenced in `config.existingConfigMap`
+and `config.existingSecret`. The `ConfigMap` should contain the OpenHound configuration file with the non-sensitive DLT configuration parameters while the `Secret` should contain the secrets for authenticating with the target services and BloodHound Enterprise.
+
+The contents of the ConfigMap and Secret are mounted as `/app/.dlt/config.toml` and `/app/.dlt/secrets.toml`. Create the necessary `config.toml` and `secrets.toml` files locally and deploy these resources using `kubectl`.
+
+```bash
+# Using jamf as an example collector, but the same pattern applies for any collector
+kubectl create -n openhound configmap openhound-jamf-config \
+  --from-file=config.toml=<path_to_local_config>.toml
+
+kubectl create -n openhound secret generic openhound-jamf-secrets \
+  --from-file=secrets.toml=<path_to_local_secrets>.toml
+```
+
+#### Optional: Additional secret files
+
+Collectors may require extra secret files such as a GitHub app PEM or an Okta JSON key file.
+Use `collector.extraSecretMounts` to mount files from pre-existing Kubernetes `Secret` objects.
+
+```yaml
+collector:
+  extraSecretMounts:
+    github-pem:
+      secretName: github-app-credentials
+      secretKey: github.pem
+      mountPath: /app/.dlt/github.pem
+    okta-json:
+      secretName: okta-client-secret
+      secretKey: okta.json
+      mountPath: /app/.dlt/okta.json
+```
+
+Each item references an existing `Secret`, the key containing the data/file and the target mount path. Similarly to the previously created secrets.toml you can deploy any additional secrets using `kubectl`.
+
+```bash
+kubectl create -n openhound secret generic github-app-credentials \
+  --from-file=github.pem=./github.pem
+
+kubectl create -n openhound secret generic okta-client-secret \
+  --from-file=okta.json=./okta.json
+```
+
+
+#### Installation
+Create a `values.yaml` file with your collector configuration using [values.example.yaml](https://raw.githubusercontent.com/SpecterOps/OpenHound/refs/heads/main/deployments/helm/values.example.yaml) as a reference and install the chart using:
+
+```bash
+helm install -f values.yaml -n openhound openhound-[name] [openhound_path]/deployments/helm/openhound
+```
+
+
+#### Verification
+Inspect the logs of the deployment to verify that the OpenHound collector is running correctly.
+```bash
+kubectl logs -n openhound -l app.kubernetes.io/name=openhound -f
+```
 
 
 ### Compose
-[Docker compose](https://docs.docker.com/compose/) is a tool to define and run multiple containerized applications. A similar approach can be used with Podman.
+The OpenHound container image can also be deployed using Docker Compose or Podman Compose on a Linux server. This is an alternative option for testing or environments where Kubernetes is not necessary.
 
-To get started, create a `config.toml` and `secrets.toml` file with the necessary configuration parameters on the host machine.
+#### Prerequisites
 
-Below is an example of a `docker-compose.yml` file to deploy OpenHound using Docker Compose, which mounts the configuration files and sets the necessary `DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME` variable to run each individual collector.
+- A Linux server with Docker or Podman installed
+- The compose plugin installed (e.g., `docker compose` or `podman compose`)
+- A compose file such as [docker-compose.bhe.yml](https://raw.githubusercontent.com/SpecterOps/OpenHound/refs/heads/main/docker-compose.bhe.yml)
 
-```yaml
-x-scheduler: &scheduler
-  image: openhound:<version>
-  command: [ "python", "src/scheduler.py" ]
-  restart: unless-stopped
-  volumes:
-   - ${HOME}/.dlt:/home/nonroot/.dlt
+#### Installation
 
-  # These environment variables can also be set inside the ~/.dlt/config.toml file 
-  # and act as an example. Configuring openhound can be done using environment variables,
-  # configuration files or a combination of both.
-  environment: &env
-    LOG_LEVEL: INFO
-    EXTRACT__WORKERS: 8
+To get started, create a `config.toml` and `secrets.toml` file with the necessary configuration parameters on the host machine. Use the docker-compose.bhe.yml file as a reference for how to structure the Compose file and mount the configuration files and secrets.
 
-services:
-  openhound-jamf:
-    <<: *scheduler
-    environment:
-      <<: *env
-      DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME: jamf
+Then run the following command to start the OpenHound container:
 
-  openhound-okta:
-    <<: *scheduler
-    environment:
-      <<: *env
-      DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME: okta
+```bash
+docker compose up -d
+```
 
-  openhound-github:
-    <<: *scheduler
-    environment:
-      <<: *env
-      DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME: github
+#### Verification
+Inspect the logs of the container(s) to verify that the OpenHound collector is running correctly.
+```bash
+docker compose logs -f
 ```
 
 
