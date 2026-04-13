@@ -3,6 +3,8 @@ title: Rules
 description: Learn how to create, manage, and optimize rules in Privilege Zones to enhance BloodHound's analysis.
 ---
 
+import SampleResultsNote from "/snippets/privilege-zones/sample-results.mdx";
+
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE" />
 
 Rules are instructions that associate objects with zones and labels based on object ID, object relationships (expansion), and Cypher queries. BloodHound applies any rule changes during the next analysis operation.
@@ -110,12 +112,14 @@ Unless you're defining a rule as part of the zone or label creation process, be 
 
           1. Click the object to add it to the list of targeted objects. You must select at least one object to create the rule.
 
-             <img
-              src="/images/privzones/objectid-rule-config.png"
-              alt="A view of the Zone Builder Object ID rule configuration"
-             />
+             <SampleResultsNote />
 
-             <Note>The **Sample Results** panel displays up to 200 sample results, separating directly selected objects from objects selected through [expansion](#rule-expansion). This helps you understand why your results may include more objects than initially expected.</Note>
+             <Frame>
+               <img
+                src="/images/privzones/objectid-rule-config.png"
+                alt="A view of the Zone Builder Object ID rule configuration"
+               />
+             </Frame>
         </Tab>
 
         <Tab title="Cypher">
@@ -123,14 +127,16 @@ Unless you're defining a rule as part of the zone or label creation process, be 
 
           1. Click **Run** below the Cypher query box. You must run the query before you can create the rule.
 
-             The first 200 results display in the **Sample Results** panel, with directly selected objects separated from objects added through [expansion](#rule-expansion).
+             <SampleResultsNote />
+
+             <Frame>
+               <img
+                src="/images/privzones/cypher-rule-config.png"
+                alt="A view of the Zone Builder Cypher rule configuration"
+               />
+             </Frame>
 
              <Tip>*(Optional)* Click **View in Explore** to pivot to the **Explore** page and see results in the graph view.</Tip>
-
-             <img
-              src="/images/privzones/cypher-rule-config.png"
-              alt="A view of the Zone Builder Cypher rule configuration"
-             />
         </Tab>
       </Tabs>
 
@@ -235,9 +241,9 @@ The **Domain** selector filters which objects are visible in the zone or label v
 
 ### Zone precedence conflicts
 
-When an object matches rules in multiple zones, only the highest-priority zone in your [**Zone Order**](/analyze-data/privilege-zones/zones) tags that object. Lower-priority zones won't tag the object, even if their rules match.
+When an object matches rules in multiple zones, only the highest-priority zone in your [**Zone Order**](/analyze-data/privilege-zones/zones) tags that object. Lower-priority zones won't tag the object, even if their rules match. This is why the **Sample Results** panel during [rule creation](#define-a-rule) may show objects that don't appear in your lower-priority zones—they're being tagged by a higher-priority zone instead.
 
-For example, if an object is tagged by both a Tier Zero rule and a Tier One rule, it will only appear in the Tier Zero zone.
+For example, if an object is tagged by both a Tier Zero rule and a Tier One rule, it will only appear in the Tier Zero zone. The **Sample Results** panel would show the object as a result of your Tier One rule, but the object would only appear in the higher-priority Tier Zero zone, not in Tier One.
 
 **Solution**: Review your **Zone Order** and check whether objects are being tagged by higher-priority zones. You can verify this by checking the higher-priority zones for the missing objects.
 
