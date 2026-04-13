@@ -1,0 +1,95 @@
+---
+title: Configure ETAC
+description: Configure Environment Targeted Access Control to limit user access by environment.
+sidebarTitle: Environment Targeted Access Control
+---
+
+import featureFlagNote from "/snippets/feature-flag.mdx";
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+Environment Targeted Access Control (ETAC) helps you apply least-privilege access in BloodHound Enterprise. Use ETAC to limit which environments **User** and **Read-only** user roles can access.
+
+<featureFlagNote />
+
+## How ETAC works
+
+ETAC adds environment scoping to the baseline permissions granted by the assigned role. This can be useful for large, complex environments where users only need access to a subset of environments to perform their work.
+
+- ETAC is a premium add-on and may not be available in every tenant.
+- ETAC applies to **User** and **Read-only** roles only. ETAC settings appear when you create or edit a user with one of those roles.
+- If you do not select any environments, the user has no environment access by default.
+- If you select specific environments, the user can access data for those environments only.
+
+<Note>
+Roles still define the baseline [permissions](/manage-bloodhound/auth/users-and-roles#user-role-definitions) that control which actions a user can perform. ETAC further limits which environments those actions apply to.
+</Note>
+
+## What users experience
+
+After you save ETAC settings, scoped users see only the data and navigation options allowed by both their role and ETAC configuration.
+
+- On the **Attack Paths** and **Posture** pages, users can see data from authorized environments only. Filters do not include unauthorized environments.
+
+- On the **Explore** page, users can access data from assigned environments only. If a search returns results from unauthorized environments, the graph still represents the full result set, but nodes and edges from unauthorized environments are hidden, and a message indicates that role-based access filtering is applied.
+
+  <Frame>
+    <img
+      src="/images/manage/etac-hidden-objects.png"
+      alt="A view of the graph on the Explore page with ETAC filtering applied, showing hidden objects from unauthorized environments"
+    />
+  </Frame>
+
+- On the **Zone Builder** page, a _Permission Denied!_ message can appear for ETAC users even when they have authorized environment access, depending on their role permissions and ETAC scope. When access is allowed, users can view objects from their authorized environments only; available actions still depend on role permissions.
+
+- Access to all other pages is unaffected, but the baseline [permissions](/manage-bloodhound/auth/users-and-roles#user-role-definitions) of the assigned role still apply.
+
+## Configure ETAC for a user
+
+Use the create or edit user workflow to configure ETAC for an eligible role and assign environments.
+
+<Steps>
+  <Step title="Open the Manage Users page">
+    In the left menu, click **Administration** > **Manage Users**.
+  </Step>
+  <Step title="Create or edit a user">
+    To create a new user, click **Create User**.
+    
+    To edit an existing user, click the hamburger menu next to the user record in the list and select **Update User**.
+
+  </Step>
+  <Step title="Assign an eligible role">
+    In the **Role** field, select **User** or **Read-only**.
+
+    When you select an eligible role, the ETAC options display in a new section beside the **Add/Edit User** form.
+
+    <Frame>
+      <img
+        src="/images/manage/etac-controls.png"
+        alt="A view of the ETAC controls in the create/edit user workflow"
+      />
+    </Frame>
+  </Step>
+  <Step title="Review the default ETAC state">
+    By default, no environments are selected, which means a user in this state has no environment access and cannot use the following pages until you select environments and save the user record:
+
+    - **Attack Paths**: The user sees no data and cannot use filters.
+    - **Explore**: The user can open the page, but sees a _Role-based access filtering applied_ message and cannot see data.
+    - **Posture**: The user can open the page, but cannot see data or use filters.
+    - **Zone Builder**: The user can open the page, but may receive a _Permission Denied!_ message. Users can view objects from their authorized environments only; available actions still depend on role permissions.
+
+  </Step>
+  <Step title="Select environments manually">
+    Choose one or more environments from the list to grant user access to the data in those environments only.
+
+    <Tip>
+      Use the search box to filter the list when you need to find a specific environment quickly.
+    </Tip>
+
+  </Step>
+  <Step title="Save the user changes">
+    Click **Save** to create or update the user record.
+
+    The user can access only the environments and pages allowed by the saved configuration.
+  </Step>
+</Steps>
