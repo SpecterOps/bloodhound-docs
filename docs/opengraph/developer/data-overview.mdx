@@ -21,13 +21,30 @@ See [Graph Structure](/opengraph/extensions/manage) for more details on the diff
 
 This page focuses on the JSON requirements for OpenGraph data payloads.
 
+## Choose your schema path
+
+All OpenGraph workflows start with the same required data payload schema (`metadata`, `graph.nodes`, and `graph.edges`).
+
+Use the following guidance to choose your path:
+
+| Goal | Required | Result |
+| --- | --- | --- |
+| Search and query OpenGraph data | Valid payload schema only | Generic graph |
+| Enable pathfinding and findings/analysis for extension relationships | Valid payload schema and an installed extension definition schema that the payload conforms to | Structured graph |
+
+In structured graphs, traversability is defined by `relationship_kinds` in the extension definition schema, and edges inherit that setting from their kind.
+
+Generic OpenGraph data does not define relationship traversability through an extension definition schema, so generic edges are treated as non-traversable for pathfinding and findings/analysis.
+
+To define structured graph behavior, continue to [Extension Definition Schema](/opengraph/developer/extension-definition-schema).
+
 <Tip>You can find the latest node and edge schemas in the BloodHound [source code](https://github.com/SpecterOps/BloodHound/tree/main/cmd/api/src/services/upload/jsonschema) on GitHub.</Tip>
 
 Use this page to validate payload-level structure. For field-level rules, use the dedicated node, edge, and metadata pages.
 
-## Ingesting OpenGraph Data
+## Ingesting OpenGraph data
 
-### File Requirements
+### File requirements
 
 Acceptable formats: `.json`, `.zip`
 
@@ -37,7 +54,7 @@ Compressed ZIP files are supported, including ZIP files with multiple payload fi
 
 If you upload a ZIP, ensure each file in the archive is a valid OpenGraph payload.
 
-### Data Payload Structure
+### Data payload structure
 
 The standard BloodHound UI upload screen accepts all OpenGraph payloads, including both generic and structured graph data.
 
@@ -72,7 +89,7 @@ When ingest completes, you can [search](/analyze-data/explore/search) OpenGraph 
 
 - **ZIP upload fails unexpectedly:** Ensure the archive does not contain nested ZIP files.
 
-## Minimal Viable Data Payload
+## Minimal viable data payload
 
 The following is a minimal example payload that conforms to the node and edge schemas above. You can use this as a starting point to build your own OpenGraph. Copy and paste the following example into a new `.json` file or <a href="/assets/opengraph/opengraph-minimal.json" download>download this example file</a>.
 

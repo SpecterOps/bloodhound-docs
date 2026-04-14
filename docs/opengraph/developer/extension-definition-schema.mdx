@@ -1,9 +1,11 @@
 ---
 title: Extension Definition Schema
-description: "Define the structure of an OpenGraph extension"
+description: "Define structured graph behavior for OpenGraph extensions"
 ---
 
 The extension definition schema defines the structure of your OpenGraph data.
+
+Use it when you want to produce a **structured graph** with extension-defined behavior.
 
 It tells BloodHound:
 
@@ -12,16 +14,32 @@ It tells BloodHound:
 - What environments to analyze
 - How findings are generated
 
-This schema is required before uploading any data.
+If you only need **generic graph** support, upload a valid OpenGraph data payload and skip this page.
 
-## Overview
+<Note>
+  Start with [OpenGraph Data](/opengraph/developer/data-overview) for required payload schema guidance. Then return to this page if you want structured graph capabilities.
+</Note>
 
-An extension definition schema is a JSON document that describes:
+## What this schema adds
+
+An extension definition schema lets extension authors define:
 
 * Node types (`node_kinds`)
 * Relationship types (`relationship_kinds`)
 * Environments (`environments`)
 * Findings (`relationship_findings`)
+
+These definitions are applied to compatible payload data at ingest time.
+
+## Traversability and analysis
+
+Traversability is defined in the extension definition schema, not in the payload edge object.
+
+- Each `relationship_kind` can set `is_traversable`.
+- Every ingested edge of that kind inherits that traversability behavior.
+- Only traversable edges are used in pathfinding and considered for findings and analysis.
+
+For generic OpenGraph data without an extension definition schema, edge traversability is not defined. Generic data is therefore treated as non-traversable for pathfinding and findings/analysis.
 
 ## Schema structure
 
@@ -62,15 +80,15 @@ Defines all node types in your graph.
 
 Each node kind represents an entity (e.g., user, device, environment).
 
-→ See [Nodes](/build/nodes)
+→ See [OpenGraph Nodes](/opengraph/developer/nodes)
 
 ### `relationship_kinds`
 
 Defines how nodes can be connected.
 
-Each relationship controls traversal behavior.
+Each relationship kind can define traversability through `is_traversable`.
 
-→ See [Relationships](/build/relationships)
+→ See [OpenGraph Edges](/opengraph/developer/edges)
 
 ### `environments`
 
@@ -82,7 +100,7 @@ Each environment links:
 - A `source_kind`
 - The principals within that environment
 
-→ See [Environments and Source Kinds](/build/environments-source-kinds)
+→ See [OpenGraph Metadata](/opengraph/developer/metadata)
 
 ### `relationship_findings`
 
@@ -93,6 +111,10 @@ Findings connect relationships to:
 - Environments
 - Remediation guidance
 - Analysis output
+
+<Note>
+  Extensions that define findings and remediations work in both Community and Enterprise, but findings are visible in Enterprise only.
+</Note>
 
 
 ## Naming and namespacing
@@ -128,7 +150,7 @@ Some important constraints:
   - A valid `environment_kind`
 
 <Note>
-  Additional validation rules may apply. See [Requirements](/reference/requirements).
+  Additional validation rules may apply. See [Requirements](/opengraph/developer/requirements).
 </Note>
 
 ## Icons and styling
@@ -144,7 +166,7 @@ Behavior:
 - If only one is provided → it is still applied
 - Invalid color values (non-hex) will cause errors
 
-→ See [Custom Icons](/build/custom-icons)
+→ See [Custom Icons](/opengraph/developer/custom-icons)
 
 ## Example schema
 
@@ -201,7 +223,8 @@ Each section builds on the others.
 
 ## Next steps
 
-* Learn how to define entities → [Nodes](/build/nodes)
-* Define relationships → [Relationships](/build/relationships)
-* Configure analysis → [Environments and Source Kinds](/build/environments-source-kinds)
-* Add visuals → [Custom Icons](/build/custom-icons)
+- Validate required payload structure → [OpenGraph Data](/opengraph/developer/data-overview)
+- Define payload entities → [OpenGraph Nodes](/opengraph/developer/nodes)
+- Define payload relationships → [OpenGraph Edges](/opengraph/developer/edges)
+- Configure source kinds and metrics eligibility → [OpenGraph Metadata](/opengraph/developer/metadata)
+- Add visuals for extension-defined kinds → [Custom Icons](/opengraph/developer/custom-icons)
