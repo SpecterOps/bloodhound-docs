@@ -1,0 +1,207 @@
+---
+title: Extension Definition Schema
+description: "Define the structure of an OpenGraph extension"
+---
+
+The extension definition schema defines the structure of your OpenGraph data.
+
+It tells BloodHound:
+
+- What types of nodes exist
+- How those nodes are related
+- What environments to analyze
+- How findings are generated
+
+This schema is required before uploading any data.
+
+## Overview
+
+An extension definition schema is a JSON document that describes:
+
+* Node types (`node_kinds`)
+* Relationship types (`relationship_kinds`)
+* Environments (`environments`)
+* Findings (`relationship_findings`)
+
+## Schema structure
+
+At a high level:
+
+```json
+{
+  "schema": { ... },
+  "node_kinds": [ ... ],
+  "relationship_kinds": [ ... ],
+  "environments": [ ... ],
+  "relationship_findings": [ ... ]
+}
+```
+
+## Core sections
+
+### `schema`
+
+Defines metadata about the extension itself.
+
+```json
+{
+  "name": "MyExtension",
+  "display_name": "My Extension",
+  "version": "1.0.0",
+  "namespace": "MY"
+}
+```
+
+* `name` must be unique
+* `namespace` is used as a prefix for all defined kinds
+
+
+### `node_kinds`
+
+Defines all node types in your graph.
+
+Each node kind represents an entity (e.g., user, device, environment).
+
+→ See [Nodes](/build/nodes)
+
+### `relationship_kinds`
+
+Defines how nodes can be connected.
+
+Each relationship controls traversal behavior.
+
+→ See [Relationships](/build/relationships)
+
+### `environments`
+
+Defines analysis boundaries and data sources.
+
+Each environment links:
+
+- An environment node
+- A `source_kind`
+- The principals within that environment
+
+→ See [Environments and Source Kinds](/build/environments-source-kinds)
+
+### `relationship_findings`
+
+Defines findings based on relationships.
+
+Findings connect relationships to:
+
+- Environments
+- Remediation guidance
+- Analysis output
+
+
+## Naming and namespacing
+
+All defined names must follow namespacing rules:
+
+- Must be prefixed with your namespace
+- Must be unique within the extension
+- Must include more than just the namespace
+
+Example:
+
+```
+GH_User
+GH_Repository
+GH_Contains
+GH_AdminAccess_Finding
+```
+
+<Warning>
+  If names are not unique or properly namespaced, the schema upload will fail.
+</Warning>
+
+## Validation rules
+
+Some important constraints:
+
+- All `name` fields must be non-empty
+- Environment node kinds must also exist in `node_kinds`
+- Relationship findings must reference:
+
+  - A valid `relationship_kind`
+  - A valid `environment_kind`
+
+<Note>
+  Additional validation rules may apply. See [Requirements](/reference/requirements).
+</Note>
+
+## Icons and styling
+
+Node kinds can optionally define:
+
+- `icon`
+- `color`
+
+Behavior:
+
+- If both are provided → a custom icon is created
+- If only one is provided → it is still applied
+- Invalid color values (non-hex) will cause errors
+
+→ See [Custom Icons](/build/custom-icons)
+
+## Example schema
+
+```json
+{
+  "schema": {
+    "name": "Active_Directory",
+    "display_name": "Active Directory (SharpHound)",
+    "version": "1.0.0",
+    "namespace": "AD"
+  },
+  "node_kinds": [
+    {
+      "name": "AD_Domain",
+      "display_name": "AD Domain",
+      "description": "An Active Directory domain environment",
+      "is_display_kind": true
+    }
+  ],
+  "relationship_kinds": [
+    {
+      "name": "AD_GenericAll",
+      "description": "Full control over target",
+      "is_traversable": true
+    }
+  ],
+  "environments": [
+    {
+      "environment_kind": "AD_Domain",
+      "source_kind": "ADBase",
+      "principal_kinds": ["AD_User"]
+    }
+  ],
+  "relationship_findings": [
+    {
+      "name": "AD_GenericAll_Finding",
+      "environment_kind": "AD_Domain",
+      "relationship_kind": "AD_GenericAll"
+    }
+  ]
+}
+```
+
+## How this fits together
+
+To successfully define an extension:
+
+1. Define your node kinds
+2. Define relationships between them
+3. Declare environments for analysis
+4. Map relationships to findings
+
+Each section builds on the others.
+
+## Next steps
+
+* Learn how to define entities → [Nodes](/build/nodes)
+* Define relationships → [Relationships](/build/relationships)
+* Configure analysis → [Environments and Source Kinds](/build/environments-source-kinds)
+* Add visuals → [Custom Icons](/build/custom-icons)
