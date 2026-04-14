@@ -3,6 +3,12 @@ title: OpenGraph Edges
 description: Description of the OpenGraph edge schema and requirements for ingestion into BloodHound.
 ---
 
+OpenGraph edges define relationships between nodes. Use this page to validate edge kinds, endpoint matching behavior, and post-processing outcomes before ingest.
+
+For payload-level structure, see [OpenGraph Data](/opengraph/developer/data-overview).
+
+## Edge Kind Rules
+
 Edge `kind` values must contain only letters (`A-Z`, `a-z`), numbers (`0-9`), and underscores (`_`).
 
 BloodHound validates edge kinds at upload time. If any edge kind includes spaces, dashes (`-`), backticks, or other special characters, the file upload fails.
@@ -37,7 +43,12 @@ BloodHound enforces this pattern for edge kinds:
 
 ## Edge Endpoint Matching
 
-Edges in OpenGraph data define relationships between nodes using a `start` endpoint and an `end` endpoint. You can control how BloodHound resolves each endpoint using one of two matching strategies in the `match_by` field. This flexibility allows you to link nodes based on their unique database identifiers or by dynamically finding them based on specific attribute values.
+Edges use a `start` endpoint and an `end` endpoint. BloodHound resolves each endpoint according to `match_by`.
+
+Use one of two strategies:
+
+- `id` (or legacy `name`) for direct identifier matching.
+- `property` for attribute-based matching.
 
 <Note>
   Use identifier matching when possible. Property matching is more flexible, but it is slower and should be used only when you cannot match by node ID.
@@ -45,7 +56,7 @@ Edges in OpenGraph data define relationships between nodes using a `start` endpo
 
 ### Match by Identifier
 
-This is the default and most common method for defining edges. It resolves the endpoint by looking up a node using its unique internal ID or its human-readable name.
+This is the default and most common method. It resolves an endpoint by unique internal ID or by human-readable name.
 
 To use this strategy, set the `match_by` property to either `"id"` or `"name"`.
 
@@ -76,7 +87,7 @@ Linking a specific user to a server using their unique IDs:
 
 ### Match by Property
 
-Use this strategy when you do not know the unique ID of the target node but can identify it through one or more known attributes (e.g., a username, email address, hostname, or custom property). This method allows for dynamic resolution based on data available at ingestion time.
+Use this strategy when you do not know the unique ID but can identify the node using one or more attributes (for example, username, email address, or hostname).
 
 To use this strategy, set the `match_by` property to `"property"`.
 
@@ -125,7 +136,7 @@ Linking a user to a server by matching the user's `username` property and the se
 
 ## Edge JSON
 
-The following is the <a href="/assets/opengraph/opengraph-edge.json" download>JSON schema</a> that all edges must conform to.
+Use the schema below as the source of truth for validation requirements. You can also download the same schema as a file: <a href="/assets/opengraph/opengraph-edge.json" download>opengraph-edge.json</a>.
 
 If an edge kind does not meet the allowed pattern, BloodHound returns a schema validation error and rejects the upload.
 
@@ -329,9 +340,9 @@ If an edge kind does not meet the allowed pattern, BloodHound returns a schema v
 
 ## Post-processing
 
-Post-processing in BloodHound refers to a series of steps during analysis phase where the system creates specific edges after ingesting data to enrich the graph and more accurately reflect the graph's state.
+Post-processing in BloodHound runs during the analysis phase. During this phase, BloodHound generates specific edges to enrich the graph and reflect the evaluated graph state.
 
-After ingesting data, BloodHound analyzes the graph state and adds edges that are essential to accurately represent the environment and support attack path analysis. BloodHound regenerates "post-processed" edges after it builds a complete graph. Before regenerating post-processed edges, BloodHound deletes any existing ones. As a result, BloodHound removes any post-processed edges that you add directly to an OpenGraph payload.
+After ingest completes, BloodHound builds a complete graph, deletes existing post-processed edges, and regenerates them. As a result, post-processed edge kinds that you add directly in OpenGraph payloads do not persist.
 
 <Accordion title="Show post-processed edges">
 BloodHound creates the following edges during post-processing:
@@ -381,7 +392,7 @@ BloodHound creates the following edges during post-processing:
 
 </Accordion>
 
-You can work around this behavior by including the supporting edges that cause the post-processing step to generate the edge that you want.
+To achieve a post-processed relationship, include the supporting edges that cause BloodHound to generate that relationship during post-processing.
 
 For example, if you include an `AdminTo` edge directly in your OpenGraph payload, BloodHound removes it during post-processing and the edge does not persist in the final graph as expected. Instead of adding `AdminTo` edges directly, include the supporting edges that cause the post-processor to generate the `AdminTo` edge. The common pattern that triggers the creation of the `AdminTo` edge is:
 
@@ -417,3 +428,19 @@ See the following example OpenGraph payload that produces the effect:
   }
 }
 ```
+
+## Troubleshooting
+
+- **Upload fails on edge kind pattern:** Ensure `kind` matches `^[A-Za-z0-9_]+$`.
+
+- **Endpoint validation fails:** Use either `value` for `id`/`name` matching, or `property_matchers` for `property` matching, not both.
+
+- **Expected edge disappears after ingest:** Check whether it is a post-processed edge kind that BloodHound regenerates.
+
+## Related Topics
+
+- [OpenGraph Data](/opengraph/developer/data-overview)
+
+- [OpenGraph Nodes](/opengraph/developer/nodes)
+
+- [OpenGraph Schema](/opengraph/developer/schema)
