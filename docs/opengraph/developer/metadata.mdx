@@ -1,6 +1,6 @@
 ---
 title: OpenGraph Metadata
-description: Define optional OpenGraph metadata fields for BloodHound ingest.
+description: Learn how metadata influences ingestion and metrics behavior.
 ---
 
 <img
@@ -9,40 +9,59 @@ description: Define optional OpenGraph metadata fields for BloodHound ingest.
   alt="Applies to BloodHound Enterprise and CE"
 />
 
-OpenGraph metadata is optional and is defined at the top level of the payload.
+The `metadata` field is used to define system-level behavior for your data payload.
 
-## Supported Metadata Fields
-
-### source_kind
-
-Use `source_kind` to attribute all nodes in a payload file to a source system.
-
-- Type: string
-- Scope: applied to all nodes in the same file during ingest
-- Example sources: `GitHub`, `Snowflake`, `MSSQL`
-
-BloodHound appends this value to each node's `kinds` array at ingest time.
-
-<Note>
-  BloodHound already uses this concept for built-in data sources. Active Directory data uses `Base`, and Azure data uses `AZBase`.
-</Note>
-
-## Example
+One of its primary uses is registering a `source_kind` in your data payload, which determines how data is included in metrics and analysis.
 
 ```json
 {
   "metadata": {
     "source_kind": "GitHub"
-  },
-  "graph": {
-    "nodes": [],
-    "edges": []
   }
 }
 ```
 
+## source_kind
+
+A `source_kind` assigns all nodes in a data payload to a source system, such as GitHub. During ingest, BloodHound appends this value to each node's `kinds` array.
+
+BloodHound uses `source_kind` to determine how nodes are included in analysis, metrics, and data management workflows. It is also a key way to distinguish data from different sources in your graph.
+
+<Note>
+  BloodHound already uses this concept for built-in data sources. Active Directory data uses `Base`, and Azure data uses `AZBase`.
+</Note>
+
+Once registered, it persists and is reused automatically for subsequent uploads that include the associated kinds but do not specify a `source_kind`.
+
+This allows you to set it once and have it apply to all future uploads from the same source system without needing to include it in every payload.
+
+## Constraints
+
+- Nodes must include a `source_kind` to be included in metrics
+- If a node does not have a `source_kind`, it may:
+  - Be excluded from metrics
+  - Potentially break edge traversal chains
+
+<Warning>
+  The exact behavior of missing `source_kind` during edge traversal may vary.
+</Warning>
+
+## Metrics
+
+- Exposure metrics
+  - Do NOT include the source node itself
+  - Only include nodes that can traverse to the source node
+
+- Impact metrics
+  - Traverse "downstream" from the target node
+  - Stop when another Tier Zero (T0) node is encountered
+
+<Note>
+  Nodes beyond a second Tier Zero (T0) node are not included in impact calculations.
+</Note>
+
 ## Troubleshooting
 
-- **`source_kind` does not appear in expected nodes:** Verify that `metadata` is at the top level of the payload and not nested under `graph`.
+- **`source_kind` does not appear in expected nodes:** Verify that `metadata` is at the top level of the data payload and not nested under `graph`.
 
-- **Unexpected kind labels after ingest:** Confirm that your `source_kind` value is intentional because BloodHound appends it to every node in the file.
+- **Unexpected kind labels after ingest:** Confirm that your `source_kind` value is intentional because BloodHound appends it to every node in the data payload.
