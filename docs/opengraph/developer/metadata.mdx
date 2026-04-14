@@ -1,6 +1,7 @@
 ---
 title: OpenGraph Metadata
 description: Learn how metadata influences ingestion and metrics behavior.
+sidebarTitle: Metadata
 ---
 
 <img
@@ -21,8 +22,6 @@ One of its primary uses is registering a `source_kind` in your data payload, whi
 }
 ```
 
-## source_kind
-
 A `source_kind` assigns all nodes in a data payload to a source system, such as GitHub. During ingest, BloodHound appends this value to each node's `kinds` array.
 
 BloodHound uses `source_kind` to determine how nodes are included in analysis, metrics, and data management workflows. It is also a key way to distinguish data from different sources in your graph.
@@ -35,18 +34,13 @@ Once registered, it persists and is reused automatically for subsequent uploads 
 
 This allows you to set it once and have it apply to all future uploads from the same source system without needing to include it in every payload.
 
-## Constraints
-
-- Nodes must include a `source_kind` to be included in metrics
-- If a node does not have a `source_kind`, it may:
-  - Be excluded from metrics
-  - Potentially break edge traversal chains
-
-<Warning>
-  The exact behavior of missing `source_kind` during edge traversal may vary.
-</Warning>
-
 ## Metrics
+
+To be included in metrics and analysis, nodes must have a `source_kind` defined at the payload level. 
+
+This is because BloodHound uses `source_kind` to determine which nodes are part of the "source system" for a finding, which in turn determines how exposure and impact metrics are calculated.
+
+The following points describe how `source_kind` influences metrics calculations:
 
 - Exposure metrics
   - Do NOT include the source node itself
@@ -59,6 +53,24 @@ This allows you to set it once and have it apply to all future uploads from the 
 <Note>
   Nodes beyond a second Tier Zero (T0) node are not included in impact calculations.
 </Note>
+
+## Schema
+
+Use the schema below as the source of truth for validation requirements:
+
+```json
+{
+    "title": "Metadata",
+    "description": "Optional metadata about the ingest payload",
+    "type": "object",
+    "properties": {
+        "source_kind": {
+            "type": ["string","null"]
+        }
+    },
+    "additionalProperties": false
+}
+``` 
 
 ## Troubleshooting
 

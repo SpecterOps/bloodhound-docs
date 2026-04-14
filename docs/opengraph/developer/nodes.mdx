@@ -1,6 +1,7 @@
 ---
 title: OpenGraph Nodes
-description: Validate OpenGraph node schema requirements for BloodHound ingest.
+description: Define nodes in your OpenGraph data payloads.
+sidebarTitle: Nodes
 ---
 
 <img
@@ -9,47 +10,67 @@ description: Validate OpenGraph node schema requirements for BloodHound ingest.
   alt="Applies to BloodHound Enterprise and CE"
 />
 
-OpenGraph nodes represent the entities in your graph, such as users, devices, repositories, or applications. Each node needs a stable identifier, one or more kinds, and optional properties.
+Nodes represent the entities in your graph, such as users, devices, repositories, or applications. Each node needs a stable identifier, one or more kinds, and optional properties.
 
-Use this page to validate node structure before ingest. For full payload structure, see [OpenGraph Data](/opengraph/developer/data-overview).
+<Note>
+  Use this page to validate node structure before ingestion. For a full data payload example, see [OpenGraph Data](/opengraph/developer/data-overview).
+</Note>
 
-## Core Concepts
+At minimum, each node must include a unique identifier and at least one kind.
 
-- **`id`** is the unique identifier for the node in your data payload.
+```json
+{
+  "id": "123",
+  "kinds": ["KindName"],
+    "properties": {
+        "key": "value"
+    }
+}
+```
 
-- **`kinds`** is an array of labels that classify the node.
+| Field | Required | Description |
+| --- | --- | --- |
+| `id` | Yes | The unique identifier for the node in your data payload. |
+| `kinds` | Yes | An array of strings that classify the node. Max three values/node. The first value is the primary kind, which controls the node styling in the graph. |
+| `properties` | No | A key-value map of custom node attributes. |
 
-- **`properties`** is an optional key-value map for node attributes.
+<Note>
+  Nodes must include a `source_kind` to be included in metrics. See [Metadata](/opengraph/developer/metadata) for details on how to set `source_kind` at the payload level.
+</Note>
 
-## Property Rules
+## Constraints
 
-### Allowed Types
+Properties must adhere to the following constraints:
 
-- Properties must be primitive types or arrays of primitive types.
-
-- Nested objects and arrays of objects are not allowed.
-
-- Arrays must be homogeneous (e.g. all strings or all numbers).
-
-### Naming
-
+- Values must be:
+  - string
+  - number
+  - boolean
+  - array of primitives
+- Nested objects are not allowed
+- Arrays of objects are not allowed
+- Arrays must be homogeneous (e.g., all strings or all numbers)
 - Property names must be lowercase.
+- Property names are case-sensitive.
 
-- Property names in BloodHound are case-sensitive. `exampleid` and `ExampleID` are treated as different properties on the same node.
+  For example, `exampleid` and `ExampleID` are treated as different properties on the same node.
 
-- This can cause issues in languages that treat JSON keys as case-insensitive (for example, PowerShell and some .NET-based tools).
+  <Warning>
+    This can cause issues in languages that treat JSON keys as case-insensitive (for example, PowerShell and some .NET-based tools).
+  </Warning>
 
-## Kinds
+## Metrics
 
-The `kinds` array classifies the node.
+To include a node in analysis and metrics, set `properties.collected` to the boolean value `true`.
 
-- The first value in `kinds` is the primary kind and controls which icon BloodHound displays for the node in graph visualizations.
+- `collected: true`: node is included in analysis and metrics.
+- `collected: false` or missing `collected`: node is treated as reference data and excluded from analysis and metrics.
 
-- The primary kind is a UI convention only and does not change ingest semantics.
+## Reserved properties
 
-- The schema currently allows up to three kinds per node (`maxItems: 3`).
+Some node properties are reserved and have special behavior during ingest. These properties must not be included in the `properties` object of a node definition, as they may cause ingest to fail or lead to unexpected behavior.
 
-## Reserved Property: `objectid`
+### `objectid`
 
 The property name `objectid` is reserved and **must not** be included in the `properties` object of a node definition.
 
@@ -61,7 +82,7 @@ During ingest, BloodHound maps this `id` value internally to `objectid`. If you 
   Do not include `objectid` inside `properties`. Use only the root-level `id` field.
 </Warning>
 
-## Node JSON
+## Schema
 
 Use the schema below as the source of truth for validation requirements. You can also download the same schema as a file: <a href="/assets/opengraph/opengraph-node.json" download>opengraph-node.json</a>.
 
@@ -129,70 +150,6 @@ Use the schema below as the source of truth for validation requirements. You can
   ]
 }
 ```
-
-## Examples
-
-### Minimal Node
-
-```json
-{
-  "id": "user-1234",
-  "kinds": ["Person"]
-}
-```
-
-### Node With Primitive Properties
-
-```json
-{
-  "id": "device-5678",
-  "kinds": ["Device", "Asset"],
-  "properties": {
-    "manufacturer": "Brandon Corp",
-    "model": "4000x",
-    "is_active": true,
-    "rating": 43.5
-  }
-}
-```
-
-### Node With Valid Array Properties
-
-```json
-{
-  "id": "repo-42",
-  "kinds": ["Repository"],
-  "properties": {
-    "topics": ["security", "identity", "graph"],
-    "risk_scores": [12, 27, 91],
-    "is_public_history": [true, false]
-  }
-}
-```
-
-### Invalid Node Example
-
-```json
-{
-  "id": "svc-99",
-  "kinds": ["Service"],
-  "properties": {
-    "objectid": "duplicate-id",
-    "owners": ["alice", 42],
-    "profile": {
-      "department": "engineering"
-    }
-  }
-}
-```
-
-Why this fails:
-
-- `objectid` is reserved.
-
-- `owners` mixes string and number values.
-
-- `profile` is a nested object.
 
 ## Troubleshooting
 
