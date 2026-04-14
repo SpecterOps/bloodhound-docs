@@ -1,0 +1,201 @@
+---
+title: OpenGraph Nodes
+description: Description of the OpenGraph node schema and requirements for ingestion into BloodHound.
+---
+
+OpenGraph nodes represent the entities in your graph, such as users, devices, repositories, or applications. Each node needs a stable identifier, one or more kinds, and optional properties.
+
+Use this page to validate node structure before ingest. For full payload structure, see [OpenGraph Data](/opengraph/developer/data-overview).
+
+## Core Concepts
+
+- **`id`** is the unique identifier for the node in your data payload.
+
+- **`kinds`** is an array of labels that classify the node.
+
+- **`properties`** is an optional key-value map for node attributes.
+
+## Property Rules
+
+### Allowed Types
+
+- Properties must be primitive types or arrays of primitive types.
+
+- Nested objects and arrays of objects are not allowed.
+
+- Arrays must be homogeneous (e.g. all strings or all numbers).
+
+### Naming
+
+- Property names must be lowercase. Property names in BloodHound are case-sensitive, which means `exampleid` and `ExampleID` are treated as two distinct properties on the same node. This can cause issues when parsing API responses in languages that treat JSON keys as case-insensitive (for example, PowerShell and some .NET-based tools).
+
+## Kinds
+
+The `kinds` array classifies the node.
+
+- The first value in `kinds` is the primary kind and controls which icon BloodHound displays for the node in graph visualizations.
+
+- The primary kind is a UI convention only and does not change ingest semantics.
+
+- The schema currently allows up to three kinds per node (`maxItems: 3`).
+
+## Reserved Property: `objectid`
+
+The property name `objectid` is reserved and **must not** be included in the `properties` object of a node definition.
+
+The top-level `id` field serves as the node identifier in your payload.
+
+During ingest, BloodHound maps this `id` value internally to `objectid`. If you also define `objectid` in `properties`, ingest fails due to a conflicting definition.
+
+<Warning>
+  Do not include `objectid` inside `properties`. Use only the root-level `id` field.
+</Warning>
+
+## Node JSON
+
+Use the schema below as the source of truth for validation requirements. You can also download the same schema as a file: <a href="/assets/opengraph/opengraph-node.json" download>opengraph-node.json</a>.
+
+```json
+{
+  "title": "Generic Ingest Node",
+  "description": "A node used in a generic graph ingestion system. Each node must have a unique identifier (`id`) and at least one kind describing its role or type. Nodes may also include a `properties` object containing custom attributes.",
+  "type": "object",
+  "$defs": {
+    "property_map": {
+      "type": ["object", "null"],
+      "description": "A key-value map of entity attributes. Values must not be objects. If a value is an array, it must contain only primitive types (e.g., strings, numbers, booleans) and must be homogeneous (all items must be of the same type).",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" },
+          {
+            "type": "array",
+            "anyOf": [
+              { "items": { "type": "string" } },
+              { "items": { "type": "number" } },
+              { "items": { "type": "boolean" } }
+            ]
+          }
+        ]
+      },
+
+      "not": {
+        "required": ["objectid"]
+      }
+    }
+  },
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "properties": {
+      "$ref": "#/$defs/property_map"
+    },
+    "kinds": {
+      "type": ["array"],
+      "items": { "type": "string" },
+      "minItems": 0,
+      "maxItems": 3,
+      "description": "An array of kind labels for the node. The first element is treated as the node's primary kind and is used to determine which icon to display in the graph UI. This primary kind is only used for visual representation and has no semantic significance for data processing."
+    }
+  },
+  "required": ["id", "kinds"],
+  "examples": [
+    {
+      "id": "user-1234",
+      "kinds": ["Person"]
+    },
+    {
+      "id": "device-5678",
+      "properties": {
+        "manufacturer": "Brandon Corp",
+        "model": "4000x",
+        "is_active": true,
+        "rating": 43.5
+      },
+      "kinds": ["Device", "Asset"]
+    }
+  ]
+}
+```
+
+## Examples
+
+### Minimal Node
+
+```json
+{
+  "id": "user-1234",
+  "kinds": ["Person"]
+}
+```
+
+### Node With Primitive Properties
+
+```json
+{
+  "id": "device-5678",
+  "kinds": ["Device", "Asset"],
+  "properties": {
+    "manufacturer": "Brandon Corp",
+    "model": "4000x",
+    "is_active": true,
+    "rating": 43.5
+  }
+}
+```
+
+### Node With Valid Array Properties
+
+```json
+{
+  "id": "repo-42",
+  "kinds": ["Repository"],
+  "properties": {
+    "topics": ["security", "identity", "graph"],
+    "risk_scores": [12, 27, 91],
+    "is_public_history": [true, false]
+  }
+}
+```
+
+### Invalid Node Example
+
+```json
+{
+  "id": "svc-99",
+  "kinds": ["Service"],
+  "properties": {
+    "objectid": "duplicate-id",
+    "owners": ["alice", 42],
+    "profile": {
+      "department": "engineering"
+    }
+  }
+}
+```
+
+Why this fails:
+
+- `objectid` is reserved.
+
+- `owners` mixes string and number values.
+
+- `profile` is a nested object.
+
+## Troubleshooting
+
+- **Upload fails with schema validation errors:** Verify that every property value is a primitive or a homogeneous array of primitives.
+
+- **Unexpected duplicate properties in results:** Check for case differences such as `exampleid` and `ExampleID`.
+
+- **Upload fails on reserved property conflict:** Remove `objectid` from `properties` and keep the identifier only in `id`.
+
+## Related Topics
+
+- [OpenGraph Data](/opengraph/developer/data-overview)
+
+- [OpenGraph Edges](/opengraph/developer/edges)
+
+- [OpenGraph Schema](/opengraph/developer/schema)

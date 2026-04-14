@@ -1,71 +1,7 @@
 ---
-title: OpenGraph Schema
-sidebarTitle: Schema
-description: "Description of the OpenGraph JSON Schema"
+title: OpenGraph Edges
+description: Description of the OpenGraph edge schema and requirements for ingestion into BloodHound.
 ---
-
-<img
-  noZoom
-  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
-  alt="Applies to BloodHound Enterprise and CE"
-/>
-
-This page explains the JSON payload structure and minimum JSON schema requirements that BloodHound uses to ingest OpenGraph nodes and edges.
-
-Terms used on this page:
-
-- **Generic graph data** is OpenGraph data that conforms only to the minimum required node and edge schemas used by data payloads, as described on this page.
-- **Structured graph data** is OpenGraph data that relies on an extension definition schema outside the payload itself to enrich the raw data and provide enhanced functionality.
-
-See [Graph Structure](/opengraph/extensions/manage) for more details on the differences between generic and structured graph data, as well as guidance on which type to use for your project.
-
-This page focuses on the JSON requirements for OpenGraph data payloads.
-
-<Tip>You can find the latest node and edge schemas in the BloodHound [source code](https://github.com/SpecterOps/BloodHound/tree/main/cmd/api/src/services/upload/jsonschema) on GitHub.</Tip>
-
-## Ingesting OpenGraph Data
-
-### File Requirements
-
-Acceptable formats: `.json`, `.zip`
-
-You can mix file types in a single upload (e.g. SharpHound + OpenGraph).
-
-Compressed ZIP files are supported, including ZIP files with multiple payload files, but ZIP files inside ZIP files (nested ZIPs) are not supported.
-
-### Data Payload Structure
-
-The standard BloodHound UI upload screen accepts all OpenGraph payloads, including both generic and structured graph data.
-
-At minimum, your JSON file should have these elements:
-
-```json
-{
-  "graph": {
-    "nodes": [],
-    "edges": []
-  }
-}
-```
-
-The `nodes` and `edges` must conform to the minimum JSON schemas (see details below). BloodHound validates that the JSON is well-formed and that nodes and edges meet these schema requirements, but it does not enforce additional structure or constraints beyond them.
-
-When ingest completes, you can [search](/analyze-data/explore/search) OpenGraph data.
-
-**Entity Panels**: Clicking on an OpenGraph node or edge will currently display the full list of the entity's properties and their values. Future enhancements will enable OpenGraph extension authors to define structured and organized entity panel representations.
-
-## Nodes
-
-Node validation details, rules, and examples now live on the dedicated [OpenGraph Nodes](/opengraph/developer/nodes) page.
-
-Use that page for:
-
-- required fields (`id`, `kinds`)
-- property type and naming constraints
-- reserved `objectid` behavior
-- the full node JSON schema reference
-
-## Edges
 
 Edge `kind` values must contain only letters (`A-Z`, `a-z`), numbers (`0-9`), and underscores (`_`).
 
@@ -77,7 +13,7 @@ Neo4j Cypher allows many special characters in symbolic names when the name is e
 
 See Neo4j [Escaping rules for symbolic names](https://neo4j.com/docs/cypher-manual/current/syntax/naming/#symbolic-names-escaping-rules) for additional naming guidance.
 
-### Edge Kind Validation
+## Edge Kind Validation
 
 BloodHound enforces this pattern for edge kinds:
 
@@ -99,7 +35,7 @@ BloodHound enforces this pattern for edge kinds:
 - ``Has`Session``
 - `Has$Session`
 
-### Edge Endpoint Matching
+## Edge Endpoint Matching
 
 Edges in OpenGraph data define relationships between nodes using a `start` endpoint and an `end` endpoint. You can control how BloodHound resolves each endpoint using one of two matching strategies in the `match_by` field. This flexibility allows you to link nodes based on their unique database identifiers or by dynamically finding them based on specific attribute values.
 
@@ -107,7 +43,7 @@ Edges in OpenGraph data define relationships between nodes using a `start` endpo
   Use identifier matching when possible. Property matching is more flexible, but it is slower and should be used only when you cannot match by node ID.
 </Note>
 
-#### Match by Identifier
+### Match by Identifier
 
 This is the default and most common method for defining edges. It resolves the endpoint by looking up a node using its unique internal ID or its human-readable name.
 
@@ -138,7 +74,7 @@ Linking a specific user to a server using their unique IDs:
 }
 ```
 
-#### Match by Property
+### Match by Property
 
 Use this strategy when you do not know the unique ID of the target node but can identify it through one or more known attributes (e.g., a username, email address, hostname, or custom property). This method allows for dynamic resolution based on data available at ingestion time.
 
@@ -187,7 +123,7 @@ Linking a user to a server by matching the user's `username` property and the se
 }
 ```
 
-### Edge JSON
+## Edge JSON
 
 The following is the <a href="/assets/opengraph/opengraph-edge.json" download>JSON schema</a> that all edges must conform to.
 
@@ -391,7 +327,7 @@ If an edge kind does not meet the allowed pattern, BloodHound returns a schema v
 }
 ```
 
-#### Post-processing
+## Post-processing
 
 Post-processing in BloodHound refers to a series of steps during analysis phase where the system creates specific edges after ingesting data to enrich the graph and more accurately reflect the graph's state.
 
@@ -481,87 +417,3 @@ See the following example OpenGraph payload that produces the effect:
   }
 }
 ```
-
-## Optional Metadata Field
-
-You can optionally include a metadata object at the top level of your data payload. This metadata currently supports a single field:
-
-    - `source_kind`: a string that applies to all nodes in the file, used to attribute a source to ingested nodes (e.g.  Github, Snowflake, MSSQL). This is useful for tracking where a node originated. We internally use this concept already for AD/Azure, using the labels “Base” and “AZBase” respectively.
-
-Example:
-
-```json
-{
-  "metadata": {
-    "source_kind": "GitHub"
-  },
-  "graph": {
-    "nodes": [],
-    "edges": []
-  }
-}
-```
-
-If present, the `source_kind` will be added to the `kinds` list of all nodes in the file during ingest. This feature is optional.
-
-## Minimal Viable Data Payload
-
-The following is a minimal example payload that conforms to the node and edge schemas above. You can use this as a starting point to build your own OpenGraph. Copy and paste the following example into a new `.json` file or <a href="/assets/opengraph/opengraph-minimal.json" download>download this example file</a>.
-
-<Tip>
-  When working with JSON files, use a plain text editor and UTF-8 encoding. Some
-  text editors may introduce unexpected, non-standard characters that can cause
-  parsing errors. It's always a good idea to validate your JSON with a
-  [linter](https://jsonlint.com/) before uploading it to BloodHound.
-</Tip>
-
-```json
-{
-  "graph": {
-    "nodes": [
-      {
-        "id": "123",
-        "kinds": ["Person"],
-        "properties": {
-          "displayname": "bob",
-          "property": "a",
-          "name": "BOB"
-        }
-      },
-      {
-        "id": "234",
-        "kinds": ["Person"],
-        "properties": {
-          "displayname": "alice",
-          "property": "b",
-          "name": "ALICE"
-        }
-      }
-    ],
-    "edges": [
-      {
-        "kind": "Knows",
-        "start": {
-          "value": "123",
-          "match_by": "id"
-        },
-        "end": {
-          "value": "234",
-          "match_by": "id"
-        }
-      }
-    ]
-  }
-}
-```
-
-To test the ingestion in your BloodHound instance, navigate to **Explore** → **Cypher**. Enter the following query and hit `Run`:
-
-```cypher
-match p=()-[:Knows]-()
-return p
-```
-
-You should get something that looks like this:
-
-<img noZoom src="/assets/og-sch-1.png" alt="BOB->Knows->Alice" />
