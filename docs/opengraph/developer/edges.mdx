@@ -1,6 +1,6 @@
 ---
 title: OpenGraph Edges
-description: Validate OpenGraph edge schema requirements for BloodHound ingest.
+description: Define relationships between nodes in your OpenGraph data payloads.
 sidebarTitle: Edges
 ---
 
@@ -12,43 +12,72 @@ sidebarTitle: Edges
 
 OpenGraph edges define relationships between nodes. Use this page to validate edge kinds, endpoint matching behavior, and post-processing outcomes before ingest.
 
-For payload-level structure, see [OpenGraph Data](/opengraph/developer/data-overview).
+<Note>
+  Use this page to validate edge structure before ingestion. For a full data payload example, see [OpenGraph Data](/opengraph/developer/data-overview).
+</Note>
 
-## Edge Kind Rules
+At minimum, each edge must include a `start` endpoint, an `end` endpoint, and a `kind` that describes the relationship type.
 
-Edge `kind` values must contain only letters (`A-Z`, `a-z`), numbers (`0-9`), and underscores (`_`).
-
-BloodHound validates edge kinds at upload time. If any edge kind includes spaces, dashes (`-`), backticks, or other special characters, the file upload fails.
-
-We recommend using PascalCase (for example, `AdminTo`, `HasSession`) for readability and consistency.
-
-Neo4j Cypher allows many special characters in symbolic names when the name is enclosed in backticks. BloodHound OpenGraph ingest is more restrictive: edge `kind` values must match `^[A-Za-z0-9_]+$`, so upload validation rejects backtick-escaped names, spaces, dashes, and other special characters.
-
-See Neo4j [Escaping rules for symbolic names](https://neo4j.com/docs/cypher-manual/current/syntax/naming/#symbolic-names-escaping-rules) for additional naming guidance.
-
-## Edge Kind Validation
-
-BloodHound enforces this pattern for edge kinds:
-
-```text
-^[A-Za-z0-9_]+$
+```json
+{
+  "start": {
+    "match_by": "id",
+    "value": "node-12345"
+  },
+  "end": {
+    "match_by": "id",
+    "value": "node-67890"
+  },
+  "kind": "RelationshipType",
+  "properties": {
+    "key": "value"
+  }
+}
 ```
 
-**Valid examples**
+| Field | Required | Description |
+| --- | --- | --- |
+| `kind` | Yes | A string that describes the relationship type. Must contain only letters, numbers, and underscores. Recommended PascalCase for readability and consistency (e.g., `UserToServer`). |
+| `start` | Yes | An object that defines how to match the starting node of the edge. See [Endpoint Matching](#endpoint-matching). |
+| `end` | Yes | An object that defines how to match the ending node of the edge. See [Endpoint Matching](#endpoint-matching). |
+| `properties` | No | A key-value map of custom edge attributes. Values must be strings, numbers, booleans, or arrays of primitives. Nested objects and arrays of objects are not allowed. |
 
-- `AdminTo`
-- `HasSession`
-- `AZMGGrantRole`
-- `Edge_1`
+## Constraints
 
-**Invalid examples**
+Edges must adhere to the following constraints:
 
-- `Admin-To`
-- `Has Session`
-- ``Has`Session``
-- `Has$Session`
+- Edge `kind` must match the regex pattern `^[A-Za-z0-9_]+$`. This means edge kinds can only contain uppercase letters, lowercase letters, numbers, and underscores. Spaces, dashes, backticks, and other special characters are not allowed in edge kinds.
 
-## Edge Endpoint Matching
+  Neo4j Cypher allows many special characters in symbolic names when the name is enclosed in backticks. BloodHound OpenGraph ingest is more restrictive: edge `kind` values must match `^[A-Za-z0-9_]+$`, so upload validation rejects backtick-escaped names, spaces, dashes, and other special characters.
+
+  See Neo4j [Escaping rules for symbolic names](https://neo4j.com/docs/cypher-manual/current/syntax/naming/#symbolic-names-escaping-rules) for additional naming guidance.
+
+- The `lastseen` property is injected automatically by BloodHound during ingestion and overwrites any value provided in the payload.
+
+## Metrics
+
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ width: "20%" }}
+/>
+
+To include the nodes connected by an edge in analysis and metrics (findings), set `properties.collected` to `true`.
+
+```json
+{
+  "properties": {
+    "collected": true
+  }
+}
+```
+
+<Note>
+  To be included in metrics and analysis (findings), nodes must also have [`metadata.source_kind`](/opengraph/developer/metadata) defined at the payload level.
+</Note>
+
+## Endpoint Matching
 
 Edges use a `start` endpoint and an `end` endpoint. BloodHound resolves each endpoint according to `match_by`.
 
@@ -141,11 +170,9 @@ Linking a user to a server by matching the user's `username` property and the se
 }
 ```
 
-## Edge JSON
+## Schema
 
 Use the schema below as the source of truth for validation requirements. You can also download the same schema as a file: <a href="/assets/opengraph/opengraph-edge.json" download>opengraph-edge.json</a>.
-
-If an edge kind does not meet the allowed pattern, BloodHound returns a schema validation error and rejects the upload.
 
 ```json
 {
@@ -442,4 +469,4 @@ See the following example OpenGraph payload that produces the effect:
 
 - **Endpoint validation fails:** Use either `value` for `id`/`name` matching, or `property_matchers` for `property` matching, not both.
 
-- **Expected edge disappears after ingest:** Check whether it is a post-processed edge kind that BloodHound regenerates.
+- **Expected edge disappears after ingest:** Check whether it is a post-processed edge kind.
