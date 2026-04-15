@@ -13,24 +13,28 @@ sidebarTitle: Edges
 OpenGraph edges define relationships between nodes. Use this page to validate edge kinds, endpoint matching behavior, and post-processing outcomes before ingest.
 
 <Note>
-  Use this page to validate edge structure before ingestion. For a full data payload example, see [OpenGraph Data](/opengraph/developer/data-payload).
+  Use this page to validate edge structure before ingestion. For a full data payload example, see [Data Payload](/opengraph/developer/data-payload).
 </Note>
 
 At minimum, each edge must include a `start` endpoint, an `end` endpoint, and a `kind` that describes the relationship type.
 
 ```json
 {
-  "start": {
-    "match_by": "id",
-    "value": "node-12345"
-  },
-  "end": {
-    "match_by": "id",
-    "value": "node-67890"
-  },
-  "kind": "RelationshipType",
-  "properties": {
-    "key": "value"
+  "graph": {
+    "nodes": [],
+    "edges": [
+      {
+        "start": {
+          "match_by": "id",
+          "value": "node-12345"
+        },
+        "end": {
+          "match_by": "id",
+          "value": "node-67890"
+        },
+        "kind": "RelationshipType"
+      }
+    ]
   }
 }
 ```
@@ -42,11 +46,15 @@ At minimum, each edge must include a `start` endpoint, an `end` endpoint, and a 
   An object that defines how to match the ending node of the edge. See [Endpoint Matching](#endpoint-matching).
 </ResponseField>
 <ResponseField name="kind" type="string" required>
-  A string that describes the relationship type. Must contain only letters, numbers, and underscores. Recommended PascalCase for readability and consistency (e.g., `UserToServer`).
+  A string that describes the relationship type. Must contain only letters, numbers, and underscores. PascalCase is recommended for readability and consistency (for example, `UserToServer`).
 </ResponseField>
 <ResponseField name="properties" type="object">
   A key-value map of custom edge attributes. Values must be strings, numbers, booleans, or arrays of primitives. Nested objects and arrays of objects are not allowed.
 </ResponseField>
+
+<Note>
+  Unless otherwise noted, examples below show edge objects only.
+</Note>
 
 ## Constraints
 
@@ -87,7 +95,7 @@ For generic OpenGraph data without an extension definition schema, traversabilit
   style={{ width: "20%" }}
 />
 
-To include the nodes connected by an edge in analysis and metrics (findings), set `properties.collected` to `true`.
+In structured graphs, set `properties.collected` to `true` to include nodes connected by an edge in analysis and metrics.
 
 ```json
 {
@@ -98,12 +106,12 @@ To include the nodes connected by an edge in analysis and metrics (findings), se
 ```
 
 <Note>
-  To be included in metrics and analysis (findings), nodes must also have [`metadata.source_kind`](/opengraph/developer/metadata) defined at the payload level.
+  In structured graphs, nodes must also have [`metadata.source_kind`](/opengraph/developer/metadata) defined at the payload level.
 </Note>
 
 ## Endpoint Matching
 
-Edges in OpenGraph data define relationships between nodes using a `start` endpoint and an `end` endpoint objects. You can control how BloodHound resolves each endpoint using one of two matching strategies in the `match_by` field.
+Edges in OpenGraph data define relationships between nodes using a `start` endpoint object and an `end` endpoint object. You can control how BloodHound resolves each endpoint using one of two matching strategies in the `match_by` field.
 
 - `id` (or legacy `name`) for direct identifier matching
 - `property` for attribute-based matching
@@ -118,7 +126,7 @@ This flexibility allows you to link nodes based on their unique database identif
 
 This is the default and most common method. It resolves an endpoint by unique internal ID or by human-readable name.
 
-To use this strategy, set the `match_by` property to either `"id"` or `"name"`.
+To use this strategy, set the `match_by` property to `"id"`. You can also use legacy `"name"` matching.
 
 <Note>
   `"name"` is deprecated and will be removed in future versions; using `"property"` with a single equality matcher is the recommended approach for name-based lookups.
@@ -155,13 +163,21 @@ To use this strategy, set the `match_by` property to either `"id"` or `"name"`.
 <ResponseField name="end.value" type="string" required>
   String containing the specific ID or name of the ending node.
 </ResponseField>
-<ResponseField name="kind" type="string">
-  Optional kind filter used within `start` or `end` to constrain the lookup to a specific node kind.
+<ResponseField name="start.kind" type="string">
+  Optional kind filter used in `start` to constrain the lookup to a specific node kind.
 
   For example, setting `kind: "User"` ensures that even if a name exists across multiple entity types, only the one classified as a `User` is selected.
 </ResponseField>
-<ResponseField name="property_matchers" type="object[]">
-  Not used in this mode. If provided alongside `match_by: "id"`, validation fails.
+<ResponseField name="end.kind" type="string">
+  Optional kind filter used in `end` to constrain the lookup to a specific node kind.
+
+  For example, setting `kind: "Server"` limits endpoint resolution to nodes classified as `Server`.
+</ResponseField>
+<ResponseField name="start.property_matchers" type="object[]">
+  Not used in this mode. If provided alongside `start.match_by: "id"`, validation fails.
+</ResponseField>
+<ResponseField name="end.property_matchers" type="object[]">
+  Not used in this mode. If provided alongside `end.match_by: "id"`, validation fails.
 </ResponseField>
 
 ### Match by Property
@@ -224,8 +240,11 @@ To use this strategy, set the `match_by` property to `"property"`.
 <ResponseField name="end.property_matchers" type="object[]" required>
   Array of matchers used to find the ending node. BloodHound attempts to find a node that satisfies all matchers.
 </ResponseField>
-<ResponseField name="value" type="string | number | boolean">
-  Not used at the endpoint level in this mode. Providing a root `value` field when `match_by` is `property` causes validation errors.
+<ResponseField name="start.value" type="string | number | boolean">
+  Not used in this mode. Providing `start.value` when `start.match_by` is `property` causes validation errors.
+</ResponseField>
+<ResponseField name="end.value" type="string | number | boolean">
+  Not used in this mode. Providing `end.value` when `end.match_by` is `property` causes validation errors.
 </ResponseField>
 <ResponseField name="property_matchers[].key" type="string" required>
   Name of the node property to check.
