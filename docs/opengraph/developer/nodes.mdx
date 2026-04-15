@@ -18,21 +18,37 @@ Nodes represent the entities in your graph, such as users, devices, repositories
 
 At minimum, each node must include a unique identifier and a `kinds` array.
 
-```json
+```json highlight={5-6}
 {
-  "id": "123",
-  "kinds": ["KindName"],
-  "properties": {
-    "key": "value"
+  "graph": {
+    "nodes": [
+      {
+        "id": "123",
+        "kinds": ["KindName"],
+        "properties": {
+          "key": "value"
+        }
+      }
+    ],
+    "edges": []
   }
 }
 ```
 
 <ResponseField name="id" type="string" required>
   Unique identifier for the node in your data payload. Use a stable, globally unique value from the source system when possible.
+
+  Every node must have a globally unique `id` to distinguish it from every other node in BloodHound's graph database. Use the identifier that the source system itself uses to differentiate objects, such as a GUID when available.
+
+  | Identifier quality | Examples |
+  | --- | --- |
+  | **Good**: globally unique | GUIDs, SIDs, certificate thumbprints |
+  | **Avoid**: not guaranteed unique | Usernames, email addresses, hostnames, auto-incremented integers |
 </ResponseField>
 <ResponseField name="kinds" type="array" required>
   An array of strings that classify the node. You can include up to three kinds per node. The first value is the primary kind, which controls the node styling in the graph.
+
+  Node `kinds` must not overlap with existing [built-in node](/resources/nodes/overview) kinds. Use a unique prefix (for example, a namespace matching your extension) to avoid conflicts.
 </ResponseField>
 <ResponseField name="properties" type="object">
   Optional key-value map of custom node attributes. Values must be primitives or homogeneous arrays of primitives.
@@ -41,19 +57,6 @@ At minimum, each node must include a unique identifier and a `kinds` array.
 <Note>
   In structured graphs, nodes must include a `source_kind` to be included in metrics. See [Metadata](/opengraph/developer/metadata) for details on how to set `source_kind` at the payload level.
 </Note>
-
-## Choose a unique identifier
-
-Every node must have a globally unique `id` to distinguish it from every other node in BloodHound's graph database. Use the identifier that the source system itself uses to differentiate objects, such as a GUID when available.
-
-| Identifier quality | Examples |
-| --- | --- |
-| **Good**: globally unique | GUIDs, SIDs, certificate thumbprints |
-| **Avoid**: not guaranteed unique | Usernames, email addresses, hostnames, auto-incremented integers |
-
-## Use distinct node kinds
-
-Node `kinds` must not overlap with existing [built-in node](/resources/nodes/overview) kinds. Use a unique prefix (for example, a namespace matching your extension) to avoid conflicts.
 
 ## Constraints
 

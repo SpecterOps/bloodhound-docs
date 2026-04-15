@@ -18,7 +18,7 @@ OpenGraph edges define relationships between nodes. Use this page to validate ed
 
 At minimum, each edge must include a `start` endpoint, an `end` endpoint, and a `kind` that describes the relationship type.
 
-```json
+```json highlight={6,10,14}
 {
   "graph": {
     "nodes": [],
@@ -47,6 +47,8 @@ At minimum, each edge must include a `start` endpoint, an `end` endpoint, and a 
 </ResponseField>
 <ResponseField name="kind" type="string" required>
   A string that describes the relationship type. Must contain only letters, numbers, and underscores. PascalCase is recommended for readability and consistency (for example, `UserToServer`).
+
+  Edge `kind` values must not overlap with [built-in edge](/resources/edges/overview) kinds. Use a unique prefix (for example, a namespace matching your extension) to avoid conflicts.
 </ResponseField>
 <ResponseField name="properties" type="object">
   A key-value map of custom edge attributes. Values must be strings, numbers, booleans, or arrays of primitives. Nested objects and arrays of objects are not allowed.
@@ -67,47 +69,6 @@ Edges must adhere to the following constraints:
   See Neo4j [Escaping rules for symbolic names](https://neo4j.com/docs/cypher-manual/current/syntax/naming/#symbolic-names-escaping-rules) for additional naming guidance.
 
 - The `lastseen` property is injected automatically by BloodHound during ingestion and overwrites any value provided in the payload.
-
-- Edge `kind` values must not overlap with existing BloodHound built-in edge kinds. Use a unique prefix (for example, a namespace matching your extension) to avoid conflicts.
-
-  See [BloodHound Edges](/resources/edges/overview) for the full list of built-in edge kinds.
-
-## Traversability and analysis
-
-Edge traversability is defined by `relationship_kinds` in an extension definition schema.
-
-- Each relationship kind can set `is_traversable`.
-- Edges that use that kind inherit the same traversability behavior.
-- Only traversable edges are included in pathfinding and considered for findings and analysis.
-
-For generic OpenGraph data without an extension definition schema, traversability is not defined for edge kinds. Generic edges are treated as non-traversable for pathfinding and findings/analysis.
-
-<Note>
-  See [Extension Definition Schema](/opengraph/developer/extension-definition-schema) for relationship kind definitions and structured graph behavior.
-</Note>
-
-## Metrics
-
-<img
-  noZoom
-  src="/assets/enterprise-edition-pill-tag.svg"
-  alt="Applies to BloodHound Enterprise only"
-  style={{ width: "20%" }}
-/>
-
-In structured graphs, set `properties.collected` to `true` to include nodes connected by an edge in analysis and metrics.
-
-```json
-{
-  "properties": {
-    "collected": true
-  }
-}
-```
-
-<Note>
-  In structured graphs, nodes must also have [`metadata.source_kind`](/opengraph/developer/metadata) defined at the payload level.
-</Note>
 
 ## Endpoint Matching
 
@@ -346,6 +307,29 @@ See the following example OpenGraph payload that produces the effect:
   }
 }
 ```
+
+## Metrics
+
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ width: "20%" }}
+/>
+
+In structured graphs, set `properties.collected` to `true` to include nodes connected by an edge in analysis and metrics.
+
+```json
+{
+  "properties": {
+    "collected": true
+  }
+}
+```
+
+<Note>
+  In structured graphs, nodes must also have [`metadata.source_kind`](/opengraph/developer/metadata) defined at the payload level.
+</Note>
 
 ## Schema
 
