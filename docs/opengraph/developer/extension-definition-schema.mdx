@@ -56,6 +56,22 @@ At a high level:
 }
 ```
 
+<ResponseField name="schema" type="object" required>
+  Extension metadata, including identity, display name, and namespace.
+</ResponseField>
+<ResponseField name="node_kinds" type="object[]" required>
+  Node kind definitions that describe the entity types in your structured graph.
+</ResponseField>
+<ResponseField name="relationship_kinds" type="object[]" required>
+  Relationship kind definitions, including traversability behavior.
+</ResponseField>
+<ResponseField name="environments" type="object[]">
+  Environment definitions that map environment nodes, data sources, and principal kinds.
+</ResponseField>
+<ResponseField name="relationship_findings" type="object[]">
+  Finding definitions that map relationship kinds to analysis output in a target environment.
+</ResponseField>
+
 ## Core sections
 
 ### `schema`
@@ -64,12 +80,25 @@ Defines metadata about the extension itself.
 
 ```json
 {
-  "name": "MyExtension",
-  "display_name": "My Extension",
+  "name": "Active_Directory",
+  "display_name": "Active Directory (SharpHound)",
   "version": "1.0.0",
-  "namespace": "MY"
+  "namespace": "AD"
 }
 ```
+
+<ResponseField name="name" type="string" required>
+  Unique extension identifier used by BloodHound to register the schema.
+</ResponseField>
+<ResponseField name="display_name" type="string" required>
+  Human-readable extension name shown in product experiences.
+</ResponseField>
+<ResponseField name="version" type="string" required>
+  Extension schema version in semantic version format, for example `1.0.0`.
+</ResponseField>
+<ResponseField name="namespace" type="string" required>
+  Prefix used for all extension-defined kinds and finding names.
+</ResponseField>
 
 * `name` must be unique
 * `namespace` is used as a prefix for all defined kinds
@@ -81,6 +110,30 @@ Defines all node types in your graph.
 
 Each node kind represents an entity (e.g., user, device, environment).
 
+```json
+[
+  {
+    "name": "AD_Domain",
+    "display_name": "AD Domain",
+    "description": "An Active Directory domain environment",
+    "is_display_kind": true
+  }
+]
+```
+
+<ResponseField name="name" type="string" required>
+  Unique, namespaced node kind identifier.
+</ResponseField>
+<ResponseField name="display_name" type="string" required>
+  Human-readable label shown for this node kind in BloodHound.
+</ResponseField>
+<ResponseField name="description" type="string">
+  Optional description that explains what the node kind represents.
+</ResponseField>
+<ResponseField name="is_display_kind" type="boolean">
+  Indicates whether this node kind should be treated as a displayable kind in the product.
+</ResponseField>
+
 → See [OpenGraph Nodes](/opengraph/developer/nodes)
 
 ### `relationship_kinds`
@@ -88,6 +141,26 @@ Each node kind represents an entity (e.g., user, device, environment).
 Defines how nodes can be connected.
 
 Each relationship kind can define traversability through `is_traversable`.
+
+```json
+[
+  {
+    "name": "AD_GenericAll",
+    "description": "Full control over target",
+    "is_traversable": true
+  }
+]
+```
+
+<ResponseField name="name" type="string" required>
+  Unique, namespaced relationship kind identifier.
+</ResponseField>
+<ResponseField name="description" type="string">
+  Optional description of what the relationship means.
+</ResponseField>
+<ResponseField name="is_traversable" type="boolean">
+  Controls whether edges of this relationship kind are used in pathfinding and analysis.
+</ResponseField>
 
 → See [OpenGraph Edges](/opengraph/developer/edges)
 
@@ -101,6 +174,26 @@ Each environment links:
 - A `source_kind`
 - The principals within that environment
 
+```json
+[
+  {
+    "environment_kind": "AD_Domain",
+    "source_kind": "ADBase",
+    "principal_kinds": ["AD_User"]
+  }
+]
+```
+
+<ResponseField name="environment_kind" type="string" required>
+  Node kind that represents the environment boundary for analysis.
+</ResponseField>
+<ResponseField name="source_kind" type="string" required>
+  Source kind used to associate ingested data with this environment.
+</ResponseField>
+<ResponseField name="principal_kinds" type="string[]" required>
+  Node kinds that BloodHound should treat as principals within the environment.
+</ResponseField>
+
 → See [OpenGraph Metadata](/opengraph/developer/metadata)
 
 ### `relationship_findings`
@@ -112,6 +205,26 @@ Findings connect relationships to:
 - Environments
 - Remediation guidance
 - Analysis output
+
+```json
+[
+  {
+    "name": "AD_GenericAll_Finding",
+    "environment_kind": "AD_Domain",
+    "relationship_kind": "AD_GenericAll"
+  }
+]
+```
+
+<ResponseField name="name" type="string" required>
+  Unique, namespaced finding identifier.
+</ResponseField>
+<ResponseField name="environment_kind" type="string" required>
+  Environment kind where this finding should be evaluated.
+</ResponseField>
+<ResponseField name="relationship_kind" type="string" required>
+  Relationship kind that triggers this finding when matching edges are present.
+</ResponseField>
 
 <Note>
   Extensions that define findings and remediations work in both Community and Enterprise, but findings are visible in Enterprise only.

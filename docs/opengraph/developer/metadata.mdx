@@ -22,17 +22,14 @@ One of its primary uses is registering a `source_kind` in your data payload, whi
 }
 ```
 
-A `source_kind` assigns all nodes in a data payload to a source system, such as GitHub. During ingest, BloodHound appends this value to each node's `kinds` array.
+<ResponseField name="metadata" type="object" required>
+  Top-level metadata object that configures payload-wide ingest behavior.
+</ResponseField>
+<ResponseField name="source_kind" type="string">
+  Source system label applied to all nodes in a data payload and used to determine metrics, analysis, and data management behavior. During ingestion, BloodHound appends this value to each node's `kinds` array.
 
-BloodHound uses `source_kind` to determine how nodes are included in analysis, metrics, and data management workflows. It is also a key way to distinguish data from different sources in your graph.
-
-<Note>
-  BloodHound already uses this concept for built-in data sources. Active Directory data uses `Base`, and Azure data uses `AZBase`.
-</Note>
-
-Once registered, it persists and is reused automatically for subsequent uploads that include the associated kinds but do not specify a `source_kind`.
-
-This allows you to set it once and have it apply to all future uploads from the same source system without needing to include it in every payload.
+  Once registered, BloodHound reuses it for subsequent uploads with the same kinds, even if the payload omits `source_kind`.
+</ResponseField>
 
 ## Metrics
 
