@@ -10,21 +10,21 @@ sidebarTitle: Nodes
   alt="Applies to BloodHound Enterprise and CE"
 />
 
-Nodes represent the entities in your graph, such as users, devices, repositories, or applications. Each node needs a stable identifier, one or more kinds, and optional properties.
+Nodes represent the entities in your graph, such as users, devices, repositories, or applications. Each node requires a stable identifier and a `kinds` array, and can also include optional properties.
 
 <Note>
-  Use this page to validate node structure before ingestion. For a full data payload example, see [OpenGraph Data](/opengraph/developer/data-payload).
+  Use this page to validate `node` structure before ingestion. For a full data payload example, see [Data Payload](/opengraph/developer/data-payload).
 </Note>
 
-At minimum, each node must include a unique identifier and at least one kind.
+At minimum, each node must include a unique identifier and a `kinds` array.
 
 ```json
 {
   "id": "123",
   "kinds": ["KindName"],
-    "properties": {
-        "key": "value"
-    }
+  "properties": {
+    "key": "value"
+  }
 }
 ```
 
@@ -32,30 +32,28 @@ At minimum, each node must include a unique identifier and at least one kind.
   Unique identifier for the node in your data payload. Use a stable, globally unique value from the source system when possible.
 </ResponseField>
 <ResponseField name="kinds" type="array" required>
-  An array of strings that classify the node. Max three values/node. The first value is the primary kind, which controls the node styling in the graph.
+  An array of strings that classify the node. You can include up to three kinds per node. The first value is the primary kind, which controls the node styling in the graph.
 </ResponseField>
 <ResponseField name="properties" type="object">
   Optional key-value map of custom node attributes. Values must be primitives or homogeneous arrays of primitives.
 </ResponseField>
 
 <Note>
-  Nodes must include a `source_kind` to be included in metrics. See [Metadata](/opengraph/developer/metadata) for details on how to set `source_kind` at the payload level.
+  In structured graphs, nodes must include a `source_kind` to be included in metrics. See [Metadata](/opengraph/developer/metadata) for details on how to set `source_kind` at the payload level.
 </Note>
 
 ## Choose a unique identifier
 
-Every node must have a universally unique `id` to distinguish it from every other node in BloodHound's graph database. Use the identifier that the source system itself uses to differentiate objects — in many cases this is a GUID.
+Every node must have a globally unique `id` to distinguish it from every other node in BloodHound's graph database. Use the identifier that the source system itself uses to differentiate objects, such as a GUID when available.
 
 | Identifier quality | Examples |
 | --- | --- |
-| **Good** — globally unique | GUIDs, SIDs, certificate thumbprints |
-| **Avoid** — not guaranteed unique | Usernames, email addresses, hostnames, auto-incremented integers |
+| **Good**: globally unique | GUIDs, SIDs, certificate thumbprints |
+| **Avoid**: not guaranteed unique | Usernames, email addresses, hostnames, auto-incremented integers |
 
 ## Use distinct node kinds
 
-Node `kinds` must not overlap with existing BloodHound built-in node kinds. Use a unique prefix (for example, a namespace matching your extension) to avoid conflicts.
-
-See [BloodHound Nodes](/resources/nodes/overview) for the full list of built-in node kinds.
+Node `kinds` must not overlap with existing [built-in node](/resources/nodes/overview) kinds. Use a unique prefix (for example, a namespace matching your extension) to avoid conflicts.
 
 ## Constraints
 
@@ -69,7 +67,7 @@ Properties must adhere to the following constraints:
 - Nested objects are not allowed
 - Arrays of objects are not allowed
 - Arrays must be homogeneous (e.g., all strings or all numbers)
-- Property names must be lowercase.
+- Property names should be lowercase.
 - Property names are case-sensitive.
 
   For example, `exampleid` and `ExampleID` are treated as different properties on the same node.
@@ -85,17 +83,6 @@ Properties must adhere to the following constraints:
   - `operatingsystem`
   - `distinguishedname`
   - `environmentid`
-
-## Metrics
-
-<img
-  noZoom
-  src="/assets/enterprise-edition-pill-tag.svg"
-  alt="Applies to BloodHound Enterprise only"
-  style={{ width: "20%" }}
-/>
-
-To be included in metrics and analysis (findings), nodes must have a [`metadata.source_kind`](/opengraph/developer/metadata) defined at the payload level.
 
 ## Reserved properties
 
@@ -113,9 +100,20 @@ During ingest, BloodHound maps this `id` value internally to `objectid`. If you 
   Do not include `objectid` inside `properties`. Use only the root-level `id` field.
 </Warning>
 
+## Metrics
+
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ width: "20%" }}
+/>
+
+In structured graphs, nodes must have a [`metadata.source_kind`](/opengraph/developer/metadata) defined at the payload level to be included in analysis and metrics.
+
 ## Schema
 
-Use the schema below as the source of truth for validation requirements. You can also download the same schema as a file: <a href="/assets/opengraph/opengraph-node.json" download>opengraph-node.json</a>.
+Use the following JSON schema for validation requirements. You can also download the same schema as a file: <a href="/assets/opengraph/opengraph-node.json" download>opengraph-node.json</a>.
 
 ```json
 {
