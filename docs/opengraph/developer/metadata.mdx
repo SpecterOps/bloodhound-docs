@@ -10,9 +10,9 @@ sidebarTitle: Metadata
   alt="Applies to BloodHound Enterprise and CE"
 />
 
-The `metadata` field is used to define system-level behavior for your data payload.
+The `metadata` object defines payload-wide ingest behavior.
 
-One of its primary uses is registering a `source_kind`, which determines how data is included in metrics and analysis.
+One of its primary uses is registering a `source_kind`, which enables bulk data removal and determines how data is included in analysis and metrics.
 
 ```json
 {
@@ -22,13 +22,17 @@ One of its primary uses is registering a `source_kind`, which determines how dat
 }
 ```
 
-<ResponseField name="metadata" type="object" required>
-  Top-level metadata object that configures payload-wide ingest behavior.
+<Note>
+  For <Tooltip tip="A graph that uses only the data payload without structured analysis or pathfinding capabilities." cta="Learn more" href="/opengraph/overview#generic-graphs">generic graph</Tooltip>, `metadata` is optional. For <Tooltip tip="A graph that includes structured analysis, pathfinding, and findings based on an installed extension definition schema." cta="Learn more" href="/opengraph/overview#structured-graphs">structured graphs</Tooltip>, `metadata` is required to enable analysis and metrics.
+</Note>
+
+<ResponseField name="metadata" type="object">
+  Top-level metadata object that configures payload-wide ingest behavior. Optional for generic graphs and required for structured graphs.
 </ResponseField>
 <ResponseField name="source_kind" type="string">
-  Source system label applied to all nodes in a data payload and used to determine metrics, analysis, and data management behavior. During ingestion, BloodHound appends this value to each node's `kinds` array.
+  Source system label applied to all nodes in a data payload and used to determine analysis, metrics, and bulk data removal. During ingestion, BloodHound appends this value to each node's `kinds` array.
 
-  Once registered, BloodHound reuses it for subsequent uploads with the same kinds, even if the payload omits `source_kind`.
+  Once registered, BloodHound reuses it for subsequent uploads with the same node kinds, even if the payload omits `source_kind`.
 </ResponseField>
 
 ## Metrics
@@ -40,19 +44,14 @@ One of its primary uses is registering a `source_kind`, which determines how dat
   style={{ width: "20%" }}
 />
 
-To be included in metrics and analysis (findings), nodes must have a `source_kind` defined at the payload level. 
+In structured graphs, nodes must have a `source_kind` defined at the payload level to be included in analysis and metrics.
 
 This is because BloodHound uses `source_kind` to determine which nodes are part of the "source system" for a finding, which in turn determines how exposure and impact metrics are calculated.
 
 The following points describe how `source_kind` influences metrics calculations:
 
-- Exposure metrics
-  - Do NOT include the source node itself
-  - Only include nodes that can traverse to the source node
-
-- Impact metrics
-  - Traverse "downstream" from the target node
-  - Stop when another Tier Zero (T0) node is encountered
+- **Exposure metrics:** Do not include the source node itself and only include nodes that can traverse to the source node.
+- **Impact metrics:** Traverse downstream from the target node and stop when another Tier Zero (T0) node is encountered.
 
 <Note>
   Nodes beyond a second Tier Zero (T0) node are not included in impact calculations.
@@ -60,7 +59,7 @@ The following points describe how `source_kind` influences metrics calculations:
 
 ## Schema
 
-Use the schema below as the source of truth for validation requirements:
+Use the following JSON schema for validation requirements.
 
 ```json
 {
