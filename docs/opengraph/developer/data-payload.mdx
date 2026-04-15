@@ -1,6 +1,6 @@
 ---
 title: OpenGraph Data Payload
-description: Description of the OpenGraph JSON Data Payload structure and requirements for ingestion into BloodHound.
+description: Learn about the JSON structure and schema requirements for OpenGraph data payloads.
 sidebarTitle: Data Payload
 ---
 
@@ -10,16 +10,7 @@ sidebarTitle: Data Payload
   alt="Applies to BloodHound Enterprise and CE"
 />
 
-This page explains the JSON payload structure and minimum schema requirements for ingesting OpenGraph nodes and edges into BloodHound.
-
-Terms used on this page:
-
-- **Generic graph data** conforms only to the minimum required node and edge payload schemas.
-- **Structured graph data** relies on an extension definition schema outside the payload to enrich raw data and provide enhanced functionality.
-
-See [Graph Structure](/opengraph/extensions/manage) for more details on the differences between generic and structured graph data, as well as guidance on which type to use for your project.
-
-This page focuses on the JSON requirements for OpenGraph data payloads.
+This page explains the structure and schema requirements for OpenGraph data payloads. It also provides a minimal viable payload example that you can use as a starting point for your own OpenGraph data.
 
 ## Before you begin
 
@@ -27,52 +18,36 @@ This page focuses on the JSON requirements for OpenGraph data payloads.
 
 Full OpenGraph support requires a PostgreSQL graph backend and one of the following editions:
 
-- BloodHound Enterprise (uses PostgreSQL)
-- BloodHound CE v8.0.0+ with PostgreSQL
-  - To switch backends in CE, set `"graph_driver": "pg"` in `bloodhound.config.json` and re-ingest.
+- BloodHound Enterprise
+- BloodHound Community v8.0.0+ with [PostgreSQL graph backend](/get-started/custom-installation#postgresql)
 
-<Note>
-  While many OpenGraph features may work on a Neo4j graph database, there are functional and performance limitations (see the [OpenGraph FAQ](/opengraph/faq#why-is-it-taking-so-long-to-ingest-opengraph-data)). For full support, migrate to a PostgreSQL graph database backend.
-</Note>
+  <Note>
+    While many OpenGraph features may work on a Neo4j graph database, there are functional and performance limitations (see the [OpenGraph FAQ](/opengraph/faq#why-is-it-taking-so-long-to-ingest-opengraph-data)). For full support, migrate to a PostgreSQL graph database backend.
+  </Note>
 
-## Choose your schema path
+## File requirements
 
-All OpenGraph workflows start with the same required data payload schema (`metadata`, `graph.nodes`, and `graph.edges`).
+OpenGraph data payloads must be uploaded as a `.json` or `.zip` file. Additional conditions and constraints include:
 
-Use the following guidance to choose your path:
+- Mixed uploads are supported (for example, SharpHound + OpenGraph).
+- ZIP archives can contain multiple payload files.
+- Nested ZIP files are not supported.
+- If you upload a ZIP, every file in the archive must be a valid OpenGraph payload.
+
+## Data payload structure
+
+All OpenGraph extensions use the same data payload format, but the required fields depend on whether you are building a generic or structured graph.
 
 | Goal | Required | Result |
 | --- | --- | --- |
-| Search OpenGraph data | Valid data payload only | <Tooltip tip="A graph that uses only the data payload without any structured analysis or pathfinding capabilities.">Generic graph</Tooltip> |
-| Enable enhanced analysis<br/>and customization | Valid data payload<br/><br/>Extension definition schema | <Tooltip tip="A graph that includes structured analysis, pathfinding, and findings based on the extension definition schema.">Structured graph</Tooltip> |
+| Search OpenGraph data | <ul><li>`graph.nodes`</li><li>`graph.edges`</li></ul> | <Tooltip tip="A graph that uses only the data payload without structured analysis or pathfinding capabilities." cta="Learn more" href="/opengraph/overview#generic-graphs">Generic graph</Tooltip> |
+| Enable enhanced analysis<br/>and customization | <ul><li>`metadata`</li><li>`graph.nodes`</li><li>`graph.edges`</li></ul> | <Tooltip tip="A graph that includes structured analysis, pathfinding, and findings based on an installed extension definition schema." cta="Learn more" href="/opengraph/overview#structured-graphs">Structured graph</Tooltip> |
 
-In structured graphs, traversability is defined by `relationship_kinds` in the extension definition schema, and edges inherit that setting from their kind.
+<Note>
+  Structured graphs also require an [extension definition schema](/opengraph/developer/extension-definition-schema) in addition to the data payload.
+</Note>
 
-Generic OpenGraph data does not define relationship traversability through an extension definition schema, so generic edges are treated as non-traversable for pathfinding and findings/analysis.
-
-To define structured graph behavior, continue to [Extension Definition Schema](/opengraph/developer/extension-definition-schema).
-
-<Tip>You can find the latest node and edge schemas in the BloodHound [source code](https://github.com/SpecterOps/BloodHound/tree/main/cmd/api/src/services/upload/jsonschema) on GitHub.</Tip>
-
-Use this page to validate payload-level structure. For field-level rules, use the dedicated node, edge, and metadata pages.
-
-## Ingesting OpenGraph data
-
-### File requirements
-
-Acceptable formats: `.json`, `.zip`
-
-You can mix file types in a single upload (e.g. SharpHound + OpenGraph).
-
-Compressed ZIP files are supported, including ZIP files with multiple payload files, but ZIP files inside ZIP files (nested ZIPs) are not supported.
-
-If you upload a ZIP, ensure each file in the archive is a valid OpenGraph payload.
-
-### Data payload structure
-
-The standard BloodHound UI upload screen accepts all OpenGraph payloads, including both generic and structured graph data.
-
-At minimum, your JSON file should have these elements:
+At minimum, a generic graph payload must include the following top-level structure:
 
 ```json
 {
@@ -83,17 +58,25 @@ At minimum, your JSON file should have these elements:
 }
 ```
 
-The `nodes` and `edges` must conform to the minimum JSON schemas. BloodHound validates that the JSON is well-formed and that nodes and edges meet these schema requirements, but it does not enforce additional structure or constraints beyond them.
+<Note>
+  For structured graphs, `metadata` is also required.
+</Note>
 
-For field-level validation details, see:
+The `nodes` and `edges` objects must conform to the minimum JSON schemas. BloodHound validates that the JSON is well-formed and that nodes and edges meet these schema requirements, but it does not enforce additional structure or constraints beyond them.
 
+For field-level details, see:
+
+- [OpenGraph Metadata](/opengraph/developer/metadata)
 - [OpenGraph Nodes](/opengraph/developer/nodes)
 - [OpenGraph Edges](/opengraph/developer/edges)
-- [OpenGraph Metadata](/opengraph/developer/metadata)
 
-When ingest completes, you can [search](/analyze-data/explore/search) OpenGraph data.
+After ingest completes, you can [search](/analyze-data/explore/search) OpenGraph data.
 
-**Entity Panels**: Clicking on an OpenGraph node or edge will currently display the full list of the entity's properties and their values. Future enhancements will enable OpenGraph extension authors to define structured and organized entity panel representations.
+<Note>
+  **Entity Panels**
+
+  Clicking an OpenGraph node or edge in the graph displays an unstructured list of its properties and values.
+</Note>
 
 ## Troubleshooting
 
@@ -105,7 +88,7 @@ When ingest completes, you can [search](/analyze-data/explore/search) OpenGraph 
 
 ## Minimal viable data payload
 
-The following is a minimal example payload that conforms to the node and edge schemas above. You can use this as a starting point to build your own OpenGraph. Copy and paste the following example into a new `.json` file or <a href="/assets/opengraph/opengraph-minimal.json" download>download this example file</a>.
+The following is a minimal example payload for a generic graph. You can use it as a starting point for your own OpenGraph data payload. Copy and paste the following example into a new `.json` file or <a href="/assets/opengraph/opengraph-minimal.json" download>download this example file</a>.
 
 <Tip>
   When working with JSON files, use a plain text editor and UTF-8 encoding. Some
@@ -163,4 +146,6 @@ return p
 
 You should get something that looks like this:
 
-<img noZoom src="/assets/og-sch-1.png" alt="BOB->Knows->Alice" />
+<Frame>
+  <img src="/assets/og-sch-1.png" alt="BOB->Knows->Alice" />
+</Frame>
