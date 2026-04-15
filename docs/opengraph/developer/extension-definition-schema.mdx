@@ -1,66 +1,18 @@
 ---
 title: Extension Definition Schema
-description: "Define structured graph behavior for OpenGraph extensions"
+description: Define structured graph behavior for OpenGraph data.
 sidebarTitle: Definition Schema
 ---
 
-Start with [OpenGraph Data](/opengraph/developer/data-payload), then continue to [Extension Definition Schema](/opengraph/developer/extension-definition-schema) when you need structured graph behavior.
+An extension definition schema tells BloodHound how to structure extension-specific [data payloads](/opengraph/developer/data-payload). Use it when you want to produce a <Tooltip tip="A graph that includes structured analysis, pathfinding, and findings based on an installed extension definition schema." cta="Learn more" href="/opengraph/overview#structured-graphs">structured graph</Tooltip> to enable enhanced features and capabilities in BloodHound.
 
-## What extensions add
+<Tip>
+  If you only need <Tooltip tip="A graph that uses only the data payload without structured analysis or pathfinding capabilities." cta="Learn more" href="/opengraph/overview#generic-graphs">generic graph</Tooltip> support, upload a valid OpenGraph data payload and skip this page.
+</Tip>
 
-An extension definition schema tells BloodHound how to interpret data payloads for structured analysis. It can define:
+An extension definition schema is a JSON file that OpenGraph extension developers provide for BloodHound users to install on the [OpenGraph Management](/opengraph/extensions/manage) page before they upload data payloads that conform to the schema.
 
-- Node and relationship kinds for your data model
-- Traversability rules used for pathfinding and analysis
-- Environments and relationship findings for structured output
-
-A complete extension project can also include:
-
-- A collector that produces compatible payloads
-- Saved queries
-- Privilege Zone rules
-
-The extension definition schema defines the structure of your OpenGraph data.
-
-Use it when you want to produce a **structured graph** with extension-defined behavior.
-
-It tells BloodHound:
-
-- What types of nodes exist
-- How those nodes are related
-- What environments to analyze
-- How findings are generated
-
-If you only need **generic graph** support, upload a valid OpenGraph data payload and skip this page.
-
-<Note>
-  Start with [OpenGraph Data](/opengraph/developer/data-payload) for required payload schema guidance. Then return to this page if you want structured graph capabilities.
-</Note>
-
-## What this schema adds
-
-An extension definition schema lets extension authors define:
-
-* Node types (`node_kinds`)
-* Relationship types (`relationship_kinds`)
-* Environments (`environments`)
-* Findings (`relationship_findings`)
-
-These definitions are applied to compatible payload data at ingest time.
-
-## Traversability and analysis
-
-Edge traversability is defined by `relationship_kinds` in an extension definition schema.
-
-- Each relationship kind can set `is_traversable`.
-- Edges that use that kind inherit the same traversability behavior.
-- Only traversable edges are included in pathfinding and considered for findings and analysis.
-
-For generic OpenGraph data without an extension definition schema, traversability is not defined for edge kinds. Generic edges are treated as non-traversable for pathfinding and findings/analysis.
-
-## Schema structure
-
-At a high level:
+The definitions in the schema are applied to compatible data payloads during ingestion to produce a structured graph with enhanced features and capabilities.
 
 ```json
 {
@@ -76,21 +28,31 @@ At a high level:
   Extension metadata, including identity, display name, and namespace.
 </ResponseField>
 <ResponseField name="node_kinds" type="object[]" required>
-  Node kind definitions that describe the entity types in your structured graph.
+  Defines custom node types for extension-specific data payloads and their visual configurations.
 </ResponseField>
 <ResponseField name="relationship_kinds" type="object[]" required>
-  Relationship kind definitions, including traversability behavior.
+  Defines custom edge types for extension-specific data payloads and their traversability behavior.
 </ResponseField>
 <ResponseField name="environments" type="object[]">
-  Environment definitions that map environment nodes, data sources, and principal kinds.
+  Defines system-level data sources and principal kinds for extension-specific data payloads.
 </ResponseField>
 <ResponseField name="relationship_findings" type="object[]">
-  Finding definitions that map relationship kinds to analysis output in a target environment.
+  Defines findings and remediation guidance that map relationship kinds to analysis output in a target environment.
 </ResponseField>
 
-## Core sections
+## Naming and namespacing
 
-### `schema`
+All defined names must follow namespacing rules:
+
+- Must be prefixed with your namespace
+- Must be unique within the extension
+- Must include more than just the namespace
+
+<Warning>
+  If names are not unique or properly namespaced, the schema upload will fail.
+</Warning>
+
+## `schema`
 
 Defines metadata about the extension itself.
 
@@ -116,15 +78,12 @@ Defines metadata about the extension itself.
   Prefix used for all extension-defined kinds and finding names.
 </ResponseField>
 
-* `name` must be unique
-* `namespace` is used as a prefix for all defined kinds
 
-
-### `node_kinds`
+## `node_kinds`
 
 Defines all node types in your graph.
 
-Each node kind represents an entity (e.g., user, device, environment).
+Each node kind represents an entity type (for example: user, device, or environment).
 
 ```json
 [
@@ -132,7 +91,9 @@ Each node kind represents an entity (e.g., user, device, environment).
     "name": "AD_Domain",
     "display_name": "AD Domain",
     "description": "An Active Directory domain environment",
-    "is_display_kind": true
+    "is_display_kind": true,
+    "icon": "globe",
+    "color": "#FF8E40"
   }
 ]
 ```
@@ -149,10 +110,14 @@ Each node kind represents an entity (e.g., user, device, environment).
 <ResponseField name="is_display_kind" type="boolean">
   Indicates whether this node kind should be treated as a displayable kind in the product.
 </ResponseField>
+<ResponseField name="icon" type="string">
+  Optional Font Awesome [icon name](https://fontawesome.com/search?s=solid) (without the "fa-" prefix) to show for nodes of this kind in the graph.
+</ResponseField>
+<ResponseField name="color" type="string">
+  Optional Hex color code (in `#RGB` or `#RRGGBB` format,the `#` is required) to apply to nodes of this kind in the graph.
+</ResponseField>
 
-→ See [OpenGraph Nodes](/opengraph/developer/nodes)
-
-### `relationship_kinds`
+## `relationship_kinds`
 
 Defines how nodes can be connected.
 
@@ -176,19 +141,13 @@ Each relationship kind can define traversability through `is_traversable`.
 </ResponseField>
 <ResponseField name="is_traversable" type="boolean">
   Controls whether edges of this relationship kind are used in pathfinding and analysis.
+
+  When `is_traversable` is set on a relationship kind, all edges of that kind inherit the same traversability behavior. Only traversable edges are included in pathfinding and considered for findings and analysis.
 </ResponseField>
 
-→ See [OpenGraph Edges](/opengraph/developer/edges)
-
-### `environments`
+## `environments`
 
 Defines analysis boundaries and data sources.
-
-Each environment links:
-
-- An environment node
-- A `source_kind`
-- The principals within that environment
 
 ```json
 [
@@ -201,7 +160,7 @@ Each environment links:
 ```
 
 <ResponseField name="environment_kind" type="string" required>
-  Node kind that represents the environment boundary for analysis.
+  Node kind that represents the environment boundary for analysis. Must match a node kind defined in `node_kinds`.
 </ResponseField>
 <ResponseField name="source_kind" type="string" required>
   Source kind used to associate ingested data with this environment.
@@ -210,17 +169,9 @@ Each environment links:
   Node kinds that BloodHound should treat as principals within the environment.
 </ResponseField>
 
-→ See [OpenGraph Metadata](/opengraph/developer/metadata)
-
-### `relationship_findings`
+## `relationship_findings`
 
 Defines findings based on relationships.
-
-Findings connect relationships to:
-
-- Environments
-- Remediation guidance
-- Analysis output
 
 ```json
 [
@@ -246,59 +197,9 @@ Findings connect relationships to:
   Extensions that define findings and remediations work in both Community and Enterprise, but findings are visible in Enterprise only.
 </Note>
 
+## Schema
 
-## Naming and namespacing
-
-All defined names must follow namespacing rules:
-
-- Must be prefixed with your namespace
-- Must be unique within the extension
-- Must include more than just the namespace
-
-Example:
-
-```
-GH_User
-GH_Repository
-GH_Contains
-GH_AdminAccess_Finding
-```
-
-<Warning>
-  If names are not unique or properly namespaced, the schema upload will fail.
-</Warning>
-
-## Validation rules
-
-Some important constraints:
-
-- All `name` fields must be non-empty
-- Environment node kinds must also exist in `node_kinds`
-- Relationship findings must reference:
-
-  - A valid `relationship_kind`
-  - A valid `environment_kind`
-
-<Note>
-  Additional validation rules may apply. See [Requirements](/opengraph/developer/data-payload#version-requirements).
-</Note>
-
-## Icons and styling
-
-Node kinds can optionally define:
-
-- `icon`
-- `color`
-
-Behavior:
-
-- If both are provided → a custom icon is created
-- If only one is provided → it is still applied
-- Invalid color values (non-hex) will cause errors
-
-→ See [Custom Icons](/opengraph/developer/custom-icons)
-
-## Example schema
+Use the following JSON schema for validation requirements.
 
 ```json
 {
@@ -339,22 +240,3 @@ Behavior:
   ]
 }
 ```
-
-## How this fits together
-
-To successfully define an extension:
-
-1. Define your node kinds
-2. Define relationships between them
-3. Declare environments for analysis
-4. Map relationships to findings
-
-Each section builds on the others.
-
-## Next steps
-
-- Validate required payload structure → [OpenGraph Data](/opengraph/developer/data-payload)
-- Define payload entities → [OpenGraph Nodes](/opengraph/developer/nodes)
-- Define payload relationships → [OpenGraph Edges](/opengraph/developer/edges)
-- Configure source kinds and metrics eligibility → [OpenGraph Metadata](/opengraph/developer/metadata)
-- Add visuals for extension-defined kinds → [Custom Icons](/opengraph/developer/custom-icons)
