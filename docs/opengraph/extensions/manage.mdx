@@ -1,14 +1,20 @@
 ---
-title: Graph Structure
-description: Learn how to manage the structures that model your OpenGraph data in BloodHound.
+title: Manage OpenGraph Extensions
+description: Learn how to manage OpenGraph extensions in BloodHound, including installation, updates, and deletion.
+sidebarTitle: Manage Extensions
 ---
 
-import OpenGraphExtensionsIntro from '/snippets/opengraph/extensions-intro.mdx';
 import OpengraphLibrary from '/snippets/opengraph-library.mdx';
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-<OpenGraphExtensionsIntro />
+Use the **OpenGraph Management** page in BloodHound to install new extensions, view active extensions, and delete extensions that you no longer need.
+
+<Note>
+  Only users with the Administrator [role](/manage-bloodhound/auth/users-and-roles#user-role-definitions) can manage extensions.
+</Note>
+
+## Supported extensions
 
 Examples of supported extensions include:
 
@@ -31,68 +37,6 @@ Examples of supported extensions include:
 </CardGroup>
 
 <OpengraphLibrary />
-
-_How_ extensions structure data has important implications for how you explore and analyze it in BloodHound. It's important to understand the differences between **generic** and **structured** graphs and how to manage extensions effectively.
-
-## Generic graphs
-
-When OpenGraph was introduced in BloodHound v8.0.0, it required data payloads to conform to the basic node, edge, and metadata format only and produced **generic graphs** to support basic exploration through Cypher queries (and later, node search).
-
-This enabled rapid iteration and flexibility for early OpenGraph extensions. However, it also meant that OpenGraph data was not integrated with other BloodHound features and capabilities.
-
-<Note>
-  Because generic graphs do not include extension-defined relationship kinds, traversability is not defined for their custom edge kinds. Generic OpenGraph edges are therefore treated as non-traversable for pathfinding and findings/analysis.
-</Note>
-
-## Structured graphs
-
-Extension developers can now create **extension bundles** to enable enhanced features and capabilities for OpenGraph data.
-
-Currently, an extension bundle consists of the extension definition schema only. In a future release, extension bundles will include additional components.
-
-After you install an extension _and_ upload a data payload that conforms to the extension definition schema, BloodHound produces a **structured graph** that provides enhanced features compared to generic graphs, such as:
-
-<Note>
-  In structured graphs, traversability is defined at the relationship kind level in the extension definition schema, and ingested edges inherit that behavior by kind.
-</Note>
-
-| Feature | Structured | Generic | Release Status |
-|---|:---:|:---:|---|
-| Node search | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | Structured: Early access<br/>Generic: Generally available |
-| Cypher search | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | Structured: Early access<br/>Generic: Generally available |
-| Bulk data removal | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | Structured: Early access<br/>Generic: Generally available |
-| Pathfinding | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-xmark" iconType="solid" color="#ef4444"/> | Early access |
-| Relationship-based findings<sup>1</sup> | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-xmark" iconType="solid" color="#ef4444"/> | Coming soon |
-| Remediations<sup>1</sup> | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-xmark" iconType="solid" color="#ef4444"/> | Coming soon |
-| Posture metrics<sup>2</sup> | <Icon icon="square-check" iconType="solid" color="#22c55e"/> | <Icon icon="square-xmark" iconType="solid" color="#ef4444"/> | Coming soon |
-
-<Note>
-  <sup>1</sup> Extensions that include findings and remediations work in both Community and Enterprise, but are visible in Enterprise only.
-  
-  <sup>2</sup> Posture metrics are available in Enterprise only.
-</Note>
-
-## Key terms
-
-See the following table for important terms and definitions related to OpenGraph extensions:
-
-| Term | Definition |
-|---|---|
-| **Collector** | A tool (for example, OpenHound CLI, AzureHound, or SharpHound) that authenticates to a third-party platform, collects the data of interest, and packages it into a standardized data payload that BloodHound can ingest. |
-| **Collector client** | A BloodHound Enterprise component that orchestrates collector runs and can submit payloads directly through the BloodHound API. |
-| **Data payload** | The formatted data generated by an OpenGraph collector that is provided to BloodHound for ingest. |
-| **Extension** | A modular collection of OpenGraph components, including an extension definition schema, collector, Cypher saved queries, Privilege Zone rules, and findings. |
-| **Extension definition schema** | A file that defines an extension's structure, including node types, edge types, traversability behavior, and visual configurations. Enables BloodHound to validate incoming data payloads and produce structured graphs. Both BloodHound Community and BloodHound Enterprise use the same extension definition schema format. |
-| **Generic graph** | OpenGraph data conforming to the basic node, edge, and metadata format required for a data payload, with no associated extension definition schema. |
-| **Structured graph** | OpenGraph data conforming to the basic node, edge, and metadata format required for a data payload _and_ associated with an installed extension definition schema. Structured graphs are fully integrated with BloodHound's features and functionality. |
-
-## Manage extensions
-
-Use the **OpenGraph Management** page in BloodHound to install new extensions, view active extensions, and delete extensions that you no longer need.
-
-<Note>
-  Only users with the Administrator [role](/manage-bloodhound/auth/users-and-roles#user-role-definitions) can manage extensions.
-</Note>
 
 ### Before you begin
 
