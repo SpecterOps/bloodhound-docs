@@ -1,0 +1,26 @@
+---
+title: 'GH_SyncedTo'
+description: 'External identity (Azure, Okta, PingOne) is synced to this GitHub user via SSO/SCIM'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Source: [AZUser](/resources/nodes/az-user), [Okta_User](/opengraph/extensions/okta/nodes/okta_user), [PingOneUser](https://github.com/andyrobbins/PingOneHound?tab=readme-ov-file#schema)
+- Destination: [GH_User](/opengraph/extensions/github/nodes/gh_user)
+- Traversable: ✅
+
+## General Information
+
+The traversable [GH_SyncedTo](/opengraph/extensions/github/edges/gh_syncedto) edge is a hybrid edge that maps an external IdP user to a GitHub user based on SCIM provisioning. Created by `Git-HoundScimUser` when SCIM data links an external identity to a GitHub account, this edge represents a confirmed identity linkage between an external identity provider and GitHub. It is traversable because compromising the IdP account provides a verified path to the corresponding GitHub account, making it a critical edge for cross-system attack path analysis. This edge enables analysts to trace access from enterprise identity providers like Azure AD, Okta, or PingOne into the GitHub environment.
+
+```mermaid
+graph LR
+    azUser("AZUser alice\@specterops.io")
+    oktaUser("Okta_User bob\@specterops.io")
+    ghUser1("GH_User alice")
+    ghUser2("GH_User bob")
+    azUser -- GH_SyncedTo --> ghUser1
+    oktaUser -- GH_SyncedTo --> ghUser2
+```
