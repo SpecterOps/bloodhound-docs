@@ -6,18 +6,18 @@ icon: "lock"
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-This document provides empirically verified analysis of how GitHub branch protection rules interact with two key attack paths in the GitHound model. All findings were validated through systematic testing against live GitHub repositories.
+This document provides empirically verified analysis of how GitHub branch protection rules interact with two key attack paths in the GitHub extension graph model. All findings were validated through systematic testing against live GitHub repositories.
 
 ## Attack Paths
 
 ### 1. Secret Exfiltration via Workflow Creation
 
-A user with write access (`GH_WriteRepoContents`) to a repository can:
+A user with write access ([GH_WriteRepoContents](/opengraph/extensions/github/edges/gh_writerepocontents)) to a repository can:
 
 1. Create a **new branch** in the repository
 2. Push a **workflow file** (`.github/workflows/*.yml`) to that branch with `on: push` trigger
 3. The workflow executes automatically on push
-4. The workflow can access **all repo-level and org-level secrets** (`GH_HasSecret`) available to the repository
+4. The workflow can access **all repo-level and org-level secrets** ([GH_HasSecret](/opengraph/extensions/github/edges/gh_hassecret)) available to the repository
 5. The workflow exfiltrates the secrets (e.g., via HTTP request to an attacker-controlled server)
 
 **Graph path:** `(:GH_User)-[:GH_HasRole|GH_HasBaseRole|GH_MemberOf*1..]->(:GH_RepoRole)-[:GH_WriteRepoContents]->(repo:GH_Repository)-[:GH_HasSecret]->(:GH_RepoSecret|:GH_OrgSecret)`
@@ -82,8 +82,8 @@ There are seven mechanisms that can bypass branch protection rules. They fall in
 
 | Mechanism | Scope | Edge/Property | Blocked by `enforce_admins`? |
 |-----------|-------|---------------|------------------------------|
-| `bypass_branch_protection` permission | Repo-wide (via custom role) | `GH_BypassBranchProtection` | **Yes** |
-| `bypassPullRequestAllowances` | Per-rule (specific users/teams) | `GH_BypassPullRequestAllowances` | Not tested (likely yes) |
+| `bypass_branch_protection` permission | Repo-wide (via custom role) | [GH_BypassBranchProtection](/opengraph/extensions/github/edges/gh_bypassbranchprotection) | **Yes** |
+| `bypassPullRequestAllowances` | Per-rule (specific users/teams) | [GH_BypassPullRequestAllowances](/opengraph/extensions/github/edges/gh_bypasspullrequestallowances) | Not tested (likely yes) |
 
 `bypassPullRequestAllowances` is **narrower** than `bypass_branch_protection`. It only bypasses PR review requirements, not lock branch.
 
@@ -91,15 +91,15 @@ There are seven mechanisms that can bypass branch protection rules. They fall in
 
 | Mechanism | Scope | Edge/Property | Blocked by `enforce_admins`? |
 |-----------|-------|---------------|------------------------------|
-| `push_protected_branch` permission | Repo-wide (via custom role) | `GH_PushProtectedBranch` | **No** |
-| Admin access | Repo-wide (built-in role) | `GH_AdminTo` | **No** |
-| `pushAllowances` | Per-rule (specific users/teams) | `GH_RestrictionsCanPush` | Not tested (likely no) |
+| `push_protected_branch` permission | Repo-wide (via custom role) | [GH_PushProtectedBranch](/opengraph/extensions/github/edges/gh_pushprotectedbranch) | **No** |
+| Admin access | Repo-wide (built-in role) | [GH_AdminTo](/opengraph/extensions/github/edges/gh_adminto) | **No** |
+| `pushAllowances` | Per-rule (specific users/teams) | [GH_RestrictionsCanPush](/opengraph/extensions/github/edges/gh_restrictionscanpush) | Not tested (likely no) |
 
 ### Other Bypasses
 
 | Mechanism | Effect | Edge |
 |-----------|--------|------|
-| `edit_repo_protections` permission | Can remove/modify protection rules entirely, then push | `GH_EditRepoProtections` |
+| `edit_repo_protections` permission | Can remove/modify protection rules entirely, then push | [GH_EditRepoProtections](/opengraph/extensions/github/edges/gh_editrepoprotections) |
 
 ## Complete Test Results
 
@@ -215,16 +215,16 @@ N/T = Not tested (not applicable to that control type)
 
 The attack requires creating a new branch. This is only blocked when **all** of the following are true:
 
-1. A `GH_BranchProtectionRule` exists with `pattern` = `*`
+1. A [GH_BranchProtectionRule](/opengraph/extensions/github/nodes/gh_branchprotectionrule) exists with `pattern` = `*`
 2. `push_restrictions` = `true`
 3. `blocks_creations` = `true`
 
 **However**, even with this control in place, the following actors can still exfiltrate secrets:
 
-- Users with `push_protected_branch` permission (`GH_PushProtectedBranch`)
-- Users with admin access (`GH_AdminTo`) — **cannot** be mitigated by `enforce_admins`
-- Users in `pushAllowances` for the `*` rule (`GH_RestrictionsCanPush`)
-- Users with `edit_repo_protections` permission (`GH_EditRepoProtections`) — can remove the rule
+- Users with `push_protected_branch` permission ([GH_PushProtectedBranch](/opengraph/extensions/github/edges/gh_pushprotectedbranch))
+- Users with admin access ([GH_AdminTo](/opengraph/extensions/github/edges/gh_adminto)) — **cannot** be mitigated by `enforce_admins`
+- Users in `pushAllowances` for the `*` rule ([GH_RestrictionsCanPush](/opengraph/extensions/github/edges/gh_restrictionscanpush))
+- Users with `edit_repo_protections` permission ([GH_EditRepoProtections](/opengraph/extensions/github/edges/gh_editrepoprotections)) — can remove the rule
 - Users with both `bypass_branch_protection` and `push_protected_branch`
 
 ### For Supply Chain Attack (Write → Push to Default Branch)

@@ -1,18 +1,18 @@
 ---
 title: Computed Edges
-description: "How GitHound computes effective branch access and secret scanning alert access edges"
+description: "How OpenHound GitHub and GitHound compute effective branch access and secret scanning alert access edges"
 icon: "diagram-project"
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-This document describes the computed edge functions and what they produce. For the empirical testing that validates the underlying security model, see [Mitigating Controls](/opengraph/extensions/github/mitigating-controls).
+This document describes the computed edge logic used by both the [OpenHound GitHub collector](/openhound/collectors/github/overview) and [GitHound](https://github.com/SpecterOps/GitHound), and the edges that logic produces. For the empirical testing that validates the underlying security model, see [Mitigating Controls](/opengraph/extensions/github/mitigating-controls).
 
 ## Computed Branch Access Edges
 
 ### Overview
 
-`Compute-GitHoundBranchAccess` is a post-collection step that computes effective branch push access. It runs as **Step 6.5** in `Invoke-GitHound`, after branches and branch protection rules have been collected and before workflows are collected.
+The GitHub collectors compute effective branch push access as a post-collection step after branches and branch protection rules have been collected and before workflow analysis. In GitHound, this logic is implemented by `Compute-GitHoundBranchAccess`.
 
 **Why it exists:** The raw permission edges in the graph (`GH_WriteRepoContents`, `GH_PushProtectedBranch`, `GH_BypassBranchProtection`) are each necessary but not sufficient for push access. A user with `GH_WriteRepoContents` may be blocked by branch protection rules, while a user with `GH_PushProtectedBranch` only bypasses push restrictions (not PR reviews). Determining whether someone can actually push requires cross-referencing role permissions, branch protection rule settings, per-rule allowances, and `enforce_admins` state. This function performs that analysis and emits computed edges that represent verified push capability.
 
@@ -192,7 +192,7 @@ Team → GH_CanWriteBranch → Branch
 
 ### Overview
 
-`Compute-GitHoundSecretScanningAccess` is a post-collection step that computes effective secret scanning alert read access. It runs as **Step 11.5** in `Invoke-GitHound`, after secret scanning alerts have been collected and before app installations are collected.
+The GitHub collectors compute effective secret scanning alert read access as a post-collection step after secret scanning alerts have been collected and before app installation analysis. In GitHound, this logic is implemented by `Compute-GitHoundSecretScanningAccess`.
 
 **Why it exists:** The raw `GH_ViewSecretScanningAlerts` permission edges connect roles to organizations or repositories, but do not connect roles directly to the individual alert nodes. Without computed edges, BloodHound pathfinding cannot traverse from a role to the alert (and onward via `GH_ValidToken` to the compromised user identity). This function bridges that gap by resolving which specific alerts each role can read.
 
