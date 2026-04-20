@@ -1,7 +1,7 @@
 ---
 title: 'Okta_Application'
 description: 'An application registered in Okta, such as a SAML app or an OIDC app'
-icon: '/images/extensions/oktahound/reference/okta_application.png'
+icon: '/images/extensions/okta/okta_application.png'
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
@@ -12,12 +12,11 @@ Applications in Okta represent the various software applications and services th
 
 With the exception of API Service applications, Okta users and groups can be assigned to applications. Users can also be synchronized TO and FROM applications in Okta, typically using the SCIM protocol. For example, when integrating with GitHub Enterprise Cloud, Okta can be configured to automatically create user accounts in GitHub when users are assigned to the GitHub application in Okta.
 
-In `OktaHound`, applications are represented as `Okta_Application` nodes.
-
+Applications are represented as Okta_Application nodes in BloodHound.
 ## Edges
 
 <Note>
-The tables below list edges defined by the OktaHound extension only. Additional edges to or from this node may be created by other extensions.
+The tables below list edges defined by the Okta extension only. Additional edges to or from this node may be created by other extensions.
 </Note>
 
 ### Inbound Edges
@@ -54,8 +53,8 @@ The tables below list edges defined by the OktaHound extension only. Additional 
 | [Okta_ManageApp](/opengraph/extensions/okta/edges/okta_manageapp) | [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ✅ |
 | [Okta_MobileAdmin](/opengraph/extensions/okta/edges/okta_mobileadmin) | [Okta_Device](/opengraph/extensions/okta/nodes/okta_device) | ✅ |
 | [Okta_OrgAdmin](/opengraph/extensions/okta/edges/okta_orgadmin) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user), [Okta_Group](/opengraph/extensions/okta/nodes/okta_group), [Okta_Device](/opengraph/extensions/okta/nodes/okta_device) | ✅ |
-| [Okta_OrgSWA](/opengraph/extensions/okta/edges/okta_orgswa) | [GH_Organization](https://github.com/SpecterOps/GitHound), [jamf_SSOIntegration](https://github.com/SpecterOps/JamfHound), [OP_Account](https://github.com/SpecterOps/1PassHound), [SNOW_Account](https://github.com/SpecterOps/SnowHound) | ❌ |
-| [Okta_OutboundOrgSSO](/opengraph/extensions/okta/edges/okta_outboundorgsso) | [AZTenant](/resources/nodes/az-tenant), [GH_Organization](https://github.com/SpecterOps/GitHound), [jamf_SSOIntegration](https://github.com/SpecterOps/JamfHound), [SNOW_Account](https://github.com/SpecterOps/SnowHound), [Okta_IdentityProvider](/opengraph/extensions/okta/nodes/okta_identityprovider) | ✅ |
+| [Okta_OrgSWA](/opengraph/extensions/okta/edges/okta_orgswa) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization), [jamf_SSOIntegration](/opengraph/extensions/jamf/nodes/jamf_ssointegration), [OP_Account](https://github.com/SpecterOps/1PassHound), [SNOW_Account](https://github.com/SpecterOps/SnowHound) | ❌ |
+| [Okta_OutboundOrgSSO](/opengraph/extensions/okta/edges/okta_outboundorgsso) | [AZTenant](/resources/nodes/az-tenant), [GH_Organization](/opengraph/extensions/github/nodes/gh_organization), [jamf_SSOIntegration](/opengraph/extensions/jamf/nodes/jamf_ssointegration), [SNOW_Account](https://github.com/SpecterOps/SnowHound), [Okta_IdentityProvider](/opengraph/extensions/okta/nodes/okta_identityprovider) | ✅ |
 | [Okta_ReadClientSecret](/opengraph/extensions/okta/edges/okta_readclientsecret) | [Okta_ClientSecret](/opengraph/extensions/okta/nodes/okta_clientsecret) | ✅ |
 | [Okta_ReadPasswordUpdates](/opengraph/extensions/okta/edges/okta_readpasswordupdates) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user) | ✅ |
 | [Okta_ResetFactors](/opengraph/extensions/okta/edges/okta_resetfactors) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user) | ✅ |
@@ -129,7 +128,7 @@ Individual application types may have additional properties specific to the inte
 | `grantTypes` | `application.settings.oauthClient.grantTypes[]` | `string[]` | OAuth 2.0 grant types allowed for OIDC apps. |
 | `redirectURI` | `application.settings.oauthClient.redirectUris[]` | `string` | OIDC redirect URI configured for the integration. |
 | `initiateLoginURI` | `application.settings.oauthClient.initiateLoginUri` | `string` | Okta-initiated login URI for supported OIDC apps. |
-| `url` | Derived from OIDC sign-in URL preference (`initiateLoginUri` first, otherwise first `redirectUris[]`) | `string` | Primary sign-in URL exposed by OktaHound for OIDC applications. |
+| `url` | Derived from OIDC sign-in URL preference (`initiateLoginUri` first, otherwise first `redirectUris[]`) | `string` | Primary sign-in URL for OIDC applications. |
 | `oauthScopes` | Derived from app grants in `PopulateOAuthScopes` / grant collection logic | `string[]` | OAuth scopes granted to the application in Okta. |
 | `domain` | `application.settings.app.domain` | `string` | Directory or service domain associated with the app integration. |
 | `domains` | `application.settings.app.domains` | `string[]` | Domain list associated with the app integration when provided. |
@@ -333,12 +332,11 @@ User name mapping from Okta to SAML 2.0, OpenID Connect (OIDC), and Secure Web A
 
 This application type is the most interesting one from the security perspective, as it represents OAuth 2.0 service (daemon) applications that can be granted machine-to-machine access to Okta APIs, without any user interaction. These applications can be assigned administrative roles, e.g., Super Admin, and OAuth 2.0 scope grants, e.g., `okta.users.manage`. Any API operation must be allowed by both the assigned roles and the granted scopes.
 
-![Okta Application scopes and roles in BloodHound](/images/extensions/oktahound/reference/bloodhound-app-scopes.png)
+![Okta Application scopes and roles in BloodHound](/images/extensions/okta/bloodhound-app-scopes.png)
 
 ## Hybrid Edges
 
-For supported systems like Active Directory, GitHub Enterprise Cloud, or Jamf Pro,
-OktaHound can create hybrid edges in BloodHound to represent the relationships between these external systems and Okta.
+For supported systems like Active Directory, GitHub Enterprise Cloud, or Jamf Pro, hybrid edges in BloodHound to represent the relationships between these external systems and Okta.
 
 ```mermaid
 graph TB
@@ -399,7 +397,7 @@ The synchronization is performed by domain-joined servers with the Okta AD Agent
 This agent typically has Domain Admin privileges in the connected AD domain to perform user and group enumeration and synchronization,
 making it a high-value target for attackers.
 
-![Okta AD agent settings](/images/extensions/oktahound/reference/okta-ad-agent.png)
+![Okta AD agent settings](/images/extensions/okta/okta-ad-agent.png)
 
 Authentication can be delegated from Okta to AD in multiple ways:
 
@@ -408,41 +406,41 @@ Authentication can be delegated from Okta to AD in multiple ways:
 - Active Directory Federation Services (ADFS) integration with Okta as a SAML IdP
 
 <Warning>
-There is no documented API available to determine the authentication delegation method(s) configured for an AD-backed Okta application.
-OktaHound therefore performs some heuristics that might not be 100% accurate in all cases.
+There is no documented API available to determine the authentication delegation method(s) configured for an AD-backed Okta application. The collector therefore performs some heuristics that might not be 100% accurate in all cases.
 </Warning>
+
 ### GitHub Enterprise Cloud Organizations
 
 When integrating Okta with GitHub Enterprise Cloud, each GitHub organization connected to Okta is represented as a separate `Okta_Application` node in BloodHound.
 
-![Properties of the GitHub Application node](/images/extensions/oktahound/reference/bloodhound-github-properties.png)
+![Properties of the GitHub Application node](/images/extensions/okta/bloodhound-github-properties.png)
 
 ### Jamf Pro
 
 When integrating Okta with Jamf Pro using SAML 2.0, each Jamf Pro instance connected to Okta is represented as a separate `Okta_Application` node in BloodHound.
 The differentiator is the `domainFQDN` property:
 
-![Jamf Pro SAML application in BloodHound](/images/extensions/oktahound/reference/bloodhound-jamf-saml-properties.png)
+![Jamf Pro SAML application in BloodHound](/images/extensions/okta/bloodhound-jamf-saml-properties.png)
 
 It is also possible to integrate Jamf Pro with Okta using Secure Web Authentication (SWA), but this option is less secure.
 
-![Jamf Pro SWA settings](/images/extensions/oktahound/reference/app-jamf-swa.png)
+![Jamf Pro SWA settings](/images/extensions/okta/app-jamf-swa.png)
 
 ## Google Workspace
 
 Similarly to the Jamf Pro SAML applications, each Google Workspace (formerly G Suite) instance connected to Okta using SAML 2.0 is represented as a separate `Okta_Application` node in BloodHound and is identified by the `domainFQDN` property:
 
-![Google Workspace SAML application in BloodHound](/images/extensions/oktahound/reference/bloodhound-google-saml-properties.png)
+![Google Workspace SAML application in BloodHound](/images/extensions/okta/bloodhound-google-saml-properties.png)
 
 The SAML 2.0 protocol should always be preferred to SWA when integrating Okta with Google Workspace:
 
-![Google Workspace sign-in protocol settings](/images/extensions/oktahound/reference/app-google-protocol-selector.png)
+![Google Workspace sign-in protocol settings](/images/extensions/okta/app-google-protocol-selector.png)
 
 ## Generic SAML 2.0 Applications
 
 The assertion consumer service (ACS) URLs of generic (non-Catalog) Okta SAML 2.0 applications are exposed via the `url` attribute in BloodHound.
 
-![Okta SAML application in BloodHound](/images/extensions/oktahound/reference/bloodhound-app-saml.png)
+![Okta SAML application in BloodHound](/images/extensions/okta/bloodhound-app-saml.png)
 
 ## Generic Secure Web Authentication (SWA) Applications
 
@@ -450,7 +448,7 @@ Secure Web Authentication (SWA) is an Okta technology that provides Single Sign-
 
 The app's login page URL is exposed via the `url` attribute in BloodHound.
 
-![Okta SWA application in BloodHound](/images/extensions/oktahound/reference/bloodhound-app-swa.png)
+![Okta SWA application in BloodHound](/images/extensions/okta/bloodhound-app-swa.png)
 
 ## Generic OpenID Connect (OIDC) Applications
 
@@ -464,7 +462,7 @@ The default redirect URI of generic (non-Catalog) Okta OIDC single-page applicat
 
 OIDC applications can be granted OAuth 2.0 scopes to access Okta APIs on behalf of users:
 
-![Okta application OIDC grants](/images/extensions/oktahound/reference/app-oidc-grants.png)
+![Okta application OIDC grants](/images/extensions/okta/app-oidc-grants.png)
 
 ## SCIM-Enabled Applications
 
