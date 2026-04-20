@@ -22,7 +22,7 @@ An OpenGraph extension is a collection of components, including:
 | **Collector** | A tool (for example, OpenHound, AzureHound, or SharpHound) that authenticates to a third-party platform, collects the data of interest, and packages it into a standardized data payload that BloodHound can ingest. |
 | **Cypher saved queries** | Custom Cypher queries provided by extension developers. |
 | **Privilege Zone rules** | Custom rules provided by extension developers to categorize nodes into Privilege Zones based on their properties and relationships. |
-| **Findings** | Insights or observations provided by extension developers derived from the ingested data, which can be used to identify risk and remediation guidance. |
+| **Findings** | Insights or observations provided by extension developers derived from the ingested data, which can be used to identify risk and remediation guidance. Findings are visible in BloodHound Enterprise only. |
 
 ## Graph structure
 
@@ -36,7 +36,11 @@ This enabled rapid iteration and flexibility for early OpenGraph extensions. How
 
 ### Structured graphs
 
-To enable enhanced analysis and customization features in BloodHound, extensions can now include an <Tooltip tip="A file that defines graph structure, including node types, edge types, traversability behavior, and visual configurations">extension definition schema</Tooltip>.
+To enable enhanced analysis and customization features in BloodHound, extensions can include an <Tooltip tip="A file that defines graph structure, including node types, edge types, traversability behavior, and visual configurations">extension definition schema</Tooltip>.
+
+Structured graphs predefine node and edge types. As a result, saved Cypher queries can run even when some expected data types are absent.
+
+For example, in an Okta environment where application credentials are stored only as `ClientSecrets` (not JWKs), queries that reference `Okta_JWK` nodes would normally fail if those nodes are missing. With a structured graph, the [Application Credentials](/opengraph/extensions/okta/queries#application-credentials) saved query can reference both `Okta_JWK` and `Okta_ClientSecret` and still return expected results.
 
 After you install an extension _and_ upload a data payload that conforms to the extension definition schema, BloodHound produces a **structured graph** that provides enhanced features compared to generic graphs, such as:
 
