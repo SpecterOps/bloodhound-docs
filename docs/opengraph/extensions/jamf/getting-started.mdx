@@ -3,8 +3,13 @@ title: Getting Started
 description: Learn how to get started with the Jamf OpenGraph extension in BloodHound.
 ---
 
-import { InstallExtension } from '/snippets/opengraph/extensions/install.jsx';
 import PreRequisites from '/snippets/opengraph/extensions/prerequisites.mdx';
+import OptionalSchemas from '/snippets/opengraph/extensions/optional-schemas.mdx';
+import ScimSchema from '/snippets/opengraph/extensions/scim-schema.mdx';
+import { InstallExtension } from '/snippets/opengraph/extensions/install.jsx';
+import { ImportCypherQueries } from '/snippets/opengraph/extensions/import-cypher-queries.jsx';
+import { CollectUploadData } from '/snippets/opengraph/extensions/collect-upload-data.jsx';
+import { ConfigurePrivilegeZones } from '/snippets/opengraph/extensions/configure-privilege-zones.jsx';
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
@@ -16,33 +21,39 @@ import PreRequisites from '/snippets/opengraph/extensions/prerequisites.mdx';
 
 <InstallExtension
 	source="Jamf"
-	env="tenant"
+	environment="tenant"
 	schemaUrl="https://github.com/SpecterOps/openhound-jamf/blob/main/extension/schema.json"
 />
 
 ### Optional Schemas
 
-If your Jamf environment is connected to other BloodHound-supported data sources in your environment, such as Okta, upload the corresponding schema too, or contact your Enterprise account team. Doing so ensures those cross-platform relationships are modeled correctly in BloodHound.
+<OptionalSchemas
+    source="Jamf"
+    environment="tenant"
+    otherSources="Okta"
+/>
 
 ## Import Cypher Queries
 
-The Jamf extension includes [Cypher queries](/opengraph/extensions/jamf/queries) to help identify attack paths and misconfigurations in Jamf Pro environments. Import the Jamf query JSON files into BloodHound using the [query import workflow](/analyze-data/explore/cypher-search#import-and-export).
+<ImportCypherQueries
+    source="Jamf"
+    slug="jamf"
+    environment="tenant"
+/>
 
-You can then run the imported queries on the **Explore** page.
+## Collect and Upload Data
 
-<Note>Cypher queries that reference node or edge kinds not present in the database will fail without the extension schema.</Note>
-
-## Collect and Upload Jamf Data
-
-There are currently two ways to collect Jamf data for this extension:
-
-- [OpenHound Jamf collector](/openhound/collectors/jamf/overview): The SpecterOps-supported collector for Jamf Pro. Use this if you want the current documented and supported collection path.
-- [JamfHound collector](https://github.com/SpecterOps/JamfHound): An alternative collector that can also produce data for the Jamf extension.
-
-<Tip>Prefer the supported [OpenHound Jamf collector](/openhound/collectors/jamf/overview).</Tip>
+<CollectUploadData
+	source="Jamf"
+	openHoundCollectorName="OpenHound Jamf collector"
+	openHoundCollectorUrl="/openhound/collectors/jamf/overview"
+	alternateCollectorName="JamfHound collector"
+	alternateCollectorUrl="https://github.com/SpecterOps/JamfHound"
+/>
 
 ## Configure Privilege Zones
 
-Use the [Privilege Zone rules](/opengraph/extensions/jamf/privilege-zone-rules) to classify high-value Jamf assets.
-
-The extension also includes specialized (Privilege Zone) queries for [creating Cypher-based Privilege Zone rules](/analyze-data/privilege-zones/rules#cypher).
+<ConfigurePrivilegeZones
+    source="Jamf"
+    slug="jamf"
+/>
