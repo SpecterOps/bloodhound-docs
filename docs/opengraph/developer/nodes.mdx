@@ -49,14 +49,25 @@ At minimum, each node must include a unique identifier and a `kinds` array.
   An array of strings that classify the node. You can include up to three kinds per node. The first value is the primary kind, which controls the node styling in the graph.
 
   Node `kinds` must not overlap with existing [built-in node](/resources/nodes/overview) kinds. Use a unique prefix (for example, a namespace matching your extension) to avoid conflicts.
+
+  Values must match at least one [`node_kinds.name`](/opengraph/developer/extension-definition-schema#node_kinds) in the extension definition schema, which also must match at least one [`environments.environment_kind`](/opengraph/developer/extension-definition-schema#environments) (also in the extension definition schema).
 </ResponseField>
 <ResponseField name="properties" type="object">
   Optional key-value map of custom node attributes. Values must be primitives or homogeneous arrays of primitives.
-</ResponseField>
 
-<Note>
-  In structured graphs, nodes must include a `source_kind` to be included in metrics. See [Metadata](/opengraph/developer/metadata) for details on how to set `source_kind` at the payload level.
-</Note>
+  See [Constraints](/opengraph/developer/nodes#constraints) and [Reserved properties](/opengraph/developer/nodes#reserved-properties) below for details on allowed property formats and reserved property names.
+  
+</ResponseField>
+<ResponseField name="properties.environmentid" type="string">
+  Associates a node with a specific environment.
+  
+  In structured graphs, only nodes with `properties.environmentid` set to a valid environment ID are used to produce <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip>) in BloodHound Enterprise. If your data payload includes an `environmentid`, ensure that it matches a `graph.nodes.id`.
+</ResponseField>
+<ResponseField name="properties.collected" type="boolean">
+  Indicates whether the node was observed directly during data collection.
+
+  In structured graphs, only nodes with `properties.collected` set to `true` and a defined [`metadata.source_kind`](/opengraph/developer/metadata) are used to produce <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> in BloodHound Enterprise.
+</ResponseField>
 
 ## Constraints
 
@@ -102,17 +113,6 @@ During ingest, BloodHound maps this `id` value internally to `objectid`. If you 
 <Warning>
   Do not include `objectid` inside `properties`. Use only the root-level `id` field.
 </Warning>
-
-## Metrics
-
-<img
-  noZoom
-  src="/assets/enterprise-edition-pill-tag.svg"
-  alt="Applies to BloodHound Enterprise only"
-  style={{ width: "20%" }}
-/>
-
-In structured graphs, nodes must have a [`metadata.source_kind`](/opengraph/developer/metadata) defined at the payload level to be included in analysis and metrics.
 
 ## Schema
 
