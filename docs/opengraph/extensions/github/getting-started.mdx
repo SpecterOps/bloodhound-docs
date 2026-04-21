@@ -3,8 +3,13 @@ title: Getting Started
 description: Learn how to get started with the GitHub OpenGraph extension in BloodHound.
 ---
 
-import { InstallExtension } from '/snippets/opengraph/extensions/install.jsx';
 import PreRequisites from '/snippets/opengraph/extensions/prerequisites.mdx';
+import OptionalSchemas from '/snippets/opengraph/extensions/optional-schemas.mdx';
+import ScimSchema from '/snippets/opengraph/extensions/scim-schema.mdx';
+import { InstallExtension } from '/snippets/opengraph/extensions/install.jsx';
+import { ImportCypherQueries } from '/snippets/opengraph/extensions/import-cypher-queries.jsx';
+import { CollectUploadData } from '/snippets/opengraph/extensions/collect-upload-data.jsx';
+import { ConfigurePrivilegeZones } from '/snippets/opengraph/extensions/configure-privilege-zones.jsx';
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
@@ -16,37 +21,47 @@ import PreRequisites from '/snippets/opengraph/extensions/prerequisites.mdx';
 
 <InstallExtension
 	source="GitHub"
-	env="organization"
+	environment="organization"
 	schemaUrl="https://github.com/SpecterOps/openhound-github/blob/main/extension/schema.json"
 />
 
 ### Optional Schemas
 
-If your GitHub environment uses SCIM, upload the [bh-scim-extension.json](https://github.com/SpecterOps/bloodhound-scim-extension/blob/main/bh-scim-extension.json) schema as well. This schema provides a shared model for provisioned users and groups across cloud identity providers and applications.
+<ScimSchema
+    source="GitHub"
+    environment="organization"
+/>
 
-If GitHub is connected to other BloodHound-supported data sources in your environment, such as Okta, upload the corresponding schema too, or contact your Enterprise account team. Doing so ensures those cross-platform relationships are modeled correctly in BloodHound.
+<OptionalSchemas
+    source="GitHub"
+    otherSources="Okta"
+/>
 
 ## Import Cypher Queries
 
-The GitHub extension includes [Cypher queries](/opengraph/extensions/github/queries) to help identify attack paths and misconfigurations in GitHub environments. Import the GitHub query JSON files into BloodHound using the [query import workflow](/analyze-data/explore/cypher-search#import-and-export).
+<ImportCypherQueries
+    source="GitHub"
+    slug="github"
+    environment="organization"
+/>
 
-You can then run the imported queries on the **Explore** page.
+## Collect and Upload Data
 
-<Note>Cypher queries that reference node or edge kinds not present in the database will fail without the extension schema.</Note>
-
-## Collect and Upload GitHub Data
-
-There are currently two ways to collect GitHub data for this extension:
-
-- [OpenHound GitHub collector](/openhound/collectors/github/overview): The SpecterOps-supported collector for GitHub. Use this if you want the current documented and supported collection path.
-- [GitHound collector](https://github.com/SpecterOps/GitHound): An alternative collector that can also produce data for the GitHub extension.
-
-<Tip>Prefer the supported [OpenHound GitHub collector](/openhound/collectors/github/overview).</Tip>
+<CollectUploadData
+	source="GitHub"
+	openHoundCollectorName="OpenHound GitHub collector"
+	openHoundCollectorUrl="/openhound/collectors/github/overview"
+	alternateCollectorName="GitHound collector"
+	alternateCollectorUrl="https://github.com/SpecterOps/GitHound"
+/>
 
 ## Configure Privilege Zones
 
-Use the [Privilege Zone rules](/opengraph/extensions/github/privilege-zone-rules) to classify high-value GitHub assets.
+<ConfigurePrivilegeZones
+    source="GitHub"
+    slug="github"
+/>
 
-The extension also includes specialized (Privilege Zone) queries for [creating Cypher-based Privilege Zone rules](/analyze-data/privilege-zones/rules#cypher).
-
-Read the [Tier Zero Classification](/opengraph/extensions/github/tier-zero) page to understand the rationale behind the Tier Zero Privilege Zone rules.
+<Note>
+    Read the [Tier Zero Classification](/opengraph/extensions/github/tier-zero) page to understand the rationale behind the Tier Zero Privilege Zone rules.
+</Note>
