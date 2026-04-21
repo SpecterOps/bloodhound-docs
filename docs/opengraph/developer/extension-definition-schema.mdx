@@ -64,10 +64,10 @@ Defines metadata about the extension itself.
 
 ```json
 {
-  "name": "Active_Directory",
-  "display_name": "Active Directory (SharpHound)",
-  "version": "v1.0.0",
-  "namespace": "AD"
+  "name": "SOOkta",
+  "display_name": "Okta Extension (by SpecterOps)",
+  "version": "v2.8.1",
+  "namespace": "Okta"
 }
 ```
 
@@ -94,12 +94,12 @@ Each node kind represents an entity type (for example: user, device, or environm
 ```json
 [
   {
-    "name": "AD_Domain",
-    "display_name": "AD Domain",
-    "description": "An Active Directory domain environment",
+    "name": "Okta_User",
+    "display_name": "Okta User",
+    "description": "An Okta user account",
     "is_display_kind": true,
-    "icon": "globe",
-    "color": "#FF8E40"
+    "icon": "user",
+    "color": "#d33115"
   }
 ]
 ```
@@ -127,13 +127,11 @@ Each node kind represents an entity type (for example: user, device, or environm
 
 Defines how nodes can be connected.
 
-Each relationship kind can define traversability through `is_traversable`.
-
 ```json
 [
   {
-    "name": "AD_GenericAll",
-    "description": "Full control over target",
+    "name": "Okta_ResetPassword",
+    "description": "Ability to reset passwords or temporary credentials for scoped Okta users",
     "is_traversable": true
   }
 ]
@@ -158,9 +156,14 @@ Defines analysis boundaries and data sources.
 ```json
 [
   {
-    "environment_kind": "AD_Domain",
-    "source_kind": "ADBase",
-    "principal_kinds": ["AD_User"]
+    "environment_kind": "Okta_Organization",
+    "source_kind": "Okta",
+    "principal_kinds": [
+      "Okta_User",
+      "Okta_Group",
+      "Okta_Application",
+      "Okta_ApiServiceIntegration"
+    ]
   }
 ]
 ```
@@ -179,12 +182,23 @@ Defines analysis boundaries and data sources.
 
 Defines findings based on relationships.
 
+<Note>
+  Extensions that define findings and remediations work in both Community and Enterprise, but findings are visible in Enterprise only.
+</Note>
+
 ```json
 [
   {
-    "name": "AD_GenericAll_Finding",
-    "environment_kind": "AD_Domain",
-    "relationship_kind": "AD_GenericAll"
+    "name": "Okta_Finding_ResetPassword",
+    "display_name": "Password Reset Permission Across Privilege Zones",
+    "environment_kind": "Okta_Organization",
+    "relationship_kind": "Okta_ResetPassword",
+    "remediation": {
+      "short_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "long_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      "short_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "long_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+    }
   }
 ]
 ```
@@ -198,50 +212,75 @@ Defines findings based on relationships.
 <ResponseField name="relationship_kind" type="string" required>
   Relationship kind that triggers this finding when matching edges are present.
 </ResponseField>
-
-<Note>
-  Extensions that define findings and remediations work in both Community and Enterprise, but findings are visible in Enterprise only.
-</Note>
+<ResponseField name="remediation" type="object">
+  Remediation guidance to resolve the finding, including both short and long descriptions.
+</ResponseField>
+<ResponseField name="remediation.short_description" type="string">
+  A concise summary of the recommended remediation action.
+</ResponseField>
+<ResponseField name="remediation.long_description" type="string">
+  A detailed explanation of the remediation, which can include formatting such as markdown for better readability.
+</ResponseField>
+<ResponseField name="remediation.short_remediation" type="string">
+  A concise summary of the steps to remediate the finding.
+</ResponseField>
+<ResponseField name="remediation.long_remediation" type="string">
+  A detailed, step-by-step guide to remediate the finding, which can include formatting such as markdown for better readability.
+</ResponseField>
 
 ## Example schema
 
-The following example schema is based on Active Directory to illustrate how the different components of the schema work together.
+The following example schema is based on Okta to illustrate how the different components of the schema work together.
 
 ```json
 {
   "schema": {
-    "name": "Active_Directory",
-    "display_name": "Active Directory (SharpHound)",
+    "name": "SOOkta",
+    "display_name": "Okta Extension (by SpecterOps)",
     "version": "v1.0.0",
-    "namespace": "AD"
+    "namespace": "Okta"
   },
   "node_kinds": [
     {
-      "name": "AD_Domain",
-      "display_name": "AD Domain",
-      "description": "An Active Directory domain environment",
-      "is_display_kind": true
+      "name": "Okta_User",
+      "display_name": "Okta User",
+      "description": "An Okta user account",
+      "is_display_kind": true,
+      "icon": "user",
+      "color": "#d33115"
     }
   ],
   "relationship_kinds": [
     {
-      "name": "AD_GenericAll",
-      "description": "Full control over target",
+      "name": "Okta_ResetPassword",
+      "description": "Ability to reset passwords or temporary credentials for scoped Okta users",
       "is_traversable": true
     }
   ],
   "environments": [
     {
-      "environment_kind": "AD_Domain",
-      "source_kind": "ADBase",
-      "principal_kinds": ["AD_User"]
+      "environment_kind": "Okta_Organization",
+      "source_kind": "Okta",
+      "principal_kinds": [
+        "Okta_User",
+        "Okta_Group",
+        "Okta_Application",
+        "Okta_ApiServiceIntegration"
+      ]
     }
   ],
   "relationship_findings": [
     {
-      "name": "AD_GenericAll_Finding",
-      "environment_kind": "AD_Domain",
-      "relationship_kind": "AD_GenericAll"
+      "name": "Okta_Finding_ResetPassword",
+      "display_name": "Password Reset Permission Across Privilege Zones",
+      "environment_kind": "Okta_Organization",
+      "relationship_kind": "Okta_ResetPassword",
+      "remediation": {
+        "short_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+        "long_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+        "short_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+        "long_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+      }
     }
   ]
 }
