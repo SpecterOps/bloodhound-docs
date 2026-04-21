@@ -48,9 +48,11 @@ At minimum, each node must include a unique identifier and a `kinds` array.
 <ResponseField name="kinds" type="array" required>
   An array of strings that classify the node. You can include up to three kinds per node. The first value is the primary kind, which controls the node styling in the graph.
 
-  Node `kinds` must not overlap with existing [built-in node](/resources/nodes/overview) kinds. Use a unique prefix (for example, a namespace matching your extension) to avoid conflicts.
+  In Cypher queries, node kinds function as labels for pattern matching. Use the colon (`:`) syntax to match nodes by kind: `MATCH (n:Okta_User)` or `MATCH (n:Okta_User|Okta_Group)`. All values in the `kinds` array can be used as labels, enabling flexible querying by any assigned kind.
 
-  Values must match at least one [`node_kinds.name`](/opengraph/developer/extension-definition-schema#node_kinds) in the extension definition schema, which also must match at least one [`environments.environment_kind`](/opengraph/developer/extension-definition-schema#environments) (also in the extension definition schema).
+  - Node `kinds` must not overlap with existing [built-in node](/resources/nodes/overview) kinds. Use a unique prefix (for example, a namespace matching your extension) to avoid conflicts.
+
+  - In structured graphs, values must match at least one [`node_kinds.name`](/opengraph/developer/extension-definition-schema#node_kinds) in the extension definition schema, which also must match at least one [`environments.environment_kind`](/opengraph/developer/extension-definition-schema#environments) (also in the extension definition schema) to produce <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> in BloodHound Enterprise.
 </ResponseField>
 <ResponseField name="properties" type="object">
   Optional key-value map of custom node attributes. Values must be primitives or homogeneous arrays of primitives.
