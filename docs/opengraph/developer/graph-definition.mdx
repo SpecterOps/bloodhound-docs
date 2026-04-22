@@ -3,6 +3,8 @@ title: Graph Definition
 description: Define structured graph behavior for OpenGraph extensions with an extension definition schema.
 ---
 
+import FindingsAndMetrics from '/snippets/opengraph/extensions/findings-requirements.mdx';
+
 <img
   noZoom
   src="/assets/enterprise-AND-community-edition-pill-tag.svg"
@@ -45,9 +47,13 @@ The definitions in the schema are applied to compatible data payloads during ing
   Defines findings and remediation guidance that map relationship kinds to analysis output in a target environment.
 </ResponseField>
 
-## Naming and namespacing
+## Constraints
 
-All defined names must follow namespacing rules:
+Extension definition schemas must follow the defined JSON schema and satisfy the following constraints.
+
+### Namespacing
+
+All `name` fields (except the `schema.name`) must follow namespacing rules:
 
 - Must be prefixed with your namespace
 - Must be unique within the extension
@@ -56,6 +62,17 @@ All defined names must follow namespacing rules:
 <Warning>
   If names are not unique or properly namespaced, the schema upload will fail.
 </Warning>
+
+### Findings and metrics
+
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ "width":"20%" }}
+/>
+
+<FindingsAndMetrics />
 
 ## `schema`
 
@@ -168,10 +185,14 @@ Defines analysis boundaries and data sources.
 ```
 
 <ResponseField name="environment_kind" type="string" required>
-  Node kind that represents the environment boundary for analysis. Must match a node kind defined in `node_kinds`.
+  Node kind that represents the environment boundary for analysis. Must match an environment node kind defined in `node_kinds.name`.
+
+  For findings and metrics in BloodHound Enterprise, the [`graph.nodes.properties.environmentid`](/opengraph/developer/nodes#param-properties-environmentid) fields in the data payload must match this field.
 </ResponseField>
 <ResponseField name="source_kind" type="string" required>
   Source kind used to associate ingested data with this environment.
+
+  For findings and metrics in BloodHound Enterprise, the [`metadata.source_kind`](/opengraph/developer/metadata#source-kind) field in your data payload must match this field.
 </ResponseField>
 <ResponseField name="principal_kinds" type="string[]" required>
   Node kinds that BloodHound should treat as principals within the environment.
