@@ -12,7 +12,7 @@ sidebarTitle: Metadata
 
 The `metadata` object defines payload-wide ingest behavior.
 
-One of its primary uses is registering a `source_kind`, which facilitates organizing and managing graph data by data source.
+One of its primary uses is registering a `source_kind`, which facilitates organizing and managing graph data by [source](/opengraph/developer/graph-data#data-source).
 
 ```json highlight={3}
 {
@@ -27,30 +27,16 @@ One of its primary uses is registering a `source_kind`, which facilitates organi
 ```
 
 <Note>
-  For <Tooltip tip="A graph that uses only the data payload without structured analysis or pathfinding capabilities." cta="Learn more" href="/opengraph/overview#generic-graphs">generic graph</Tooltip>, `metadata` is optional. For <Tooltip tip="A graph that includes structured analysis, pathfinding, and findings based on an installed extension definition schema." cta="Learn more" href="/opengraph/overview#structured-graphs">structured graphs</Tooltip>, `metadata` is required to produce findings and metrics.
+  The `metadata` object is optional for both <Tooltip tip="A graph generated from a data payload that conforms to the minimum JSON schema only." cta="Learn more" href="/opengraph/overview#generic-graphs">generic graphs</Tooltip> and <Tooltip tip="A graph generated from a data payload that also conforms to an installed extension definition schema." cta="Learn more" href="/opengraph/overview#structured-graphs">structured graphs</Tooltip>.
 </Note>
 
 <ResponseField name="metadata" type="object">
-  Top-level metadata object that configures payload-wide ingest behavior. Optional for generic graphs and required for structured graphs.
+  Optional top-level metadata object that configures payload-wide ingest behavior.
 </ResponseField>
 <ResponseField name="source_kind" type="string">
-  Source system label applied to all nodes in a data payload and used to determine analysis, metrics, and bulk data removal. During ingestion, BloodHound appends this value to each node's `kinds` array.
+  Source system label used to register a source kind and apply it to all nodes in a data payload. During ingestion, BloodHound appends this value to each node's `kinds` array.
 
-  Once registered, BloodHound reuses it for subsequent uploads with the same node kinds, even if the payload omits `source_kind`.
-
-  In structured graphs, nodes must have a `source_kind` defined to produce <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip>. The `metadata.source_kind` value must match the `extensions.source_kind` value in the extension definition schema.
-  
-  This is because BloodHound uses `source_kind` to determine which nodes are part of the "source system" for a finding, which in turn determines how exposure and impact metrics are calculated.
-
-  <Warning>
-    Specific [node properties](/opengraph/developer/nodes) are also required to produce findings for structured graphs in BloodHound Enterprise.
-  </Warning>
-
-  The following points describe how `source_kind` influences metrics calculations:
-
-  - **Exposure metrics:** Do not include the source node itself and only include nodes that can traverse to the source node.
-  - **Impact metrics:** Traverse downstream from the target node and stop when another Tier Zero (T0) node is encountered. Nodes beyond a second Tier Zero (T0) node are not included in impact calculations.
-  
+  You can register a `source_kind` through the `metadata` object or through the extension definition schema. Once registered, BloodHound reuses it for subsequent uploads with the same node kinds, even if the payload omits `metadata.source_kind`.
 </ResponseField>
 
 ## Schema
@@ -75,4 +61,4 @@ Use the following JSON schema for validation requirements.
 
 - **`source_kind` does not appear in expected nodes:** Verify that `metadata` is at the top level of the data payload and not nested under `graph`.
 
-- **Unexpected kind labels after ingest:** Confirm that your `source_kind` value is intentional because BloodHound appends it to every node in the data payload.
+- **Unexpected kind labels after ingest:** Confirm that your `source_kind` value is intentional because `metadata.source_kind` appends it to every node in the data payload.

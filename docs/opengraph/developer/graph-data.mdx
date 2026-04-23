@@ -50,9 +50,11 @@ The `nodes` and `edges` arrays must conform to minimum JSON schemas. BloodHound 
 
 For field-level details and schema requirements, see the following pages:
 
-- [Metadata](/opengraph/developer/metadata) (_optional_)
-- [Nodes](/opengraph/developer/nodes)
-- [Edges](/opengraph/developer/edges)
+| Page | Description |
+| --- | --- |
+| [Metadata](/opengraph/developer/metadata) | Defines payload-wide ingest behavior to facilitate organizing and managing graph data by source. |
+| [Nodes](/opengraph/developer/nodes) | Represents entities in your graph, such as users, devices, repositories, applications, and (for findings and metrics) environments. |
+| [Edges](/opengraph/developer/edges) | Represents relationships between nodes in your graph indicating some form of interaction or access. |
 
 ## Graph structure
 
@@ -64,6 +66,33 @@ When you upload a data payload that conforms to an installed extension definitio
 | --- | --- |
 | <Tooltip tip="A graph generated from a data payload that conforms to the minimum JSON schema only." cta="Learn more" href="/opengraph/overview#generic-graphs">Generic graph</Tooltip> | You only need to ingest and [search](/analyze-data/explore/search#search) nodes and edges. |
 | <Tooltip tip="A graph generated from a data payload that also conforms to an installed extension definition schema." cta="Learn more" href="/opengraph/overview#structured-graphs">Structured graph</Tooltip> | You need schema-driven [analysis](/analyze-data/findings/analysis) and [pathfinding](/analyze-data/explore/search#pathfinding). |
+
+## Data source
+
+OpenGraph extensions can collect data from many systems. To facilitate organizing and managing this data by a specific source, you can register a `source_kind` and apply it to the relevant nodes in your data payload.
+
+For example, if you wanted to delete all data for a source, you could navigate to the **Administration** > **Database Management** page and select the name of the defined source.
+
+<Note>
+  You can still remove OpenGraph data without registering and applying a `source_kind` by checking the **Sourceless data** option. However, that could have unintended consequences if you have multiple OpenGraph data sources without a registered `source_kind`.
+</Note>
+
+You can register and apply a `source_kind` in three ways:
+
+- In the [`kinds`](/opengraph/developer/nodes#param-kinds) array of each relevant node in a data payload.
+- In the [`metadata`](/opengraph/developer/metadata) object of your data payload, which applies the `source_kind` to all nodes.
+- In the [`environments`](/opengraph/developer/graph-definition#environments) array of an extension definition schema, which applies the `source_kind` to all nodes that match the environment's `environment_kind`.
+
+In structured graphs, nodes must include a registered `source_kind` to produce <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> and metrics. This is because BloodHound uses `source_kind` to determine which nodes are part of the "source system" for a finding, which in turn determines how exposure and impact metrics are calculated.
+
+<Warning>
+  Specific [node properties](/opengraph/developer/nodes#findings-and-metrics) are also required to produce findings for structured graphs in BloodHound Enterprise.
+</Warning>
+
+The following points describe how `source_kind` influences metrics calculations:
+
+- **Exposure metrics:** Do not include the source node itself and only include nodes that can traverse to the source node.
+- **Impact metrics:** Traverse downstream from the target node and stop when another Tier Zero (T0) node is encountered. Nodes beyond a second Tier Zero (T0) node are not included in impact calculations.
 
 ## Minimal viable data payload
 
