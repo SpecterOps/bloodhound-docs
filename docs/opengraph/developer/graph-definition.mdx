@@ -33,7 +33,7 @@ The definitions in the schema are applied to compatible data payloads during ing
 ```
 
 <ResponseField name="schema" type="object" required>
-  Extension metadata, including identity, display name, and namespace.
+  Extension metadata identifying the extension, including version and namespace.
 </ResponseField>
 <ResponseField name="node_kinds" type="object[]" required>
   Defines custom node types for extension-specific data payloads and their visual configurations.
@@ -42,7 +42,7 @@ The definitions in the schema are applied to compatible data payloads during ing
   Defines custom edge types for extension-specific data payloads and their traversability behavior.
 </ResponseField>
 <ResponseField name="environments" type="object[]">
-  Defines system-level data sources and principal kinds for extension-specific data payloads.
+  Defines system-level data sources and principal kinds for extension-specific data payloads. Required for findings and metrics in BloodHound Enterprise.
 </ResponseField>
 <ResponseField name="relationship_findings" type="object[]">
   Defines findings and remediation guidance that map relationship kinds to analysis output in a target environment.
@@ -52,17 +52,18 @@ The definitions in the schema are applied to compatible data payloads during ing
 
 Extension definition schemas must follow the defined JSON schema and satisfy the following constraints.
 
-### Namespacing
+### Names and namespaces
 
-All `name` fields (except the `schema.name`) must follow namespacing rules:
-
-- Must be prefixed with your namespace
-- Must be unique within the extension
-- Must include more than just the namespace
+All `name` fields (except the `schema.name` field) must follow namespacing rules to avoid conflicts with other extensions and built-in graph elements. This doesn't apply to `display_name` fields, which are for human readability only.
 
 <Warning>
-  If names are not unique or properly namespaced, the schema upload will fail.
+  - If names are not unique or properly namespaced, schema uploads fail validation.
+  - `TAG` is a reserved namespace prefix for Privilege Zones and cannot be used.
 </Warning>
+
+- Must be unique within the extension
+- Must be prefixed with your namespace separated by an underscore (for example, `namespace_Name`)
+- Must include more than just the namespace
 
 ### Findings and metrics
 
@@ -91,24 +92,22 @@ Defines metadata about the extension itself.
 ```
 
 <ResponseField name="name" type="string" required>
-  Unique extension identifier used by BloodHound to register the schema.
+  Unique name used by BloodHound to associate ingested data with this schema.
 </ResponseField>
 <ResponseField name="display_name" type="string" required>
-  Human-readable extension name shown in product experiences.
+  Human-readable label shown for this extension in BloodHound.
 </ResponseField>
 <ResponseField name="version" type="string" required>
   Extension schema version in semantic version format, for example `v1.0.0`.
 </ResponseField>
 <ResponseField name="namespace" type="string" required>
-  Prefix used for all extension-defined kinds and finding names.
+  Prefix used for all extension-defined `node_kinds`, `relationship_kinds`, and `relationship_findings` names.
 </ResponseField>
 
 
 ## `node_kinds`
 
-Defines all node types in your graph.
-
-Each node kind represents an entity type (for example: user, device, or environment).
+Defines all node types in your graph. Each node kind represents an entity type (for example: user, device, or environment).
 
 ```json
 [
@@ -124,7 +123,9 @@ Each node kind represents an entity type (for example: user, device, or environm
 ```
 
 <ResponseField name="name" type="string" required>
-  Unique, namespaced node kind identifier.
+  Unique node kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules and match the `kinds` field in node data payloads.
+
+  The node schema for an environment must be defined here to be used for findings and metrics in BloodHound Enterprise.
 </ResponseField>
 <ResponseField name="display_name" type="string" required>
   Human-readable label shown for this node kind in BloodHound.
@@ -133,7 +134,7 @@ Each node kind represents an entity type (for example: user, device, or environm
   Optional description that explains what the node kind represents.
 </ResponseField>
 <ResponseField name="is_display_kind" type="boolean">
-  Indicates whether this node kind should be treated as a displayable kind in the product.
+  Indicates whether this node kind should be treated as a displayable kind in BloodHound.
 </ResponseField>
 <ResponseField name="icon" type="string">
   Optional Font Awesome [icon name](https://fontawesome.com/search?s=solid) (without the "fa-" prefix) to show for nodes of this kind in the graph.
@@ -144,7 +145,7 @@ Each node kind represents an entity type (for example: user, device, or environm
 
 ## `relationship_kinds`
 
-Defines how nodes can be connected.
+Defines how nodes can be connected. Each relationship kind represents a specific type of connection between nodes.
 
 ```json
 [
@@ -157,7 +158,7 @@ Defines how nodes can be connected.
 ```
 
 <ResponseField name="name" type="string" required>
-  Unique, namespaced relationship kind identifier.
+  Unique relationship kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules and match the `kinds` field in edge data payloads.
 </ResponseField>
 <ResponseField name="description" type="string">
   Optional description of what the relationship means.
@@ -165,12 +166,12 @@ Defines how nodes can be connected.
 <ResponseField name="is_traversable" type="boolean">
   Controls whether edges of this relationship kind are used in pathfinding and analysis.
 
-  When `is_traversable` is set on a relationship kind, all edges of that kind inherit the same traversability behavior. Only traversable edges are included in pathfinding and considered for findings and analysis.
+  When `is_traversable` is set on a relationship kind, all edges of that kind inherit the same traversability behavior. Only <Tooltip tip="Represents a relationship where the starting node can take control of the ending node to a degree that lets an attacker abuse the ending node's outgoing edges" cta="Learn more" href="/resources/edges/traversable-edges">traversable edges</Tooltip> are included in pathfinding and considered for findings and metrics.
 </ResponseField>
 
 ## `environments`
 
-Defines analysis boundaries and data sources.
+Defines analysis boundaries and data sources. Each environment represents a system with its own set of <Tooltip tip="A type of object that can authenticate and be assigned permissions within an environment.">principals</Tooltip> and relationships that can be analyzed for findings and metrics in BloodHound Enterprise.
 
 ```json
 [
@@ -198,16 +199,23 @@ Defines analysis boundaries and data sources.
   For findings and metrics in BloodHound Enterprise, the [`metadata.source_kind`](/opengraph/developer/metadata#source-kind) field in your data payload must match this field.
 </ResponseField>
 <ResponseField name="principal_kinds" type="string[]" required>
-  Node kinds that BloodHound should treat as principals within the environment.
+  Node kinds that BloodHound should treat as principals within the environment. Must match `node_kinds.name` defined in this schema.
 </ResponseField>
 
 ## `relationship_findings`
 
-Defines findings based on relationships.
+Defines <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> based on relationships. Each finding represents a specific combination of environment and relationship kinds that BloodHound Enterprise should evaluate for high-risk conditions and provide remediation guidance.
 
-<Note>
-  Extensions that define findings and remediations work in both Community and Enterprise, but findings are visible in Enterprise only.
-</Note>
+Extensions that define findings and remediations work in both Community and Enterprise, but findings are visible in Enterprise only.
+
+<Tip>
+  If a finding name would match its associated relationship kind, add `_Finding` to the finding name to distinguish them.
+  
+  For example:
+
+  - Relationship kind name: `Okta_ResetPassword`
+  - Finding name: `Okta_Finding_ResetPassword`
+</Tip>
 
 ```json
 [
@@ -227,13 +235,16 @@ Defines findings based on relationships.
 ```
 
 <ResponseField name="name" type="string" required>
-  Unique, namespaced finding identifier.
+  Unique finding identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules.
+</ResponseField>
+<ResponseField name="display_name" type="string">
+  Human-readable label shown for this finding in BloodHound.
 </ResponseField>
 <ResponseField name="environment_kind" type="string" required>
-  Environment kind where this finding should be evaluated.
+  Environment kind where this finding should be evaluated. Must match an `environments.environment_kind` and `node_kinds.name` defined in this schema.
 </ResponseField>
 <ResponseField name="relationship_kind" type="string" required>
-  Relationship kind that triggers this finding when matching edges are present.
+  Relationship kind that triggers this finding when matching edges are present. Must match a `relationship_kinds.name` defined in this schema.
 </ResponseField>
 <ResponseField name="remediation" type="object">
   Remediation guidance to resolve the finding, including both short and long descriptions.
