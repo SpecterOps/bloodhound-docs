@@ -8,13 +8,9 @@ description: "Define custom icons and colors for OpenGraph node kinds."
 
 To help visually differentiate your OpenGraph nodes in BloodHound, you can define custom icons and colors. The method for doing so depends on whether your extension produces a <Tooltip tip="A graph that uses only the data payload without structured analysis or pathfinding capabilities." cta="Learn more" href="/opengraph/overview#generic-graphs">generic graph</Tooltip> or a <Tooltip tip="A graph that includes structured analysis, pathfinding, and findings based on an installed extension definition schema." cta="Learn more" href="/opengraph/overview#structured-graphs">structured graph</Tooltip>:
 
-- **Generic graphs**: You must use the [`POST /api/v2/custom-nodes`](/reference/custom-node-management/create-custom-nodes) API endpoint to define custom icons and colors.
+- **Generic graphs**: Use the [`POST /api/v2/custom-nodes`](/reference/custom-node-management/create-custom-nodes) API endpoint to define custom icons and colors.
 
-- **Structured graphs**: You can define icons and colors directly in the [`node_kinds`](/opengraph/developer/graph-definition#node_kinds) section of your <Tooltip tip="A file that defines graph structure, including node types, edge types, traversability behavior, and visual configurations" cta="Learn more" href="/opengraph/developer/graph-definition">extension definition schema</Tooltip>.
-
-<Note>
-  The `/api/v2/custom-nodes` endpoint works for both generic and structured graphs, but is required for generic graphs and optional for structured graphs.
-</Note>
+- **Structured graphs**: Define icons and colors directly in the [`node_kinds`](/opengraph/developer/graph-definition#node_kinds) array of your <Tooltip tip="A file that defines graph structure, including node types, edge types, traversability behavior, and visual configurations" cta="Learn more" href="/opengraph/developer/graph-definition">extension definition schema</Tooltip>.
 
 ## Icon options
 
@@ -28,7 +24,32 @@ When specifying an icon:
 
 ## Examples
 
-The following examples show how to define custom icons for OpenGraph node kinds using the API Explorer and a Python script.
+The following examples show how to define custom icons for OpenGraph node kinds using an extension definition schema, the API Explorer, and a Python script.
+
+### Extension definition schema
+
+For structured graphs, define icons and colors directly in the [`node_kinds`](/opengraph/developer/graph-definition#node_kinds) array of your extension definition schema.
+
+```json
+{
+  "node_kinds": [
+    {
+      "name": "example_Person",
+      "display_name": "Person",
+      "description": "A person in the graph",
+      "icon": "user",
+      "color": "#2299FF"
+    },
+    {
+      "name": "example_Device",
+      "display_name": "Device",
+      "description": "A device in the graph",
+      "icon": "desktop",
+      "color": "#00AA55"
+    }
+  ]
+}
+```
 
 ### API request body
 
@@ -43,7 +64,7 @@ Use this payload with the [`POST /api/v2/custom-nodes`](/reference/custom-node-m
       "icon": {
         "type": "font-awesome",
         "name": "user",
-        "color": "#FFF"
+        "color": "#2299FF"
       }
     },
     "device": {
