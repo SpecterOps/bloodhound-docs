@@ -46,13 +46,15 @@ At minimum, each edge must include a `start` endpoint, an `end` endpoint, and a 
   An object that defines how to match the ending node of the edge. See [Endpoint Matching](#endpoint-matching).
 </ResponseField>
 <ResponseField name="kind" type="string" required>
-  A string that describes the relationship type. Must contain only letters, numbers, and underscores. PascalCase is recommended for readability and consistency (for example, `Okta_ResetPassword`).
+  A string that describes the relationship type.
+  
+  - Use a namespaced format with your extension prefix followed by an underscore and a descriptive name (for example, `Okta_ResetPassword`). This prefix must be unique and must not overlap with [built-in edge](/resources/edges/overview) kinds.
 
-  Use a namespaced format with your extension prefix followed by an underscore and a descriptive name (for example, `Okta_ResetPassword`).
+  - Must match the regex pattern `^[A-Za-z0-9_]+$`, which means edge kinds can only contain uppercase letters, lowercase letters, numbers, and underscores. Spaces, dashes, backticks, and other special characters are not allowed in edge kinds. PascalCase is recommended for readability and consistency.
 
-  Edge `kind` values must not overlap with [built-in edge](/resources/edges/overview) kinds. Use a unique prefix (for example, a namespace matching your extension) to avoid conflicts.
+    Neo4j Cypher allows many special characters in symbolic names when the name is enclosed in backticks. BloodHound OpenGraph ingest is more restrictive: edge `kind` values must match `^[A-Za-z0-9_]+$`, so upload validation rejects backtick-escaped names, spaces, dashes, and other special characters.
 
-  See [Constraints](/opengraph/developer/edges#constraints) below for additional guidance.
+    See Neo4j [Escaping rules for symbolic names](https://neo4j.com/docs/cypher-manual/current/syntax/naming/#symbolic-names-escaping-rules) for additional naming guidance.
 </ResponseField>
 <ResponseField name="properties" type="object">
   A key-value map of custom edge attributes. Values must be strings, numbers, booleans, or arrays of primitives. Nested objects and arrays of objects are not allowed.
@@ -61,18 +63,6 @@ At minimum, each edge must include a `start` endpoint, an `end` endpoint, and a 
 <Note>
   Unless otherwise noted, examples below show edge objects only.
 </Note>
-
-## Constraints
-
-Edges must adhere to the following constraints:
-
-- Edge `kind` must match the regex pattern `^[A-Za-z0-9_]+$`. This means edge kinds can only contain uppercase letters, lowercase letters, numbers, and underscores. Spaces, dashes, backticks, and other special characters are not allowed in edge kinds.
-
-  Neo4j Cypher allows many special characters in symbolic names when the name is enclosed in backticks. BloodHound OpenGraph ingest is more restrictive: edge `kind` values must match `^[A-Za-z0-9_]+$`, so upload validation rejects backtick-escaped names, spaces, dashes, and other special characters.
-
-  See Neo4j [Escaping rules for symbolic names](https://neo4j.com/docs/cypher-manual/current/syntax/naming/#symbolic-names-escaping-rules) for additional naming guidance.
-
-- The `lastseen` property is injected automatically by BloodHound during ingestion and overwrites any value provided in the payload.
 
 ## Endpoint Matching
 
