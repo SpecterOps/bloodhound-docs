@@ -69,7 +69,9 @@ When you upload a data payload that conforms to an installed extension definitio
 
 ## Data source
 
-OpenGraph extensions can collect data from many systems. To facilitate organizing and managing this data by a specific source, you can register a `source_kind` and apply it to the relevant nodes in your data payload.
+OpenGraph extensions can collect data from many different systems. By default, BloodHound identifies this as _sourceless data_. If you're using multiple extensions, you may have multiple data sources feeding into your BloodHound graph database without any way to differentiate them.
+
+To facilitate organizing and managing OpenGraph data in BloodHound, you can register a `source_kind` and apply it to the relevant nodes in your data payload. Once registered, BloodHound reuses it for subsequent uploads with the same node kinds, even if the data payload omits it.
 
 For example, if you wanted to delete all data for a source, you could navigate to the **Administration** > **Database Management** page and select the name of the defined source.
 
@@ -83,7 +85,7 @@ You can register and apply a `source_kind` in three ways:
 - In the [`metadata`](/opengraph/developer/metadata) object of your data payload, which applies the `source_kind` to all nodes.
 - In the [`environments`](/opengraph/developer/graph-definition#environments) array of an extension definition schema, which applies the `source_kind` to all nodes that match the environment's `environment_kind`.
 
-In structured graphs, nodes must include a registered `source_kind` to produce <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> and metrics. This is because BloodHound uses `source_kind` to determine which nodes are part of the "source system" for a finding, which in turn determines how exposure and impact metrics are calculated.
+In structured graphs, nodes _must_ include a registered `source_kind` to produce <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> and metrics. This is because BloodHound uses `source_kind` to determine which nodes are part of the "source system" for a finding, which in turn determines how exposure and impact metrics are calculated.
 
 <Warning>
   Specific [node properties](/opengraph/developer/nodes#findings-and-metrics) are also required to produce findings for structured graphs in BloodHound Enterprise.
