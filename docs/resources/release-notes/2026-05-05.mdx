@@ -1,0 +1,64 @@
+---
+title: 2026-05-05 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-05-05"
+---
+
+| | | | | |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-05-05 | v9.1.0 | No release | No release | v2.13.0 |
+ 
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## API and Auth
+
+  - {/*BED-8094*/} Resolved an issue where filtering in **API Explorer** only matched endpoint tags and did not reliably include matching API paths.
+  - {/*BED-7931*/} Resolved an issue where **API Explorer** showed an outdated request example for `POST /api/v2/clear-database` that did not include newer OpenGraph delete options.
+  - {/*BED-7761*/} Resolved an issue where SSO and OIDC user provisioning did not correctly apply ETAC environment access behavior based on role claims.
+  - {/*BED-7516*/} Resolved an issue where deleting a client through `DELETE /api/v2/clients/{id}` did not generate expected audit log entries.
+
+  ## Ingest and Graph Processing
+
+  - {/*BED-8058*/} Resolved an issue where the Neo4j `FetchKinds` path did not return edge kinds, which could cause incomplete kind metadata during graph operations.
+  - {/*BED-8034*/} Resolved an issue where cross-product processing could create unnecessary edges when component sets shared nested members.
+  - {/*BED-8028*/} Resolved an issue where edge deletion by kind could fail against Neo4j backends.
+  - {/*BED-7781*/} Resolved an issue where a single unresolved `property_match` in an ingest payload could cause other valid payload entries to fail in the same submission.
+  - {/*BED-7700*/} Resolved an issue where extension upload upserts used a delete-and-recreate pattern instead of true upsert behavior, causing unnecessary ID sequence churn.
+  - {/*BED-7483*/} Resolved an issue where ingest operations could fail with repeated `Error reading ingest file` failures tied to conflicting upsert behavior.
+  - {/*BED-7463*/} Resolved an issue where concurrent ingest and changelog flush activity could deadlock and interrupt processing.
+
+  ## OpenGraph and Data Correctness
+
+  - {/*BED-7932*/} Resolved an issue where OpenGraph findings did not display severity color because severity values were not returned correctly.
+  - {/*BED-7768*/} Resolved an issue where selecting **All X** options for OpenGraph environment filters did not correctly include all environments for the selected schema.
+  - {/*BED-7762*/} Resolved an issue where object IDs could appear with an appended timestamp in the entity panel after specific OpenGraph node upsert sequences.
+  - {/*BED-7936*/} Resolved an issue where PreAgg histogram processing did not correctly accumulate smaller buckets for expected cumulative histogram behavior.
+  - {/*BED-6773*/} Resolved an issue where certain Azure resources could be misclassified as Active Directory group types based on SID-suffix matching during post-processing.
+  - {/*BED-4754*/} Resolved an issue where `AZAddOwner` relationships were not created as expected in Azure analysis results.
+
+  ## Cypher, Explore, and Interface
+
+  - {/*BED-7860*/} Resolved an issue where pressing the space bar in the Cypher editor on the **Explore** page could fail to insert spaces as expected.
+  - {/*BED-7939*/} Resolved an issue where long edge-type content in pathfinding filter dialogs could overflow and reduce readability.
+  - {/*BED-7898*/} Resolved an issue where multiple table views had column header alignment inconsistencies.
+  - {/*BED-7904*/} Resolved an issue where the navigation logo could shrink excessively as browser height decreased.
+  - {/*BED-7881*/} Resolved an issue where the navigation area could become non-scrollable at reduced window heights.
+  - {/*BED-7586*/} Resolved an issue where search help text contrast in **Explore** was too low in dark mode.
+  - {/*BED-4761*/} Resolved an issue where selected nodes in **Explore** could not be unselected to return the graph to a clear state.
+  - {/*BED-4495*/} Resolved an issue where arrowheads in **Explore** could become visually misaligned when multiple edges connected the same nodes.
+
+  ## Data Collection Connectivity
+
+  - {/*BED-7980*/} Resolved an issue where RC collectors running in Docker could fail to connect due to unsupported user-agent parsing behavior.
+</Update>
+
+<Update label="AzureHound" tags={["Fixed Issues"]}>
+  ## Data Collection and Relationship Accuracy
+
+  - {/*BED-6542*/} Resolved an issue where AzureHound could create incorrect `AZContains` relationships across tenant boundaries.
+  - {/*BED-4600*/} Resolved an issue where AzureHound collection and ingest workflows could enter inconsistent job states and surface follow-on analysis failures.
+</Update>
