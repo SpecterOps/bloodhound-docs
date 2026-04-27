@@ -1,0 +1,78 @@
+---
+title: Configure the Collector
+description: Configure the GitHub collector to gather data from your GitHub organization.
+---
+
+import RunAndCollect from '/snippets/hounds/openhound-run-and-collect.mdx';
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+This page covers downloading and running the OpenHound GitHub collector against your GitHub organization.
+
+## Prerequisites
+
+* OpenHound installed with the GitHub collector included. Follow the OpenHound [installation](/openhound/community) instructions to set up OpenHound for BloodHound Community Edition. The Github collector is included by default in the OpenHound container image.
+* A [Personal Access Token (PAT)](/openhound/collectors/github/configure-pat) or [GitHub App Installation](/openhound/collectors/github/configure-app) configured with the required permissions
+
+<Note>The OpenHound setup instructions for BloodHound Community Edition also apply to BloodHound Enterprise users, for now.</Note>
+
+## Required Permissions
+
+Both PAT and GitHub App authentication methods require the same set of Read-only permissions. The table below maps each permission to the collection functions it enables.
+
+### Repository permissions
+
+- Actions
+- Administration
+- Contents
+- Environments
+- Metadata
+- Secret scanning alerts
+- Secrets
+- Variables
+
+
+### Organization permissions
+
+- Administration
+- Custom organization roles
+- Custom repository roles
+- Members
+- Personal access tokens
+- Personal access token requests
+- Secrets
+- Variables
+
+
+## Configure OpenHound
+
+The following OpenHound configuration parameters are required to run the Github collector. These can either be set
+via the `[sources.source.github.credentials]` section of the secrets file or via environment variables using the `SOURCES__GITHUB__CREDENTIALS` prefix.
+
+### Option 1: Github app installation
+| Parameter Name | Environment Variable            | Description                                                                        |
+|----------------|---------------------------------|------------------------------------------------------------------------------------|
+| `org_name`         | \{PREFIX\}__ORG_NAME     | The name of the GitHub organization to collect data from. |
+| `app_id`     | \{PREFIX\}__APP_ID | The GitHub App ID used to authenticate to the GitHub API.              |
+| `client_id`     | \{PREFIX\}__CLIENT_ID | The GitHub App Client ID used to authenticate to the GitHub API.              |
+| `key_path`         | \{PREFIX\}__KEY_PATH     | The path to the GitHub App private key file. |
+
+
+### Option 2: Fine-grained Personal Access Token (PAT)
+| Parameter Name | Environment Variable            | Description                                                                        |
+|----------------|---------------------------------|------------------------------------------------------------------------------------|
+| `org_name`         | \{PREFIX\}__ORG_NAME     | The name of the GitHub organization to collect data from. |
+| `token`     | \{PREFIX\}__TOKEN | The fine-grained Personal Access Token (PAT) used to authenticate to the GitHub API. |
+
+### Example Configuration
+```toml title="secrets.toml"
+[sources.source.github.credentials]
+org_name = "my-github-org"
+key_path = "/path/to/private/key.pem"
+app_id = "123456"
+client_id = "myclientid"
+```
+
+## Running OpenHound and Collecting Data
+
+<RunAndCollect source="GitHub" env="organization" />

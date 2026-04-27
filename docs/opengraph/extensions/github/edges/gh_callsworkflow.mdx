@@ -1,0 +1,23 @@
+---
+title: 'GH_CallsWorkflow'
+description: '[Workflow] Job calls a reusable workflow — GH_WorkflowJob → GH_Workflow'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Source: [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob)
+- Destination: [GH_Workflow](/opengraph/extensions/github/nodes/gh_workflow)
+- Traversable: ❌
+
+## General Information
+
+The traversable GH_CallsWorkflow edge links a workflow job to a reusable workflow it invokes via the `uses:` key at the job level. This edge captures the reusable workflow call graph, enabling analysts to trace inherited permissions and secret access through called workflows.
+
+### Local vs. remote reusable workflows
+
+- **Local** (`./. github/workflows/_ci.yml`): the destination is matched by `name` against workflows in the same repository.
+- **Remote** (`org/repo/.github/workflows/file.yml@ref`): the destination is matched by the full reference string. If the called workflow has not been collected, the edge destination will not resolve.
+
+The `reusable_ref` property on the edge always contains the raw `uses:` value from the workflow file.

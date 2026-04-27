@@ -3,11 +3,22 @@ title: BloodHound Glossary
 description: Learn the terminology used in BloodHound software and documentation.
 ---
 
+import defAttackPath from '/snippets/terms/attack-path.mdx';
+import defFinding from '/snippets/terms/finding.mdx';
+import defExposure from '/snippets/terms/exposure.mdx';
+import defImpact from '/snippets/terms/impact.mdx';
+import defListBasedFinding from '/snippets/terms/list-based-finding.mdx';
+import defRelationshipBasedFinding from '/snippets/terms/relationship-based-finding.mdx';
+import defHygiene from '/snippets/terms/hygiene.mdx';
+import defCompositeEdge from '/snippets/terms/composite-edge.mdx';
+
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 ## Attack Path
 
-A chain of abusable privileges and user behaviors that create direct and indirect connections between principals. In BloodHound, Attack Paths are visualized in the [graph](#graph) by [nodes](#node) and [edges](#edge). Learn more in [What is Attack Path Management](https://bloodhoundenterprise.io/what-is-attack-path-management/).
+<defAttackPath />
+
+In BloodHound, Attack Paths are visualized in the [graph](#graph) with [nodes](#node) and [edges](#edge). Learn more in [What is Attack Path Management](https://bloodhoundenterprise.io/what-is-attack-path-management/).
 
 - **Identity-based Attack Path**—An Attack Path is based on identity or an already authenticated [principal](#principal). BloodHound's main goal is to help visualize and manage Attack Paths.
 
@@ -41,6 +52,10 @@ A collector client is a configuration object in your BloodHound Enterprise tenan
 
 A collector application is software that collects [Attack Path](#attack-path)-related data from a [directory](#directory) and sends it to your BloodHound Enterprise tenant. Examples include SharpHound Enterprise and AzureHound Enterprise.
 
+## Composite Edge
+
+<defCompositeEdge />
+
 ## Custom Glyph
 
 A visual indicator that can be applied to zones to distinguish objects within that zone on the Explore page.
@@ -73,25 +88,23 @@ The automatic process by which BloodHound includes additional objects in a zone 
 
 ## Exposure
 
-A risk measurement that quantifies the extent to which [principals](#principal) in a [directory](#directory) have [Attack Paths](#attack-path) to [Tier Zero](#tier-zero%2Fhigh-value) [objects](#object). It encompasses both principals with one-step paths (`UserA -[ForceChangePassword]-> TierZero`), and multi-step paths (`UserA -[ForceChangePassword]-> UserB -[GenericAll]-> TierZero`). Exposure is measured in two ways:
-
-- **Exposure count**—The number of principals with a Tier Zero Attack Path.
-
-- **Exposure percentage**—The percentage of principals in the directory with a Tier Zero Attack Path.
-
-BloodHound Enterprise calculates exposure for all [choke points](#choke-point).
+<defExposure />
 
 ## Finding
 
-A specific instance of a vulnerability that an attacker could abuse to gain access to, and eventually take control of, a network. Each finding can be categorized as a specific [Attack Path](#attack-path) type.
+<defFinding />
 
-There are two types of findings in BloodHound:
+An attack path is the route. A finding is the identified risk instance tied to that route. Each finding can be categorized as a specific Attack Path type.
 
-- **List-based finding**—A finding for a specific [principal](#principal) where the vulnerability is related to the principal itself, such as a misconfiguration. Because of this nature, list-based findings do not necessarily have an [exposure](#exposure) metric, but they will have an [impact](#impact) metric.
+There are two types of findings in BloodHound Enterprise:
 
-- **Relationship-based finding**—A finding for a pair of [principals](#principal)—a target that is privileged (such as belonging to Tier Zero) and a source/origin that is not—that can be compromised by one or more connections between said principals. Each relationship-based finding may be composed of one or many individual [Attack Paths](#attack-path).
+- **Relationship-based finding**
 
-  A relationship-based finding can have an [exposure](#exposure) metric (the exposure risk of the source/origin principal being compromised) and an [impact](#impact) metric (the impact risk of the target principal being compromised).
+  <defRelationshipBasedFinding />
+
+- **List-based finding**
+
+  <defListBasedFinding />
 
 ## FOSS
 
@@ -105,15 +118,13 @@ The graph database used by BloodHound. It stores the relationships between [node
 
 An audit log in Zone Builder that tracks changes made to zones and labels over time, including who made the change and when.
 
+## Hygiene
+
+<defHygiene />
+
 ## Impact
 
-A risk measurement that quantifies how much control of your environment an affected asset has. Specifically:
-
-- **Impact count**—The number of principals/objects that could be compromised through an Attack Path.
-
-- **Impact percentage**—The percentage of the environment that could be impacted by a specific identity vulnerability.
-
-Impact is closely related to [exposure](#exposure), which measures the percentage of principals with a *Tier Zero* Attack Path. Together, these metrics help organizations prioritize remediation by understanding which Attack Paths pose the greatest risk.
+<defImpact />
 
 ## Kind
 
@@ -122,6 +133,10 @@ The schema-level classification or label applied to [nodes](#node) in the [graph
 ## Label
 
 A flexible way to categorize objects for easier searching and filtering. Unlike [zones](#zone), labels are not used in risk analysis and do not represent hierarchical privilege levels, making them useful for organizational purposes without affecting attack path calculations.
+
+## Metatree
+
+An aggregate view of the graph for a selected environment and privilege zone displayed on the Attack Paths page. This view simplifies large volumes of nodes and edges into a compact visualization optimized for readability, showing bottlenecks and key exposure points at a glance.
 
 ## Node
 
@@ -132,6 +147,10 @@ A node is part of the [graph](#graph) construct and represents an entity in the 
 An entity encompassing both directory-level entities from Active Directory and Entra ID [directories](#directory) and other assets discovered through data integrations like OpenGraph. Examples include users, groups, computers, organizational units (OUs), domains, trusts, and cloud resources.
 
 Objects are synonymous with [nodes](#node) and represent distinct elements contributing to the network's overall structure and security posture. An object can also be referred to as an "asset".
+
+## Post-Processing
+
+A phase of analysis in which BloodHound models structural aspects that are inherent to a given system but are not directly collected as data. Post-processing derives relationships that are known and relevant to Attack Paths based on how the system works, such as combining multiple non-traversable edges into complex edges.
 
 ## Principal
 
@@ -175,7 +194,7 @@ Refers to a dedicated instance of BloodHound that contains its own data, configu
 
 ## Tier Zero/High Value
 
-The most critical and sensitive objects in the network, typically including domain controllers and other core infrastructure components. The term stems from [tiering](#tiering%2Ftier-model).
+The most critical and sensitive objects in the network, typically including domain controllers and other core infrastructure components. The term stems from [tiering](#tiering%2Ftier-model). Tier Zero is the highest-priority zone in the [Privilege Zones](#privilege-zone) model.
 
 ## Tiering/Tier Model
 
