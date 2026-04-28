@@ -21,7 +21,7 @@ import featureFlagNote from "/snippets/feature-flag.mdx";
 
   Configure automatic [expiration](/manage-bloodhound/auth/api-key-expiration) for API keys used to authenticate to the BloodHound API to reduce long-lived credentials and support internal security and compliance requirements.
 
-  API key expiration applies to personal API tokens, non-personal API tokens used for integrations, and collector client API tokens (AzureHound, SharpHound, OpenHound).
+  API key expiration applies to personal API tokens, non-personal API tokens used for integrations, and collector client API tokens used by AzureHound, SharpHound, and OpenHound.
 
   <featureFlagNote />
 </Update>
@@ -78,57 +78,48 @@ import featureFlagNote from "/snippets/feature-flag.mdx";
 </Update>
 
 <Update label="BloodHound" tags={["Fixed Issues"]}>
-  ## API, Auth, and Audit
+  ## API and Authentication
 
-  - {/*BED-8094*/} Resolved an issue where filtering in **API Explorer** only matched endpoint tags and did not reliably include matching API paths.
-  - {/*BED-7931*/} Resolved an issue where **API Explorer** showed an outdated request example for `POST /api/v2/clear-database` that did not include newer OpenGraph delete options.
-  - {/*BED-7761*/} Resolved an issue where users created through SSO and OIDC sign-in did not consistently receive the correct ETAC environment access based on their role claims.
-  - {/*BED-7516*/} Resolved an issue where deleting a client through `DELETE /api/v2/clients/{id}` did not generate expected audit log entries.
+  - {/*BED-8094*/} Resolved an issue where filtering in the **API Explorer** only matched endpoint tags and did not reliably include matching API paths.
+  - {/*BED-7931*/} Resolved an issue where the **API Explorer** showed an outdated request example for [`POST /api/v2/clear-database`](/reference/database/delete-your-bloodhound-data) that did not include newer OpenGraph delete options.
+  - {/*BED-7516*/} Resolved an issue where deleting a client through [`DELETE /api/v2/clients/{id}`](/reference/clients/delete-client) did not generate expected audit log entries.
+  - {/*BED-7761*/} Resolved an issue where users created through SSO and OIDC sign-in did not consistently receive the correct [Environment Targeted Access Control (ETAC)](/manage-bloodhound/auth/environment-targeted-access-control) environment access based on their assigned role.
 
-  ## Ingest and Graph Processing
+  ## Graph Processing
 
-  - {/*BED-8058*/} Resolved an issue where the Neo4j `FetchKinds` path did not return edge kinds, which could cause incomplete kind metadata during graph operations.
-  - {/*BED-8034*/} Resolved an issue where cross-product processing could create unnecessary edges when component sets shared nested members.
-  - {/*BED-8028*/} Resolved an issue where edge deletion by kind could fail against Neo4j backends.
-  - {/*BED-7781*/} Resolved an issue where a single unresolved `property_match` in an ingest payload could cause other valid payload entries to fail in the same submission.
-  - {/*BED-7700*/} Resolved an issue where extension upload upserts used a delete-and-recreate pattern instead of true upsert behavior, causing unnecessary ID sequence churn.
-  - {/*BED-7483*/} Resolved an issue where ingest operations could fail with repeated `Error reading ingest file` failures tied to conflicting upsert behavior.
-  - {/*BED-7463*/} Resolved an issue where concurrent ingest and changelog flush activity could deadlock and interrupt processing.
+  - {/*BED-8028, BED-8058*/} Resolved Neo4j kind-handling issues where relationship types were not included when fetching available kinds from the database and edge deletion by kind could fail against Neo4j backends.
+  - {/*BED-8034*/} Resolved an issue where cross-product analysis could return duplicated results when entities belonged to overlapping groups.
+  - {/*BED-6773*/} Resolved an issue where certain Azure nodes could be misclassified as Active Directory groups based on SID-suffix matching during post-processing.
+  - {/*BED-4754*/} Resolved an issue where [`AZAddOwner`](/resources/edges/az-add-owner) relationships were not created as expected during post-processing.
+  - {/*BED-7936*/} Resolved an issue where histogram metric bucket count calculations for SharpHound data returned per-bucket counts instead of cumulative values.
 
-  ## OpenGraph Data Correctness
+  ## OpenGraph
 
+  - {/*BED-7781*/} Resolved an issue where a single unresolved [`property_matchers`](/opengraph/developer/schema#match-by-property) array in an OpenGraph data payload could cause other valid payload entries to fail in the same file upload.
+  - {/*BED-7700*/} Resolved an issue where OpenGraph extension installation recreated existing extensions and related records instead of performing a true upsert, causing unnecessary ID sequence churn even when no material schema changes were made.
+  - {/*BED-7463, BED-7483*/} Resolved an issue where concurrent ingest and changelog flush activity could deadlock and interrupt processing, causing repeated `Error reading ingest file` failures.
   - {/*BED-7932*/} Resolved an issue where OpenGraph findings did not display severity color because severity values were not returned correctly.
-  - {/*BED-7768*/} Resolved an issue where selecting **All X** options for OpenGraph environment filters did not correctly include all environments for the selected schema.
-  - {/*BED-7762*/} Resolved an issue where object IDs could appear with an appended timestamp in the entity panel after specific OpenGraph node upsert sequences.
+  - {/*BED-7768*/} Resolved an issue where selecting the **All `<environment>`** filter did not correctly include all data scoped to an OpenGraph extension.
+  - {/*BED-7762*/} Resolved an issue where object IDs could appear with an appended timestamp in the **Entity Panel** after specific OpenGraph node upsert sequences.
 
-  ## Analysis and Azure Data Accuracy
+  ## Explore
 
-  - {/*BED-7936*/} Resolved an issue where PreAgg histogram processing did not correctly accumulate smaller buckets into the expected cumulative histogram output.
-  - {/*BED-6773*/} Resolved an issue where certain Azure resources could be misclassified as Active Directory group types based on SID-suffix matching during post-processing.
-  - {/*BED-4754*/} Resolved an issue where `AZAddOwner` relationships were not created as expected in Azure analysis results.
-
-  ## Explore and Cypher
-
-  - {/*BED-7860*/} Resolved an issue where pressing the space bar in the Cypher editor on the **Explore** page could fail to insert spaces as expected.
-  - {/*BED-7939*/} Resolved an issue where long edge-type content in pathfinding filter dialogs could overflow and reduce readability.
-  - {/*BED-7586*/} Resolved an issue where search help text contrast in **Explore** was too low in dark mode.
-  - {/*BED-4761*/} Resolved an issue where selected nodes in **Explore** could not be unselected to return the graph to a clear state.
-  - {/*BED-4495*/} Resolved an issue where arrowheads in **Explore** could become visually misaligned when multiple edges connected the same nodes.
+  - {/*BED-7860*/} Resolved an issue where the space bar keyboard key was unresponsive in the **Cypher Query** editor.
+  - {/*BED-7939*/} Resolved an issue where long edge names in the **Pathfinding Edge Filter** could overlap.
+  - {/*BED-7586*/} Resolved an issue where help text contrast in the **Search** tab was too low in dark mode.
+  - {/*BED-4761*/} Resolved an issue in BloodHound Community Edition where selected nodes could not be unselected to return the graph to a clear state.
+  - {/*BED-4495*/} Resolved an issue where arrowheads in the graph could become visually misaligned when multiple edges connected the same nodes.
 
   ## Navigation and Table Layout
 
-  - {/*BED-7898*/} Resolved an issue where multiple table views had column header alignment inconsistencies.
-  - {/*BED-7904*/} Resolved an issue where the navigation logo could shrink excessively as browser height decreased.
-  - {/*BED-7881*/} Resolved an issue where the navigation area could become non-scrollable at reduced window heights.
-
-  ## Data Collection Connectivity
-
-  - {/*BED-7980*/} Resolved an issue where RC collectors running in Docker could fail to connect due to unsupported user-agent parsing behavior.
+  - {/*BED-7898*/} Resolved an issue where multiple table views had inconsistent column header alignment.
+  - {/*BED-7904*/} Resolved an issue where the BloodHound logo could shrink and eventually disappear as browser height decreased.
+  - {/*BED-7881*/} Resolved an issue where the sidebar navigation area could become non-scrollable at reduced browser heights.
 </Update>
 
 <Update label="AzureHound" tags={["Fixed Issues"]}>
-  ## Collection Reliability and Relationship Accuracy
+  ## Collection Reliability
 
-  - {/*BED-6542*/} Resolved an issue where AzureHound could create incorrect `AZContains` relationships across tenant boundaries.
+  - {/*BED-6542*/} Resolved an issue where AzureHound could create incorrect [`AZContains`](/resources/edges/az-contains) edges across tenant boundaries.
   - {/*BED-4600*/} Resolved an issue where AzureHound jobs could appear to continue running after collection and ingest completed, resulting in inconsistent job state and follow-on failures.
 </Update>
