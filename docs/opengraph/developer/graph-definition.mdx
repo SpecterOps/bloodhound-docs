@@ -12,7 +12,7 @@ import FindingsAndMetrics from '/snippets/opengraph/extensions/findings-requirem
   alt="Applies to BloodHound Enterprise and Community Edition"
 />
 
-An extension definition schema tells BloodHound how to structure extension-specific [data payloads](/opengraph/developer/graph-data). Use it when you want your extension to produce a <Tooltip tip="A graph generated from a data payload that also conforms to an installed extension definition schema." cta="Learn more" href="/opengraph/overview#structured-graphs">structured graph</Tooltip> and enable advanced analysis features in BloodHound.
+An extension definition schema tells BloodHound how to interpret, interact with, and represent extension-specific [data payloads](/opengraph/developer/graph-data). Use it when you want your extension to produce a <Tooltip tip="A graph generated from a data payload that also conforms to an installed extension definition schema." cta="Learn more" href="/opengraph/overview#structured-graphs">structured graph</Tooltip> and enable advanced analysis features in BloodHound.
 
 <Tip>
   If you only need <Tooltip tip="A graph generated from a data payload that conforms to the minimum JSON schema only." cta="Learn more" href="/opengraph/overview#generic-graphs">generic graph</Tooltip> support, upload a valid OpenGraph data payload and skip this page.
@@ -20,7 +20,7 @@ An extension definition schema tells BloodHound how to structure extension-speci
 
 An extension definition schema is a JSON file that OpenGraph extension developers provide for BloodHound users to install on the [OpenGraph Management](/opengraph/extensions/manage) page before they upload data payloads that conform to the schema.
 
-The definitions in the schema are applied to compatible data payloads during ingestion to produce a structured graph.
+This page describes the components of an extension definition schema. For a full example of how these components work together, see the [example schema](/opengraph/developer/graph-definition#example-schema) section at the end of the page.
 
 ```json
 {
@@ -36,30 +36,36 @@ The definitions in the schema are applied to compatible data payloads during ing
   Extension metadata identifying the extension, including version and namespace.
 </ResponseField>
 <ResponseField name="node_kinds" type="array" required>
-  Defines custom node types for extension-specific data payloads and their visual configurations.
+  Defines custom node types and their visual representations for an extension.
 </ResponseField>
 <ResponseField name="relationship_kinds" type="array" required>
-  Defines custom edge types for extension-specific data payloads and their traversability behavior.
+  Defines custom edge types and their traversability behavior for an extension.
 </ResponseField>
 <ResponseField name="environments" type="array">
-  Defines system-level data sources and principal kinds for extension-specific data payloads. Required for findings and metrics in BloodHound Enterprise.
+  Defines the environments for a platform and identifies which node kinds an extension treats as principals within each environment.
+  
+  BloodHound Enterprise uses these environment definitions to group analysis, findings, and metrics.
 </ResponseField>
 <ResponseField name="relationship_findings" type="array">
-  Defines findings and remediation guidance that map relationship kinds to analysis output in a target environment.
+  Defines the findings and remediation guidance BloodHound Enterprise uses when relationships of the specified kind represent potential Attack Paths in a target environment (based on Privilege Zone rules).
 </ResponseField>
 
-## Names and namespaces
+## Namespacing
 
-All `name` fields (except the `schema.name` field) must follow namespacing rules to avoid conflicts with other extensions and built-in graph elements. This doesn't apply to `display_name` fields, which are for human readability only.
+BloodHound uses namespaces to organize graph data. Each extension has a namespace key, which is used as a prefix in relevant `name` fields to indicate that the data belongs to that namespace. Namespacing allows multiple extensions to define similar graph data without conflicts, because the namespace prefix makes each name unique.
 
-<Warning>
-  - If names are not unique or properly namespaced, schema uploads fail validation.
-  - `TAG` is a reserved namespace prefix for Privilege Zones and cannot be used.
-</Warning>
+With the exception of `schema.name`, all `name` fields must follow these namespacing rules to avoid collisions with built-in graph elements and other extensions. This does not apply to `display_name` fields, which are used only for human-readable labels.
 
 - Must be unique within the extension
 - Must be prefixed with your namespace separated by an underscore (for example, `namespace_Name`)
 - Must include more than just the namespace
+
+Although the `schema.name` field does not use a namespace prefix, it must still be unique for each extension. BloodHound treats extensions with matching `schema.name` fields as the same extension and overwrites existing extension definition schemas when uploaded.
+
+<Warning>
+  - If names are not unique or properly namespaced, schema uploads fail validation.
+  - `TAG` is a reserved namespace prefix and cannot be used.
+</Warning>
 
 ## Findings and metrics
 
@@ -88,7 +94,7 @@ Defines metadata about the extension itself.
 ```
 
 <ResponseField name="name" type="string" required>
-  Unique name used by BloodHound to associate ingested data with this schema.
+  Unique name that identifies an extension in BloodHound.
 </ResponseField>
 <ResponseField name="display_name" type="string" required>
   Human-readable label shown for this extension in BloodHound.
@@ -97,13 +103,13 @@ Defines metadata about the extension itself.
   Extension schema version in semantic version format, for example `v1.0.0`.
 </ResponseField>
 <ResponseField name="namespace" type="string" required>
-  Prefix used for all extension-defined `node_kinds`, `relationship_kinds`, and `relationship_findings` names.
+  Namespace key used as a prefix for all `name` fields in the `node_kinds`, `relationship_kinds`, and `relationship_findings` arrays to indicate that the data belongs to that namespace.
 </ResponseField>
 
 
 ## `node_kinds`
 
-Defines all node types in your graph. Each node kind represents an entity type (for example: user, device, or environment).
+Defines all node types in your extension. Each node kind represents an entity type (for example: user, device, or environment).
 
 ```json
 [
@@ -119,7 +125,7 @@ Defines all node types in your graph. Each node kind represents an entity type (
 ```
 
 <ResponseField name="name" type="string" required>
-  Unique node kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules and match the `kinds` field in node data payloads.
+  Unique node kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules. Nodes in the data payload must match at least one of the `kinds` defined here.
 
   The node schema for an environment must be defined here to be used for findings and metrics in BloodHound Enterprise.
 </ResponseField>
@@ -130,7 +136,7 @@ Defines all node types in your graph. Each node kind represents an entity type (
   Optional description that explains what the node kind represents.
 </ResponseField>
 <ResponseField name="is_display_kind" type="boolean">
-  Indicates whether this node kind should be treated as a displayable kind in BloodHound.
+  Determines whether to use the `icon` and `color` definitions for nodes of this kind in the graph.
 </ResponseField>
 <ResponseField name="icon" type="string">
   Optional Font Awesome [icon name](https://fontawesome.com/search?s=solid) (without the "fa-" prefix) to show for nodes of this kind in the graph.
@@ -141,7 +147,7 @@ Defines all node types in your graph. Each node kind represents an entity type (
 
 ## `relationship_kinds`
 
-Defines how nodes can be connected. Each relationship kind represents a specific type of connection between nodes.
+Defines what kind of connections exist. Each relationship kind represents a specific type of connection that can exist between nodes.
 
 ```json
 [
@@ -154,20 +160,27 @@ Defines how nodes can be connected. Each relationship kind represents a specific
 ```
 
 <ResponseField name="name" type="string" required>
-  Unique relationship kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules and match the `kinds` field in edge data payloads.
+  Unique relationship kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules. Edges in the data payload must match at least one of the `kinds` defined here.
 </ResponseField>
 <ResponseField name="description" type="string">
   Optional description of what the relationship means.
 </ResponseField>
 <ResponseField name="is_traversable" type="boolean">
-  Controls whether edges of this relationship kind are used in pathfinding and analysis.
+  Controls whether edges of this relationship kind are used for pathfinding and Attack Path detection.
 
-  When `is_traversable` is set on a relationship kind, all edges of that kind inherit the same traversability behavior. Only <Tooltip tip="Represents a relationship where the starting node can take control of the ending node to a degree that lets an attacker abuse the ending node's outgoing edges" cta="Learn more" href="/resources/edges/traversable-edges">traversable edges</Tooltip> are included in pathfinding and considered for findings and metrics.
+  When `is_traversable` is set to `true` on a relationship kind, all edges of that kind inherit the same traversability behavior. Only <Tooltip tip="Represents a relationship where the starting node can take control of the ending node to a degree that lets an attacker abuse the ending node's outgoing edges" cta="Learn more" href="/resources/edges/traversable-edges">traversable edges</Tooltip> are included in pathfinding and considered for findings and metrics.
 </ResponseField>
 
 ## `environments`
 
-Defines analysis boundaries and data sources. Each environment represents a system with its own set of <Tooltip tip="A type of object that can authenticate and be assigned permissions within an environment.">principals</Tooltip> and relationships that can be analyzed for findings and metrics in BloodHound Enterprise.
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ "width":"20%" }}
+/>
+
+Environments are platform-specific groupings of nodes that BloodHound Enterprise uses to scope findings and metrics. Each environment definition specifies which node kinds represent <Tooltip tip="A type of object that can authenticate and be assigned permissions within an environment.">principals</Tooltip> within each environment.
 
 ```json
 [
@@ -185,27 +198,36 @@ Defines analysis boundaries and data sources. Each environment represents a syst
 ```
 
 <ResponseField name="environment_kind" type="string" required>
-  Node kind that represents the environment boundary for analysis. Must match an environment node kind defined in `node_kinds.name`.
+  Represents which node type within the extension is considered an environment for organizational and analytics purposes. Must match a node kind defined in the `node_kinds` array.
 
-  For findings and metrics in BloodHound Enterprise, the [`graph.nodes.properties.environmentid`](/opengraph/developer/nodes#param-properties-environmentid) fields in the data payload must match this field.
+  For findings and metrics in BloodHound Enterprise, the [`graph.nodes.properties.environmentid`](/opengraph/developer/nodes#param-properties-environmentid) field for applicable nodes in the data payload must match this field.
 </ResponseField>
 <ResponseField name="source_kind" type="string" required>
-  Source kind used to associate ingested data with this environment.
+  Source kind that associates this environment definition with a specific platform for environment organization and selection.
 
-  For findings and metrics in BloodHound Enterprise, nodes in this environment must include a `source_kind` that matches this field. This value can be applied payload-wide with [`metadata.source_kind`](/opengraph/developer/metadata#param-source-kind) or manually in the [`node_kinds`](/opengraph/developer/nodes#param-kinds) array in the data payload.
+  For findings and metrics in BloodHound Enterprise, nodes in this environment must include a `source_kind`. This value can be applied payload-wide with [`metadata.source_kind`](/opengraph/developer/metadata#param-source-kind) or manually in the [`node_kinds`](/opengraph/developer/nodes#param-kinds) array in the data payload.
 </ResponseField>
 <ResponseField name="principal_kinds" type="array" required>
-  Node kinds that BloodHound should treat as principals within the environment. Must match `node_kinds.name` defined in this schema.
+  Node kinds defined by this extension/schema that BloodHound should treat as principals. Must match a `node_kinds.name` defined in this schema.
+
+  BloodHound Enterprise incorporates these node kinds in findings and metrics.
 </ResponseField>
 
 ## `relationship_findings`
 
-Defines <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> based on relationships. Each finding represents a specific combination of environment and relationship kinds that BloodHound Enterprise should evaluate for high-risk conditions and provide remediation guidance.
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ "width":"20%" }}
+/>
 
-Extensions that define findings and remediations work in both Community and Enterprise, but findings are visible in Enterprise only.
+Defines <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> based on relationships. Each finding represents a single instance of an <Tooltip tip="a chain of abusable privileges and user behaviors that creates direct or indirect connections between principals." cta="Learn more" href="/analyze-data/findings/attack-paths#attack-paths">Attack Path</Tooltip>. BloodHound Enterprise identifies instances of a traversable edge targeting a node of higher privilege (violating a Privilege Zone boundary), analyzes the risk, and provides remediation guidance.
 
 <Tip>
-  If a finding name would match its associated relationship kind, include `Finding` in the name to distinguish them.
+  **Best practice**
+
+  If a finding `name` would match its associated `relationship_kind`, include `Finding` in the name to distinguish them.
   
   For example:
 
@@ -231,7 +253,7 @@ Extensions that define findings and remediations work in both Community and Ente
 ```
 
 <ResponseField name="name" type="string" required>
-  Unique finding identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules.
+  Unique finding identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules and be unique across all schema definition names, including node kinds, relationship kinds, and findings.
 </ResponseField>
 <ResponseField name="display_name" type="string">
   Human-readable label shown for this finding in BloodHound.
@@ -240,22 +262,22 @@ Extensions that define findings and remediations work in both Community and Ente
   Environment kind where this finding should be evaluated. Must match an `environments.environment_kind` and `node_kinds.name` defined in this schema.
 </ResponseField>
 <ResponseField name="relationship_kind" type="string" required>
-  Relationship kind that triggers this finding when matching edges are present. Must match a `relationship_kinds.name` defined in this schema.
+  Relationship kind that contributes to this finding when matching edges are present and the edge crosses a Privilege Zone boundary. Must match a `relationship_kinds.name` defined in this schema.
 </ResponseField>
 <ResponseField name="remediation" type="object">
-  Remediation guidance to resolve the finding, including both short and long descriptions.
+  Remediation guidance to resolve the finding, including both short and long forms.
 </ResponseField>
 <ResponseField name="remediation.short_description" type="string">
   A concise summary of the recommended remediation action.
 </ResponseField>
 <ResponseField name="remediation.long_description" type="string">
-  A detailed explanation of the remediation, which can include formatting such as markdown for better readability.
+  A detailed explanation of the finding and its cause, which can include Markdown formatting for better readability.
 </ResponseField>
 <ResponseField name="remediation.short_remediation" type="string">
   A concise summary of the steps to remediate the finding.
 </ResponseField>
 <ResponseField name="remediation.long_remediation" type="string">
-  A detailed, step-by-step guide to remediate the finding, which can include formatting such as markdown for better readability.
+  A detailed, step-by-step guide to remediate the finding, which can include Markdown formatting for better readability.
 </ResponseField>
 
 ## Example schema
