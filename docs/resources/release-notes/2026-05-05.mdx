@@ -14,8 +14,8 @@ sidebarTitle: "2026-05-05"
 </Tip>
 
 <Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
-  {/*BED-7813*/}
   ## Database Management
+  {/*BED-7813*/}
 
   Manage graph cleanup tasks more predictably from the **Database Management** page.
 
@@ -26,30 +26,9 @@ sidebarTitle: "2026-05-05"
   </Frame>
 </Update>
 
-<Update label="BloodHound" description="Enhancement" tags={["Data Ingestion"]}>
-  {/*BED-8131*/}
-  {/*BED-8098*/}
-  {/*BED-8097*/}
-  ## Ingest and Post-Processing
-
-  Process large datasets with faster traversal paths and less <Tooltip tip="A phase of analysis in which BloodHound models structural aspects that are inherent to a given system but are not directly collected as data." cta="Learn more" href="/analyze-data/findings/analysis#post-processing">post-processing</Tooltip> churn.
-
-  This release optimizes graph index coverage for common traversal paths and introduces "delta-change apply" behavior for some post-processed edges.
-  
-  As a result, BloodHound now updates the following edges only when they have changed, instead of deleting and recreating them in full during each post-processing run:
-
-  - [`Owns`](/resources/edges/owns)
-  - [`WriteOwner`](/resources/edges/write-owner)
-  - [`AZMGAddMember`](/resources/edges/az-mg-add-member)
-  - [`AZMGAddOwner`](/resources/edges/az-mg-add-owner)
-  - [`AZMGAddSecret`](/resources/edges/az-mg-add-secret)
-  - [`AZMGGrantAppRoles`](/resources/edges/az-mg-grant-app-roles)
-  - [`AZMGGrantRole`](/resources/edges/az-mg-grant-role)
-</Update>
-
 <Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
-  {/*BED-7540*/}
   ## Cypher Query Results
+  {/*BED-7540*/}
 
   Work through Cypher query results with panel behavior that adapts to the number of returned nodes.
 
@@ -61,16 +40,16 @@ sidebarTitle: "2026-05-05"
     <img src="/images/release_notes/9_1_0/query-result-behavior.gif" alt="Animated GIF showing updated behavior when a query returns multiple nodes" />
   </Frame>
 
-  {/*BED-7541*/}
   ## Subcategories for Saved Queries
+  {/*BED-7541*/}
   
   Scroll through **Saved Queries** with clearer subcategories and less repeated labeling.
   <Frame>
     <img src="/images/release_notes/9_1_0/saved-queries-subcategories.gif" alt="Animated GIF showing new subcategories for saved queries" />
   </Frame>
 
-  {/*BED-7537*/}
   ## Entity Panel Controls
+  {/*BED-7537*/}
   
   The **Entity Panel** now has collapse controls on the left and close controls on the right for more intuitive interaction and to reduce accidental panel closures.
 
@@ -80,24 +59,50 @@ sidebarTitle: "2026-05-05"
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
-  {/*BED-7783*/}
   ## Custom Icons
+  {/*BED-7783*/}
 
   Designate the default icon and color for nodes matching a given kind in an OpenGraph data payload.
 
   BloodHound now uses the `"is_display_kind": true` field in an extension definition schema's `node_kinds` array to determine which icon and color to apply to matching nodes in the graph.
 
-  {/*BED-7501*/}
   ## Extension Management API
+  {/*BED-7501*/}
 
   Manage OpenGraph extensions with more granular read and write permissions.
 
   Extension management now provides separate permissions for extension schema administration and related data access:
 
+  - Users with the Power User, Auditor, User, and Read-only roles can view installed extensions, including associated findings and edges.
   - Only users with the Administrator role can upload or delete extension definition schemas. The **Upload** and **Delete** extension buttons are disabled for all other roles.
-  - Users with the Power User, Auditor, User, and Read-only roles can view installed extensions, findings, and edges.
 
-  See [User Role Definitions](/manage-bloodhound/auth/users-and-roles#user-role-definitions) for a full breakdown of permissions.
+  <Note>
+    See [User Role Definitions](/manage-bloodhound/auth/users-and-roles#user-role-definitions) for a full breakdown of OpenGraph extension permissions.
+  </Note>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Post-Processing"]}>
+  ## Optimized Graph Indices
+  {/*BED-8131*/}
+  
+  Graph query and path lookup operations are faster in this release due to improved index coverage on edge data.
+  
+  BloodHound now uses optimized graph indices that cover the columns most frequently accessed during traversals, reducing the need for additional row lookups.
+  
+  ## Incremental Edge Updates
+  {/*BED-8098, BED-8097*/}
+
+  <Tooltip tip="A phase of analysis in which BloodHound models structural aspects that are inherent to a given system but are not directly collected as data." cta="Learn more" href="/analyze-data/findings/analysis#post-processing">Post-processing</Tooltip> runs faster and more efficiently for several edge types in this release.
+
+  BloodHound now updates the following edges incrementally—only writing changes when edges are added or removed—instead of deleting and recreating all edges of each type during every post-processing run:
+
+  - [`Owns`](/resources/edges/owns)
+  - [`WriteOwner`](/resources/edges/write-owner)
+  - [`AZMGAddMember`](/resources/edges/az-mg-add-member)
+  - [`AZMGAddOwner`](/resources/edges/az-mg-add-owner)
+  - [`AZMGAddSecret`](/resources/edges/az-mg-add-secret)
+  - [`AZMGGrantAppRoles`](/resources/edges/az-mg-grant-app-roles)
+  - [`AZMGGrantRole`](/resources/edges/az-mg-grant-role)
 </Update>
 
 <Update label="BloodHound" tags={["Fixed Issues"]}>
