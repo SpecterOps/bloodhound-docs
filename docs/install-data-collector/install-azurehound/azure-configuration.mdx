@@ -239,10 +239,10 @@ _Note: If you do not have any management groups, you may either create your Tena
 
 ## Scripted configuration
 
-As an alternative to the manual steps described in this document, you can use **PowerShell** to achieve the same.
-Below is a sample PowerShell script that performs all the required steps,
-with the exception of uploading the authentication certificate. After running this script,
-follow the [Add application authentication certificate](#add-application-authentication-certificate) section to complete the setup.
+As an alternative to the manual steps described in this document, you can use **PowerShell** to automate the entire configuration process.
+The script below registers AzureHound in Entra ID, creates the least-privilege Azure Reader role, and assigns it to the service principal.
+The script is **idempotent**—it safely handles re-runs by detecting existing resources and updating them as needed, preventing duplicate role definitions or assignments.
+After running this script, follow the [Add application authentication certificate](#add-application-authentication-certificate) section to complete the setup.
 
 ```powershell
 <#
@@ -252,8 +252,10 @@ as an application in Entra ID.
 
 .DESCRIPTION
 This script registers the Azure Data Exporter for BloodHound Enterprise (AzureHound)
-as an on-prem application in Microsoft Entra ID and Azure,
-including all the necessary read permissions.
+as an application in Microsoft Entra ID and Azure, including all necessary read permissions
+and a least-privilege custom Azure Reader role. The script is idempotent: on subsequent runs,
+it detects existing role definitions and assignments, updates them if needed, and skips creation
+to prevent duplicates.
 
 The required PowerShell modules can be installed
 from the PowerShell Gallery using the following command:
@@ -466,18 +468,42 @@ $flatRole | ConvertTo-Json -Depth 10 | Set-Content -Path $flatRolePath
 
 # Create the custom AzureHound Reader role
 try {
-    [Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleDefinition] $azureHoundReaderRole =
-        New-AzRoleDefinition -InputFile $flatRolePath
+    $existingRole = Get-AzRoleDefinition -Name 'AzureHound Reader' -ErrorAction SilentlyContinue
+    
+    if ($existingRole) {
+        $existingRole.Actions = $flatRole.Actions
+        $existingRole.NotActions = $flatRole.NotActions
+        $existingRole.DataActions = $flatRole.DataActions
+        $existingRole.NotDataActions = $flatRole.NotDataActions
+        $existingRole.Description = $flatRole.Description
+        $existingRole.AssignableScopes = $flatRole.AssignableScopes
+        [Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleDefinition] $azureHoundReaderRole =
+            Set-AzRoleDefinition -Role $existingRole
+    }
+    else {
+        [Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleDefinition] $azureHoundReaderRole =
+            New-AzRoleDefinition -InputFile $flatRolePath
+    }
 }
 finally {
     Remove-Item -Path $flatRolePath
 }
 
 # Assign the AzureHound Reader role at the Tenant Root Group
-[Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleAssignment] $readerRoleAssignment =
-    New-AzRoleAssignment -ObjectId $servicePrincipal.Id `
-                         -Scope $rootManagementGroup.Id `
-                         -RoleDefinitionId $azureHoundReaderRole.Id
+$existingAssignment = Get-AzRoleAssignment -ObjectId $servicePrincipal.Id `
+                                           -Scope $rootManagementGroup.Id `
+                                           -RoleDefinitionId $azureHoundReaderRole.Id `
+                                           -ErrorAction SilentlyContinue
+
+if ($existingAssignment) {
+    [Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleAssignment] $readerRoleAssignment = $existingAssignment
+}
+else {
+    [Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleAssignment] $readerRoleAssignment =
+        New-AzRoleAssignment -ObjectId $servicePrincipal.Id `
+                             -Scope $rootManagementGroup.Id `
+                             -RoleDefinitionId $azureHoundReaderRole.Id
+}
 
 # Sign out from Azure Resource Manager
 Disconnect-AzAccount -Scope Process
