@@ -3,9 +3,11 @@ title: AzureHound Enterprise Azure Configuration
 description: "This section details creating and configuring an Enterprise Application for AzureHound within Microsoft Entra ID, including API permissions, roles, and authentication certificate."
 ---
 
+import EntraIdPermissions from '/snippets/hounds/azurehound-entra-id-permissions.mdx';
+
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-<Info>You can complete the steps on this page manually using the sections below, or use the PowerShell script at the [Scripted Configuration](#scripted-configuration) section to automate the entire process (except certificate upload).</Info>
+<Info>You can complete the steps on this page manually following the instructions below, or use the PowerShell script at the [Scripted Configuration](#scripted-configuration) section to automate the entire process (except certificate upload).</Info>
 
 ## Create the AzureHound Enterprise app
 1.  Log into the [Microsoft Entra admin center](https://entra.microsoft.com/) as a user with the [Global Administrator] role,
@@ -67,7 +69,9 @@ description: "This section details creating and configuring an Enterprise Applic
       <img src="/assets/image-109.png" alt=""/>
     </Frame>
 
-6.  Search for all MS Graph permissions described in [AzureHound Data and Permissions: Entra ID](/collect-data/azurehound-data-permissions#entra-id) and check the box next to them.
+6.  Search for and check the box next to each of the following Microsoft Graph **application** permissions. See [AzureHound Data and Permissions: Entra ID](/collect-data/azurehound-data-permissions#entra-id) for details on the least-privilege approach:
+
+<EntraIdPermissions />
 
 7.  In the bottom of the window, select **Add permissions**.
     <Frame>
@@ -364,11 +368,16 @@ Update-MgApplication `
 )
 
 # Resolve each permission name to its AppRole definition
-[hashtable[]] $resourceAccess = $requiredPermissions | ForEach-Object {
+[Microsoft.Graph.PowerShell.Models.IMicrosoftGraphAppRole[]] $appRoles = $requiredPermissions | ForEach-Object {
     [Microsoft.Graph.PowerShell.Models.IMicrosoftGraphAppRole] $role =
-        $microsoftGraph.AppRoles | Where-Object Value -eq $_
-    if (-not $role) { throw "Permission '$_' not found in Microsoft Graph app roles" }
-    @{ id = $role.Id; type = 'Role' }
+        $microsoftGraph.AppRoles | Where-Object Value -eq $PSItem
+    if (-not $role) { throw "Permission '$PSItem' not found in Microsoft Graph app roles" }
+    $role
+}
+
+# Transform the app roles to the format required by Update-MgApplication
+[hashtable[]] $resourceAccess = $appRoles | ForEach-Object {
+    @{ id = $PSItem.Id; type = 'Role' }
 }
 
 # Delegate the required API permissions
@@ -420,21 +429,41 @@ Update-AzConfig -EnableLoginByWam $false
 # Authenticate against Azure Resource Manager
 Connect-AzAccount -Environment AzureCloud -Scope Process
 
-# Download the AzureHound Reader custom role definition
-[string] $roleDefinitionUrl =
-  'https://bloodhound.specterops.io/assets/azurehound-reader-role.json'
-[string] $tempRolePath = New-TemporaryFile
-
-try {
-    Invoke-WebRequest -Uri $roleDefinitionUrl `
-                      -OutFile $tempRolePath `
-                      -UseBasicParsing `
-                      -ErrorAction Stop
+# Load the AzureHound Reader custom role definition
+[string] $roleDefinitionJson = @'
+{
+    "properties": {
+        "roleName": "AzureHound Reader",
+        "description": "Least-privilege read-only role for AzureHound data collection from Azure Resource Manager.",
+        "assignableScopes": [
+            "/providers/Microsoft.Management/managementGroups/<tenantRootGroupId>"
+        ],
+        "permissions": [
+            {
+                "actions": [
+                    "Microsoft.Resources/subscriptions/resourceGroups/read",
+                    "Microsoft.Authorization/roleAssignments/read",
+                    "Microsoft.Management/managementGroups/read",
+                    "Microsoft.Management/managementGroups/descendants/read",
+                    "Microsoft.Compute/virtualMachines/read",
+                    "Microsoft.Compute/virtualMachineScaleSets/read",
+                    "Microsoft.KeyVault/vaults/read",
+                    "Microsoft.Web/sites/read",
+                    "Microsoft.ContainerRegistry/registries/read",
+                    "Microsoft.ContainerService/managedClusters/read",
+                    "Microsoft.Automation/automationAccounts/read",
+                    "Microsoft.Logic/workflows/read",
+                    "Microsoft.Storage/storageAccounts/read",
+                    "Microsoft.Storage/storageAccounts/blobServices/containers/read"
+                ],
+                "notActions": [],
+                "dataActions": [],
+                "notDataActions": []
+            }
+        ]
+    }
 }
-catch {
-    Write-Error "Failed to download the AzureHound Reader role definition from $roleDefinitionUrl — $_"
-    exit 1
-}
+'@
 
 if (-not (Test-Path -Path 'variable:servicePrincipal')) {
     # Fetch the service principal if the Azure part of the script is executed independently
@@ -449,8 +478,7 @@ if (-not (Test-Path -Path 'variable:servicePrincipal')) {
 
 # New-AzRoleDefinition expects a flat structure, not the nested `properties` wrapper
 # used by the ARM portal upload format, so we must flatten it before passing it in.
-$roleDefinition = Get-Content -Path $tempRolePath -Raw | ConvertFrom-Json
-Remove-Item -Path $tempRolePath
+[PSCustomObject] $roleDefinition = $roleDefinitionJson | ConvertFrom-Json
 
 $flatRole = [PSCustomObject]@{
     Name             = $roleDefinition.properties.roleName
@@ -490,13 +518,13 @@ finally {
 }
 
 # Assign the AzureHound Reader role at the Tenant Root Group
-$existingAssignment = Get-AzRoleAssignment -ObjectId $servicePrincipal.Id `
-                                           -Scope $rootManagementGroup.Id `
-                                           -RoleDefinitionId $azureHoundReaderRole.Id `
-                                           -ErrorAction SilentlyContinue
+$existingRoleAssignment = Get-AzRoleAssignment -ObjectId $servicePrincipal.Id `
+                                               -Scope $rootManagementGroup.Id `
+                                               -RoleDefinitionId $azureHoundReaderRole.Id `
+                                               -ErrorAction SilentlyContinue
 
-if ($existingAssignment) {
-    [Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleAssignment] $readerRoleAssignment = $existingAssignment
+if ($null -ne $existingRoleAssignment) {
+    [Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleAssignment] $readerRoleAssignment = $existingRoleAssignment
 }
 else {
     [Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleAssignment] $readerRoleAssignment =
