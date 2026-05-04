@@ -1,0 +1,51 @@
+---
+title: Overview
+description: Learn about the SpecterOps-supported OpenHound GitHub collector for BloodHound.
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+The OpenHound GitHub collector is the SpecterOps-supported tool for retrieving GitHub organization data for BloodHound.
+
+If you are evaluating collector options for the GitHub extension, this is the recommended path. An alternative collector, [GitHound](https://github.com/SpecterOps/GitHound), also exists, but this documentation section focuses specifically on the OpenHound-based collector.
+
+## Data Collection & Privacy
+
+The GitHub collector is an open-source, read-only data collector. It requests only **read-only** permissions and never modifies your GitHub organization, repositories, or settings.
+
+### What the GitHub collector collects
+
+- Organization metadata and custom roles
+- User accounts, team memberships, and SAML/SSO identities
+- Repository details, branch protection rules, and repository roles
+- GitHub Actions workflow YAML files (for trigger and permission analysis)
+- Deployment environments and branch policies
+- Organization and repository-level secrets and variables metadata
+- Secret scanning alerts
+- GitHub App installations and personal access token (PAT) grants
+
+### What the GitHub collector does not collect
+
+- Source code content (except GitHub Actions workflow YAML files)
+- Secret values or credentials
+
+### Data storage
+
+All collected data is stored **locally** on the machine running the GitHub collector, in JSON files written to the working directory. The GitHub collector communicates solely with the GitHub API using the credentials you provide — no data is sent to any other external service.
+
+Authentication credentials are held in memory only during collection and are never written to disk. Output files persist on your local filesystem until you delete them.
+
+## Authentication Options
+
+The OpenHound GitHub collector supports two authentication methods:
+
+- [GitHub App installation](/openhound/collectors/github/configure-app): Recommended for larger organizations because it offers higher rate limits.
+- [Fine-grained Personal Access Token](/openhound/collectors/github/configure-pat): Simpler to set up for smaller environments and testing.
+
+Both methods require read-only permissions. See [Configure the Collector](/openhound/collectors/github/collect-data) for the required permission set and runtime configuration.
+
+## Next Steps
+
+- Review [Configure the Collector](/openhound/collectors/github/collect-data)
+- Choose an authentication method: [GitHub App](/openhound/collectors/github/configure-app) or [Fine-grained PAT](/openhound/collectors/github/configure-pat)
+- Import the resulting data with the [GitHub OpenGraph extension](/opengraph/extensions/github/getting-started)
