@@ -7,7 +7,7 @@ import EntraIdPermissions from '/snippets/hounds/azurehound-entra-id-permissions
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-<Info>You can complete the steps on this page manually following the instructions below, or use the PowerShell script at the [Scripted Configuration](#scripted-configuration) section to automate the entire process (except certificate upload).</Info>
+<Info>You can complete the steps on this page manually following the instructions below, or use the PowerShell script in the [Scripted Configuration](#scripted-configuration) section to automate the entire process (except certificate upload).</Info>
 
 ## Create the AzureHound Enterprise app
 1.  Log into the [Microsoft Entra admin center](https://entra.microsoft.com/) as a user with the [Global Administrator] role,
@@ -71,7 +71,7 @@ import EntraIdPermissions from '/snippets/hounds/azurehound-entra-id-permissions
 
 6.  Search for and check the box next to each of the following Microsoft Graph **application** permissions. See [AzureHound Data and Permissions: Entra ID](/collect-data/azurehound-data-permissions#entra-id) for details on the least-privilege approach:
 
-<EntraIdPermissions />
+    <EntraIdPermissions />
 
 7.  In the bottom of the window, select **Add permissions**.
     <Frame>
@@ -89,9 +89,9 @@ import EntraIdPermissions from '/snippets/hounds/azurehound-entra-id-permissions
     </Frame>
 
 10.  After being redirected to API Permissions again, you should see the **Status** column listing all permissions as **Granted**.
-    <Frame>
-      <img src="/assets/azurehound-install-consent-granted.png" alt=""/>
-    </Frame>
+     <Frame>
+       <img src="/assets/azurehound-install-consent-granted.png" alt=""/>
+     </Frame>
 
 11. Continue to the next section: "Add application authentication certificate".
 
@@ -156,7 +156,11 @@ _Note: All steps in this section are optional and do not affect the functionalit
 
 ## Create and assign custom AzureHound Reader role in Azure Resource Manager
 
-_Note: If you do not have any management groups, you may either create your Tenant Root Group following the prompts in the middle of the screen to ensure future visibility if another administrator begins use of subscriptions, or you may skip this section altogether. If you skip this section, you will see a warning in the logs for each collection indicating the lack of ability to collect this data accordingly._
+<Note>
+  If you don't have any management groups, you can skip this section. However, AzureHound will log a warning during each collection indicating it cannot collect management group data.
+
+  Alternatively, you can create your Tenant Root Group by following the prompts in the Azure portal. This ensures visibility if another administrator begins using subscriptions in the future.
+</Note>
 
 1.  Log into the [Azure portal](https://portal.azure.com/) as a user with the [User Access Administrator](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/privileged#user-access-administrator) role.
 
@@ -203,39 +207,39 @@ _Note: If you do not have any management groups, you may either create your Tena
     </Frame>
 
 10.  Search for the **AzureHound Reader** role and select it.
-    <Frame>
-      <img src="/assets/arm-select-azurehound-reader-role.png" alt=""/>
-    </Frame>
+     <Frame>
+       <img src="/assets/arm-select-azurehound-reader-role.png" alt=""/>
+     </Frame>
 
 11.  Click **Members**.
-    <Frame>
-      <img src="/assets/image-130.png" alt=""/>
-    </Frame>
+     <Frame>
+       <img src="/assets/image-130.png" alt=""/>
+     </Frame>
 
 12.  Click **Select members**.
-    <Frame>
-      <img src="/assets/image-131.png" alt=""/>
-    </Frame>
+     <Frame>
+       <img src="/assets/image-131.png" alt=""/>
+     </Frame>
 
 13.  Search for and click on your previously created service principal.
-    <Frame>
-      <img src="/assets/image-132.png" alt=""/>
-    </Frame>
+     <Frame>
+       <img src="/assets/image-132.png" alt=""/>
+     </Frame>
 
 14. Validate the principal selected, then click **Select**.
-    <Frame>
-      <img src="/assets/image-133.png" alt=""/>
-    </Frame>
+     <Frame>
+       <img src="/assets/image-133.png" alt=""/>
+     </Frame>
 
 15. Click the tab **Review + Assign**.
-    <Frame>
-      <img src="/assets/image-134.png" alt=""/>
-    </Frame>
+     <Frame>
+       <img src="/assets/image-134.png" alt=""/>
+     </Frame>
 
 16. Click **Review + Assign** at the bottom of the page.
-    <Frame>
-      <img src="/assets/image-135.png" alt=""/>
-    </Frame>
+     <Frame>
+       <img src="/assets/image-135.png" alt=""/>
+     </Frame>
 
 17. Confirm the role is present by refreshing this view. You may need to alter the filter to see this role.
 
@@ -244,11 +248,14 @@ _Note: If you do not have any management groups, you may either create your Tena
 ## Scripted configuration
 
 As an alternative to the manual steps described in this document, you can use **PowerShell** to automate the entire configuration process.
+
 The script below registers AzureHound in Entra ID, creates the least-privilege Azure Reader role, and assigns it to the service principal.
 The script is **idempotent**—it safely handles re-runs by detecting existing resources and updating them as needed, preventing duplicate role definitions or assignments.
-After running this script, follow the [Add application authentication certificate](#add-application-authentication-certificate) section to complete the setup.
 
-```powershell
+<Note>
+  After running this script, follow the [Add application authentication certificate](#add-application-authentication-certificate) section to complete the setup.
+</Note>
+
 <#
 .SYNOPSIS
 Registers the Azure Data Exporter for BloodHound Enterprise (AzureHound)
