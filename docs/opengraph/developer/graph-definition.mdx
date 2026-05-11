@@ -57,8 +57,8 @@ BloodHound uses namespaces to organize graph data. Each extension has a namespac
 With the exception of `schema.name`, all `name` fields must follow these namespacing rules to avoid collisions with built-in graph elements and other extensions. This does not apply to `display_name` fields, which are used only for human-readable labels.
 
 - Must be unique within the extension
-- Must be prefixed with your namespace separated by an underscore (for example, `namespace_Name`)
-- Must include more than just the namespace
+- Must be prefixed with the extension's namespace separated by an underscore (for example, `namespace_Name`)
+- Must include more than just the namespace prefix
 
 Although the `schema.name` field does not use a namespace prefix, it must still be unique for each extension. BloodHound treats extensions with matching `schema.name` fields as the same extension and overwrites existing extension definition schemas when uploaded.
 
@@ -106,7 +106,6 @@ Defines metadata about the extension itself.
   Namespace key used as a prefix for all `name` fields in the `node_kinds`, `relationship_kinds`, and `relationship_findings` arrays to indicate that the data belongs to that namespace.
 </ResponseField>
 
-
 ## `node_kinds`
 
 Defines all node types in your extension. Each node kind represents an entity type (for example: user, device, or environment).
@@ -125,7 +124,7 @@ Defines all node types in your extension. Each node kind represents an entity ty
 ```
 
 <ResponseField name="name" type="string" required>
-  Unique node kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules. Nodes in the data payload must match at least one of the `kinds` defined here.
+  Unique node kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules. For each node in a data payload, at least one value in its `kinds` array must match a `node_kinds.name` defined in the extension definition schema.
 
   The node schema for an environment must be defined here to be used for findings and metrics in BloodHound Enterprise.
 </ResponseField>
@@ -160,7 +159,7 @@ Defines what kind of connections exist. Each relationship kind represents a spec
 ```
 
 <ResponseField name="name" type="string" required>
-  Unique relationship kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules. Edges in the data payload must match at least one of the `kinds` defined here.
+  Unique relationship kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules. For each edge in a data payload, `kind` must match a `relationship_kinds.name` defined in the extension definition schema.
 </ResponseField>
 <ResponseField name="description" type="string">
   Optional description of what the relationship means.
@@ -180,7 +179,7 @@ Defines what kind of connections exist. Each relationship kind represents a spec
   style={{ "width":"20%" }}
 />
 
-Environments are platform-specific groupings of nodes that BloodHound Enterprise uses to scope findings and metrics. Each environment definition specifies which node kinds represent <Tooltip tip="A type of object that can authenticate and be assigned permissions within an environment.">principals</Tooltip> within each environment.
+Environments are platform-specific groupings of nodes that BloodHound Enterprise uses to scope findings and metrics. Each environment definition specifies which node kinds represent <Tooltip tip="An object type that can authenticate, be assigned permissions within an environment, and serve as a basis for risk metric calculations.">principals</Tooltip> within each environment.
 
 ```json
 [
@@ -201,14 +200,14 @@ Environments are platform-specific groupings of nodes that BloodHound Enterprise
   Represents which node type within the extension is considered an environment for organizational and analytics purposes. Must match a node kind defined in the `node_kinds` array.
 
   For findings and metrics in BloodHound Enterprise, the [`graph.nodes.properties.environmentid`](/opengraph/developer/nodes#param-properties-environmentid) field for applicable nodes in the data payload must match this field.
+
+  For intra-extension findings, this typically matches the environment kind defined by the same extension schema. For cross-platform findings (for example, hybrid relationships), the impacted environment kind may be different.
 </ResponseField>
 <ResponseField name="source_kind" type="string" required>
   Source kind that associates this environment definition with a specific platform for environment organization and selection.
-
-  For findings and metrics in BloodHound Enterprise, nodes in this environment must include a `source_kind`. This value can be applied payload-wide with [`metadata.source_kind`](/opengraph/developer/metadata#param-source-kind) or manually in the [`node_kinds`](/opengraph/developer/nodes#param-kinds) array in the data payload.
 </ResponseField>
 <ResponseField name="principal_kinds" type="array" required>
-  Node kinds defined by this extension/schema that BloodHound should treat as principals. Must match a `node_kinds.name` defined in this schema.
+  Node kinds defined by this extension/schema that BloodHound should treat as <Tooltip tip="An object type that can authenticate, be assigned permissions within an environment, and serve as a basis for risk metric calculations.">principals</Tooltip>. Must match a `node_kinds.name` defined in this schema.
 
   BloodHound Enterprise incorporates these node kinds in findings and metrics.
 </ResponseField>
@@ -222,7 +221,7 @@ Environments are platform-specific groupings of nodes that BloodHound Enterprise
   style={{ "width":"20%" }}
 />
 
-Defines <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> based on relationships. Each finding represents a single instance of an <Tooltip tip="a chain of abusable privileges and user behaviors that creates direct or indirect connections between principals." cta="Learn more" href="/analyze-data/findings/attack-paths#attack-paths">Attack Path</Tooltip>. BloodHound Enterprise identifies instances of a traversable edge targeting a node of higher privilege (violating a Privilege Zone boundary), analyzes the risk, and provides remediation guidance.
+Defines findings based on relationships. Each finding represents a single instance of an <Tooltip tip="A chain of abusable privileges and user behaviors that creates direct or indirect connections between principals." cta="Learn more" href="/analyze-data/findings/attack-paths#attack-paths">Attack Path</Tooltip>. BloodHound Enterprise identifies instances of a traversable edge targeting a node of higher privilege (violating a Privilege Zone boundary), analyzes the risk, and provides remediation guidance.
 
 <Tip>
   **Best practice**

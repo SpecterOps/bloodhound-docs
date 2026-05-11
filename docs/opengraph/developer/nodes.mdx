@@ -52,9 +52,9 @@ At minimum, each node must include a unique identifier and a `kinds` array.
 
   In Cypher queries, node kinds function as labels for pattern matching. Use the colon (`:`) syntax to match nodes by kind: `MATCH (n:Okta_User)` or `MATCH (n:Okta_User|Okta_Group)`. All values in the `kinds` array can be used as labels, enabling flexible querying by any assigned kind.
 
-  - Node `kinds` must not overlap with existing [built-in node](/resources/nodes/overview) kinds. Use a unique prefix (for example, a namespace matching your extension) to avoid conflicts.
+  - Node `kinds` must not overlap with [built-in node](/resources/nodes/overview) kinds. Consider using a prefix related to your data source or environment separated by an underscore. For example, `Okta_User`.
 
-  - In structured graphs, values must match at least one [`node_kinds.name`](/opengraph/developer/graph-definition#node_kinds) in the extension definition schema, which also must match at least one [`environments.environment_kind`](/opengraph/developer/graph-definition#environments) (also in the extension definition schema) to produce <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip>.
+  - In structured graphs, values must match at least one [`node_kinds.name`](/opengraph/developer/graph-definition#node_kinds) in the extension definition schema, which also must match at least one [`environments.environment_kind`](/opengraph/developer/graph-definition#environments) (also in the extension definition schema) to produce <Tooltip tip="A specific instance of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip>.
 </ResponseField>
 <ResponseField name="properties" type="object">
   Optional key-value map of custom node attributes. Values must be primitives or homogeneous arrays of primitives. BloodHound displays node properties in the **Entity Panel** when you click a node in the graph.
@@ -64,12 +64,12 @@ At minimum, each node must include a unique identifier and a `kinds` array.
 <ResponseField name="properties.environmentid" type="string">
   Associates a node with a specific environment.
   
-  To enable <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> in structured graphs, define an environment node in `graph.nodes` and set `properties.environmentid` for all other node kinds to the environment node's `name`.
+  To enable <Tooltip tip="A specific instance of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> in structured graphs, define an environment node in `graph.nodes`. To be included in analysis, metrics, and findings generation, a node must have `properties.environmentid` set to an environment node's `id`.
 </ResponseField>
 <ResponseField name="properties.collected" type="boolean">
   Indicates whether an environment node kind was observed directly during data collection.
 
-  In structured graphs, only environment nodes with `properties.collected` set to `true` and a registered `source_kind` are used to produce <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip>. You can register and apply `source_kind` through [`metadata`](/opengraph/developer/metadata) or apply it directly in node `kinds` after it has been registered.
+  In structured graphs, only environment nodes with `properties.collected` set to `true` and a registered `source_kind` are used to produce <Tooltip tip="A specific instance of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip>. You can register and apply `source_kind` through [`metadata`](/opengraph/developer/metadata) or apply it directly in node `kinds` after it has been registered.
 
   This property is not necessary for nodes of other kinds.
 </ResponseField>
@@ -87,6 +87,11 @@ Properties must adhere to the following constraints:
 - Arrays of objects are not allowed
 - Arrays must be homogeneous (e.g., all strings or all numbers)
 - Property names should be lowercase.
+
+  <Note>
+    BloodHound accepts property names with uppercase characters, but using lowercase is a best practice. Future releases may enforce lowercase property names.
+  </Note>
+
 - Property names are case-sensitive.
 
   For example, `exampleid` and `ExampleID` are treated as different properties on the same node.
@@ -94,10 +99,11 @@ Properties must adhere to the following constraints:
   <Warning>
     This can cause issues in languages that treat JSON keys as case-insensitive (for example, PowerShell and some .NET-based tools).
   </Warning>
+
 - Special characters in property names or values may cause ingest to fail or lead to unexpected behavior. Avoid spaces and special characters.
 - The `lastseen` property is injected automatically by BloodHound during ingestion and overwrites any value provided in the payload.
 - The `reconcile` property is stripped during ingestion.
-- The following properties are uppercased during ingest if they are present as strings:
+- The following property values are uppercased during ingest if they are present as strings:
   - `name`
   - `operatingsystem`
   - `distinguishedname`

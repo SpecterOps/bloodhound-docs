@@ -29,7 +29,7 @@ Full OpenGraph support requires a PostgreSQL graph database and one of the follo
 
 OpenGraph data payloads are accepted as `.json` files or `.zip` archives. A single upload operation can include a mix of valid `.json` and `.zip` files from different collectors (for example, SharpHound and OpenGraph). Additional constraints include:
 
-- `.zip` archives can contain multiple payload files.
+- `.zip` archives can contain multiple `.json` payload files.
 - Nested `.zip` archives are not supported.
 - If you upload a `.zip` archive, every file in the archive must be a valid data payload.
 
@@ -53,7 +53,7 @@ For field-level details and schema requirements, see the following pages:
 | Page | Description |
 | --- | --- |
 | [Metadata](/opengraph/developer/metadata) | Defines payload-wide ingest behavior to facilitate organizing and managing graph data by source. |
-| [Nodes](/opengraph/developer/nodes) | Represents entities in your graph, such as users, devices, repositories, applications, and (for findings and metrics) environments. |
+| [Nodes](/opengraph/developer/nodes) | Represents entities in your graph, such as users, devices, repositories, applications, and environments. |
 | [Edges](/opengraph/developer/edges) | Represents relationships between nodes in your graph indicating some form of interaction or access. |
 
 ## Graph structure
@@ -79,14 +79,17 @@ For example, if you wanted to delete all data for a source, you could navigate t
   You can still remove OpenGraph data without registering and applying a `source_kind` by checking the **Sourceless data** option. However, that could have unintended consequences if you have multiple OpenGraph data sources without a registered `source_kind`.
 </Note>
 
-You can register and apply a `source_kind` in two ways:
+You can **register** a `source_kind` in two ways:
 
-- In the [`kinds`](/opengraph/developer/nodes#param-kinds) array of each relevant node in a data payload.
-- In the [`metadata`](/opengraph/developer/metadata) object of your data payload, which applies the `source_kind` to all nodes.
+- Specify it in at least one payload's [`metadata`](/opengraph/developer/metadata) object. After that initial registration, later payloads can reuse it without re-registering it.
+- Define it as an [`environments.source_kind`](/opengraph/developer/graph-definition#param-source-kind) value in an extension definition schema.
 
-In structured graphs, nodes _must_ include a registered `source_kind` in the data payload to produce <Tooltip tip="A specific subsection of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> and metrics. This `source_kind` must match the corresponding [`environments.source_kind`](/opengraph/developer/graph-definition#param-source-kind) value in the extension definition schema.
+You can **apply** a `source_kind` in two ways:
 
-This is because BloodHound uses `source_kind` to determine which nodes are part of the "source system" for a finding, which in turn determines how exposure and impact metrics are calculated.
+- Specify it in the payload's [`metadata`](/opengraph/developer/metadata) object, which applies it to all defined nodes.
+- Explicitly include it in a node's [`kinds`](/opengraph/developer/nodes#param-kinds) array, which applies it only to that node.
+
+In structured graphs, nodes _must_ include a registered `source_kind` to produce <Tooltip tip="A specific instance of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> and metrics.
 
 <Warning>
   Specific [node properties](/opengraph/developer/nodes#findings-and-metrics) are also required to produce findings for structured graphs in BloodHound Enterprise.
@@ -94,8 +97,8 @@ This is because BloodHound uses `source_kind` to determine which nodes are part 
 
 The following points describe how `source_kind` influences metrics calculations:
 
-- **Exposure metrics:** Do not include the source node itself and only include nodes that can traverse to the source node.
-- **Impact metrics:** Traverse downstream from the target node and stop when another Tier Zero (T0) node is encountered. Nodes beyond a second Tier Zero (T0) node are not included in impact calculations.
+- **Exposure metrics:** Traverse upstream toward the origin and stop when a node in the same zone is encountered (for Tier Zero paths, this means stopping when a Tier Zero node is reached). The origin node itself is not included.
+- **Impact metrics:** Traverse downstream from the target node and include nodes in the same zone until the downstream set is fully enumerated.
 
 ## Minimal viable data payload
 

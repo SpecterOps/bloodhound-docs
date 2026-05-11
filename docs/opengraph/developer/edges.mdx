@@ -48,16 +48,14 @@ At minimum, each edge must include a `start` endpoint, an `end` endpoint, and a 
 <ResponseField name="kind" type="string" required>
   A string that describes the relationship type.
   
-  - Use a namespaced format with your extension prefix followed by an underscore and a descriptive name (for example, `Okta_ResetPassword`). This prefix must be unique and must not overlap with [built-in edge](/resources/edges/overview) kinds.
+  - A descriptive name that identifies the edge kind and does not overlap with [built-in edge](/resources/edges/overview) kinds. Consider using a prefix related to your data source or environment separated from the name by an underscore. For example, `Okta_ResetPassword`.
 
   - Must match the regex pattern `^[A-Za-z0-9_]+$`, which means edge kinds can only contain uppercase letters, lowercase letters, numbers, and underscores. Spaces, dashes, backticks, and other special characters are not allowed in edge kinds. PascalCase is recommended for readability and consistency.
 
     Neo4j Cypher allows many special characters in symbolic names when the name is enclosed in backticks. BloodHound OpenGraph ingest is more restrictive: edge `kind` values must match `^[A-Za-z0-9_]+$`, so upload validation rejects backtick-escaped names, spaces, dashes, and other special characters.
-
-    See Neo4j [Escaping rules for symbolic names](https://neo4j.com/docs/cypher-manual/current/syntax/naming/#symbolic-names-escaping-rules) for additional naming guidance.
 </ResponseField>
 <ResponseField name="properties" type="object">
-  A key-value map of custom edge attributes. Values must be strings, numbers, booleans, or arrays of primitives. Nested objects and arrays of objects are not allowed.
+  A key-value map of custom edge properties. Values must be strings, numbers, booleans, or arrays of primitives. Nested objects and arrays of objects are not allowed.
 </ResponseField>
 
 <Note>
@@ -69,9 +67,9 @@ At minimum, each edge must include a `start` endpoint, an `end` endpoint, and a 
 Edges in OpenGraph data define relationships between nodes using a `start` endpoint object and an `end` endpoint object. You can control how BloodHound resolves each endpoint using one of two matching strategies in the `match_by` field.
 
 - `id` (or legacy `name`) for direct identifier matching
-- `property` for attribute-based matching
+- `property` for property-based matching
 
-This flexibility allows you to link nodes based on their unique database identifiers or by dynamically finding them based on specific attribute values.
+This flexibility allows you to link nodes based on their unique database identifiers or by dynamically finding them based on specific property values.
 
 <Note>
   Use identifier matching when possible. Property matching is more flexible, but it is slower and should be used only when you cannot match by node ID.
@@ -79,7 +77,7 @@ This flexibility allows you to link nodes based on their unique database identif
 
 ### Match by Identifier
 
-This is the default and most common method. It resolves an endpoint by unique internal ID or by human-readable name.
+This is the default and most common method. It resolves an endpoint by unique internal ID.
 
 To use this strategy, set the `match_by` property to `"id"`. You can also use legacy `"name"` matching.
 
@@ -137,7 +135,7 @@ To use this strategy, set the `match_by` property to `"id"`. You can also use le
 
 ### Match by Property
 
-Use this strategy when you do not know the unique ID of the target node but can identify it using one or more known attributes (for example, username, email address, hostname, or custom property). This method allows for dynamic resolution based on data available at the time of ingestion.
+Use this strategy when you do not know the unique ID of the target node but can identify it using one or more known properties (for example, username, email address, hostname, or custom property). This method allows for dynamic resolution based on data available at the time of ingestion.
 
 To use this strategy, set the `match_by` property to `"property"`.
 
@@ -176,12 +174,12 @@ To use this strategy, set the `match_by` property to `"property"`.
   Starting endpoint definition for the edge.
 </ResponseField>
 <ResponseField name="start.match_by" type='"property"' required>
-  Must be set to `property`.
+  Set to `property` to match against one or more of the starting node's property values.
 </ResponseField>
 <ResponseField name="start.property_matchers" type="array" required>
   Array of matchers used to find the starting node. BloodHound attempts to find a node that satisfies all matchers.
-
-  You can provide multiple matchers in the array. The system will attempt to find a node that satisfies all conditions simultaneously.
+  
+  At least one matcher is required, but you can provide multiple matchers in the array. The system will attempt to find a node that satisfies all conditions simultaneously.
 </ResponseField>
 <ResponseField name="start.kind" type="string">
   Optional kind filter used to narrow node resolution for the starting node.
@@ -190,10 +188,10 @@ To use this strategy, set the `match_by` property to `"property"`.
   Ending endpoint definition for the edge.
 </ResponseField>
 <ResponseField name="end.match_by" type="string" required>
-  Must be set to `property`.
+  Set to `property` to match against one or more of the ending node's property values.
 </ResponseField>
 <ResponseField name="end.property_matchers" type="array" required>
-  Array of matchers used to find the ending node. BloodHound attempts to find a node that satisfies all matchers.
+  Array of matchers used to find the ending node. BloodHound attempts to find a node that satisfies all matchers. At least one matcher is required, but you can provide multiple matchers in the array. The system will attempt to find a node that satisfies all conditions simultaneously.
 </ResponseField>
 <ResponseField name="start.value" type="string | number | boolean">
   Not used in this mode. Providing `start.value` when `start.match_by` is `property` causes validation errors.
@@ -265,7 +263,7 @@ BloodHound creates the following edges during post-processing:
 
 </Accordion>
 
-To achieve a post-processed relationship, include the supporting edges that cause BloodHound to generate that relationship during post-processing.
+To create a post-processed relationship using OpenGraph, include the supporting edges that cause BloodHound to generate that relationship during post-processing.
 
 For example, if you include an `AdminTo` edge directly in your OpenGraph payload, BloodHound removes it during post-processing and the edge does not persist in the final graph as expected. Instead of adding `AdminTo` edges directly, include the supporting edges that cause the post-processor to generate the `AdminTo` edge. The common pattern that triggers the creation of the `AdminTo` edge is:
 
