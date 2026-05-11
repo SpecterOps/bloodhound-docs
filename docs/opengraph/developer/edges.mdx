@@ -66,8 +66,8 @@ At minimum, each edge must include a `start` endpoint, an `end` endpoint, and a 
 
 Edges in OpenGraph data define relationships between nodes using a `start` endpoint object and an `end` endpoint object. You can control how BloodHound resolves each endpoint using one of two matching strategies in the `match_by` field.
 
-- `id` (or legacy `name`) for direct identifier matching
-- `property` for property-based matching
+- `id` for direct node identifier matching
+- `property` for node property-based matching
 
 This flexibility allows you to link nodes based on their unique database identifiers or by dynamically finding them based on specific property values.
 
@@ -77,13 +77,9 @@ This flexibility allows you to link nodes based on their unique database identif
 
 ### Match by Identifier
 
-This is the default and most common method. It resolves an endpoint by unique internal ID.
+This is the default and most common method. It resolves an endpoint by unique node [`id`](/opengraph/developer/nodes#param-id).
 
-To use this strategy, set the `match_by` property to `"id"`. You can also use legacy `"name"` matching.
-
-<Note>
-  `"name"` is deprecated and will be removed in future versions; using `"property"` with a single equality matcher is the recommended approach for name-based lookups.
-</Note>
+To use this strategy, set the `match_by` property to `"id"`.
 
 ```json Linking a specific user to a server using their unique IDs
 {
@@ -102,19 +98,19 @@ To use this strategy, set the `match_by` property to `"id"`. You can also use le
   Starting endpoint definition for the edge.
 </ResponseField>
 <ResponseField name="start.match_by" type="string" required>
-  Set to `id` to match the node's unique object identifier, or `name` to match the node's name string.
+  Set to `id` to match the node's unique object identifier.
 </ResponseField>
 <ResponseField name="start.value" type="string" required>
-  String containing the specific ID or name of the target node.
+  String containing the specific ID of the target node.
 </ResponseField>
 <ResponseField name="end" type="object" required>
   Ending endpoint definition for the edge.
 </ResponseField>
 <ResponseField name="end.match_by" type="string" required>
-  Set to `id` to match the node's unique object identifier, or `name` to match the node's name string.
+  Set to `id` to match the node's unique object identifier.
 </ResponseField>
 <ResponseField name="end.value" type="string" required>
-  String containing the specific ID or name of the ending node.
+  String containing the specific ID of the ending node.
 </ResponseField>
 <ResponseField name="start.kind" type="string">
   Optional kind filter used in `start` to constrain the lookup to a specific node kind.
@@ -136,6 +132,10 @@ To use this strategy, set the `match_by` property to `"id"`. You can also use le
 ### Match by Property
 
 Use this strategy when you do not know the unique ID of the target node but can identify it using one or more known properties (for example, username, email address, hostname, or custom property). This method allows for dynamic resolution based on data available at the time of ingestion.
+
+<Warning>
+  You can also use legacy `"name"` matching. This method is deprecated and will be removed in future versions. To perform name-based matching, use the property matching strategy with a single equality matcher.
+</Warning>
 
 To use this strategy, set the `match_by` property to `"property"`.
 
@@ -174,7 +174,7 @@ To use this strategy, set the `match_by` property to `"property"`.
   Starting endpoint definition for the edge.
 </ResponseField>
 <ResponseField name="start.match_by" type='"property"' required>
-  Set to `property` to match against one or more of the starting node's property values.
+  Set to `property` to match against one or more of the starting node's property values or `name` to match the node's name string (deprecated).
 </ResponseField>
 <ResponseField name="start.property_matchers" type="array" required>
   Array of matchers used to find the starting node. BloodHound attempts to find a node that satisfies all matchers.
@@ -188,7 +188,7 @@ To use this strategy, set the `match_by` property to `"property"`.
   Ending endpoint definition for the edge.
 </ResponseField>
 <ResponseField name="end.match_by" type="string" required>
-  Set to `property` to match against one or more of the ending node's property values.
+  Set to `property` to match against one or more of the ending node's property values or `name` to match the node's name string (deprecated).
 </ResponseField>
 <ResponseField name="end.property_matchers" type="array" required>
   Array of matchers used to find the ending node. BloodHound attempts to find a node that satisfies all matchers. At least one matcher is required, but you can provide multiple matchers in the array. The system will attempt to find a node that satisfies all conditions simultaneously.
