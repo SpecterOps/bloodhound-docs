@@ -200,8 +200,6 @@ Environments are platform-specific groupings of nodes that BloodHound Enterprise
   Represents which node type within the extension is considered an environment for organizational and analytics purposes. Must match a node kind defined in the `node_kinds` array.
 
   For findings and metrics in BloodHound Enterprise, the [`graph.nodes.properties.environmentid`](/opengraph/developer/nodes#param-properties-environmentid) field for applicable nodes in the data payload must match this field.
-
-  For intra-extension findings, this typically matches the environment kind defined by the same extension schema. For cross-platform findings (for example, hybrid relationships), the impacted environment kind may be different.
 </ResponseField>
 <ResponseField name="source_kind" type="string" required>
   Source kind that associates this environment definition with a specific platform for environment organization and selection. See [Data source](/opengraph/developer/graph-data#data-source) for details.
@@ -226,18 +224,18 @@ Defines findings based on relationships. Each finding represents a single instan
 <Tip>
   **Best practice**
 
-  If a finding `name` would match its associated `relationship_kind`, include `Finding` in the name to distinguish them.
+  If a finding `name` would match its associated `relationship_kind`, include `_Finding` as a suffix in the name to distinguish them.
   
   For example:
 
   - Relationship kind name: `Okta_ResetPassword`
-  - Finding name: `Okta_Finding_ResetPassword`
+  - Finding name: `Okta_ResetPassword_Finding`
 </Tip>
 
 ```json
 [
   {
-    "name": "Okta_Finding_ResetPassword",
+    "name": "Okta_ResetPassword_Finding",
     "display_name": "Password Reset Permission Across Privilege Zones",
     "environment_kind": "Okta_Organization",
     "relationship_kind": "Okta_ResetPassword",
@@ -259,6 +257,8 @@ Defines findings based on relationships. Each finding represents a single instan
 </ResponseField>
 <ResponseField name="environment_kind" type="string" required>
   Environment kind where this finding should be evaluated. Must match an `environments.environment_kind` and `node_kinds.name` defined in this schema.
+
+  For intra-extension findings, this typically matches the environment kind defined by the same extension schema. For cross-platform findings (for example, hybrid relationships), the impacted environment kind may be different.
 </ResponseField>
 <ResponseField name="relationship_kind" type="string" required>
   Relationship kind that contributes to this finding when matching edges are present and the edge crosses a Privilege Zone boundary. Must match a `relationship_kinds.name` defined in this schema.
@@ -322,7 +322,7 @@ The following example schema is based on Okta to illustrate how the different co
   ],
   "relationship_findings": [
     {
-      "name": "Okta_Finding_ResetPassword",
+      "name": "Okta_ResetPassword_Finding",
       "display_name": "Password Reset Permission Across Privilege Zones",
       "environment_kind": "Okta_Organization",
       "relationship_kind": "Okta_ResetPassword",
