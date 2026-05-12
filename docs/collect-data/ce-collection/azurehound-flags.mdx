@@ -46,6 +46,7 @@ AzureHound supports several authentication options. You can control how AzureHou
 
 * `-u` or `--username` \- The user principal name of the AzureAD user you wish to authenticate as. UPN format is “username@domain.com”
 * `-p` or `--password` \- The clear-text password of the AzureAD user.
+* `-t` or `--tenant` \- The directory tenant to authenticate to (GUID or friendly name format).
 
 Example:
 ```bash
@@ -55,37 +56,72 @@ You can skip proving the password on the command line, and AzureHound will inter
 
 ### Authenticating with Service Principal Secret
 
-* `-a` or `--app` \- The Application ID that the Azure app registration portal assigned when the app was registered.
+* `-a` or `--app` \- The Application (client) ID that the Azure app registration portal assigned when the app was registered.
 * `-s` or `--secret` \- The Application Secret generated for the app in the app registration portal.
+* `-t` or `--tenant` \- The directory tenant to authenticate to (GUID or friendly name format).
 
 Example:
 ```bash
 ./azurehound -a "6b5adee8-0d36-45b6-b393-8f29ae8a8cc8" -s "&lt;secret&gt;" --tenant "contoso.onmicrosoft.com" list
 ```
+
+### Authenticating with Service Principal Certificate
+
+* `-a` or `--app` \- The Application (client) ID that the Azure app registration portal assigned when the app was registered.
+* `--cert` \- The path to the certificate uploaded to the app registration portal (PEM format).
+* `-k` or `--key` \- The path to the private key file for the certificate (PEM format).
+* `--keypass` (optional) \- The passphrase to use if the private key is encrypted.
+* `-t` or `--tenant` \- The directory tenant to authenticate to (GUID or friendly name format).
+
+Example:
+```bash
+./azurehound -a "6b5adee8-0d36-45b6-b393-8f29ae8a8cc8" --cert ./certificate.pem --key ./key.pem --tenant "contoso.onmicrosoft.com" list
+```
+
+### Authenticating with Azure Managed Identity
+
+* `--managed-identity` \- Use Azure Managed Identity to authenticate. Use this when running AzureHound on an Azure resource (VM, App Service, etc.) with a managed identity assigned.
+* `--managed-identity-client-id` (optional) \- Client ID of a user-assigned managed identity. If not provided, uses system-assigned identity.
+* `-t` or `--tenant` \- The directory tenant to authenticate to (GUID or friendly name format).
+
+Example (system-assigned):
+```bash
+./azurehound --managed-identity --tenant "contoso.onmicrosoft.com" list
+```
+
+Example (user-assigned):
+```bash
+./azurehound --managed-identity --managed-identity-client-id "6b5adee8-0d36-45b6-b393-8f29ae8a8cc8" --tenant "contoso.onmicrosoft.com" list
+```
+
 ### Authenticating with a JWT
 
 * `-j` or `--jwt` \- An MS Graph or AzureRM scoped JWT. These JWTs last a maximum of 90 minutes, so you may need to get a new JWT to enumerate data with AzureHound later.
 
 Example:
 ```bash
-./azurehound -j "ey..." --tenant "contoso.onmicrosoft.com" list az-ad
+./azurehound -j "ey..." list az-ad
 ```
+
 ### Authenticating with a Refresh Token
 
 * `-r` or `--refresh-token` \- A refresh token. AzureHound will automatically exchange this for an appropriately scoped JWT when accessing the MS Graph and AzureRM APIs.
+* `-t` or `--tenant` \- The directory tenant to authenticate to (GUID or friendly name format).
 
 Example:
 ```bash
 ./azurehound -r "0.ARwA6Wg..." --tenant "contoso.onmicrosoft.com" list
 ```
+
 ## Additional Scoping and Output Flags
 
-* `-t` or `--tenant` \- The directory tenant you want to request permission from. This can be in GUID or friendly name format.
 * `-b` \- Filter by one or more subscription IDs. AzureHound will automatically dedupe this list for you.
 * `-m` \- Filter by one or more management group IDs. AzureHound will automatically dedupe all descendant management groups and subscriptions for you.
-* `-o` or `--output` \- Instructs AzureHound to write its output to a specified file name.
-* `--log-file` \- Output logs to this file
+* `-o` or `--output` \- Instructs AzureHound to write its output to a specified file name. Accepts either a bare filename (`azurehound.json`, written to the current working directory) or an absolute path (`~/azurehound.json`).
+* `--log-file` \- Write logs to the specified file. Accepts either a bare filename (`log.txt`, written to the current working directory) or an absolute path (`~/azurehound.log`).
+* `--json` \- Emit logs as structured JSON instead of the default line-based format. Requires `--log-file` to be set.
 * `-v` or `--verbosity` \- AzureHound verbosity level (defaults to 0), a higher value gives more verbosity \[Min: -1, Max: 2\]
+* `--version` \- Print the AzureHound version and exit.
 
 ## Custom User-Agent
 
