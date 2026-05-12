@@ -47,7 +47,7 @@ At minimum, each edge must include a `start` endpoint, an `end` endpoint, and a 
 </ResponseField>
 <ResponseField name="kind" type="string" required>
   A string that describes the relationship type.
-  
+
   - A descriptive name that identifies the edge kind and does not overlap with [built-in edge](/resources/edges/overview) kinds. Consider using a prefix related to your data source or environment separated from the name by an underscore. For example, `Okta_ResetPassword`.
 
   - Must match the regex pattern `^[A-Za-z0-9_]+$`, which means edge kinds can only contain uppercase letters, lowercase letters, numbers, and underscores. Spaces, dashes, backticks, and other special characters are not allowed in edge kinds. PascalCase is recommended for readability and consistency.
@@ -64,10 +64,11 @@ At minimum, each edge must include a `start` endpoint, an `end` endpoint, and a 
 
 ## Endpoint Matching
 
-Edges in OpenGraph data define relationships between nodes using a `start` endpoint object and an `end` endpoint object. You can control how BloodHound resolves each endpoint using one of two matching strategies in the `match_by` field.
+Edges in OpenGraph data define relationships between nodes using a `start` endpoint object and an `end` endpoint object. You can control how BloodHound resolves each endpoint using one of three matching strategies in the `match_by` field.
 
 - `id` for direct node identifier matching
-- `property` for node property-based matching
+- `property` for node property matching
+- `name` for legacy node name matching (<Badge color="orange">deprecated</Badge>)
 
 This flexibility allows you to link nodes based on their unique database identifiers or by dynamically finding them based on specific property values.
 
@@ -131,10 +132,6 @@ This is the default and most common method. It resolves an endpoint by unique no
 
 Use this strategy when you do not know the unique ID of the target node but can identify it using one or more known [`properties`](/opengraph/developer/nodes#param-properties) (for example, username, email address, hostname, or custom property). This method allows for dynamic resolution based on data available at the time of ingestion.
 
-<Warning>
-  You can also use the legacy `"match_by": "name"` matching strategy. This method is deprecated and will be removed in future versions. To perform name-based lookups, use the property matching strategy with a single equality matcher.
-</Warning>
-
 To use this strategy, set the `match_by` property to `"property"`.
 
 ```json Linking a user to a server by matching the user's username property and the server's hostname property
@@ -171,12 +168,12 @@ To use this strategy, set the `match_by` property to `"property"`.
 <ResponseField name="start" type="object" required>
   Starting endpoint definition for the edge.
 </ResponseField>
-<ResponseField name="start.match_by" type='"property"' required>
-  Strategy for matching the starting node. Set to `property` to match against one or more of the starting node's property values or `name` to match the node's name string (deprecated).
+<ResponseField name="start.match_by" type="string" required>
+  Strategy for matching the starting node. Set to `property` to match against one or more of the starting node's property values.
 </ResponseField>
 <ResponseField name="start.property_matchers" type="array" required>
   Array of matchers used to find the starting node. BloodHound attempts to find a node that satisfies all matchers.
-  
+
   At least one matcher is required, but you can provide multiple matchers in the array. The system will attempt to find a node that satisfies all conditions simultaneously.
 </ResponseField>
 <ResponseField name="start.kind" type="string">
@@ -186,7 +183,7 @@ To use this strategy, set the `match_by` property to `"property"`.
   Ending endpoint definition for the edge.
 </ResponseField>
 <ResponseField name="end.match_by" type="string" required>
-  Strategy for matching the ending node. Set to `property` to match against one or more of the ending node's property values or `name` to match the node's name string (deprecated).
+  Strategy for matching the ending node. Set to `property` to match against one or more of the ending node's property values.
 </ResponseField>
 <ResponseField name="end.property_matchers" type="array" required>
   Array of matchers used to find the ending node. BloodHound attempts to find a node that satisfies all matchers. At least one matcher is required, but you can provide multiple matchers in the array. The system will attempt to find a node that satisfies all conditions simultaneously.
@@ -205,6 +202,91 @@ To use this strategy, set the `match_by` property to `"property"`.
 </ResponseField>
 <ResponseField name="property_matchers[].value" type="string | number | boolean" required>
   Expected value for the property matcher.
+</ResponseField>
+
+### Match by Name (<Badge color="orange">deprecated</Badge>)
+
+Use this legacy strategy to resolve an endpoint by a `name` string. This strategy predates [Match by Property](/opengraph/developer/edges#match-by-property) and uses the `value` field directly, similar to [Match by Identifier](/opengraph/developer/edges#match-by-identifier). It is retained for backward compatibility.
+
+<Warning>
+  The `name` matching strategy is deprecated and will be removed in a future release. Migrate to [Match by Property](/opengraph/developer/edges#match-by-property) with an equality matcher on the `name` property. Mixing `match_by: "name"` with `property_matchers` fails schema validation.
+</Warning>
+
+To use this strategy, set the `match_by` property to `"name"` and provide the name string in `value`. Combine with an optional `kind` filter to disambiguate nodes that share names across kinds.
+
+```json Linking a user to a server by their names
+{
+  "start": {
+    "match_by": "name",
+    "value": "alice.smith",
+    "kind": "User"
+  },
+  "end": {
+    "match_by": "name",
+    "value": "db-prod-01",
+    "kind": "Server"
+  }
+}
+```
+
+Internally, BloodHound rewrites a `name` match to a property match against the `name` property. The equivalent payload using [Match by Property](/opengraph/developer/edges#match-by-property):
+
+```json
+{
+  "start": {
+    "match_by": "property",
+    "property_matchers": [
+      {
+        "key": "name",
+        "operator": "equals",
+        "value": "alice.smith"
+      }
+    ],
+    "kind": "User"
+  },
+  "end": {
+    "match_by": "property",
+    "property_matchers": [
+      {
+        "key": "name",
+        "operator": "equals",
+        "value": "db-prod-01"
+      }
+    ],
+    "kind": "Server"
+  }
+}
+```
+
+<ResponseField name="start" type="object" required>
+  Starting endpoint definition for the edge.
+</ResponseField>
+<ResponseField name="start.match_by" type="string" required>
+  Strategy for matching the starting node. Set to `name` to match against a name string.
+</ResponseField>
+<ResponseField name="start.value" type="string" required>
+  Name string used to look up the target node.
+</ResponseField>
+<ResponseField name="start.kind" type="string">
+  Optional kind filter used to constrain the lookup to a specific node kind. Recommended when names overlap across kinds.
+</ResponseField>
+<ResponseField name="end" type="object" required>
+  Ending endpoint definition for the edge.
+</ResponseField>
+<ResponseField name="end.match_by" type="string" required>
+  Strategy for matching the ending node. Set to `name` to match against a name string.
+</ResponseField>
+<ResponseField name="end.value" type="string" required>
+  Name string used to look up the ending node.
+</ResponseField>
+<ResponseField name="end.kind" type="string">
+  Optional kind filter used to constrain the lookup to a specific node kind. Recommended when names overlap across kinds.
+</ResponseField>
+<ResponseField name="start.property_matchers" type="array">
+  Not used in this mode. Providing `property_matchers` when `start.match_by` is `name` causes validation errors.
+</ResponseField>
+<ResponseField name="end.property_matchers" type="array">
+  Not used in this mode. Providing `property_matchers` when `end.match_by` is `name` causes validation errors.
 </ResponseField>
 
 ## Post-processing
