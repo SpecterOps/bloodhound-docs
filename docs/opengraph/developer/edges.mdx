@@ -48,7 +48,9 @@ At minimum, each edge must include a `start` endpoint, an `end` endpoint, and a 
 <ResponseField name="kind" type="string" required>
   A string that describes the relationship type.
 
-  - A descriptive name that identifies the edge kind and does not overlap with [built-in edge](/resources/edges/overview) kinds. Consider using a prefix related to your data source or environment separated from the name by an underscore. For example, `Okta_ResetPassword`.
+  - A descriptive name that identifies the edge kind and does not overlap with [built-in edge](/resources/edges/overview) kinds. 
+  
+    Consider using a prefix related to your data source or environment separated from the name by an underscore. For example, `Okta_ResetPassword`. For [structured graphs](/opengraph/overview#structured-graphs), a prefix that matches the extension's [`namespace`](/opengraph/developer/graph-definition#namespacing) is required.
 
   - Must match the regex pattern `^[A-Za-z0-9_]+$`, which means edge kinds can only contain uppercase letters, lowercase letters, numbers, and underscores. Spaces, dashes, backticks, and other special characters are not allowed in edge kinds. PascalCase is recommended for readability and consistency.
 
@@ -186,7 +188,9 @@ To use this strategy, set the `match_by` property to `property`.
   Strategy for matching the ending node. Set to `property` to match against one or more of the ending node's property values.
 </ResponseField>
 <ResponseField name="end.property_matchers" type="array" required>
-  Array of matchers used to find the ending node. BloodHound attempts to find a node that satisfies all matchers. At least one matcher is required, but you can provide multiple matchers in the array. The system will attempt to find a node that satisfies all conditions simultaneously.
+  Array of matchers used to find the ending node.
+  
+  At least one matcher is required, but you can provide multiple matchers in the array. The system will attempt to find a node that satisfies all conditions simultaneously.
 </ResponseField>
 <ResponseField name="start.value" type="string | number | boolean">
   Not used in this mode. Providing `start.value` when `start.match_by` is `property` causes validation errors.
@@ -343,7 +347,7 @@ BloodHound creates the following edges during post-processing:
 
 </Accordion>
 
-To create a post-processed relationship using OpenGraph, include the supporting edges that cause BloodHound to generate that relationship during post-processing.
+To create one of BloodHound's built-in post-processed edges using OpenGraph, include the supporting edges that cause BloodHound to generate that relationship during post-processing.
 
 For example, if you include an `AdminTo` edge directly in your OpenGraph payload, BloodHound removes it during post-processing and the edge does not persist in the final graph as expected. Instead of adding `AdminTo` edges directly, include the supporting edges that cause the post-processor to generate the `AdminTo` edge. The common pattern that triggers the creation of the `AdminTo` edge is:
 

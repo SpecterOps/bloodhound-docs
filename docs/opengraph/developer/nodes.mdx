@@ -52,7 +52,9 @@ At minimum, each node must include a unique identifier and a `kinds` array.
 
   In Cypher queries, node kinds function as labels for pattern matching. Use the colon (`:`) syntax to match nodes by kind: `MATCH (n:Okta_User)` or `MATCH (n:Okta_User|Okta_Group)`. All values in the `kinds` array can be used as labels, enabling flexible querying by any assigned kind.
 
-  - Node `kinds` must not overlap with [built-in node](/resources/nodes/overview) kinds. Consider using a prefix related to your data source or environment separated by an underscore. For example, `Okta_User`.
+  - Node `kinds` must not overlap with [built-in node](/resources/nodes/overview) kinds.
+  
+    Consider using a prefix related to your data source or environment separated by an underscore. For example, `Okta_User`. For [structured graphs](/opengraph/overview#structured-graphs), a prefix that matches the extension's [`namespace`](/opengraph/developer/graph-definition#namespacing) is required.
 
   - For a node to participate in a structured graph, at least one value in its `kinds` array should match a [`node_kinds.name`](/opengraph/developer/graph-definition#node_kinds) defined in an installed extension definition schema.
 </ResponseField>
@@ -65,6 +67,8 @@ At minimum, each node must include a unique identifier and a `kinds` array.
   Associates a node with a specific environment.
   
   To enable <Tooltip tip="A specific instance of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> in structured graphs, define an environment node in `graph.nodes`. To be included in analysis, metrics, and findings generation, a node must have `properties.environmentid` set to an environment node's `id`.
+
+  Environment nodes themselves must also have `properties.environmentid` set, but the value does not have to match the node's own `id`. For example, a child environment node can have `properties.environmentid` set to a parent node environment `id`.
 </ResponseField>
 <ResponseField name="properties.collected" type="boolean">
   Indicates whether an environment node kind was observed directly during data collection.
@@ -89,7 +93,7 @@ Properties must adhere to the following constraints:
 - Property names should be lowercase.
 
   <Note>
-    BloodHound accepts property names with uppercase characters, but using lowercase is a best practice. Future releases may enforce lowercase property names.
+    BloodHound currently accepts property names with uppercase characters, but will enforce lowercase property names in a future release.
   </Note>
 
 - Property names are case-sensitive.

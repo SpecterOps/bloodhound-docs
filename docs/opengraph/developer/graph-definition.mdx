@@ -124,7 +124,7 @@ Defines all node types in your extension. Each node kind represents an entity ty
 ```
 
 <ResponseField name="name" type="string" required>
-  Unique node kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules. For each node in a data payload, at least one value in its `kinds` array must match a `node_kinds.name` defined in the extension definition schema.
+  Unique node kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules. For each node in a data payload to be included in a [structured graph](/opengraph/overview#structured-graphs), at least one value in its `kinds` array must match a `node_kinds.name` defined in the extension definition schema.
 
   The node schema for an environment must be defined here to be used for findings and metrics in BloodHound Enterprise.
 </ResponseField>
@@ -159,7 +159,7 @@ Defines what kind of connections exist. Each relationship kind represents a spec
 ```
 
 <ResponseField name="name" type="string" required>
-  Unique relationship kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules. For each edge in a data payload, `kind` must match a `relationship_kinds.name` defined in the extension definition schema.
+  Unique relationship kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules. For each edge in a data payload to be included in a [structured graph](/opengraph/overview#structured-graphs), `kind` must match a `relationship_kinds.name` defined in the extension definition schema.
 </ResponseField>
 <ResponseField name="description" type="string">
   Optional description of what the relationship means.
@@ -179,7 +179,7 @@ Defines what kind of connections exist. Each relationship kind represents a spec
   style={{ "width":"20%" }}
 />
 
-Environments are platform-specific groupings of nodes that BloodHound Enterprise uses to scope findings and metrics. Each environment definition specifies which node kinds represent <Tooltip tip="An object type that can authenticate, be assigned permissions within an environment, and serve as a basis for risk metric calculations.">principals</Tooltip> within each environment.
+Environments are platform-specific groupings of nodes that BloodHound Enterprise uses to scope findings and metrics. Each environment definition specifies which node kinds represent <Tooltip tip="An entity in a system that can authenticate, be assigned permissions, and serve as a basis for risk metric calculations.">principals</Tooltip> within each environment.
 
 ```json
 [
@@ -205,7 +205,7 @@ Environments are platform-specific groupings of nodes that BloodHound Enterprise
   Source kind that associates this environment definition with a specific platform for environment organization and selection. See [Data source](/opengraph/developer/graph-data#data-source) for details.
 </ResponseField>
 <ResponseField name="principal_kinds" type="array" required>
-  Node kinds defined by this extension/schema that BloodHound should treat as <Tooltip tip="An object type that can authenticate, be assigned permissions within an environment, and serve as a basis for risk metric calculations.">principals</Tooltip>. Must match a `node_kinds.name` defined in this schema.
+  Node kinds defined by this extension/schema that BloodHound should treat as <Tooltip tip="An entity in a system that can authenticate, be assigned permissions, and serve as a basis for risk metric calculations.">principals</Tooltip>. Must match a `node_kinds.name` defined in this schema.
 
   BloodHound Enterprise incorporates these node kinds in findings and metrics.
 </ResponseField>
@@ -256,12 +256,12 @@ Defines findings based on relationships. Each finding represents a single instan
   Human-readable label shown for this finding in BloodHound.
 </ResponseField>
 <ResponseField name="environment_kind" type="string" required>
-  Environment kind where this finding should be evaluated. Must match an `environments.environment_kind` and `node_kinds.name` defined in this schema.
+  Environment kind where this finding should be evaluated. Must match an `environments.environment_kind` and `node_kinds.name` defined in any installed extension definition schema.
 
   For intra-extension findings, this typically matches the environment kind defined by the same extension schema. For cross-platform findings (for example, hybrid relationships), the impacted environment kind may be different.
 </ResponseField>
 <ResponseField name="relationship_kind" type="string" required>
-  Relationship kind that contributes to this finding when matching edges are present and the edge crosses a Privilege Zone boundary. Must match a `relationship_kinds.name` defined in this schema.
+  Relationship kind that contributes to this finding when matching edges are present and the edge crosses a Privilege Zone boundary. Must match a `relationship_kinds.name` defined in any installed extension definition schema.
 </ResponseField>
 <ResponseField name="remediation" type="object">
   Remediation guidance to resolve the finding, including both short and long forms.
