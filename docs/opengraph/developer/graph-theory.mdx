@@ -13,10 +13,6 @@ However, while the process of adding nodes and edges to the product is greatly s
 
 An attack graph is a tool - a powerful force multiplier when wielded correctly, a frustrating and confusing hazard when not. This document aims to equip you with the knowledge and skills necessary to effectively wield this tool.
 
-<Info>
-At this time, OpenGraph nodes and edges are not supported in the Search or Pathfinding tab, so the Cypher tab **must** be used to query the data manually.
-</Info>
-
 # Basic Attack Graph Vocabulary and Design Theory
 Graphs are [well-understood](https://en.wikipedia.org/wiki/Graph_%28discrete_mathematics%29), well-studied mathematical constructs. You can find thousands of guides, tools, and academic papers that make use of graphs. This document will not replace a proper education or time spent working with graphs. But in this section we will touch on the most fundamental aspects of a graph you must understand in order to effectively get BloodHound to work with your nodes and edges.
 
@@ -28,13 +24,13 @@ The above graph has two nodes and one edge. The edge is **directed**. The source
 
 **Every** edge in a BloodHound attack graph is **directed**, and is **one-way**. There are no bi-directional (“two-way”) edges in a BloodHound graph.
 
-In a BloodHound attack graph, the direction of the **edge** must match the direction of **access** or **attack**. Let’s look at an example with Active Directory group memberships.
+In a BloodHound attack graph, the direction of the **edge** must match the direction of **access** or **attack**. Let's look at an example with Active Directory group memberships.
 
 In the BloodHound attack graph, we model Active Directory security group memberships like this:
 
 <img noZoom src="/assets/og-bp-2.png" alt="User -- MemberOf --> Group"/>
 
-Think about the direction of the edge. Now think for a moment and try to figure out why we don’t model AD security group memberships like this instead:
+Think about the direction of the edge. Now think for a moment and try to figure out why we don't model AD security group memberships like this instead:
 
 <img noZoom src="/assets/og-bp-3.png" alt="Group -- HasMember --> User"/>
 
@@ -42,7 +38,7 @@ This seems perfectly reasonable at first glance, does it not? But remember that 
 
 The direction of the edge going from the group to the user does not expose any attack path. Just because a user is a member of a group does not mean the group has any “control” of the user. But when the direction of the edge is from the user to the group, that DOES serve attack path discovery.
 
-Why? Because in Windows and Active Directory, members of security groups gain the privileges held by those groups. Let’s extend the model a bit to make this easier to see:
+Why? Because in Windows and Active Directory, members of security groups gain the privileges held by those groups. Let's extend the model a bit to make this easier to see:
 
 <img noZoom src="/assets/og-bp-4.png" alt="User -- MemberOf -> Group -- GenericAll --> Domain"/>
 
@@ -68,9 +64,9 @@ In the above graph there are two patterns:
 
 2. From the blue (bottom left) to the green (bottom right) node
 
-What’s wrong with this design?
+What's wrong with this design?
 
-Think of the graph as a map of **one-way streets**. In the above graph we have two one-way streets. But this map kinda sucks, doesn’t it? You can only start in two places and you can only go to two places. You can’t go from the red (top left) node to the blue (bottom left) node because there is no **path** connecting those nodes.
+Think of the graph as a map of **one-way streets**. In the above graph we have two one-way streets. But this map kinda sucks, doesn't it? You can only start in two places and you can only go to two places. You can't go from the red (top left) node to the blue (bottom left) node because there is no **path** connecting those nodes.
 
 This is a much better map:
 
@@ -80,7 +76,7 @@ Now is there a **path** from the red (top left) node to the blue (bottom left) n
 
 The difference in the two graphs is the level of **connectedness**, or how well-linked the nodes are to one another.
 
-Let’s belabor the point a little more to make it even more clear. The top model would be analogous to having a node represent both a **person** and the **address** where they live, with the edge representing the fact that they live at that address:
+Let's belabor the point a little more to make it even more clear. The top model would be analogous to having a node represent both a **person** and the **address** where they live, with the edge representing the fact that they live at that address:
 
 <img noZoom src="/assets/og-bp-7.png" alt="Badly connected nodes"/>
 
@@ -90,8 +86,12 @@ While the bottom graph would be analogous to having the nodes represent the **ad
 
 It should be obvious that for the sake of **pathfinding**, the **second** model is the **only** model that will work.
 
-**This is actually how Google Maps works under the hood – it is a graph where locations are nodes and streets are edges.**
+**This is actually how Google Maps works under the hood — it is a graph where locations are nodes and streets are edges.**
+
+<Warning>
+  If your graph model does not create paths connecting non-adjacent nodes, you should use a relational database instead. A graph database is the wrong tool for data that only produces one-to-one patterns.
+</Warning>
 
 <Note>
-This article is adapted from [Andy Robbins](https://www.linkedin.com/in/robbinsandy/)’ blog post, “[Attack Graph Model Design Requirements and Examples](https://specterops.io/blog/2025/08/01/attack-graph-model-design-requirements-and-examples/),” which goes beyond what’s described here.
+This article is adapted from [Andy Robbins](https://www.linkedin.com/in/robbinsandy/)' blog post, “[Attack Graph Model Design Requirements and Examples](https://specterops.io/blog/2025/08/01/attack-graph-model-design-requirements-and-examples/),” which goes beyond what's described here.
 </Note>

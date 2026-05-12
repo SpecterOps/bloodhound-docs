@@ -1,36 +1,70 @@
 ---
-title: OpenGraph Custom Icons
+title: Custom Icons
 sidebarTitle: Custom Icons
-description: "How to set Custom Icons for your Custom Nodes"
+description: "Define custom icons and colors for OpenGraph node kinds."
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-# Introduction
-Since arbitrary nodes don’t have predefined types, there needs to be a way to specify custom icons. Here are a few possible approaches.
+To help visually differentiate your OpenGraph nodes in BloodHound, you can define custom icons and colors. The method for doing so depends on whether your extension produces a <Tooltip tip="A graph that uses only the data payload without structured analysis or pathfinding capabilities." cta="Learn more" href="/opengraph/overview#generic-graphs">generic graph</Tooltip> or a <Tooltip tip="A graph that includes structured analysis, pathfinding, and findings based on an installed extension definition schema." cta="Learn more" href="/opengraph/overview#structured-graphs">structured graph</Tooltip>:
 
-# Icon Selection
+- **Generic graphs**: Use the [`POST /api/v2/custom-nodes`](/reference/custom-node-management/create-custom-nodes) API endpoint to define custom icons and colors.
 
-## Predefined icon set
+- **Structured graphs**: Define icons and colors directly in the [`node_kinds`](/opengraph/developer/graph-definition#node_kinds) array of your <Tooltip tip="A file that defines graph structure, including node types, edge types, traversability behavior, and visual configurations" cta="Learn more" href="/opengraph/developer/graph-definition">extension definition schema</Tooltip>.
 
-- Provide a set of icons (from Font Awesome) and allow users to specify an icon name 
-- Users can optionally specify a color per node kind. Acceptable values are #RGB or #RRGGBB
-- The entirety of the free, solid icons that font awesome offers are available. Supported icons can be viewed on the [official Font Awesome docs](https://fontawesome.com/search?o=r&ic=free&s=solid).
-- User must correctly specify the icon name using Font Awesome’s naming conventions. 
-    - A valid icon name will be something like “house” or “smile” without any fa-, fas-, etc. prefixes
-- Render a (?) icon on failed mappings. 
-- Provide a `PUT` endpoint for users to correct erroneous mappings (ie. feUser instead of faUser)
+## Icon options
 
-### Example payload for custom icons 
+BloodHound supports the full free, solid icon set from Font Awesome. View available icons on the [official Font Awesome docs](https://fontawesome.com/search?o=r&ic=free&s=solid).
 
-``` JSON
+When specifying an icon:
+
+- Use the Font Awesome icon name without any prefix, for example `house` or `smile` (not `fa-house` or `fas-house`).
+- Optionally specify a color per node kind. Acceptable values are `#RGB` or `#RRGGBB`.
+- If an icon name cannot be resolved, BloodHound renders a `(?)` icon. Use the `PUT /api/v2/custom-nodes` endpoint to correct invalid mappings.
+
+## Examples
+
+The following examples show how to define custom icons for OpenGraph node kinds using an extension definition schema, the API Explorer, and a Python script.
+
+### Extension definition schema
+
+For structured graphs, define icons and colors directly in the [`node_kinds`](/opengraph/developer/graph-definition#node_kinds) array of your extension definition schema.
+
+```json
+{
+  "node_kinds": [
+    {
+      "name": "example_Person",
+      "display_name": "Person",
+      "description": "A person in the graph",
+      "icon": "user",
+      "color": "#2299FF"
+    },
+    {
+      "name": "example_Device",
+      "display_name": "Device",
+      "description": "A device in the graph",
+      "icon": "desktop",
+      "color": "#00AA55"
+    }
+  ]
+}
+```
+
+### Direct API call
+
+The following example request payload defines custom icons for three node kinds (`person`, `device`, and `alert`).
+
+Use this payload with the [`POST /api/v2/custom-nodes`](/reference/custom-node-management/create-custom-nodes) endpoint to create custom node icon mappings.
+
+```json POST /api/v2/custom-nodes
 {
   "custom_types": {
     "person": {
       "icon": {
         "type": "font-awesome",
         "name": "user",
-        "color": "#FFF"
+        "color": "#2299FF"
       }
     },
     "device": {
@@ -49,46 +83,55 @@ Since arbitrary nodes don’t have predefined types, there needs to be a way to 
 }
 ```
 
-### Example with API Explorer
+### BloodHound API Explorer
 
-You can set custom icons directly from the BloodHound API Explorer without writing any code.
+You can set custom icons directly from the BloodHound **API Explorer** without writing any code.
 
 <Steps>
 
 <Step title="Open the API Explorer">
 Navigate to the API Explorer from the BloodHound menu.
 
-<img src="/images/extensions/custom-icons/custom-icons-01.png" alt="BloodHound menu showing the API Explorer option" />
+<Frame>
+  <img src="/images/extensions/custom-icons/custom-icons-01.png" alt="BloodHound menu showing the API Explorer option" />
+</Frame>
 </Step>
 
 <Step title="Select the POST endpoint">
 Under **Custom Node Management**, expand the `POST /api/v2/custom-nodes` endpoint and click **Try it out**.
 
-<img src="/images/extensions/custom-icons/custom-icons-02.png" alt="API Explorer showing the POST custom-nodes endpoint" />
+<Frame>
+  <img src="/images/extensions/custom-icons/custom-icons-02.png" alt="API Explorer showing the POST custom-nodes endpoint" />
+</Frame>
 </Step>
 
 <Step title="Enter your payload and execute">
 Enter your custom icon configuration in the **Request body** field and click **Execute**.
 
-<img src="/images/extensions/custom-icons/custom-icons-03.png" alt="API Explorer with a custom icon payload ready to execute" />
+<Frame>
+  <img src="/images/extensions/custom-icons/custom-icons-03.png" alt="API Explorer with a custom icon payload ready to execute" />
+</Frame>
 </Step>
 
 <Step title="Verify the response">
 A `201` response confirms your custom icons were created successfully.
 
-<img src="/images/extensions/custom-icons/custom-icons-04.png" alt="API Explorer showing a successful 201 response with the custom icon configuration" />
+<Frame>
+  <img src="/images/extensions/custom-icons/custom-icons-04.png" alt="API Explorer showing a successful 201 response with the custom icon configuration" />
+</Frame>
 </Step>
 
 </Steps>
 
+### Python script
 
-### Example with Python
-Here's a simple Python script to help you customize your icons.  
-You will need to generate a [Bearer Token](/reference/overview#jwt-bearer-token)
+Use the following Python script to define custom icons via the API. You will need to generate a [Bearer Token](/reference/overview#jwt-bearer-token).
 
-**Note** Make sure to adjust the `url` and replace the `place holder token` in the script.
+<Warning>
+  Update the `url` variable and replace the placeholder token before running the script.
+</Warning>
 
-``` Python
+```python
 import requests
 import json
 import urllib3
@@ -122,7 +165,7 @@ def define_icon(icon_type, icon_name, icon_color):
         verify=False  # Disables SSL verification
     )
 
-    print(f"🔹 Sent icon for: {icon_type}")
+    print(f"Sent icon for: {icon_type}")
     print("Status Code:", response.status_code)
     print("Response Body:", response.text)
     print("---")
@@ -132,4 +175,4 @@ define_icon("Node1", "burst", "#03CEFC")
 define_icon("Node2", "home", "#D67500")
 ```
 
-You can call `define_icon` as many time as you need for each of your node type. 
+Call `define_icon` as many times as needed for each of your node types.

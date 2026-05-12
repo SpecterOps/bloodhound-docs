@@ -3,11 +3,11 @@ export const ImportCypherQueries = ({ source, slug, environment }) => {
   return (
     <>
       <p>
-        The {source} extension includes <a href={`/opengraph/extensions/${slug}/queries`}>Cypher queries</a> to help identify attack paths and misconfigurations in your {source} {environment}. Import the {source} query JSON files into BloodHound using the <a href="/analyze-data/explore/cypher-search#import-and-export">query import workflow</a>.
+        The {source} extension provides Cypher queries to help identify attack paths and misconfigurations in your {source} {environment}.
       </p>
 
       <p>
-        You can then run the imported queries on the <strong>Explore</strong> page.
+        You can find links to download JSON files for each query from GitHub in the <a href={`/opengraph/extensions/${slug}/queries`}>query documentation</a>. Import these files into BloodHound using the <a href="/analyze-data/explore/cypher-search#import-and-export">query import workflow</a>.
       </p>
 
       <Note>
