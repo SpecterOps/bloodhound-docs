@@ -4,13 +4,13 @@ title: BloodHound Enterprise Security Overview
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-### Introduction and Architecture
+## Introduction and Architecture
 
 Attack Paths are chains of abusable privileges and user behaviors that create direct and indirect connections between computers and users. They exist due to years of misconfigurations and a lack of visibility into how privileges are applied. Attack Paths cannot be patched through traditional methods because they are misconfigurations, not vulnerabilities.
 
 SpecterOps built BloodHound Enterprise following the principles of [Attack Path Management](https://specterops.io/what-is-attack-path-management/) (APM). The primary goal of APM is to solve the Attack Path problem directly. APM is a fundamentally different, unique methodology designed to help organizations understand, empirically quantify the impact of, and eliminate Attack Path risks.
 
-### Single-Tenant Architecture Diagram
+## Single-Tenant Architecture Diagram
 
 <Frame>
   <img src="/assets/image-38.png"/>
@@ -28,7 +28,7 @@ Customers may request that their tenant reside within one of the supported AWS r
 
 Additionally, BloodHound Enterprise utilizes [Pendo](https://pendo.io) to provide in-product tours and behavior monitoring. Customer data is not sent to Pendo. More information on Pendo's data privacy, security policies, and certifications is available [here](https://www.pendo.io/data-privacy-security/).
 
-### AWS Datacenter Security
+## AWS Datacenter Security
 
 BloodHound Enterprise is hosted within AWS, which touts a litany of security certifications and is subject to regular audits and certifications. Certifications for AWS include ISO 27001, SOC 1 and 2, etc.
 
@@ -39,21 +39,21 @@ BloodHound Enterprise is hosted within AWS, which touts a litany of security cer
     * [ISO 27017 Certification](https://d1.awsstatic.com/certifications/iso_27017_certification.pdf)
     * [SOC 1 / 2 /3 Artifacts](https://aws.amazon.com/compliance/soc-faqs/)
 
-### Customer Data Storage and Separation
+## Customer Data Storage and Separation
 
-#### Separation of Customer Data
+### Separation of Customer Data
 
 BloodHound Enterprise is deployed in a single-tenancy model within AWS. Each customer environment is configured with its own database, API, and UI servers, and data is not commingled between customers.
 
 Each tenant has unique authentication keys defined for authentication between services within the overall system.
 
-#### Data Backup and Retention
+### Data Backup and Retention
 
 Data backup occurs via [Amazon EBS](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html) and [Amazon RDS](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_CommonTasks.BackupRestore.html) backup functionality. All backups are encrypted using the methods listed below in the Customer Data Security section.
 
 All backups are retained for seven (7) days.
 
-#### Customer Data Security
+### Customer Data Security
 
 BloodHound Enterprise uses available Amazon encryption functionalities to encrypt all data using AES-256 with an Amazon-managed key. This applies to all servers in the BloodHound Enterprise infrastructure. Backup snapshots utilize the same encryption mechanisms.
 
@@ -61,6 +61,63 @@ AWS security groups isolate all BHE installations. They do not have permission t
 
 More information on EBS volume encryption [can be found here](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html).
 Information specific to RDS volume encryption [can be found here](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.Encryption.html).
+
+### Bring Your Own Key Encryption
+
+BloodHound Enterprise supports a "Bring Your Own Key" (BYOK) model for encryption of data at rest, allowing you to maintain control over your encryption keys to support internal security policies and compliance requirements.
+
+With BYOK, you provide your own encryption key through AWS Key Management Service (KMS), and BloodHound Enterprise uses that key to encrypt your tenant data instead of SpecterOps-managed keys.
+
+<Note>
+  BYOK encryption applies only to data at rest. It does not impact TLS certificates used for encrypting data in transit.
+</Note>
+
+#### Important Considerations
+
+To enable BYOK encryption for your BloodHound Enterprise tenant, you must contact your account team. You should also be aware of the following considerations:
+
+- **Key availability**: Your BloodHound Enterprise tenant requires continuous access to your KMS key. If the key becomes unavailable (deleted, access revoked, or expired), your tenant will experience service disruptions.
+- **Key rotation**: You are responsible for managing key rotation according to your security policies. Coordinate any key changes with your SpecterOps account team.
+- **Cost**: There may be additional AWS KMS costs associated with key usage. Consult AWS pricing documentation for details.
+- **Migration**: Migrating an existing tenant to BYOK requires coordination and may involve scheduled maintenance windows.
+
+#### Prerequisites
+
+To use BYOK encryption, you need:
+
+- An AWS account with permissions to create and manage KMS keys
+- Ability to configure IAM policies for cross-account access
+- A BloodHound Enterprise tenant
+
+#### Setup Process
+
+BYOK setup requires coordination with your SpecterOps account team. The general process involves the following steps:
+
+<Steps>
+  <Step title="Create a KMS key in your AWS account">
+    Create a KMS key in your AWS account.
+    
+    <Note>
+      See the [AWS documentation](https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html) for details.
+    </Note>
+  </Step>
+
+  <Step title="Configure cross-account access">
+    Attach an IAM policy to your KMS key that allows the SpecterOps AWS account ID (provided by your account team) to use the key.
+    
+    <Note>
+      See the [AWS documentation](https://docs.aws.amazon.com/kms/latest/developerguide/key-policy-modifying-external-accounts.html) for details.
+    </Note>
+  </Step>
+
+  <Step title="Provide the key ARN to SpecterOps">
+    Contact your account team and provide the Amazon Resource Name (ARN) of your KMS key.
+  </Step>
+
+  <Step title="Coordinate tenant provisioning">
+    Work with your account team to provision a new tenant or migrate your existing tenant to use your key.
+  </Step>
+</Steps>
 
 ## Network Communications
 
