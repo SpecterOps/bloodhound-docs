@@ -27,10 +27,6 @@ graph LR
 
 Some steps are required before you can complete the [AzureHound configuration](/install-data-collector/install-azurehound/create-configuration). At minimum, you must create the application registration because AzureHound requires an Entra ID **Directory (tenant) ID** and **Application (client) ID**.
 
-For managed identity authentication, you must first create the identity in Azure and configure the app registration to use it because AzureHound requires the **Managed Identity Client ID**.
-
-For certificate authentication, you must also upload the certificate to the app registration if you're using the AzureHound Enterprise CLI tool to create the certificate.
-
 ## Create a new app registration
 
 This section guides you through the minimum steps to create a new application registration in Microsoft Entra ID for AzureHound Enterprise data collection.
@@ -177,13 +173,13 @@ This section describes how to configure authentication methods for the AzureHoun
 
 ### Managed identity (<Badge color="green">recommended</Badge>)
 
-Managed identities provide the most secure authentication method by eliminating credential management entirely. Microsoft Entra ID automatically manages the identity lifecycle, but you must properly configure the identity-to-host assignment and federated trust.
-
-This section describes how to configure Azure Managed Identity authentication for the AzureHound Enterprise application registration.
-
-<Tip>You will need the managed identity **Client ID** to complete [AzureHound configuration](/install-data-collector/install-azurehound/create-configuration) later.</Tip>
+Managed identities provide the most secure authentication method because they remove the need to manage credentials directly.
 
 <ManagedIdentityRecommendation />
+
+For this setup, create a user-assigned managed identity in Azure, assign it to the Azure resource where you plan to run AzureHound Enterprise, and configure the app registration to trust that identity.
+
+<Note>To complete [AzureHound configuration](/install-data-collector/install-azurehound/create-configuration), you will need the user-assigned managed identity **Client ID**. AzureHound Enterprise must run on the Azure resource where that identity is assigned.</Note>
 
 <Steps>
   <Step title="Navigate to Azure Managed Identities">
@@ -198,13 +194,24 @@ This section describes how to configure Azure Managed Identity authentication fo
     <Note>See the Microsoft [documentation](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/manage-user-assigned-managed-identities-azure-portal) for more information.</Note>
 
   </Step>
-  <Step title="Configure the app registration to use the managed identity">
+  <Step title="Assign the managed identity to the AzureHound Enterprise host">
+
+    Assign the user-assigned managed identity to the Azure resource where you plan to run AzureHound Enterprise, such as a virtual machine or app service.
+
+    <Note>Azure Managed Identity authentication only works when AzureHound Enterprise runs on an Azure resource that has access to the managed identity.</Note>
+
+  </Step>
+  <Step title="Configure the app registration to trust the managed identity">
 
     1. Sign in to the [Microsoft Entra admin center](https://entra.microsoft.com/) and navigate to the previously created AzureHound Enterprise application registration.
 
     1. In the left menu, click **Certificates & secrets** > **Federated credentials** > **Add credential**.
 
-    1. From the **Federated credential scenario** drop-down menu, select **Managed Identity** and enter the required information.
+    1. From the **Federated credential scenario** drop-down menu, select **Managed Identity**.
+
+    1. Select the user-assigned managed identity that you created for AzureHound Enterprise.
+
+    1. Review the default values and complete any remaining required fields.
 
         <Note>See the Microsoft [documentation](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-config-app-trust-managed-identity) for more information.</Note>
     
@@ -217,7 +224,7 @@ This section describes how to configure Azure Managed Identity authentication fo
 
 Certificates provide stronger authentication than client secrets or username and password combinations, but you must manage and rotate them properly.
 
-This section describes how to add an authentication certificate to the AzureHound Enterprise application registration.
+For this setup, you must also upload the certificate to the app registration if you're using the AzureHound Enterprise CLI tool to create the certificate.
 
 <Note>If you have not already created a certificate, see [Create an AzureHound Configuration](/install-data-collector/install-azurehound/create-configuration) before proceeding.</Note>
 
