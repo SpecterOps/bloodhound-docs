@@ -4,6 +4,7 @@ description: Follow this guide to configure Microsoft Entra ID for AzureHound En
 ---
 
 import ManagedIdentityRecommendation from '/snippets/hounds/managed-id-recommendation.mdx';
+import EntraIdPermissions from '/snippets/hounds/azurehound-entra-id-permissions.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
@@ -13,14 +14,14 @@ Creating a Microsoft Entra ID application registration is a prerequisite for Azu
 graph LR
     A[Create a
     new app 
-    registration] --> B[Assign 
+    registration] --> B[Add 
     required API
     permissions]
     B --> C[Configure 
     authentication 
     methods]
-    C --> D[Assign 
-    required 
+    C --> D[Create and
+    assign required 
     access roles]
 ```
 
@@ -83,16 +84,14 @@ This section guides you through the minimum steps to create a new application re
           alt="A view of the Azure portal showing the application registration details page with the Application (client) ID and Directory (tenant) ID fields highlighted."
         />
       </Frame>
-    
-    Continue to the [Grant Microsoft Graph Permissions](#grant-microsoft-graph-permissions) section.
 
   </Step>
 
 </Steps>
 
-## Assign required API permissions
+## Add required API permissions
 
-This section describes how to assign the required Microsoft Graph API permissions to the AzureHound Enterprise application registration.
+This section describes how to configure the required Microsoft Graph API permissions for the AzureHound Enterprise application registration.
 
 <Note>See the [Microsoft documentation](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-configure-app-access-web-apis#add-permissions-to-access-microsoft-graph) for more information.</Note>
 
@@ -129,25 +128,9 @@ This section describes how to assign the required Microsoft Graph API permission
           />
         </Frame>
 
-    1. Search for the **Directory.Read.All** permission and check the box next to it.
+    1. Search for and check the box next to each of the following Microsoft Graph **application** permissions. See [AzureHound Data and Permissions: Entra ID](/collect-data/azurehound-data-permissions#entra-id) for details on the least-privilege approach:
 
-        <Frame>
-          <img
-            src="/images/data_collectors/azurehound/directory-read-all.png"
-            alt="A view of the Microsoft Graph API permission selection page with the Directory.Read.All permission highlighted."
-            style={ { maxWidth: '70%' } }
-          />
-        </Frame>
-
-    1. Search for the **RoleManagement.Read.All** permission and check the box next to it.
-
-        <Frame>
-          <img
-            src="/images/data_collectors/azurehound/rolemanagement-read-all.png"
-            alt="A view of the Microsoft Graph API permission selection page with the RoleManagement.Read.All permission highlighted."
-            style={ { maxWidth: '70%' } }
-          />
-        </Frame>
+        <EntraIdPermissions />
 
     1. Click **Add permissions**.
 
@@ -177,8 +160,6 @@ This section describes how to assign the required Microsoft Graph API permission
           />
         </Frame>
 
-        Continue to the [Configure authentication](#configure-authentication) section.
-
   </Step>
 
 </Steps>
@@ -187,14 +168,14 @@ This section describes how to assign the required Microsoft Graph API permission
 
 This section describes how to configure authentication methods for the AzureHound Enterprise application registration. AzureHound Enterprise supports the following authentication methods:
 
-- Azure Managed Identity _(recommended)_
+- Azure Managed Identity (<Badge color="green">recommended</Badge>)
 - Certificate
 - Client Secret
 - Username and Password
 
 <Note>This section provides instructions for configuring the **Azure Managed Identity** and **Certificate** authentication methods. For information on other methods, see the Microsoft [documentation](https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-credentials).</Note>
 
-### Managed identity (recommended)
+### Managed identity (<Badge color="green">recommended</Badge>)
 
 Managed identities provide the most secure authentication method by eliminating credential management entirely. Microsoft Entra ID automatically manages the identity lifecycle, but you must properly configure the identity-to-host assignment and federated trust.
 
@@ -277,119 +258,83 @@ This section describes how to add an authentication certificate to the AzureHoun
   </Step>
 </Steps>
 
-## Assign required access roles
+## Create and assign required access roles
 
 This section describes how to assign the required access roles to the AzureHound Enterprise application registration for data collection.
 
-### Assign Directory Readers role on the Entra ID tenant
+The AzureHound Reader role is a least-privilege custom role that grants AzureHound the minimum permissions required to collect data from Azure Resource Manager. Assigning this role at the Tenant Root Group scope ensures AzureHound can collect data across all current and future subscriptions in the tenant.
 
-The AzureHound Enterprise application registration requires the **Directory Readers** role to read Entra ID data. Follow the steps below to assign this role.
+<Note>
+  If you don't have any management groups, you can skip this section. However, AzureHound will log a warning during each collection indicating it cannot collect management group data.
 
-<Steps>
-  <Step title="Navigate to Entra ID Roles & admins">
-
-    In the left menu, click **Entra ID** > **Roles & admins**.
-
-  </Step>
-  <Step title="Assign Directory Readers role">
-
-    1. Search for the **Directory Readers** role and click the role name or description.
-
-        <Note>Clicking the checkbox sometimes prevents clicking on the role itself.</Note>
-
-        <Frame>
-          <img src="/assets/image-117.png" alt=""/>
-        </Frame>
-
-    1. Click **Add assignments**.
-
-        <Frame>
-          <img src="/assets/image-118.png" alt=""/>
-        </Frame>
-
-    1. Click **No member selected** to open the search window.
-
-        <Frame>
-          <img src="/assets/image-119.png" alt=""/>
-        </Frame>
-
-    1. Search for the previously created service principal with either its name, application ID, or object ID. Select it by clicking on it.
-
-        <Frame>
-          <img src="/assets/image-120.png" alt=""/>
-        </Frame>
-
-    1. Click **Select**.
-
-        <Frame>
-          <img src="/assets/image-121.png" alt=""/>
-        </Frame>
-
-    1. Validate that your principal is displayed and click **Next**.
-
-        <Frame>
-          <img src="/assets/image-122.png" alt=""/>
-        </Frame>
-
-    1. Ensure that the Assignment type is **Active** and the **Permanently assigned** box is checked. Enter a justification and click **Assign**.
-
-        <Frame>
-          <img src="/assets/image-123.png" alt=""/>
-        </Frame>
-
-    1. Confirm that the service principal is a **Directory Reader** by refreshing the view.
-
-  </Step>
-</Steps>
-
-### Grant Reader role on all Azure subscriptions
-
-If you do not have any management groups, you may either create your Tenant Root Group following the prompts in the middle of the screen to ensure future visibility if another administrator begins use of subscriptions, or you may skip this section altogether.
-
-<Note>If you skip this section, you will see a warning in the logs for each collection indicating the lack of ability to collect this data accordingly.</Note>
+  Alternatively, you can create your Tenant Root Group by following the prompts in the Azure portal. This ensures visibility if another administrator begins using subscriptions in the future.
+</Note>
 
 <Steps>
-  <Step title="Navigate to Management Groups">
+  <Step title="Navigate to the Tenant Root Group">
 
     1. Log into the [Azure portal](https://portal.azure.com/) as a user with the [User Access Administrator](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/privileged#user-access-administrator) role.
 
     1. Search for and select the **Management groups** item in the top search bar.
 
         <Frame>
-          <img src="/assets/image-124.png" alt=""/>
+          <img src="/assets/arm-search-management-groups.png" alt=""/>
         </Frame>
-    
+
     1. Select **Tenant Root Group**.
 
         <Frame>
-          <img src="/assets/image-125.png" alt=""/>
+          <img src="/assets/arm-select-tenant-root-group.png" alt=""/>
         </Frame>
 
   </Step>
-  <Step title="Add the Reader role assignment">
+  <Step title="Create the AzureHound Reader custom role">
 
     1. Select **Access control (IAM)**.
 
         <Frame>
-          <img src="/assets/image-126.png" alt=""/>
+          <img src="/assets/arm-select-access-control-iam.png" alt=""/>
         </Frame>
 
-    1. Select **Role assignments**.
+    1. Click **Add**, then **Add custom role**.
 
         <Frame>
-          <img src="/assets/image-127.png" alt=""/>
+          <img src="/assets/arm-add-custom-role.png" alt=""/>
         </Frame>
 
-    1. Click **Add**, then **Add role assignment**.
+    1. Download <a href="/assets/azurehound-reader-role.json" download>azurehound-reader-role.json</a>, open it in a text editor, and replace `<tenantRootGroupId>` with your [Tenant Root Management Group ID](https://learn.microsoft.com/en-us/azure/governance/management-groups/overview#root-management-group-for-each-directory) (this is your Entra ID tenant ID).
 
         <Frame>
-          <img src="/assets/image-128.png" alt=""/>
+          <img src="/assets/arm-json-tenantid.png" alt=""/>
         </Frame>
 
-    1. Find the **Reader** role and select it.
+    1. In **Basics** > **File**, upload the edited file and click **Review + create**.
 
         <Frame>
-          <img src="/assets/image-129.png" alt=""/>
+          <img src="/assets/arm-upload-azurehound-reader.png" alt=""/>
+        </Frame>
+
+        <Info>See [AzureHound Data Collection and Permissions: Azure Resource Manager](/collect-data/azurehound-data-permissions#azure-resource-manager) for details on each least-privilege permission in the AzureHound Reader role.</Info>
+
+    1. Review the role and click **Create** at the bottom of the page.
+
+        <Frame>
+          <img src="/assets/arm-create.png" alt=""/>
+        </Frame>
+
+  </Step>
+  <Step title="Assign the AzureHound Reader role">
+
+    1. Back in **Access control (IAM)**, click **Add**, then **Add role assignment**.
+
+        <Frame>
+          <img src="/assets/arm-add-role-assignment.png" alt=""/>
+        </Frame>
+
+    1. Search for the **AzureHound Reader** role and select it.
+
+        <Frame>
+          <img src="/assets/arm-select-azurehound-reader-role.png" alt=""/>
         </Frame>
 
     1. Click **Members**.
@@ -417,7 +362,7 @@ If you do not have any management groups, you may either create your Tenant Root
         </Frame>
 
   </Step>
-  <Step title="Review role assignment">
+  <Step title="Review the role assignment">
 
     1. Click the tab **Review + Assign**.
 
@@ -432,14 +377,20 @@ If you do not have any management groups, you may either create your Tenant Root
         </Frame>
 
     1. Confirm the role is present by refreshing this view. You may need to alter the filter to see this role.
+
   </Step>
 </Steps>
 
-## Scripted app registration
+## Scripted configuration
 
-As an alternative to the manual app registration process described in this document, you can use **PowerShell** to achieve the same.
-Below is a sample PowerShell script that performs all the required steps,
-with the exception of [configuring the authentication certificate](#add-application-authentication-certificate).
+As an alternative to the manual steps described in this document, you can use **PowerShell** to automate the entire configuration process.
+
+The script below registers AzureHound in Entra ID, creates the least-privilege Azure Reader role, and assigns it to the service principal.
+The script is **idempotent**—it safely handles re-runs by detecting existing resources and updating them as needed, preventing duplicate role definitions or assignments.
+
+<Note>
+  After running this script, follow the steps to [configure an authentication certificate](/install-data-collector/install-azurehound/azure-configuration#certificate) to complete the setup.
+</Note>
 
 ```powershell
 <#
@@ -449,8 +400,10 @@ as an application in Entra ID.
 
 .DESCRIPTION
 This script registers the Azure Data Exporter for BloodHound Enterprise (AzureHound)
-as an on-prem application in Microsoft Entra ID and Azure,
-including all the necessary read permissions.
+as an application in Microsoft Entra ID and Azure, including all necessary read permissions
+and a least-privilege custom Azure Reader role. The script is idempotent: on subsequent runs,
+it detects existing role definitions and assignments, updates them if needed, and skips creation
+to prevent duplicates.
 
 The required PowerShell modules can be installed
 from the PowerShell Gallery using the following command:
@@ -458,7 +411,6 @@ from the PowerShell Gallery using the following command:
 Install-Module -Scope AllUsers -Repository PSGallery -Force -Name @(
     Microsoft.Graph.Applications,
     Microsoft.Graph.Authentication,
-    Microsoft.Graph.Identity.DirectoryManagement,
     Az.Resources,
     Az.Accounts
 )
@@ -469,7 +421,6 @@ Version: 1.1
 
 #Requires -Version 5
 #Requires -Modules Microsoft.Graph.Applications,Microsoft.Graph.Authentication
-#Requires -Modules Microsoft.Graph.Identity.DirectoryManagement
 #Requires -Modules Az.Resources,Az.Accounts
 
 #region Entra ID
@@ -479,8 +430,7 @@ Version: 1.1
 Connect-MgGraph -NoWelcome -ContextScope Process -Scopes @(
    'User.Read',
    'Application.ReadWrite.All',
-   'AppRoleAssignment.ReadWrite.All',
-   'RoleManagement.ReadWrite.Directory'
+   'AppRoleAssignment.ReadWrite.All'
 )
 
 # Register the AzureHound application
@@ -493,7 +443,7 @@ Connect-MgGraph -NoWelcome -ContextScope Process -Scopes @(
     MarketingUrl      = 'https://specterops.io/bloodhound-enterprise'
     TermsOfServiceUrl = 'https://specterops.io/terms-of-service'
     PrivacyStatementUrl = 'https://specterops.io/privacy-policy'
-    SupportUrl = 'https://support.bloodhoundenterprise.io/'
+    SupportUrl = 'https://bloodhound.specterops.io/'
 }
 [hashtable] $webUrls = @{
     HomePageUrl = $homePage
@@ -548,60 +498,51 @@ Update-MgApplication `
 [Microsoft.Graph.PowerShell.Models.IMicrosoftGraphServicePrincipal] $microsoftGraph =
     Get-MgServicePrincipal -Filter "DisplayName eq 'Microsoft Graph'"
 
-# Fetch the Directory.Read.All scope ID,
-# which should be 7ab1d382-f21e-4acd-a863-ba3e13f7da61
-[Microsoft.Graph.PowerShell.Models.IMicrosoftGraphAppRole] $readDirectoryScope =
-    $microsoftGraph.AppRoles | Where-Object Value -eq 'Directory.Read.All'
+# Define the least-privilege Microsoft Graph application permissions
+# See: /collect-data/azurehound-data-permissions#entra-id
+[string[]] $requiredPermissions = @(
+    'User.Read.All'
+    'GroupMember.Read.All'
+    'Application.Read.All'
+    'Device.Read.All'
+    'Organization.Read.All'
+    'RoleManagement.Read.Directory'
+    'AdministrativeUnit.Read.All'
+    'AuditLog.Read.All'  # Optional: for signInActivity on user objects
+)
 
-# Fetch the RoleManagement.Read.All scope ID,
-# which should be c7fbd983-d9aa-4fa7-84b8-17382c103bc4
-[Microsoft.Graph.PowerShell.Models.IMicrosoftGraphAppRole] $readRolesScope =
-    $microsoftGraph.AppRoles | Where-Object Value -eq 'RoleManagement.Read.All'
+# Resolve each permission name to its AppRole definition
+[Microsoft.Graph.PowerShell.Models.IMicrosoftGraphAppRole[]] $appRoles = $requiredPermissions | ForEach-Object {
+    [Microsoft.Graph.PowerShell.Models.IMicrosoftGraphAppRole] $role =
+        $microsoftGraph.AppRoles | Where-Object Value -eq $PSItem
+    if (-not $role) { throw "Permission '$PSItem' not found in Microsoft Graph app roles" }
+    $role
+}
+
+# Transform the app roles to the format required by Update-MgApplication
+[hashtable[]] $resourceAccess = $appRoles | ForEach-Object {
+    @{ id = $PSItem.Id; type = 'Role' }
+}
 
 # Delegate the required API permissions
 Update-MgApplication -ApplicationId $registeredApp.Id -RequiredResourceAccess @{
     ResourceAppId = $microsoftGraph.AppId # 00000003-0000-0000-c000-000000000000
-    ResourceAccess = @(@{
-        id = $readDirectoryScope.Id       # 7ab1d382-f21e-4acd-a863-ba3e13f7da61
-        type = 'Role'
-    },@{
-        id = $readRolesScope.Id           # c7fbd983-d9aa-4fa7-84b8-17382c103bc4
-        type = 'Role'
-    })
+    ResourceAccess = $resourceAccess
 }
 
-# Approve the permissions on the tenant
-[Microsoft.Graph.PowerShell.Models.IMicrosoftGraphAppRoleAssignment] $readRolesAdminConsent =
+# Admin-consent each permission
+foreach ($access in $resourceAccess) {
     New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $servicePrincipal.Id `
                                             -PrincipalId $servicePrincipal.Id `
                                             -ResourceId $microsoftGraph.Id `
-                                            -AppRoleId $readRolesScope.Id
-
-[Microsoft.Graph.PowerShell.Models.IMicrosoftGraphAppRoleAssignment] $readDirectoryAdminConsent =
-    New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $servicePrincipal.Id `
-                                            -PrincipalId $servicePrincipal.Id `
-                                            -ResourceId $microsoftGraph.Id `
-                                            -AppRoleId $readDirectoryScope.Id
-
-# Fetch the template ID of the Directory Readers role,
-# which should be 88d8e3e3-8f55-4a1e-953a-9b9898b8876b
-[Microsoft.Graph.PowerShell.Models.MicrosoftGraphDirectoryRole] $directoryReadersRole =
-    Get-MgDirectoryRole -Filter "displayName eq 'Directory Readers'"
+                                            -AppRoleId $access.id
+}
 
 # Get the environment-specific Microsoft Graph API endpoint
 # Azure Global: https://graph.microsoft.com
 # Azure USGov:  https://graph.microsoft.us
 [string] $graphEndpoint =
     (Get-MgEnvironment -Name (Get-MgContext).Environment).GraphEndpoint
-
-# OData IDs need to be used when assigning role membership,
-# e.g., https://graph.microsoft.com/v1.0/serviceprincipals/{46615ae4-da39-4403-8de2-606e10774ae0}
-[string] $servicePrincipalOdataId =
-  "$graphEndpoint/v1.0/serviceprincipals/{$($servicePrincipal.Id)}"
-
-# Assign the Directory Readers Entra ID Role to the service principal
-New-MgDirectoryRoleMemberByRef -DirectoryRoleId $directoryReadersRole.Id `
-                               -OdataId $servicePrincipalOdataId
 
 # Fetch the info about the current user
 [Microsoft.Graph.PowerShell.Models.IMicrosoftGraphDirectoryObject] $currentUser =
@@ -624,7 +565,7 @@ Disconnect-MgGraph | Out-Null
 
 #endregion Entra ID
 
-#region Azure (Optional)
+#region Azure
 
 # Optionally enable browser-based login on Windows 10 and later
 Update-AzConfig -EnableLoginByWam $false
@@ -632,10 +573,41 @@ Update-AzConfig -EnableLoginByWam $false
 # Authenticate against Azure Resource Manager
 Connect-AzAccount -Environment AzureCloud -Scope Process
 
-# Fetch the identifier of the Reader role
-[string] $rootScope = '/'
-[Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleDefinition] $azureReaderRole =
-    Get-AzRoleDefinition -Scope $rootScope -Name 'Reader'
+# Load the AzureHound Reader custom role definition
+[string] $roleDefinitionJson = @'
+{
+    "properties": {
+        "roleName": "AzureHound Reader",
+        "description": "Least-privilege read-only role for AzureHound data collection from Azure Resource Manager.",
+        "assignableScopes": [
+            "/providers/Microsoft.Management/managementGroups/<tenantRootGroupId>"
+        ],
+        "permissions": [
+            {
+                "actions": [
+                    "Microsoft.Resources/subscriptions/resourceGroups/read",
+                    "Microsoft.Authorization/roleAssignments/read",
+                    "Microsoft.Management/managementGroups/read",
+                    "Microsoft.Management/managementGroups/descendants/read",
+                    "Microsoft.Compute/virtualMachines/read",
+                    "Microsoft.Compute/virtualMachineScaleSets/read",
+                    "Microsoft.KeyVault/vaults/read",
+                    "Microsoft.Web/sites/read",
+                    "Microsoft.ContainerRegistry/registries/read",
+                    "Microsoft.ContainerService/managedClusters/read",
+                    "Microsoft.Automation/automationAccounts/read",
+                    "Microsoft.Logic/workflows/read",
+                    "Microsoft.Storage/storageAccounts/read",
+                    "Microsoft.Storage/storageAccounts/blobServices/containers/read"
+                ],
+                "notActions": [],
+                "dataActions": [],
+                "notDataActions": []
+            }
+        ]
+    }
+}
+'@
 
 if (-not (Test-Path -Path 'variable:servicePrincipal')) {
     # Fetch the service principal if the Azure part of the script is executed independently
@@ -648,14 +620,94 @@ if (-not (Test-Path -Path 'variable:servicePrincipal')) {
 [Microsoft.Azure.Commands.Resources.Models.ManagementGroups.PSManagementGroup] $rootManagementGroup =
     Get-AzManagementGroup -GroupName $currentTenantId
 
-# Assign the Reader role on all Azure subscriptions to AzureHound
-[Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleAssignment] $readerRoleAssignment =
-    New-AzRoleAssignment -ObjectId $servicePrincipal.Id `
-                         -Scope $rootManagementGroup.Id `
-                         -RoleDefinitionId $azureReaderRole.Id
+# New-AzRoleDefinition expects a flat structure, not the nested `properties` wrapper
+# used by the ARM portal upload format, so we must flatten it before passing it in.
+[PSCustomObject] $roleDefinition = $roleDefinitionJson | ConvertFrom-Json
+
+$flatRole = [PSCustomObject]@{
+    Name             = $roleDefinition.properties.roleName
+    Description      = $roleDefinition.properties.description
+    Actions          = $roleDefinition.properties.permissions[0].actions
+    NotActions       = $roleDefinition.properties.permissions[0].notActions
+    DataActions      = $roleDefinition.properties.permissions[0].dataActions
+    NotDataActions   = $roleDefinition.properties.permissions[0].notDataActions
+    AssignableScopes = @($roleDefinition.properties.assignableScopes |
+                         ForEach-Object { $_ -replace '<tenantRootGroupId>', $currentTenantId })
+}
+
+[string] $flatRolePath = New-TemporaryFile
+$flatRole | ConvertTo-Json -Depth 10 | Set-Content -Path $flatRolePath
+
+# Create the custom AzureHound Reader role
+try {
+    $existingRole = Get-AzRoleDefinition -Name 'AzureHound Reader' -ErrorAction SilentlyContinue
+
+    if ($existingRole) {
+        $existingRole.Actions = $flatRole.Actions
+        $existingRole.NotActions = $flatRole.NotActions
+        $existingRole.DataActions = $flatRole.DataActions
+        $existingRole.NotDataActions = $flatRole.NotDataActions
+        $existingRole.Description = $flatRole.Description
+        $existingRole.AssignableScopes = $flatRole.AssignableScopes
+        [Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleDefinition] $azureHoundReaderRole =
+            Set-AzRoleDefinition -Role $existingRole
+    }
+    else {
+        [Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleDefinition] $azureHoundReaderRole =
+            New-AzRoleDefinition -InputFile $flatRolePath
+    }
+}
+finally {
+    Remove-Item -Path $flatRolePath
+}
+
+# Assign the AzureHound Reader role at the Tenant Root Group
+$existingRoleAssignment = Get-AzRoleAssignment -ObjectId $servicePrincipal.Id `
+                                               -Scope $rootManagementGroup.Id `
+                                               -RoleDefinitionId $azureHoundReaderRole.Id `
+                                               -ErrorAction SilentlyContinue
+
+if ($null -ne $existingRoleAssignment) {
+    [Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleAssignment] $readerRoleAssignment = $existingRoleAssignment
+}
+else {
+    [Microsoft.Azure.Commands.Resources.Models.Authorization.PSRoleAssignment] $readerRoleAssignment =
+        New-AzRoleAssignment -ObjectId $servicePrincipal.Id `
+                             -Scope $rootManagementGroup.Id `
+                             -RoleDefinitionId $azureHoundReaderRole.Id
+}
 
 # Sign out from Azure Resource Manager
 Disconnect-AzAccount -Scope Process
 
-#endregion Azure (Optional)
+#endregion Azure
+
+#region Summary
+
+Write-Host ''
+Write-Host '=== Configuration Summary ===' -ForegroundColor Cyan
+Write-Host ''
+Write-Host 'Entra ID app registration:' -ForegroundColor Green
+Write-Host "  Application Name:  $appName"
+Write-Host "  Application ID:    $($registeredApp.AppId)"
+Write-Host "  Object ID:         $($registeredApp.Id)"
+Write-Host "  Tenant ID:         $currentTenantId"
+Write-Host "  Owner:             $($currentUser.UserPrincipalName)"
+Write-Host ''
+Write-Host 'Microsoft Graph permissions (admin-consented):' -ForegroundColor Green
+$requiredPermissions | ForEach-Object { Write-Host "  - $_" }
+Write-Host ''
+
+Write-Host 'Azure Resource Manager:' -ForegroundColor Green
+Write-Host "  Custom Role:       $($azureHoundReaderRole.Name)"
+Write-Host "  Role ID:           $($azureHoundReaderRole.Id)"
+Write-Host "  Assigned Scope:    $($rootManagementGroup.Id)"
+Write-Host ''
+
+Write-Host 'Remaining manual step:' -ForegroundColor Yellow
+Write-Host '  Upload an authentication certificate to the app registration.'
+Write-Host '  See: https://bloodhound.specterops.io/install-data-collector/install-azurehound/azure-configuration#add-application-authentication-certificate'
+Write-Host ''
+
+#endregion Summary
 ```

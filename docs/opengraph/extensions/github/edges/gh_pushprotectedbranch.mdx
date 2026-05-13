@@ -1,0 +1,28 @@
+---
+title: 'GH_PushProtectedBranch'
+description: '[Repository] Repo role can push to branches with push restrictions. Not affected by enforce_admins.'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Source: [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole)
+- Destination: [GH_Repository](/opengraph/extensions/github/nodes/gh_repository)
+- Traversable: ❌
+
+## General Information
+
+The non-traversable GH_PushProtectedBranch edge represents a role's ability to push directly to branches that are protected by push restrictions. This permission is available to Admin and Maintain roles. This edge bypasses the push gate of branch protection, allowing direct commits to protected branches without going through the pull request workflow. Unlike merge gate bypasses (such as [GH_BypassBranchProtection](/opengraph/extensions/github/edges/gh_bypassbranchprotection)), this push gate bypass is NOT suppressed by the `enforce_admins` setting on the branch protection rule, making it a particularly potent permission.
+
+
+```mermaid
+graph LR
+    user1("GH_User bob")
+    maintainRole("GH_RepoRole GitHound\maintain")
+    adminRole("GH_RepoRole GitHound\admin")
+    repo("GH_Repository GitHound")
+    user1 -- GH_HasRole --> maintainRole
+    maintainRole -- GH_PushProtectedBranch --> repo
+    adminRole -- GH_PushProtectedBranch --> repo
+```

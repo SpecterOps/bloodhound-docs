@@ -1,0 +1,220 @@
+---
+title: OpenGraph Nodes
+description: Define graph objects in your OpenGraph data payloads.
+sidebarTitle: Nodes
+---
+
+import DataValidationNote from '/snippets/opengraph/data-validation-note.mdx';
+import FeatureFlagNote from "/snippets/feature-flag.mdx";
+import FindingsAndMetrics from '/snippets/opengraph/extensions/findings-requirements.mdx';
+
+<img
+  noZoom
+  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise and CE"
+/>
+
+Nodes represent the entities in your graph, such as users, devices, repositories, applications, and (for findings and metrics) environments. Each node requires a stable identifier and a `kinds` array, and can also include optional properties.
+
+<DataValidationNote dataType="node" />
+
+At minimum, each node must include a unique identifier and a `kinds` array.
+
+```json highlight={5-6}
+{
+  "graph": {
+    "nodes": [
+      {
+        "id": "123",
+        "kinds": ["KindName"],
+        "properties": {
+          "key": "value"
+        }
+      }
+    ],
+    "edges": []
+  }
+}
+```
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the node in your data payload. Use a stable, globally unique value from the source system when possible.
+
+  Every node must have a globally unique `id` to distinguish it from every other node in BloodHound's graph database. Use the identifier that the source system itself uses to differentiate objects, such as a GUID when available.
+
+  | Identifier quality | Examples |
+  | --- | --- |
+  | **Good**: globally unique | GUIDs, SIDs, certificate thumbprints |
+  | **Avoid**: not guaranteed unique | Usernames, email addresses, hostnames, auto-incremented integers |
+</ResponseField>
+<ResponseField name="kinds" type="array" required>
+  An array of strings that classify the node. You can include up to three kinds per node. The first value is the primary kind, which controls the node styling in the graph.
+
+  In Cypher queries, node kinds function as labels for pattern matching. Use the colon (`:`) syntax to match nodes by kind: `MATCH (n:Okta_User)` or `MATCH (n:Okta_User|Okta_Group)`. All values in the `kinds` array can be used as labels, enabling flexible querying by any assigned kind.
+
+  - Node `kinds` must not overlap with [built-in node](/resources/nodes/overview) kinds.
+  
+    Consider using a prefix related to your data source or environment separated by an underscore. For example, `Okta_User`. For [structured graphs](/opengraph/overview#structured-graphs), a prefix that matches the extension's [`namespace`](/opengraph/developer/graph-definition#namespacing) is required.
+
+  - For a node to participate in a structured graph, at least one value in its `kinds` array should match a [`node_kinds.name`](/opengraph/developer/graph-definition#node_kinds) defined in an installed extension definition schema.
+</ResponseField>
+<ResponseField name="properties" type="object">
+  Optional key-value map of custom node attributes. Values must be primitives or homogeneous arrays of primitives. BloodHound displays node properties in the **Entity Panel** when you click a node in the graph.
+
+  See [Constraints](/opengraph/developer/nodes#constraints) and [Reserved properties](/opengraph/developer/nodes#reserved-properties) below for details on allowed property formats and reserved property names.
+</ResponseField>
+<ResponseField name="properties.environmentid" type="string">
+  Associates a node with a specific environment.
+  
+  To enable <Tooltip tip="A specific instance of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> in structured graphs, define an environment node in `graph.nodes`. To be included in analysis, metrics, and findings generation, a node must have `properties.environmentid` set to an environment node's `id`.
+
+  Environment nodes themselves must also have `properties.environmentid` set, but the value does not have to match the node's own `id`. For example, a child environment node can have `properties.environmentid` set to a parent node environment `id`.
+</ResponseField>
+<ResponseField name="properties.collected" type="boolean">
+  Indicates whether an environment node kind was observed directly during data collection.
+
+  In structured graphs, only environment nodes with `properties.collected` set to `true` and a registered `source_kind` are used to produce <Tooltip tip="A specific instance of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip>. You can register and apply `source_kind` through [`metadata`](/opengraph/developer/metadata) or apply it directly in node `kinds` after it has been registered.
+
+  This property is not necessary for nodes of other kinds.
+</ResponseField>
+
+## Property rules
+
+Properties must adhere to the following constraints:
+
+- Values must be:
+  - string
+  - number
+  - boolean
+  - array of primitives
+- Nested objects are not allowed
+- Arrays of objects are not allowed
+- Arrays must be homogeneous (e.g., all strings or all numbers)
+- Property names should be lowercase.
+
+  <Note>
+    BloodHound currently accepts property names with uppercase characters, but will enforce lowercase property names in a future release.
+  </Note>
+
+- Property names are case-sensitive.
+
+  For example, `exampleid` and `ExampleID` are treated as different properties on the same node.
+
+  <Warning>
+    This can cause issues in languages that treat JSON keys as case-insensitive (for example, PowerShell and some .NET-based tools).
+  </Warning>
+
+- Special characters in property names or values may cause ingest to fail or lead to unexpected behavior. Avoid spaces and special characters.
+- The `lastseen` property is injected automatically by BloodHound during ingestion and overwrites any value provided in the payload.
+- The `reconcile` property is stripped during ingestion.
+- The following property values are uppercased during ingest if they are present as strings:
+  - `name`
+  - `operatingsystem`
+  - `distinguishedname`
+  - `environmentid`
+
+## Reserved properties
+
+Some node properties are reserved and have special behavior during ingest. These properties must not be included in the `properties` object of a node definition, as they may cause ingest to fail or lead to unexpected behavior.
+
+### `objectid`
+
+The property name `objectid` is reserved and **must not** be included in the `properties` object of a node definition.
+
+The top-level `id` field serves as the node identifier in your payload.
+
+During ingest, BloodHound maps this `id` value internally to `objectid`. If you also define `objectid` in `properties`, ingest fails due to a conflicting definition.
+
+<Warning>
+  Do not include `objectid` inside `properties`. Use only the root-level `id` field.
+</Warning>
+
+## Findings and metrics
+
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ "width":"20%" }}
+/>
+
+<FeatureFlagNote />
+
+<FindingsAndMetrics />
+
+## Schema
+
+Use the following JSON schema for validation requirements. You can also download the same schema as a file: <a href="/assets/opengraph/opengraph-node.json" download>opengraph-node.json</a>.
+
+```json
+{
+  "title": "Generic Ingest Node",
+  "description": "A node used in a generic graph ingestion system. Each node must have a unique identifier (`id`) and at least one kind describing its role or type. Nodes may also include a `properties` object containing custom attributes.",
+  "type": "object",
+  "$defs": {
+    "property_map": {
+      "type": ["object", "null"],
+      "description": "A key-value map of entity attributes. Values must not be objects. If a value is an array, it must contain only primitive types (e.g., strings, numbers, booleans) and must be homogeneous (all items must be of the same type).",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" },
+          {
+            "type": "array",
+            "anyOf": [
+              { "items": { "type": "string" } },
+              { "items": { "type": "number" } },
+              { "items": { "type": "boolean" } }
+            ]
+          }
+        ]
+      },
+
+      "not": {
+        "required": ["objectid"]
+      }
+    }
+  },
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "properties": {
+      "$ref": "#/$defs/property_map"
+    },
+    "kinds": {
+      "type": ["array"],
+      "items": { "type": "string" },
+      "minItems": 0,
+      "maxItems": 3,
+      "description": "An array of kind labels for the node. The first element is treated as the node's primary kind and is used to determine which icon to display in the graph UI. This primary kind is only used for visual representation and has no semantic significance for data processing."
+    }
+  },
+  "required": ["id", "kinds"],
+  "examples": [
+    {
+      "id": "user-1234",
+      "kinds": ["Person"]
+    },
+    {
+      "id": "device-5678",
+      "properties": {
+        "manufacturer": "Brandon Corp",
+        "model": "4000x",
+        "is_active": true,
+        "rating": 43.5
+      },
+      "kinds": ["Device", "Asset"]
+    }
+  ]
+}
+```
+
+## Troubleshooting
+
+- **Upload fails with schema validation errors:** Verify that every property value is a primitive or a homogeneous array of primitives.
+
+- **Unexpected duplicate properties in results:** Check for case differences such as `exampleid` and `ExampleID`.
+
+- **Upload fails on reserved property conflict:** Remove `objectid` from `properties` and keep the identifier only in `id`.

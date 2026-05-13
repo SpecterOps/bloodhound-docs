@@ -6,6 +6,7 @@ description: Set up a local instance of BloodHound Community Edition and start i
 import SampleData from '/snippets/sample-data.mdx';
 import OpengraphLibrary from '/snippets/opengraph-library.mdx';
 import Prerequisites from '/snippets/get-started/prerequisites.mdx';
+import InstallWarning from '/snippets/get-started/install-warning.mdx';
 
 <img noZoom src="/assets/community-edition-pill-tag.svg" alt="Applies to BloodHound CE only" />
 
@@ -18,6 +19,8 @@ After installation, you'll learn how to ingest data into BloodHound CE and explo
 <Prerequisites />
 
 ## Install BloodHound CE
+
+<InstallWarning />
 
 Installing BloodHound CE with the BloodHound CLI is the easiest way to get started. The CLI handles downloading the necessary Docker images and creating the `docker-compose.yml` file with standard defaults.
 
@@ -128,7 +131,7 @@ Installing BloodHound CE with the BloodHound CLI is the easiest way to get start
 
 ## Get data into BloodHound
 
-To get data into BloodHound, ingest sample data or run a data collector.
+To get data into BloodHound, ingest sample data or collect data from your environment with either standalone collectors or OpenHound.
 
 <Tabs>
   <Tab title="Option 1: Sample data (faster)" icon="file-zipper">
@@ -137,17 +140,31 @@ To get data into BloodHound, ingest sample data or run a data collector.
     <SampleData />
   </Tab>
   <Tab title="Option 2: Data collectors (more realistic)" icon="microchip">
-    BloodHound CE analyzes data collected by its two collector services, each collecting from a specific directory:
+    There are two main ways to collect data for BloodHound CE:
 
-    * Active Directory, collected by SharpHound CE
-    * Entra ID (formerly Azure AD), collected by AzureHound CE
+    - Active Directory, collected by SharpHound CE
+    - Entra ID (formerly Azure AD) and Azure IaaS, collected by AzureHound CE
+    - Github, Jamf, and Okta, collected by OpenHound CLI for BloodHound CE
 
     <OpengraphLibrary />
 
     <Steps>
+      <Step title="Choose a collection method">
+
+        Pick the collection method that best fits your environment:
+
+        - Use **SharpHound CE** for Active Directory and **AzureHound CE** for Entra ID.
+        - Use **OpenHound CLI** for supported SaaS and platform data sources, such as Github, Jamf, and Okta.
+
+      </Step>
+
       <Step title="Download a collector">
 
-        Each collector is a standalone binary. Download collectors using one of the following methods:
+        Each collector is a standalone binary. You can download SharpHound CE and AzureHound CE using one of the following methods:
+
+        <Note>
+          To install the OpenHound CLI and configure supported collectors, see [OpenHound Community](/openhound/community).
+        </Note>
 
         <Tabs>
           <Tab title="BloodHound CE UI" icon="download">
@@ -186,13 +203,22 @@ To get data into BloodHound, ingest sample data or run a data collector.
         # Provide your credentials and tenant information to run AzureHound CE
         C:\> AzureHound.exe --username "MattNelson@contoso.onmicrosoft.com" --password "MyVeryStrongPassword" --tenant "contoso.onmicrosoft.com" list
         ```
+
+        ```bash OpenHound CLI
+        # Collect data with OpenHound CLI for BloodHound CE
+        openhound collect okta ./output
+
+        # Convert collected data to OpenGraph format for BloodHound CE
+        openhound convert okta ./output/okta ./graph/okta
+        ```
         </CodeGroup>
 
         <Tip>
-        For optional command flags, see:
+        For command options, see:
 
         - [SharpHound Community Edition Flags](/collect-data/ce-collection/sharphound-flags)
         - [AzureHound Community Edition Flags](/collect-data/ce-collection/azurehound-flags)
+        - [OpenHound CLI](/openhound/community#cli-commands)
         </Tip>
       </Step>
 
@@ -215,13 +241,19 @@ To look at identified attack paths in the graph, go to the **Explore** page in t
 
 <Steps>
   <Step title="Search for a user">
-    1. In the **Search** bar, search nodes for a user like `user:bob`.
-    2. Select the user and click on the node that appears.
-    3. Explore information about the user's sessions and memberships.
+    1. In the **Search** bar, search nodes for a user object.
+
+       - For Active Directory sample data, enter `user:bob`.
+
+       - For Azure sample data, enter `azuser:bob`.
+
+    1. Select the user and click on the node that appears.
+
+    1. Explore information about the user's sessions and memberships.
   </Step>
 
   <Step title="Pathfind">
-    Review the path from one user to another on the **Pathfinding** tab. For example, pathfind from `BOB` to `ADMINISTRATOR`.
+    Review the path from one user to another on the **Pathfinding** tab. For example, pathfind from `BOB@PHANTOM.CORP` to `ADMINISTRATORS@PHANTOM.CORP`.
   </Step>
 
   <Step title="Explore Cypher queries">

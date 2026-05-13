@@ -1,5 +1,6 @@
 ---
 title: OpenGraph FAQ
+sidebarTitle: FAQ
 description: "The following are common questions about OpenGraph"
 ---
 
@@ -8,32 +9,52 @@ description: "The following are common questions about OpenGraph"
 <AccordionGroup>
 <Accordion title="Can I define my own icons in OpenGraph?">
 Yes you can!
-You can find all the details [here](/opengraph/custom-icons)
+You can find all the details [here](/opengraph/developer/custom-icons)
 </Accordion>
 <Accordion title="Can I delete data ingested via OpenGraph?">
 Yes you can!
 
-You can remove generic data by using one of the following three (3) options:
+You can remove generic data by using one of the following three options:
 
 1. Cypher commands in the Explore UI
-    - Requires `enable_cypher_mutations: true` in config. For more info [click here](/manage-bloodhound/bh-config#enable-cypher-mutations)
 
-2. Admin UI → Database Management page
-    - The following checkboxes will be displayed
-    - All Data
-    - Active Directory Data
-    - Azure Data
-    - … X Data (there will be 0 or more checkboxes here that allow you to delete any data that had been ingested with a `source_kind` provided)
-    - Sourceless Data (checking this box will delete all entities that do not have a kind that can be found in the `source_kinds` table.  You can observe the `source_kinds` your BloodHound instance is currently aware of by calling `GET api/v2/graphs/source_kinds`.)
+   Requires `enable_cypher_mutations: true` in config. For more info [click here](/manage-bloodhound/bh-config#enable-cypher-mutations)
 
-3. API: `Clear-Database`
-    - See the [OpenGraph API Page](/opengraph/api) for more information
+1. Admin UI → Database Management page
+
+   The following checkboxes will be displayed:
+
+     - All Data
+     - Active Directory Data
+        - HasSession edges
+
+          Use the **HasSession edges** option when you need to refresh time-sensitive session data without deleting the rest of the collected graph.
+
+          <Note>Manual **HasSession** edge deletion is generally only necessary in BloodHound Community. In BloodHound Enterprise, **HasSession** edges reconcile automatically by [retention](/collect-data/enterprise-collection/data-retention#data-retention) and only need manual deletion when you want an immediate session data refresh.</Note>
+
+     - Azure Data
+     - … X Data
+     
+       There will be 0 or more checkboxes here that allow you to delete any data that had been ingested with a `source_kind` provided.
+
+     - Sourceless Data
+     
+        Checking this box will delete all entities that do not have a kind that can be found in the `source_kinds` table.  You can observe the `source_kinds` your BloodHound instance is currently aware of by calling `GET /api/v2/graphs/source_kinds`.
+
+1. API: [`/api/v2/clear-database`](/reference/database/delete-your-bloodhound-data)
 
 </Accordion>
 <Accordion title="Do custom nodes & edges work with Search and Pathfinding?">
-**Search:** Yes! As of v8.5.0, OpenGraph nodes are partially supported in the search functionality on the **Explore** page. You can search for OpenGraph nodes by display name or object ID, and visualize them in the graph with custom icons and colors. However, you cannot yet prepend search queries by OpenGraph node types.
+Yes! BloodHound supports **Search** and **Pathfinding** for [_structured_](/opengraph/extensions/manage#structured-graphs) graphs.
 
-**Pathfinding:** Not yet. OpenGraph edges are not currently supported in the **Pathfinding** tab on the **Explore** page. For pathfinding queries involving OpenGraph data, you must use the Cypher tab to query the data manually.
+For [_generic_](/opengraph/extensions/manage#generic-graphs) graphs, only **Search** is supported.
+
+Pathfinding, findings, and analysis require traversable relationship kinds defined in an extension definition schema. Generic graph data does not define traversability and is treated as non-traversable.
+
+<Note>
+All forms of OpenGraph data support Cypher querying in general.
+</Note>
+
 </Accordion>
 <Accordion title="How can I add my project to the OpenGraph library?">
 Have you built a cool project using OpenGraph and want it featured here? Already got your project in the list and need to update something? Open a ["Library Change" issue](https://github.com/SpecterOps/bloodhound-docs/issues) on the BloodHound Docs repo and we'll get it added for you!
@@ -44,27 +65,6 @@ Submissions from the community will have a <Icon icon="people-group" color="#fff
 Slow ingestion speeds are commonly seen when using a Neo4j graph database and are typically resolved by switching to a PostgreSQL backend. For full, officially supported OpenGraph functionality, use a PostgreSQL backend (see [Requirements](/opengraph/best-practices#requirements)).
 
 To switch to a PostgreSQL graph database, set `"graph_driver": "pg"` in your `bloodhound.config.json` file and restart the BloodHound services/containers. You will need to re-ingest any data into the new database.
-</Accordion>
-<Accordion title="Why do OpenGraph nodes disappear after ingestion?">
-<Note>
-This behavior **only applies to BloodHound Enterprise Edition (BHE)**. BloodHound Community Edition (BHCE) does not perform reconciliation.
-</Note>
-
-One of the benefits of BloodHound Enterprise Edition is active management of the data in the graph to ensure freshness and accuracy. As part of this data management, there is a reconciliation step that runs shortly after ingestion and deletes orphaned nodes (nodes that have no edges). This is distinct from the edge [post-processing](/opengraph/schema#post-processing) behavior and is intended to reduce stale or unconnected objects in the graph.
-
-**What this means:**
-
-- Ingesting nodes without edges in BloodHound Community Edition (BHCE) successfully creates and displays all nodes, including orphaned nodes.
-- For the same data uploaded to BloodHound Enterprise Edition (BHE), the nodes without edges are ingested and immediately deleted during the reconciliation step.
-
-**Recommended workaround:**
-
-Every node must be linked to another node. Use one of the following methods to link your OpenGraph nodes:
-
-- Ensure each node defined in the payload has at least one edge connecting it to another node (either predefined or otherwise defined in the payload). This is the simplest method to resolve orphaned nodes.
-- Anchor your OpenGraph data to a lightweight root node (an arbitrary node that orphaned nodes can be connected to without impacting the rest of the graph design).
-
-   For example, create a single root node (such as `(:OGRoot)`) and add a containment edge (such as `(:OGRoot)-[:OGContains]->(:YourNode)`) to keep nodes from being orphaned and pruned. Use an edge kind that you exclude from your path queries if you don't want it to affect pathfinding.
 </Accordion>
 <Accordion title="Why do AD/AZ nodes disappear after I delete OpenGraph data?">
 The initial OpenGraph implementation introduced the `source_kind` metadata field to let you create a source and quickly apply it to all nodes in the payload. This preliminary process applies the `source_kind` to all nodes in the payload—whether you define or reference them—which can create unintended side-effects when building hybrid paths that connect OpenGraph nodes to Active Directory (AD) or Azure (AZ) nodes.
@@ -84,5 +84,9 @@ Use a two-step upload process when building hybrid paths.
 - **First payload (isolated subgraph)**: Upload only your OpenGraph nodes and edges and set `source_kind` in `metadata`. Ensure that every node has at least one edge within this payload (for example, connect nodes to each other or to a root node and add a containment edge, such as `(:OGRoot)-[:OGContains]->(:YourNode)`). Do not link to AD/AZ objects in this payload.
 
 - **Second payload (linking AD/AZ nodes)**: Link the isolated subgraph's nodes to the AD/AZ nodes that connect your subgraph to existing AD/AZ entities. This avoids cross-source side effects when `source_kind` is present.
+
+  <Note>
+    Do **not** define `source_kind` in the second payload.
+  </Note>
 </Accordion>
 </AccordionGroup>

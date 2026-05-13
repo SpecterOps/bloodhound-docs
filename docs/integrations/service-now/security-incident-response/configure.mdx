@@ -1,0 +1,98 @@
+---
+title: Integrate BloodHound Enterprise with ServiceNow Security Incident Response
+description: Learn how to install and configure the integration to automate the creation of security incidents based on attack path findings.
+sidebarTitle: Install and configure
+---
+
+import InstallApp from '/snippets/integrations/servicenow-install.mdx';
+import CreateAppUser from '/snippets/integrations/servicenow-create-user.mdx';
+import ChangeAppScope from '/snippets/integrations/servicenow-change-app-scope.mdx';
+import ConnectBloodHound from '/snippets/integrations/servicenow-connect-bloodhound.mdx';
+import FilterAttackPathTypes from '/snippets/integrations/servicenow-filter-attack-paths.mdx';
+import ConfigureImportSchedule from '/snippets/integrations/servicenow-configure-import.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+The [Security Incident Response (SIR)](https://store.servicenow.com/store/app/5400757f1b45a610a85b16db234bcb85) integration for BloodHound Enterprise supports the following use cases:
+
+- Create SIR ticketing workflows for BloodHound Enterprise attack path findings
+- Integrate BloodHound Enterprise attack path findings into existing ticketing workflows
+- Monitor identity vulnerabilities over time
+
+## Prerequisites
+
+Before you begin the installation and configuration process, ensure the following prerequisites are met:
+
+- Admin access to a ServiceNow instance with the [Security Incident Response (SIR) module](https://www.servicenow.com/docs/r/security-management/security-incident-response/install-and-configure-sir.html) installed and configured
+- Access to the ServiceNow Store to install the BloodHound Enterprise app
+- Admin access to a BloodHound Enterprise tenant
+- A BloodHound Enterprise [non-personal API key/ID pair](/integrations/bloodhound-api/working-with-api#create-a-non-personal-api-key%2Fid-pair) with the **Auditor** role
+
+## Install the application
+
+<InstallApp />
+
+## Create an application user
+
+<CreateAppUser role="x_spop_security_in.app_admin" />
+
+## Configure the application
+
+The integration provides a guided setup experience to connect to BloodHound Enterprise, filter attack path types, configure field mapping, and set the import schedule. Follow the steps below to complete the configuration.
+
+<Steps>
+
+  <ChangeAppScope app="Security Incident Response Integration with SpecterOps BloodHound" />
+
+  <ConnectBloodHound app="Security Incident Response Integration with SpecterOps BloodHound" setup="Guided Setup" />
+
+  <FilterAttackPathTypes app="Security Incident Response Integration with SpecterOps BloodHound" />
+
+    <Step>
+
+    ### Configure field mapping
+
+    Field mapping allows you to specify how BloodHound Enterprise attack path finding fields map to ServiceNow SIR ticket fields. You can use the default mapping or customize it as needed.
+
+    1.  Click **Get Started** in the _SpecterOps to ServiceNow Field Mapping_ section.
+
+        <Frame>
+        <img
+            src="/images/integrations/service-now/sir/image12.png"
+            alt="A view of the ServiceNow user interface showing the process of getting started with field mapping."
+        />
+        </Frame>
+
+    1.  Click **Configure** to review the mapping. Update it if necessary, or use the default mapping.
+
+        <Frame>
+        <img
+            src="/images/integrations/service-now/sir/image25.png"
+            alt="A view of the ServiceNow user interface showing the default field mapping."
+        />
+        </Frame>
+
+        The following table describes the default field mapping:
+
+        | **SpecterOps BloodHound Fields** | **ServiceNow SIR Fields** |
+        |----------------------------------|---------------------------|
+        | id                               | correlation id            |
+        | composite risk                   | risk score                |
+        | description + remediation        | description               |
+        | domain name + title + id         | short description         |
+        | from principal                   | contact type              |
+        | server url                       | external url              |
+
+    1.  Click the <Icon icon="close" /> (close) icon.
+
+    1.  Click **Mark as Complete**.
+
+    </Step>
+
+    <ConfigureImportSchedule app="Security Incident Response Integration with SpecterOps BloodHound" />
+
+</Steps>
+
+## Next steps
+
+[View and manage](/integrations/service-now/security-incident-response/use) SIR tickets created from BloodHound Enterprise attack path findings in ServiceNow.

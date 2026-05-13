@@ -11,11 +11,39 @@ Privileged collection allows BloodHound to analyze Attack Paths based on non-cen
 
 ## AD Structure Data
 
-By default, all `Authenticated Users` may query data from Active Directory via LDAP. Unless modifications have been made to this default, administrative privilege is not required for SharpHound to collect AD Structure Data.
+By default, all `Authenticated Users` may query almost all data from Active Directory utilized by BloodHound via LDAP. Additional privileges are required for the sections below.
 
 ### Restricted Read Permissions
 
 If modifications exist that restrict the default read permissions, the SharpHound collector service account must be a member of an audit role group which is granted `Read Property` and `Read Permissions` on all collected AD objects.
+
+### Delegated Managed Service Account
+
+The Active Directory Schema restricts `Authenticated Users` read permissions on Delegated Managed Service Account (dMSA) objects by default. Grant the SharpHound account `Read` and `Read Permissions` on dMSA objects in the `Managed Service Accounts` container by running the code below after changing the SID to the SharpHound account. Repeat for all other OUs containing dMSA objects.
+
+```powershell
+Import-Module ActiveDirectory
+
+# SharpHound account SID
+$SharpHoundSID = "S-1-5-21-1273778777-4208638582-2921056243-16306"
+
+# Container/OU to grant permissions on
+$MSAContainerDN = "CN=Managed Service Accounts," + $(Get-ADDomain).DistinguishedName
+
+# Static configuration
+$DMSAObjectClassGUID = [GUID]"0feb936f-47b3-49f2-9386-1dedc2c23765"  # msDS-DelegatedManagedServiceAccount
+$Trustee = New-Object System.Security.Principal.SecurityIdentifier($SharpHoundSID)
+
+# Get current ACL and trustee SID
+$ACL = Get-Acl "AD:\$MSAContainerDN"
+
+# Add Read Property and Read Permissions ACEs (inherit-only on dMSA objects)
+$ACL.AddAccessRule((New-Object System.DirectoryServices.ActiveDirectoryAccessRule($Trustee, "ReadProperty", "Allow", [GUID]::Empty, "Descendents", $DMSAObjectClassGUID)))
+$ACL.AddAccessRule((New-Object System.DirectoryServices.ActiveDirectoryAccessRule($Trustee, "ReadControl", "Allow", [GUID]::Empty, "Descendents", $DMSAObjectClassGUID)))
+
+# Apply the modified ACL
+Set-Acl "AD:\$MSAContainerDN" -AclObject $ACL
+```
 
 ### Deleted Objects Container (Optional)
 

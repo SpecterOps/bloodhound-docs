@@ -1,0 +1,202 @@
+---
+title: 2026-03-23 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-03-23"
+---
+
+|     |     |     |     |
+| --- | --- | --- | --- |
+| **Release** | **BloodHound** | **SharpHound** | **AzureHound** |
+| 2026-03-23 | v8.9.0 | v2.11.0 | v2.11.0 |
+
+<Tip>Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.</Tip>
+
+<Update label="BloodHound" description="General Availability" tags={["Zone Builder"]}>
+  {/*BED-7492*/}
+
+  ## Privilege Zones General Availability
+
+  The [Privilege Zones](/analyze-data/privilege-zones/overview) feature is now generally available in BloodHound, providing a supported workflow for organizing objects by privilege level and monitoring violations of your network tiering model.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  {/*BED-7451*/}
+
+  ## Property-Based Edge Matching for OpenGraph
+
+  Link nodes by unique database identifiers or dynamically match them using specific attribute values.
+
+  New [property-based edge matching](/opengraph/developer/edges#match-by-property) (`match_by: "property"`) enables hybrid edge creation using cross-system attributes, such as email, username, or hostname.
+
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  {/*BED-7577*/}
+  
+  ## Flexible OpenGraph Node Ingestion
+
+  <img
+    src="/assets/enterprise-edition-pill-tag.svg"
+    alt="BloodHound Enterprise logo"
+    style={{ width: "25%" }}
+  />
+  
+  Upload nodes and edges in separate OpenGraph data payloads.
+  
+  Previously, BloodHound Enterprise immediately deleted OpenGraph nodes that were not connected by at least one edge during the reconciliation process that runs after ingestion.
+  
+  Now, disconnected nodes are subject to [reconciliation and retention](/collect-data/enterprise-collection/data-retention) settings. This enables more flexible multi-step OpenGraph workflows where you upload nodes and edges in separate data payloads, without the risk of losing data after ingestion.
+</Update>
+
+<Update label="BloodHound" description="Breaking Change" tags={["OpenGraph"]}>
+  {/*BED-7451*/}
+
+  ## `objectid` is Now a Reserved Node Property
+
+  <Warning>
+    OpenGraph payloads that include `objectid` in a node's `properties` object will now fail upload validation.
+  </Warning>
+
+  To keep node identity unambiguous for property-based endpoint matching workflows, `objectid` is now [reserved](/opengraph/developer/nodes#objectid) and may not be defined in a node's `properties` object.
+
+  The root-level `id` field already serves as the unique identifier for every node. BloodHound automatically maps this value to `objectid` internally upon ingestion. Remove any `objectid` keys from your node `properties` objects and rely solely on the root-level `id` field.
+
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-7542*/}
+  
+  ## Search Component Styling Consistency
+
+  Switch between the **Search**, **Pathfinding**, and **Cypher** tabs on the **Explore** page without layout shifts.
+
+  Tabs now maintain a fixed width to prevent layout shifting and keep controls and content in a stable position while you work.
+
+  <Frame>
+    <img
+      src="/images/release_notes/8_9_0/search-tabs.gif"
+      alt="A GIF showing a user switching between Search, Pathfinding, and Cypher tabs without layout shift"
+    />
+  </Frame>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-7001*/}
+
+  ## Table Layout Scrollbar Visibility
+
+  Review overflowing results in the [table layout](/analyze-data/explore/search#table) graph visualization more reliably.
+
+  Scrollbars now remain visible when content overflows, so you can clearly see when more items are available in the list and keep track of your scroll position.
+
+  <Frame>
+    <img
+      src="/images/release_notes/8_9_0/visible-scrollbars.png"
+      alt="A view of the table layout highlighting visible scrollbars when content overflows"
+    />
+  </Frame>
+</Update>
+
+<Update label="AzureHound" description="New Feature" tags={["Data Collection"]}>
+  {/*BED-7398*/}
+
+  ## Azure Federated Identity Credentials
+
+  Map trust relationships from external identity providers to Azure App Registrations with new nodes and edges representing Federated Identity Credentials (FICs).
+
+  An FIC is a trust configuration on an App Registration that allows an external identity provider to authenticate without a password or certificate. You can follow this trust path to the related Service Principal through [AZRunsAs](/resources/edges/az-runs-as) to understand downstream impact.
+
+  AzureHound now collects FICs from Azure and adds two new graph elements in BloodHound:
+
+  - [AZFederatedIdentityCredential](/resources/nodes/az-federated-identity-credential) node: Represents each FIC as an object with properties such as audiences, issuer, and subject.
+
+      <Frame>
+        <img
+          src="/images/release_notes/8_9_0/az-federated-identity-node.png"
+          alt="A screenshot of the AZFederatedIdentityCredential node object properties in the BloodHound entity panel"
+          style={{ width: "70%" }}
+        />
+     </Frame>
+
+  - [AZAuthenticatesTo](/resources/edges/az-authenticates-to) edge: Connects each FIC node to its associated App Registration so you can map trust relationships from external identity providers.
+
+      <Frame>
+        <img
+          src="/images/release_notes/8_9_0/az-auth-to-edge.png"
+          alt="A screenshot of the AZAuthenticatesTo edge in the BloodHound entity panel"
+          style={{ width: "70%" }}
+        />
+     </Frame>
+
+</Update>
+
+<Update label="SharpHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-7374*/}
+
+  ## Improved Logging for NTLM Collection
+
+  Troubleshoot NTLM collection failures faster with detailed per-machine status logging.
+  
+  SharpHound now reports the outcome of each WMI and Remote Registry operation attempt directly in your service and run logs, eliminating guesswork about which machines rejected collection and why.
+
+  - **Per-attempt status events**: Registry operations now emit status events for each collection attempt, immediately visible in SharpHound's service and run logs
+  - **Strategy visibility**: Logs now expose which collection strategy (WMI or Remote Registry) succeeded for each machine
+  - **Enhanced error details**: Failure messages include inner exception information for better troubleshooting
+  - **Port-scan optimization**: Immediate success status is reported when port scanning is skipped
+
+</Update>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+
+  ## Cypher
+
+  - {/*BED-7349*/} Resolved an issue where changing or deleting saved query names did not render immediately without refreshing the page.
+  - {/*BED-7048*/} Resolved an issue on PostgreSQL backends where using Cypher colon syntax for multi-label node matching behaved with `OR` semantics instead of the expected `AND` semantics (for example, `MATCH (n:User:Tag_Tier_Zero) RETURN n`).
+  
+  ## Zone Builder
+
+  - {/*BED-7291*/} Resolved an issue where saving an empty object ID-based rule returned an incorrect Cypher-related error message.
+  - {/*BED-7520*/} Resolved an issue where filter options on the **Certifications** page were not styled consistently with other filter components.
+  - {/*BED-7556*/} Resolved an issue where object icons appeared unevenly spaced in the Zone and Label **Details View**.
+  - {/*BED-7351*/} Resolved an issue where upgrade prompt text on the **Zones** page could wrap poorly in constrained layouts.
+  - {/*BED-7297*/} Resolved multiple styling inconsistencies across spacing, borders, shadows, and overflow behavior.
+
+  ## Posture
+
+  <img
+    src="/assets/enterprise-edition-pill-tag.svg"
+    alt="BloodHound Enterprise logo"
+    style={{ width: "25%" }}
+  />
+
+  - {/*BED-7384*/} Resolved an issue where custom time range selector labels on the **Posture** page had low contrast in dark mode.
+  - {/*BED-7293*/} Resolved an issue where sorting columns in the Attack Paths table on the **Posture** page could sort the wrong column.
+  - {/*BED-7289*/} Resolved an issue where the tooltip for the Change column in the Attack Paths table on the **Posture** page did not appear on hover.
+
+  ## Attack Paths
+
+  <img
+    src="/assets/enterprise-edition-pill-tag.svg"
+    alt="BloodHound Enterprise logo"
+    style={{ width: "25%" }}
+  />
+
+  {/*BED-7249*/} Resolved an issue where the tenant status indicator could overflow the panel on smaller viewports.
+
+</Update>
+
+<Update label="AzureHound" tags={["Fixed Issues"]}>
+
+  {/*BED-6466*/} Resolved an issue where the `azurehound.exe` Enterprise collector was missing key Windows file properties, including product version metadata, which made it difficult for administrators to identify deployed binaries.
+
+</Update>
+
+<Update label="SharpHound" tags={["Fixed Issues"]}>
+
+  {/*BED-7513*/} Resolved an issue where [AIACA](/resources/nodes/aiaca) objects with empty `cACertificate` values (for example, `{0}`) could be skipped during collection.
+  
+  <img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }} />
+
+  {/*BED-7153*/} Resolved an issue where DAG group data for some machines could be dropped during post-processing, causing Large Default Groups with RDP Access findings to incorrectly include Citrix systems even when the Citrix RDP Support flag was enabled.
+
+</Update>
