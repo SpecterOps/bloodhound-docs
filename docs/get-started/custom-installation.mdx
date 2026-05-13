@@ -480,6 +480,98 @@ If you are currently using a PostgreSQL backend database and want to change to N
 
 </Steps>
 
+### Enable Transport Layer Security (TLS)
+
+To secure BHCE with HTTPS, add your certificate information to the `tls` block in the `bloodhound.config.json` file and make the certificate files available in the BloodHound container.
+
+<Note>
+  After you set both `cert_file` and `key_file`, BloodHound uses HTTPS on that port instead of HTTP.
+</Note>
+
+<Steps>
+
+  <Step title="Obtain a TLS certificate and key">
+
+    For a local or testing deployment, generate a self-signed certificate and key with `openssl`:
+
+    ```bash
+    openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:4096 \
+      -keyout private_key.pem -out certificate.pem \
+      -subj "/CN=your_domain.com"
+    ```
+
+    <Note>
+      Self-signed certificates are appropriate for local testing only. For any shared or production deployment, use a certificate issued by a trusted certificate authority (CA).
+    </Note>
+
+  </Step>
+
+  <Step title="Move the certificate and key to a mountable directory">
+
+    Create a directory next to your `docker-compose.yml` and `bloodhound.config.json` files and move the certificate and key into it. The examples on this page use a directory named `cert`:
+
+    ```bash
+    mkdir cert
+    mv certificate.pem private_key.pem cert/
+    ```
+
+  </Step>
+
+  <Step title="Configure TLS settings">
+
+    In the `bloodhound.config.json` file, set `cert_file` and `key_file` to the paths where the certificate and key will be available **inside the container**.
+    
+    These values must match the container-side destination of the volume mount you add in the next step, not the location of the files on your host:
+
+    ```json title="bloodhound.config.json"
+    "tls": {
+      "cert_file": "/cert/certificate.pem", // [!code ++]
+      "key_file": "/cert/private_key.pem" // [!code ++]
+    },
+    ```
+
+  </Step>
+
+  <Step title="Mount the certificate directory">
+
+    In the `docker-compose.yml` file, mount both the `bloodhound.config.json` file and the `cert` directory into the `bloodhound` service as read-only volumes:
+
+    ```yaml title="docker-compose.yml"
+    bloodhound:
+      # ...
+      volumes: # [!code ++]
+        - ./bloodhound.config.json:/bloodhound.config.json:ro # [!code ++]
+        - ./cert:/cert:ro # [!code ++]
+    ```
+
+    <Note>
+      The upstream `docker-compose.yml` example ships with the `bloodhound.config.json` mount commented out. Make sure both volume entries are uncommented before you continue, or the container ignores your custom configuration, leaves `tls` empty, and continues to serve plain HTTP.
+    </Note>
+
+  </Step>
+
+  <Step title="Start BloodHound and verify HTTPS">
+
+    Bring up (or recreate) the `bloodhound` container so the new volume mounts and configuration take effect:
+
+    ```bash
+    docker compose up -d --force-recreate bloodhound
+    ```
+
+    <Tip>
+      The `--force-recreate` option ensures the container picks up changes to volumes and configuration. A plain `docker compose restart` does not reapply volume mounts.
+    </Tip>
+
+    Browse to `https://127.0.0.1:8080` and confirm the BloodHound UI loads over HTTPS. Browsers display a certificate warning when you use a self-signed certificate; this is expected and does not occur with a CA-issued certificate.
+
+    <Note>
+      The listening port is unchanged. TLS is negotiated on the same port the BloodHound service already binds to (`8080` by default).
+    </Note>
+
+  </Step>
+
+</Steps>
+
 ### Run multiple instances simultaneously
 
 You might want to run multiple BHCE instances to:
