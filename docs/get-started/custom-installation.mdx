@@ -482,7 +482,7 @@ If you are currently using a PostgreSQL backend database and want to change to N
 
 ### Enable Transport Layer Security (TLS)
 
-To secure BHCE with HTTPS, add your certificate information to the `tls` block in the `bloodhound.config.json` file and make the certificate files available in the BloodHound container.
+To secure BHCE with HTTPS, add your certificate information to the `tls` block in the [`bloodhound.config.json`](https://github.com/SpecterOps/BloodHound/blob/main/examples/docker-compose/bloodhound.config.json) file. Then, make the certificate files available in the BloodHound container with volume mounts in the [`docker-compose.yml`](https://github.com/SpecterOps/BloodHound/blob/main/examples/docker-compose/docker-compose.yml) file.
 
 <Note>
   After you set both `cert_file` and `key_file`, BloodHound uses HTTPS on that port instead of HTTP.
@@ -545,7 +545,7 @@ To secure BHCE with HTTPS, add your certificate information to the `tls` block i
     ```
 
     <Note>
-      The upstream `docker-compose.yml` example ships with the `bloodhound.config.json` mount commented out. Make sure both volume entries are uncommented before you continue, or the container ignores your custom configuration, leaves `tls` empty, and continues to serve plain HTTP.
+      By default, the `volume` mount for the `bloodhound` service is commented out. Make sure to uncomment it before you continue. Otherwise, the container ignores your custom configuration and continues to serve plain HTTP.
     </Note>
 
   </Step>
@@ -562,10 +562,18 @@ To secure BHCE with HTTPS, add your certificate information to the `tls` block i
       The `--force-recreate` option ensures the container picks up changes to volumes and configuration. A plain `docker compose restart` does not reapply volume mounts.
     </Tip>
 
-    Browse to `https://127.0.0.1:8080` and confirm the BloodHound UI loads over HTTPS. Browsers display a certificate warning when you use a self-signed certificate; this is expected and does not occur with a CA-issued certificate.
+  </Step>
 
+  <Step title="Verify HTTPS">
+
+    Browse to `https://127.0.0.1:8080` and confirm that BloodHound loads over HTTPS.
+    
+    The default URL is `http://127.0.0.1:8080`, so make sure to change the protocol to `https://` in the address bar.
+
+    The listening port is unchanged. TLS is negotiated on the same port that the BloodHound service binds to by default (`8080`).
+    
     <Note>
-      The listening port is unchanged. TLS is negotiated on the same port the BloodHound service already binds to (`8080` by default).
+      Browsers display a certificate warning when you use a self-signed certificate; this is expected and does not occur with a CA-issued certificate.
     </Note>
 
   </Step>
@@ -623,7 +631,7 @@ Follow these steps to run multiple BHCE instances on a single machine.
 ### Expose BHCE outside of `localhost`
 
 You might need to access your BHCE instance from another computer than the one it is installed on. The default installation does not 
-expose the port outside of `localhost`. To do it, you will need to change the IP Address the BloodHound UI.
+expose the port outside of `localhost`. To do it, you will need to change the IP address that the BloodHound UI binds to.
 
 In the `docker-compose.yml` file, update the BloodHound service port binding to use a different IP Address.
 
