@@ -178,6 +178,35 @@ TODO: Run end-to-end test to validate flags, ConfigValues schema, and finish ste
   </Step>
 </Steps>
 
+#### Ignore preflight checks
+
+In non-production environments where you need to proceed past failing preflight checks (for example, an automated test pipeline running on undersized hardware), you can skip preflight enforcement at install time.
+
+<Warning>
+  Skipping host preflight checks is not recommended for production installations. The host preflights guard against conditions — undersized hardware, slow disks, incompatible kernels, missing filesystem options — that cause BloodHound Enterprise to fail or perform poorly under load.
+</Warning>
+
+Pass the following flags to the install command:
+
+| Flag | Effect |
+| --- | --- |
+| `--ignore-host-preflights` | Skips Embedded Cluster host preflight checks (CPU, RAM, disk latency, kernel, filesystem, and so on). |
+| `--ignore-app-preflights` | Skips application-level preflight checks defined by BloodHound Enterprise. |
+| `--yes` | Auto-confirms the interactive prompt that `--ignore-host-preflights` would otherwise emit. Required for unattended installs. |
+
+Example:
+
+```bash
+sudo ./bloodhound-enterprise install \
+  --license license.yaml \
+  --headless \
+  --config-values config-values.yaml \
+  --installer-password <password> \
+  --ignore-host-preflights \
+  --ignore-app-preflights \
+  --yes
+```
+
 ## Access the cluster
 
 When troubleshooting, it can be useful to list the cluster and view logs using the `kubectl` command line tool.
