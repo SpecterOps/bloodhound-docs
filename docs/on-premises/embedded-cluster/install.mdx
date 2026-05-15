@@ -1,0 +1,205 @@
+---
+title: Install BloodHound Enterprise
+sidebarTitle: Install
+description: Use this guide to install BloodHound Enterprise on-premises with the embedded cluster deployment option.
+---
+
+import { Checklist} from '/snippets/components/checklist.jsx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+In the [Deployment Overview](/on-premises/embedded-cluster/overview), we covered the high-level overview of the embedded cluster deployment option for BloodHound Enterprise on-premises.
+
+This guide provides detailed, step-by-step instructions to install BloodHound Enterprise using the embedded cluster installer.
+
+<Note>
+ The embedded cluster installer bundles a lightweight Kubernetes distribution (k0s) with the BloodHound Enterprise application, so you can deploy everything on a single Linux host without needing to set up Kubernetes separately.
+</Note>
+
+## Before you begin
+
+Complete the following prerequisites before starting the installation:
+
+TODO: Verify against latest docs
+
+<Checklist checklistKey="embedded-cluster-install">
+- Review [system requirements](/on-premises/prerequisites)
+- Prepare a Linux host (Ubuntu 20.04+, RHEL 8+) with root access
+- Obtain valid TLS certificate and private key in PEM format
+- Ensure network ports `443` and `8800` are accessible
+- Verify internet connectivity for downloading the installer
+</Checklist>
+
+## Installation methods
+
+TODO: Verify descriptions of the installation methods and add cli-based method instructions.
+
+You can install BloodHound Enterprise using either the **UI-guided installer** or the **CLI-based installer**. Choose the method that fits how you want to configure and deploy the application.
+
+| Method | Use this when |
+| --- | --- |
+| **Web-based installer** | You want an interactive web interface for configuration. This method is recommended for first-time installations, visual configuration, and environments with desktop access to the Linux host. |
+| **CLI-based installer** | You want to use a headless configuration file. This method is best for automated deployments, air-gapped environments, and environments without desktop access. |
+
+<Tip>
+  Both methods produce identical results. Choose the method that best fits your workflow.
+</Tip>
+
+### Web-based installer
+
+The web-based installer provides an interactive setup experience through a web interface. It guides you through configuration steps such as domain setup, certificate management, and database connectivity.
+
+TODO: Run end-to-end test to validate and finish steps.
+
+<Steps>
+  <Step title="Navigate to the installer portal">
+    Log in to the [SpecterOps - BloodHound Enterprise Portal](https://enterprise.replicated.com/bloodhound-enterprise).
+
+    <Note>
+      If you don't have access, contact your team administrator or your BloodHound Enterprise account team to request an invitation.
+    </Note>
+  </Step>
+  <Step title="Download & install BloodHound Enterprise">
+    1. In the **Select Version** field, choose the version of BloodHound Enterprise you want to install.
+
+    1. SSH into the Linux host where you want to install BloodHound Enterprise.
+
+    1. Copy the command to download the installer archive to the Linux host.
+
+       ```bash
+       curl -f "<url>" -H "Authorization: Bearer <token>" -o bloodhound-enterprise-<version>.tar.gz
+       ```
+    
+    1. Copy the command to extract the installer archive on the Linux host.
+
+       ```bash
+       tar -xvzf bloodhound-enterprise-<version>.tar.gz
+       ```
+
+       <Note>
+         The installer archive contains the embedded cluster application and all necessary dependencies, including the k0s Kubernetes distribution. The installer will set up everything for you on a single Linux host.
+       </Note>
+    
+    1. Copy the command to install BloodHound Enterprise with root privileges with the license file.
+
+       ```bash
+       sudo ./bloodhound-enterprise install --license license.yaml
+       ```
+
+    1. Complete the following installation steps on the Linux host:
+
+       - Copy password
+       - Certificate management
+       - Firewall settings
+       - Test connectivity
+  </Step>
+  <Step title="Run the setup wizard">
+    <Note>
+      If you have an existing PostgreSQL database, make sure to have the connection details ready for the installation process. You can also choose to use the bundled PostgreSQL instance that comes with the installer.
+    </Note>
+
+    1. Open the URL provided at the end of the installation process on the Linux host to access the setup wizard.
+
+     1. Complete the setup wizard steps in the UI:
+
+        | Step | Notes |
+        | --- | --- |
+        | **Domain Configuration** | Use a lowercase hostname with no underscores. Kubernetes ingress rules require lowercase hostnames. |
+        | **Application Access** | Configure how users reach the BloodHound Enterprise application. |
+        | **Certificates** | Choose whether to have the installer generate a TLS certificate for HTTPS access or upload your own. We recommend uploading your own certificates. |
+        | **Database Configuration** | Choose between the embedded PostgreSQL database or provide connection details for an external PostgreSQL database. |
+        | **Run Preflight Checks** | Review and resolve any blocking checks before continuing the installation. |
+  </Step>
+  <Step title="Access BloodHound Enterprise">
+    Access the BloodHound Enterprise tenant and complete the following next steps:
+    
+    - [Create users](/manage-bloodhound/auth/users-and-roles)
+    - [Configure collectors](/install-data-collector/overview)
+  </Step>
+</Steps>
+
+## Access the cluster
+
+When troubleshooting, it can be useful to list the cluster and view logs using the `kubectl` command line tool.
+
+TODO: Need to clean this section up and verify the commands against the latest installer.
+
+<Steps>
+  <Step title="SSH into a controller node">
+    SSH into a controller node on the Linux host where the embedded cluster is running.
+  </Step>
+  <Step title="Load kubectl shell">
+    Run the following command to load the `kubectl` shell environment where `APP_SLUG` is the unique slug for the application.
+
+     ```bash
+     sudo ./APP_SLUG shell
+     ```
+
+     <Note>
+       The appropriate `kubeconfig` is exported, and the location of useful binaries like `kubectl` and Replicated's preflight and support-bundle plugins is added to `PATH`.
+     </Note>
+  </Step>
+  <Step title="Run common troubleshooting commands">
+    Use the available binaries as needed. See the following tabs for common cluster inspection commands:
+
+    <Tabs>
+      <Tab title="Processes">
+      List all running processes in the cluster:
+
+      ```bash
+      kubectl get po -A
+      ```
+
+      </Tab>
+      <Tab title="Services">
+      List all services in the cluster:
+
+      ```bash
+      kubectl get services -A
+      ```
+
+      </Tab>
+      <Tab title="Logs">
+      View BloodHound Enterprise logs:
+
+      ```bash
+      kubectl logs -n [NAMESPACE] [POD_NAME]
+      ```
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="Exit the kubectl shell">
+    When finished, type `exit` or press `Ctrl + D` to exit the shell.
+  </Step>
+</Steps>
+
+### Filesystem layout
+
+Embedded clusters are built on [k0s](https://k0sproject.io/). All cluster data lives under a single root:
+
+<Tree>
+  <Tree.Folder name="/var/lib/embedded-cluster/ <- 40 GB minimum required here" defaultOpen>
+    <Tree.File name="bin/ <- EC and k0s binaries" />
+    <Tree.Folder name="k0s/ <- k0s data directory" defaultOpen>
+      <Tree.Folder name="pki/" defaultOpen>
+        <Tree.File name="admin.conf <- cluster kubeconfig" />
+      </Tree.Folder>
+      <Tree.File name="kubelet/ <- kubelet state and pod volumes" />
+      <Tree.File name="containerd/ <- container images and overlay snapshots" />
+      <Tree.File name="etcd/ <- etcd data (internal etcd)" />
+    </Tree.Folder>
+    <Tree.File name="registry/ <- in-cluster registry (airgap installs only)" />
+    <Tree.File name="charts/ <- Helm chart cache" />
+  </Tree.Folder>
+</Tree>
+
+### Relevant paths
+
+The following paths are relevant for troubleshooting the embedded cluster installation:
+
+| Path | Contents |
+| --- | --- |
+| `/etc/embedded-cluster/` | EC configuration |
+| `/var/log/embedded-cluster-install.log` | Installation log |
+| `/run/k0s/` | k0s runtime sockets and PID files |
+| `/etc/k0s/k0s.yaml` | k0s cluster config (generated, do not edit directly) |  

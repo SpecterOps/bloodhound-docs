@@ -1,0 +1,56 @@
+---
+title: On-premises architecture
+sidebarTitle: Architecture
+description: Understand the architecture, components, and data flow of BloodHound Enterprise on-premises deployments.
+hidden: true
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+BloodHound Enterprise on-premises gives you full control over your deployment infrastructure while maintaining the same powerful identity security capabilities as the SaaS version.
+
+## Deployment architecture
+
+BloodHound Enterprise on-premises consists of two primary parts:
+
+- **BHE Server (Linux)** - Runs the BloodHound application, database, and supporting infrastructure
+- **Collector hosts (Windows)** - Run lightweight collector services (SharpHound and/or AzureHound)
+
+TODO: Add diagram of the architecture here, showing the BHE Server, collector hosts, and data flow between them.
+
+<img src="/images/on-premises/architecture-overview.png" alt="BloodHound Enterprise on-premises architecture diagram" />
+
+### Core components
+
+The BHE Server includes the following components:
+
+| Component | Purpose |
+|-----------|---------|
+| **BHE API** | Application server, UI, graph analysis, and collector ingestion |
+| **PostgreSQL 16.x** | Unified database for application data and graph storage |
+| **Kubernetes (k0s)** | Container orchestration platform (embedded cluster only) |
+| **KOTS Admin Console** | Deployment management, configuration, and updates |
+
+### Data collectors
+
+Collectors run separately from the BHE Server and gather configuration data from your identity infrastructure:
+
+| Collector | Target Environment | Data Collected |
+|-----------|-------------------|----------------|
+| **SharpHound Enterprise** | Active Directory | AD objects, relationships, ACLs, sessions |
+| **AzureHound Enterprise** | Azure / Entra ID | Azure AD objects, role assignments, resource relationships |
+| **OpenGraph** | Custom sources | User-defined graph data (JSON) |
+
+## Data flow
+
+Data flows through the system in the following sequence:
+
+1. **Collection** - Collectors gather configuration data from AD, Azure, or custom sources
+2. **Transmission** - Data is transmitted over encrypted HTTPS/TLS 1.3 to the BHE API
+3. **Processing** - The BHE API processes and stores data in PostgreSQL
+4. **Analysis** - Graph analysis identifies privilege relationships and attack paths
+5. **Visualization** - Results are displayed in the BloodHound UI
+
+<Note>
+  Collectors have zero local storage of collected data. All data is transmitted directly to the BHE Server and stored in PostgreSQL.
+</Note>
