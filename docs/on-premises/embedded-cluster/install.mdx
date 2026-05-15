@@ -1,48 +1,44 @@
 ---
-title: Install BloodHound Enterprise
-sidebarTitle: Install
-description: Use this guide to install BloodHound Enterprise on-premises with the embedded cluster deployment option.
+title: Install and Configure
+description: Use this guide to install and configure BloodHound Enterprise on-premises with the embedded cluster deployment option.
 ---
 
 import { Checklist} from '/snippets/components/checklist.jsx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-In the [Deployment Overview](/on-premises/embedded-cluster/overview), we covered the high-level overview of the embedded cluster deployment option for BloodHound Enterprise on-premises.
+In the [Deployment Overview](/on-premises/embedded-cluster/overview), we covered the high-level overview of the embedded cluster deployment option for BloodHound Enterprise on-premises. This guide provides step-by-step instructions for installing and configuring BloodHound Enterprise with the embedded cluster installer.
 
-This guide provides detailed, step-by-step instructions to install BloodHound Enterprise using the embedded cluster installer.
+The embedded cluster installer bundles a Kubernetes distribution (k0s) with the BloodHound Enterprise application, so you can deploy everything on a single Linux host without needing to set up Kubernetes separately.
+
+## Pre-install checklist
+
+The following checklist summarizes the install-blocking gates and pre-deployment work that must be completed before running the installer.
 
 <Note>
- The embedded cluster installer bundles a lightweight Kubernetes distribution (k0s) with the BloodHound Enterprise application, so you can deploy everything on a single Linux host without needing to set up Kubernetes separately.
+  For detailed host sizing, collector specifications, supported filesystems and kernel versions, and the complete set of preflight checks the installer enforces, see the full [system requirements](/on-premises/embedded-cluster/system-requirements).
 </Note>
 
-## Before you begin
-
-Complete the following prerequisites before starting the installation:
-
-TODO: Verify against latest docs
-
 <Checklist checklistKey="embedded-cluster-install">
-- Review [system requirements](/on-premises/prerequisites)
-- Prepare a Linux host (Ubuntu 20.04+, RHEL 8+) with root access
-- Obtain valid TLS certificate and private key in PEM format
-- Ensure network ports `443` and `8800` are accessible
-- Verify internet connectivity for downloading the installer
+- Provision a dedicated x86-64 Linux host (any distribution with systemd) with root or sudo access, sized per the [BloodHound Enterprise host](/on-premises/embedded-cluster/system-requirements#bloodhound-enterprise-host) specification
+- Back the host with SSD storage (P99 write latency ≤10ms) — the installer blocks on spinning disk
+- Stand up a [reverse proxy](/on-premises/embedded-cluster/system-requirements#reverse-proxy) with your SSL certificate to terminate HTTPS in front of BloodHound Enterprise
+- Create a [DNS A record](/on-premises/embedded-cluster/system-requirements#dns) for the BloodHound Enterprise FQDN that resolves for both users and collectors
+- Open inbound TCP `443` (users and collectors) and `30080` (Admin Console, restricted to admins)
+- For online installs, allow outbound HTTPS to `replicated.app`, `proxy.replicated.com`, and `registry.replicated.com`; for air-gapped installs, download the installer bundle ahead of time
 </Checklist>
 
 ## Installation methods
-
-TODO: Verify descriptions of the installation methods and add cli-based method instructions.
 
 You can install BloodHound Enterprise using either the **UI-guided installer** or the **CLI-based installer**. Choose the method that fits how you want to configure and deploy the application.
 
 | Method | Use this when |
 | --- | --- |
-| **Web-based installer** | You want an interactive web interface for configuration. This method is recommended for first-time installations, visual configuration, and environments with desktop access to the Linux host. |
-| **CLI-based installer** | You want to use a headless configuration file. This method is best for automated deployments, air-gapped environments, and environments without desktop access. |
+| **Web-based installer** | You want a guided, interactive setup. After you run the install command, the installer prints a URL that you open in a browser (from any machine that can reach the host on the Admin Console port) and configures BloodHound Enterprise through the UI. Recommended for first-time installations and one-off deployments. |
+| **CLI-based installer** | You want a non-interactive, scriptable install. You provide a pre-built `ConfigValues` file and the installer password as flags, and preflight checks run on the command line instead of in the UI. Recommended for automated or repeatable deployments. |
 
 <Tip>
-  Both methods produce identical results. Choose the method that best fits your workflow.
+  Both methods produce the same installed cluster and application. The CLI method requires you to prepare a `ConfigValues` file ahead of time; the web-based installer collects those values interactively.
 </Tip>
 
 ### Web-based installer
@@ -112,7 +108,71 @@ TODO: Run end-to-end test to validate and finish steps.
   </Step>
   <Step title="Access BloodHound Enterprise">
     Access the BloodHound Enterprise tenant and complete the following next steps:
-    
+
+    - [Create users](/manage-bloodhound/auth/users-and-roles)
+    - [Configure collectors](/install-data-collector/overview)
+  </Step>
+</Steps>
+
+### CLI-based installer
+
+The CLI-based installer runs the install non-interactively from the command line. You provide your configuration values as a file and your Admin Console password as a flag, and the installer runs preflight checks and completes the deployment without opening a browser.
+
+This method is suited to automated, scripted, or repeatable deployments.
+
+TODO: Run end-to-end test to validate flags, ConfigValues schema, and finish steps.
+
+<Steps>
+  <Step title="Navigate to the installer portal">
+    Log in to the [SpecterOps - BloodHound Enterprise Portal](https://enterprise.replicated.com/bloodhound-enterprise) to retrieve the installer download command and your license file.
+
+    <Note>
+      If you don't have access, contact your team administrator or your BloodHound Enterprise account team to request an invitation.
+    </Note>
+  </Step>
+  <Step title="Prepare the ConfigValues file">
+    Create a `ConfigValues` YAML file on the Linux host with the configuration values the installer would otherwise collect through the UI (domain configuration, application access, certificates, and database configuration).
+
+    TODO: Document the BloodHound Enterprise `ConfigValues` schema and provide an annotated example.
+
+    <Note>
+      If you have an existing PostgreSQL database, include the connection details in the `ConfigValues` file. To use the bundled PostgreSQL instance, set the corresponding database option instead.
+    </Note>
+  </Step>
+  <Step title="Download & install BloodHound Enterprise">
+    1. In the **Select Version** field, choose the version of BloodHound Enterprise you want to install.
+
+    1. SSH into the Linux host where you want to install BloodHound Enterprise.
+
+    1. Copy the command to download the installer archive to the Linux host.
+
+       ```bash
+       curl -f "<url>" -H "Authorization: Bearer <token>" -o bloodhound-enterprise-<version>.tar.gz
+       ```
+
+    1. Copy the command to extract the installer archive on the Linux host.
+
+       ```bash
+       tar -xvzf bloodhound-enterprise-<version>.tar.gz
+       ```
+
+    1. Run the install command with the `--headless`, `--config-values`, and `--installer-password` flags.
+
+       ```bash
+       sudo ./bloodhound-enterprise install \
+         --license license.yaml \
+         --headless \
+         --config-values config-values.yaml \
+         --installer-password <password>
+       ```
+
+       <Note>
+         Host preflight checks run automatically on the command line. Resolve any blocking failures and re-run the install command before continuing.
+       </Note>
+  </Step>
+  <Step title="Access BloodHound Enterprise">
+    Access the BloodHound Enterprise tenant and complete the following next steps:
+
     - [Create users](/manage-bloodhound/auth/users-and-roles)
     - [Configure collectors](/install-data-collector/overview)
   </Step>
