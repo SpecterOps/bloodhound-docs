@@ -1,0 +1,153 @@
+---
+title: 2026-05-26 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-05-26"
+---
+
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-05-26 | v9.2.0 | No release | v2.13.0 | No release |
+ 
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+<Update label="BloodHound" description="New Feature" tags={["Explore"]}>
+  ## Eligible Roles in the Entity Panel
+  {/*BED-7309*/}
+
+  Review privileged role eligibility directly from the **Entity Panel** with a new **Eligible Roles** accordion.
+
+  This update adds visibility into role eligibility and role approval relationships for supported Azure principals, helping operators assess role activation risk without leaving graph exploration workflows.
+</Update>
+
+<Update label="BloodHound" description="New Feature" tags={["Cypher"]}>
+  ## CySQL `CREATE` Support
+  {/*BED-8250*/}
+
+  Use `CREATE` statements in CySQL for workflows that require writing graph data with Cypher-compatible syntax.
+
+  This improves language parity for users migrating existing Cypher workflows and tooling into BloodHound environments backed by CySQL.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  ## Stronger OpenGraph Kind Validation
+  {/*BED-8072*/}
+
+  Prevent reserved `tag_` kind prefixes from being used in extension definitions and ingest paths.
+
+  This protects internal kind semantics and reduces ingest ambiguity for extension developers.
+
+  ## Source Kind Attribution Refinement
+  {/*BED-8030*/}
+
+  Apply payload `source_kind` attribution only to nodes explicitly defined in the payload, not to edge endpoint reference placeholders.
+
+  This narrows attribution behavior to expected node definitions and avoids over-applying source kinds during edge-only references.
+
+  ## Updated Node Schema Example Guidance
+  {/*BED-8080*/}
+
+  The OpenGraph node JSON schema example now demonstrates `environmentid` and `collected` properties.
+
+  This provides clearer guidance for extension developers building payloads that align with BloodHound ingest expectations.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["API", "Posture"]}>
+  ## Findings API Identifier Consistency
+  {/*BED-8271*/}
+
+  The `/api/v2/attack-paths/findings` response uses explicit identifier key names for improved API clarity.
+
+  Response fields now align on `_id` naming conventions to support cleaner client-side filtering, sorting, and integration maintenance.
+
+  ## OpenGraph Exposure Tooltip Language
+  {/*BED-7803*/}
+
+  Exposure percentage guidance is now generalized for OpenGraph scenarios.
+
+  This update makes tooltip explanations more consistent across Active Directory, Azure, and OpenGraph analysis contexts.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
+  ## Expanded Path and Result Function Support
+  {/*BED-8294, BED-8261*/}
+
+  Query path contents more flexibly with support for `nodes(path)` result mapping and `relationships(path)` traversal expressions.
+
+  These updates improve compatibility with common Cypher query patterns that depend on iterating path components and returning ordered path entities.
+
+  ## Broader CySQL Clause and List Parity
+  {/*BED-7062, BED-7060, BED-7055, BED-5740*/}
+
+  Build more expressive CySQL queries with improved support for `ORDER BY`, `WITH`, `UNWIND`, and array/entity comparison patterns.
+
+  This reduces rewrites for existing Cypher queries and improves end-to-end query portability across supported backends.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  ## Search Selection and Panel Flow
+  {/*BED-8159*/}
+
+  Move from **Search** results to entity analysis faster with automatic node selection and immediate **Entity Panel** context.
+
+  The selected node now persists more predictably while switching between **Search** and **Pathfinding**, reducing repeated selection work.
+
+  ## Export Selected Table Columns
+  {/*BED-7010*/}
+
+  Export CSV and JSON outputs that honor the columns you selected in table view.
+
+  This keeps exported datasets aligned to analyst intent and reduces cleanup work outside BloodHound.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["UI"]}>
+  ## Improved Dialog and Upload Modal Scaling
+  {/*BED-7580, BED-7308*/}
+
+  Interact with large dialogs and multi-file upload lists more reliably on constrained viewports.
+
+  Dialogs now better respect viewport height limits, and large file lists in import flows provide improved scrolling behavior.
+</Update>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## API and Access Control
+
+  - {/*BED-8214*/} Resolved an issue where non-administrator users could trigger the **Analyze Now** API action through direct requests.
+  - {/*BED-8218*/} Resolved an issue where filtering string fields with numeric or boolean-like values could return `500` errors on API endpoints.
+  - {/*BED-8252*/} Resolved issues in graph-backed filtering where numeric and boolean-like string values were parsed incorrectly and silently bypassed expected filters.
+
+  ## Cypher and Query Processing
+
+  - {/*BED-8260*/} Resolved an issue where variable-length relationships with a lower bound of `0` did not correctly match zero-hop paths.
+  - {/*BED-7883*/} Resolved an issue where Cypher equality comparisons could fail when values contained special characters.
+  - {/*BED-6595*/} Resolved an issue where combining `AD_ATTACK_PATHS` and `AZ_ATTACK_PATHS` edge shortcuts could fail depending on shortcut order.
+  - {/*BED-5945*/} Resolved an issue where datetime arithmetic with duration values could fail with incompatible operand type errors.
+  - {/*BED-5292*/} Added support for Cypher list functions `head`, `tail`, and `last` in CySQL to improve query compatibility.
+
+  ## User Interface and Navigation
+
+  - {/*BED-8283*/} Resolved an issue where the **Administration** pop-out panel could close before users selected an option.
+  - {/*BED-8109*/} Resolved an issue where filtering finished job logs after paging could show empty results due to stale page state.
+  - {/*BED-8073*/} Resolved an issue where graph labels could render on top of node icons, reducing readability.
+  - {/*BED-7102*/} Resolved inconsistent password validation in **Create User** so special character requirements align with backend policy.
+
+  ## Analysis and Findings Stability
+
+  - {/*BED-7256*/} Resolved an ADCS post-processing issue where gMSA and sMSA accounts could be incorrectly filtered from certificate enrollment paths.
+  - {/*BED-5998*/} Resolved finding flapping for NTLM Relay to ADCS paths so affected findings no longer repeatedly remediate and rediscover without real state changes.
+</Update>
+
+<Update label="SharpHound" tags={["Fixed Issues"]}>
+  ## Collection and Edge Accuracy
+
+  - {/*BED-6632*/} Resolved an issue where local principal kinds were labeled inconsistently, which could lead to incorrect handling of local group and local user objects.
+  - {/*BED-7625*/} Resolved an issue where `AllowedToDelegate` edges were not created when `msDS-AllowedToDelegateTo` values existed but specific delegation flags were not set.
+</Update>
+
+<Update label="AzureHound" tags={["Fixed Issues"]}>
+  ## Collection Compatibility
+
+  - {/*BED-8176*/} Resolved an issue where `edge-*` AzureHound container images used an invalid collector version string that prevented successful data upload to BloodHound.
+</Update>
