@@ -121,6 +121,26 @@ where n.hasPassword
 return n order by n.name skip 10 limit 100
 ```
 
+## Entity Creation[](#entity-creation)
+
+<Note>
+  `CREATE` requires `enable_cypher_mutations: true` in your BloodHound configuration file.
+</Note>
+
+### Create nodes
+
+``` Cypher
+CREATE (n:User {name: 'test-node', objectid: 'UUID-1234-567890'})
+RETURN n
+```
+
+### Create relationships
+
+``` Cypher
+CREATE (u:User {name: 'alice'})-[r:MemberOf]->(g:Group {name: 'admins'})
+RETURN r
+```
+
 ## Entity Updates[](#entity-updates)
 
 ### Setting Properties and Labels
@@ -474,10 +494,6 @@ supported in CySQL translation.
 The below issues are known defects. They are classified as defects of CySQL as the intent is to correctly support their
 use.
 
-### Entity Creation
-
-The `create` reserved Cypher keyword is currently unsupported. Future support of it is planned.
-
 ### `labels` Function
 
 Returns the labels of the given node reference. This function returns the node's labels as a text array value. Label
@@ -554,7 +570,6 @@ efforts may be pursued to add support for these language features.
 * Pattern Comprehensions
 * Existential Subqueries (e.g. exists)
 * Merge Statements
-* Unwind Expressions
 * Pattern Predicates using Recursive Expansion
 
 ## Differences between Cypher and CySQL[](#cysql-differences)
