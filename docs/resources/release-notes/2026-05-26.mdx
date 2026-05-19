@@ -105,38 +105,38 @@ sidebarTitle: "2026-05-26"
 </Update>
 
 <Update label="BloodHound" tags={["Fixed Issues"]}>
-  ## API and Access Control
+  ## Analysis
+  
+  - {/*BED-7256*/}Resolved an ADCS post-processing issue where managed service accounts (gMSA and sMSA) could be incorrectly filtered from certificate enrollment paths when certificate templates have `SubjectAltRequireDNS` or `SubjectAltRequireDomainDNS` enabled.
+
+  - {/*BED-5998*/}<img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }}/> Resolved an issue where **Tier Zero Computer Vulnerable to Coercion-based NTLM Relay to ADCS (ESC8) Attack** findings could appear remediated, disappear, and then be rediscovered with a new `first_seen` value even when no real remediation occurred.
+
+  ## API
 
   - {/*BED-8214*/} Resolved an issue where non-administrator users could trigger the **Analyze Now** API action through direct requests.
-  - {/*BED-8218*/} Resolved an issue where filtering string fields with numeric or boolean-like values could return `500` errors on API endpoints.
-  - {/*BED-8252*/} Resolved issues in graph-backed filtering where numeric and boolean-like string values were parsed incorrectly and silently bypassed expected filters.
+  - {/*BED-8218, BED-8252*/} Resolved issues where filtering string fields with numeric or boolean-like values was interpreted incorrectly, causing API errors or incorrect filtering behavior.
 
-  ## Cypher and Query Processing
+  ## Cypher
 
-  - {/*BED-8260*/} Resolved an issue where variable-length relationships with a lower bound of `0` did not correctly match zero-hop paths.
-  - {/*BED-7883*/} Resolved an issue where Cypher equality comparisons could fail when values contained special characters.
-  - {/*BED-6595*/} Resolved an issue where combining `AD_ATTACK_PATHS` and `AZ_ATTACK_PATHS` edge shortcuts could fail depending on shortcut order.
-  - {/*BED-5945*/} Resolved an issue where datetime arithmetic with duration values could fail with incompatible operand type errors.
-  - {/*BED-5292*/} Added support for Cypher list functions `head`, `tail`, and `last` in CySQL to improve query compatibility.
+  - {/*BED-8260*/} Resolved an issue where variable-length relationships with a lower bound of `0` did not correctly handle zero-hop matching; when a relationship resolves to `0` hops, the nodes on either side now bind to the same node.
+  - {/*BED-7883*/} Resolved an issue where Cypher equality comparisons for `objectid` values could fail when the values contained special characters.
+  - {/*BED-6595*/} Resolved an issue where combining `AD_ATTACK_PATHS` and `AZ_ATTACK_PATHS` edge shortcuts with the pipe character (`|`) would fail to return results from both shortcuts.
+  - {/*BED-5945*/} Resolved an issue where filtering edges by `lastseen` using duration-based date ranges would fail with a type compatibility error.
+  - {/*BED-5292*/} Resolved an issue where Cypher list functions `head`, `tail`, and `last` were not supported on PostgreSQL database backends.
 
-  ## User Interface and Navigation
+  ## UI
 
-  - {/*BED-8283*/} Resolved an issue where the **Administration** pop-out panel could close before users selected an option.
-  - {/*BED-8109*/} Resolved an issue where filtering finished job logs after paging could show empty results due to stale page state.
+  - {/*BED-8283*/} Resolved an issue where the **Administration** pop-out panel in the navigation sidebar could close before users selected an option.
+  - {/*BED-8109*/} Resolved an issue where filtering the **Finished Jobs Log** after paging could show empty results due to stale page state.
   - {/*BED-8073*/} Resolved an issue where graph labels could render on top of node icons, reducing readability.
-  - {/*BED-7102*/} Resolved inconsistent password validation in **Create User** so special character requirements align with backend policy.
-
-  ## Analysis and Findings Stability
-
-  - {/*BED-7256*/} Resolved an ADCS post-processing issue where gMSA and sMSA accounts could be incorrectly filtered from certificate enrollment paths.
-  - {/*BED-5998*/} Resolved finding flapping for NTLM Relay to ADCS paths so affected findings no longer repeatedly remediate and rediscover without real state changes.
+  - {/*BED-7102*/} Resolved an issue where password validation in the UI for creating users was inconsistent with the API validation rules.
 </Update>
 
 <Update label="SharpHound" tags={["Fixed Issues"]}>
   ## Collection and Edge Accuracy
 
   - {/*BED-6632*/} Resolved an issue where local principal kinds were labeled inconsistently, which could lead to incorrect handling of local group and local user objects.
-  - {/*BED-7625*/} Resolved an issue where `AllowedToDelegate` edges were not created when `msDS-AllowedToDelegateTo` values existed but specific delegation flags were not set.
+  - {/*BED-7625*/} Resolved an issue where [`AllowedToDelegate`](/resources/edges/allowed-to-delegate) edges were not created when `msDS-AllowedToDelegateTo` values existed but specific delegation flags were not set.
 </Update>
 
 <Update label="AzureHound" tags={["Fixed Issues"]}>
