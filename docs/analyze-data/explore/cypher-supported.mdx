@@ -489,6 +489,69 @@ The `size` function is expected to behave differently if the given expression ev
 the function returns the number of Unicode characters present in the text value. This behavior is currently not
 supported in CySQL translation.
 
+### `nodes`
+
+Returns an ordered list of all nodes in a matched path.
+
+``` Cypher
+match p = (:Computer)-[:HasSession]->(:User)
+return nodes(p)
+```
+
+### `relationships`
+
+Returns an ordered list of all relationships in a matched path.
+
+``` Cypher
+match p = (:Computer)-[:HasSession]->(:User)
+return relationships(p)
+```
+
+### `startNode`
+
+Returns the start node of a given relationship reference.
+
+``` Cypher
+match (:Computer)-[r:HasSession]->(:User)
+return startNode(r)
+```
+
+### `endNode`
+
+Returns the end node of a given relationship reference.
+
+``` Cypher
+match (:Computer)-[r:HasSession]->(:User)
+return endNode(r)
+```
+
+### `head`
+
+Returns the first element of a list.
+
+``` Cypher
+match p = (:Computer)-[:HasSession]->(:User)
+return head(nodes(p))
+```
+
+### `tail`
+
+Returns all elements of a list except the first.
+
+``` Cypher
+match p = (:Computer)-[:MemberOf*..]->(g:Group)
+return tail(nodes(p))
+```
+
+### `last`
+
+Returns the last element of a list.
+
+``` Cypher
+match p = (:Computer)-[:MemberOf*..]->(g:Group)
+return last(nodes(p))
+```
+
 ## Known Defects in Supported Components[](#known-defects)
 
 The below issues are known defects. They are classified as defects of CySQL as the intent is to correctly support their
@@ -509,12 +572,6 @@ return n
 
 While currently implemented this function returns the smallint array of labels associated with a node when referenced in
 CySQL. Future support to convert the smallint array of node labels into text values is planned.
-
-### Pattern Lookup Functions
-
-The pattern lookup functions `head`, `tail`, and `last` are not currently supported. These functions are typically used to reference different parts of a matched pattern.
-
-Support for them is planned for a future version of CySQL.
 
 ### Unpacking Arrays of Entities for Comparison
 

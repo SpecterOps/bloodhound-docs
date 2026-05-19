@@ -13,24 +13,6 @@ sidebarTitle: "2026-05-26"
   Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
 </Tip>
 
-<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
-  ## Stronger OpenGraph Kind Validation
-  {/*BED-8072*/}
-
-  BloodHound now rejects uploads that use the reserved `tag_` prefix (case-insensitive) in custom node and edge kinds. This applies to both extension definition schemas and data payloads.
-
-  If you maintain [extension definition schemas](/opengraph/developer/graph-definition#namespacing) or [data payloads](/opengraph/developer/graph-data), update any affected kinds to avoid failed uploads.
-</Update>
-
-<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
-  ## Updated Node Schema
-  {/*BED-8080*/}
-
-  The OpenGraph [node JSON schema](/opengraph/developer/nodes#schema) now demonstrates `environmentid` and `collected` properties.
-
-  This provides clearer guidance for extension developers building payloads that align with BloodHound ingest expectations.
-</Update>
-
 <Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
   ## Eligible Roles in the Entity Panel
   {/*BED-7309*/}
@@ -62,30 +44,34 @@ sidebarTitle: "2026-05-26"
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
-  ## Expanded path introspection functions
-  {/*BED-8294, BED-8261*/}
+  ## Expanded Cypher query support
+  {/*BED-8294, BED-8261, BED-5292, BED-7062, BED-7060, BED-7055, BED-5740*/}
 
-  Query path contents more flexibly with support for `nodes(path)` result mapping and `relationships(path)`, `startNode()`, and `endNode()` traversal expressions.
+  Write more complete Cypher queries on PostgreSQL backends with expanded support for:
 
-  These updates improve compatibility with common Cypher query patterns that depend on iterating or returning ordered path components.
+  | Category | Added support |
+  |---|---|
+  | Path introspection | [`nodes()`](/analyze-data/explore/cypher-supported#nodes), [`relationships()`](/analyze-data/explore/cypher-supported#relationships), [`startNode()`](/analyze-data/explore/cypher-supported#startnode), [`endNode()`](/analyze-data/explore/cypher-supported#endnode) |
+  | List navigation | [`head()`](/analyze-data/explore/cypher-supported#head), [`tail()`](/analyze-data/explore/cypher-supported#tail), [`last()`](/analyze-data/explore/cypher-supported#last) |
+  | Clauses and expressions | `ORDER BY`, `WITH`, `UNWIND`, array/entity comparisons |
 </Update>
 
-<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
-  ## Broader CySQL clause and list parity
-  {/*BED-7062, BED-7060, BED-7055, BED-5740*/}
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  ## Stronger OpenGraph Kind Validation
+  {/*BED-8072*/}
 
-  Build more expressive CySQL queries with improved support for `ORDER BY`, `WITH`, `UNWIND`, and array/entity comparison patterns.
+  BloodHound now rejects uploads that use the reserved `tag_` prefix (case-insensitive) in custom node and edge kinds. This applies to both extension definition schemas and data payloads.
 
-  This reduces rewrites for existing Cypher queries and improves end-to-end query portability across supported backends.
+  If you maintain [extension definition schemas](/opengraph/developer/graph-definition#namespacing) or [data payloads](/opengraph/developer/graph-data), update any affected kinds to avoid failed uploads.
 </Update>
 
-<Update label="BloodHound" description="Enhancement" tags={["UI"]}>
-  ## Improved Dialog and Upload Modal Scaling
-  {/*BED-7580, BED-7308*/}
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  ## Updated Node Schema
+  {/*BED-8080*/}
 
-  Interact with large dialogs and multi-file upload lists more reliably on constrained viewports.
+  The OpenGraph [node JSON schema](/opengraph/developer/nodes#schema) now demonstrates [`environmentid`](/opengraph/developer/nodes#param-properties-environmentid) and [`collected`](/opengraph/developer/nodes#param-properties-collected) properties.
 
-  Dialogs now better respect viewport height limits, and large file lists in import flows provide improved scrolling behavior.
+  This provides clearer guidance for extension developers building payloads that align with BloodHound ingest expectations, especially for extensions that produce findings and risk metrics.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Risk Metrics"]}>
@@ -94,9 +80,13 @@ sidebarTitle: "2026-05-26"
 
   <img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }}/>
 
-  Exposure percentage guidance is now generalized for OpenGraph scenarios.
+  The **Exposed** tooltip on the [Attack Paths](/analyze-data/findings/attack-paths) page now uses platform-agnostic language. Previously, it defined exposure in terms of Active Directory and Entra object types only. As [OpenGraph extensions](/opengraph/overview) expand BloodHound beyond Active Directory and Azure, that definition is no longer accurate.
 
-  This update makes tooltip explanations more consistent across Active Directory, Azure, and OpenGraph analysis contexts.
+  The updated tooltip instead describes exposure as a percentage of _identities_ that can reach a privileged asset through at least one attack path.
+
+  <Frame>
+    <img src="/images/release_notes/9_2_0/exposure-tooltip.png" alt="Screenshot of updated Exposed tooltip on Attack Paths page" style={{ width: "100%" }} />
+  </Frame>
 </Update>
 
 <Update label="BloodHound" tags={["Fixed Issues"]}>
@@ -119,10 +109,10 @@ sidebarTitle: "2026-05-26"
   - {/*BED-7883*/} Resolved an issue where Cypher equality comparisons for `objectid` values could fail when the values contained special characters.
   - {/*BED-6595*/} Resolved an issue where combining `AD_ATTACK_PATHS` and `AZ_ATTACK_PATHS` edge shortcuts with the pipe character (`|`) would fail to return results from both shortcuts.
   - {/*BED-5945*/} Resolved an issue where filtering edges by `lastseen` using duration-based date ranges would fail with a type compatibility error.
-  - {/*BED-5292*/} Resolved an issue where Cypher list functions `head`, `tail`, and `last` were not supported on PostgreSQL database backends.
 
   ## UI
 
+  - {/*BED-7580, BED-7308*/} Resolved an issue where importing many files at once (such as a large Cypher query library) caused the file list to expand beyond the viewport, pushing the **Upload** button off-screen and requiring users to zoom out to proceed. File lists now scroll within the dialog.
   - {/*BED-8283*/} Resolved an issue where the **Administration** pop-out panel in the navigation sidebar could close before users selected an option.
   - {/*BED-8109*/} Resolved an issue where filtering the **Finished Jobs Log** after paging could show empty results due to stale page state.
   - {/*BED-8073*/} Resolved an issue where graph labels could render on top of node icons, reducing readability.
