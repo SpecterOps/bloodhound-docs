@@ -103,22 +103,41 @@ where u.objectid = 'UUID-1234-567890'
 return p
 ```
 
-## Return Options[](#return-options)
+## Build multi-part queries
 
-### Order
+Use `WITH` to pass intermediate results from one query part to the next. You can use `WITH` to filter, aggregate, sort, or alias results before continuing the query.
 
-``` Cypher
-match (n:User)
-where n.hasPassword
-return n order by n.name
+```cypher
+MATCH p = shortestPath((u:User)-[:MemberOf*1..]->(g:Group))
+WITH DISTINCT g AS targetGroup, COUNT(u) AS userCount
+RETURN targetGroup.name, userCount
+ORDER BY userCount DESC
+LIMIT 5
 ```
 
-### Skip and Limit
+## Result Ordering and Pagination
 
-``` Cypher
+### `ORDER BY`
+
+Use `ORDER BY` with `RETURN` or `WITH` to sort results by a projected value. Ascending order is the default; append `DESC` for descending order.
+
+```cypher
+WITH [2, 3, 1, 5, 4] AS list
+UNWIND list AS num
+RETURN num
+ORDER BY num DESC
+```
+
+### `SKIP` and `LIMIT`
+
+Use `SKIP` and `LIMIT` with `RETURN` or `WITH` to paginate or trim a result set after sorting.
+
+```cypher
 match (n:User)
-where n.hasPassword
-return n order by n.name skip 10 limit 100
+return n
+order by n.name
+skip 10
+limit 100
 ```
 
 ## Entity Creation[](#entity-creation)
@@ -184,6 +203,22 @@ match ()-[r:MemberOf]->()
 delete r
 ```
 
+## Unwind a list into rows
+
+Expand a list into individual rows for further filtering, aggregation, or sorting.
+
+```cypher
+match (u:User)
+where u.name contains "A"
+with collect(u.name) as temp
+unwind temp as usernames
+return usernames
+limit 100
+```
+
+<Note>
+  Queries that use `UNWIND` return tabular results only.
+</Note>
 
 ## Supported Query Filters
 
@@ -493,44 +528,44 @@ supported in CySQL translation.
 
 Returns an ordered list of all nodes in a matched path.
 
-``` Cypher
-match p = (:Computer)-[:HasSession]->(:User)
+```cypher
+match p = ()-[]->()
 return nodes(p)
 ```
 
 ### `relationships`
 
-Returns an ordered list of all relationships in a matched path.
+Returns the ordered relationship list for a path.
 
-``` Cypher
-match p = (:Computer)-[:HasSession]->(:User)
+```cypher
+match p = ()-[]->()
 return relationships(p)
 ```
 
 ### `startNode`
 
-Returns the start node of a given relationship reference.
+Returns the start node for a relationship reference.
 
-``` Cypher
-match (:Computer)-[r:HasSession]->(:User)
-return startNode(r)
+```cypher
+match p = (a)-[*1..]->(b)
+where none(r in relationships(p) where startNode(r).name = 'blocked')
+return p
 ```
 
 ### `endNode`
 
-Returns the end node of a given relationship reference.
+Returns the end node for a relationship reference.
 
-``` Cypher
-match (:Computer)-[r:HasSession]->(:User)
-return endNode(r)
+```cypher
+match ()-[r]->() return endNode(r)
 ```
 
 ### `head`
 
 Returns the first element of a list.
 
-``` Cypher
-match p = (:Computer)-[:HasSession]->(:User)
+```cypher
+match p = ()-[]->()
 return head(nodes(p))
 ```
 
@@ -538,18 +573,9 @@ return head(nodes(p))
 
 Returns all elements of a list except the first.
 
-``` Cypher
-match p = (:Computer)-[:MemberOf*..]->(g:Group)
+```cypher
+match p = ()-[]->()
 return tail(nodes(p))
-```
-
-### `last`
-
-Returns the last element of a list.
-
-``` Cypher
-match p = (:Computer)-[:MemberOf*..]->(g:Group)
-return last(nodes(p))
 ```
 
 ## Known Defects in Supported Components[](#known-defects)
