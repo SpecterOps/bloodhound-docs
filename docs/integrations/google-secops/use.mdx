@@ -1,0 +1,100 @@
+---
+title: Use Google SecOps with BloodHound Enterprise
+description: Learn how to investigate BloodHound Enterprise findings in Google SecOps by using cases, alerts, events, playbooks, and actions.
+sidebarTitle: Investigate findings
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+After you complete the [installation and configuration](/integrations/google-secops/configure), Google SecOps begins receiving BloodHound Enterprise attack path data through the connector. This page explains how that data is organized and how analysts can work with it during an investigation.
+
+## Understand the investigation structure
+
+The integration organizes BloodHound Enterprise findings into Google SecOps cases, alerts, and events.
+
+| Object | Purpose |
+| --- | --- |
+| **Case** | Groups related BloodHound Enterprise findings for investigation. With the recommended grouping rule enabled, one case is created per source domain. |
+| **Alert** | Represents a unique BloodHound Enterprise finding or path title within a case. |
+| **Event** | Captures an individual attack path occurrence and its supporting details, such as the involved nodes and object IDs. |
+
+## Review cases, alerts, and events
+
+Use the following workflow to inspect the findings created by the connector.
+
+<Steps>
+  <Step title="Open the Cases page">
+    1. Open your Google SecOps dashboard.
+    2. Select **Cases** from the navigation menu.
+    3. Review the list of cases created by the BloodHound Enterprise connector.
+  </Step>
+
+  <Step title="Inspect alerts in a case">
+    1. Open a case for the domain that you want to investigate.
+    2. Review the alerts in that case.
+
+    Each alert corresponds to a distinct BloodHound Enterprise finding or path title.
+  </Step>
+
+  <Step title="Inspect events in an alert">
+    1. Open an alert in the case.
+    2. Review the events listed under that alert.
+    3. Double-click an event to open the full attack path details.
+
+    Event details include the step-by-step path traversal and identifiers such as `object_id`.
+  </Step>
+</Steps>
+
+## Work with playbooks
+
+The imported **BloodHound Attack Path Alerts Playbook** can run against generated cases. You can also create your own playbook if you want to extend the workflow in Google SecOps.
+
+<Steps>
+  <Step title="Create a custom playbook">
+    1. Go to **Response** > **Playbooks**.
+    2. Click the add (**+**) icon.
+    3. Select **Playbook** as the type.
+    4. Click **Create**.
+    5. Build the draft playbook by adding components from **Actions**, **Triggers**, **Blocks**, and **Flows**.
+  </Step>
+
+  <Step title="Review playbook results">
+    1. Open a generated case.
+    2. Review the playbook execution associated with that case.
+
+    Google SecOps stores the playbook results with the case so analysts can inspect the outcome of each run.
+  </Step>
+</Steps>
+
+## Run BloodHound Enterprise actions
+
+The integration includes on-demand actions that help analysts enrich investigations with data from BloodHound Enterprise.
+
+- **Ping** verifies connectivity to the BloodHound Enterprise server.
+- **Get Object Id** retrieves the object ID for a named node, such as a user, group, or computer.
+- **Does Path Exist** checks whether a shortest path exists between two specified nodes in the BloodHound Enterprise graph.
+- **Fetch Assets** retrieves detailed information about an asset based on its object ID.
+- **Path Does Not Exist** logs that no shortest path exists between the specified nodes.
+
+## Map and model alerts
+
+Alerts are not mapped and modeled by default. Configure field mappings before you move the integration into regular analyst workflows.
+
+<Steps>
+  <Step title="Open Mapping and Modeling">
+    1. Open the Google SecOps settings menu.
+    2. Select **Mapping and Modeling**.
+  </Step>
+
+  <Step title="Select the mapping family">
+    1. Choose the **Default** family.
+    2. Open the **Visualization** tab.
+  </Step>
+
+  <Step title="Map the required fields">
+    1. Map the incoming alert fields to the corresponding event fields.
+    2. Ensure that **StartTime** and **EndTime** are configured correctly.
+    3. Save the mapping configuration.
+    4. Test the mapping with sample alerts before you use it in production.
+  </Step>
+</Steps>
