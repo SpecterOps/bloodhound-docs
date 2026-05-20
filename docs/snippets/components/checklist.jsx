@@ -1,59 +1,26 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 
 export const Checklist = ({ checklistKey, title, children }) => {
   const [items, setItems] = useState([]);
-  const initializedRef = useRef(false);
 
   useEffect(() => {
-    // Only initialize once
-    if (initializedRef.current) return;
-    initializedRef.current = true;
-
-    // Count actual list items from children
-    let itemCount = 0;
-    React.Children.forEach(children, (child) => {
-      if (React.isValidElement(child) && child.type === 'ul') {
-        React.Children.forEach(child.props.children, (li) => {
-          if (React.isValidElement(li) && li.type === 'li') {
-            itemCount++;
-          }
-        });
-      }
-    });
-
-    console.log('Initializing with item count:', itemCount);
-
     // Load saved state from localStorage
     const saved = localStorage.getItem(`checklist-${checklistKey}`);
     if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        console.log('Loaded from localStorage:', parsed);
-        // Verify saved state matches current item count
-        if (parsed.length === itemCount) {
-          setItems(parsed);
-        } else {
-          // Reset if count doesn't match
-          console.log('Count mismatch, resetting');
-          setItems(new Array(itemCount).fill(false));
-        }
-      } catch (e) {
-        // If parsing fails, initialize with false
-        console.log('Parse error, resetting');
-        setItems(new Array(itemCount).fill(false));
-      }
+      const parsed = JSON.parse(saved);
+      setItems(parsed);
     } else {
-      console.log('No saved state, initializing');
-      setItems(new Array(itemCount).fill(false));
+      // Initialize based on number of list items
+      const listItems = document.querySelectorAll(`[data-checklist="${checklistKey}"] li`);
+      setItems(new Array(listItems.length).fill(false));
     }
   }, [checklistKey]);
 
   useEffect(() => {
     // Save to localStorage whenever items change
     if (items.length > 0) {
-      console.log('Saving to localStorage:', checklistKey, items);
       localStorage.setItem(`checklist-${checklistKey}`, JSON.stringify(items));
     }
   }, [items, checklistKey]);
@@ -62,7 +29,6 @@ export const Checklist = ({ checklistKey, title, children }) => {
     setItems(prev => {
       const newItems = [...prev];
       newItems[index] = !newItems[index];
-      console.log('Toggled index', index, 'new items:', newItems);
       return newItems;
     });
   };
