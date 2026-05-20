@@ -45,15 +45,55 @@ You can install BloodHound Enterprise using either the **UI-guided installer** o
 
 The web-based installer provides an interactive setup experience through a web interface. It guides you through configuration steps such as domain setup, certificate management, and database connectivity.
 
-TODO: Run end-to-end test to validate and finish steps.
-
 <Steps>
-  <Step title="Navigate to the installer portal">
-    Log in to the [SpecterOps - BloodHound Enterprise Portal](https://enterprise.replicated.com/bloodhound-enterprise).
+  <Step title="Navigate to the web-based installer">
+    The web-based installer is available through the **SpecterOps - BloodHound Enterprise Portal**.
+    
+    If you don't have access, contact your team administrator or your BloodHound Enterprise account team to request an invitation.
 
-    <Note>
-      If you don't have access, contact your team administrator or your BloodHound Enterprise account team to request an invitation.
-    </Note>
+    1. Log in to the [SpecterOps - BloodHound Enterprise Portal](https://enterprise.replicated.com/bloodhound-enterprise).
+
+    1. Click the **Install** tab at the top of the page.
+
+       <Note>
+         The installation options displayed on this page depend on the licensing associated with your account.
+       </Note>
+  </Step>
+  <Step title="Choose installation options">
+
+    The first step of the installer prompts you to choose your installation options, such as network availability and whether to show instructions for relocating images to a private registry.
+
+    1. Enter a name for your BloodHound Enterprise instance.
+
+    1. Choose one of the following **Network Availability** options:
+
+       | Option | Use this when |
+       | --- | --- |
+       | **Outbound requests allowed** | The Kubernetes cluster can make outbound internet requests. |
+       | **Outbound requests require HTTPS Proxy** | Outbound traffic must go through a proxy server. |
+
+       <Note>
+         If you choose the proxy option, a **Configure proxy URL** field appears on the next page of the installer where you can enter your proxy URL. The installer also adds `--proxy $YOUR_PROXY_URL` to the download _and_ install commands to ensure the installer can access the internet through your proxy.
+       </Note>
+
+    1. Click the toggle for **Show instructions to relocate images to your private registry** if you need to create a custom image pipeline with full control over storage location, logging, and configuration options.
+
+       <Note>
+         If you choose this option, the next page of the installer provides instructions for running the necessary commands on your Linux host:
+
+         - Entering your private registry URL
+         - Pulling the necessary container images
+         - Tagging them with your private registry URL
+         - Pushing them to your registry
+
+        The installer also adds `--registry $YOUR_REGISTRY_URL` to the install command to ensure the cluster pulls images from your registry.
+       </Note>
+
+       <Frame>
+         <img src="/images/on-premises/install-options.png" alt="A screenshot showing the initial installation options in the BloodHound Enterprise web-based installer" />
+       </Frame>
+
+    1. Click **Continue**.
   </Step>
   <Step title="Download & install BloodHound Enterprise">
     The BloodHound Enterprise Portal generates the exact download and install commands for your release, including a signed URL, a short-lived bearer token, and your specific version.
@@ -62,11 +102,27 @@ TODO: Run end-to-end test to validate and finish steps.
       Always copy and run the commands from the portal. The snippets below are placeholder examples that show the shape of each command, not runnable commands.
     </Note>
 
+    <Frame>
+      <img src="/images/on-premises/install-instructions.png" alt="A screenshot showing the installation instructions in the BloodHound Enterprise web-based installer" />
+    </Frame>
+
     1. In the **Select Version** field, choose the version of BloodHound Enterprise you want to install.
+
+    1. If you selected the proxy option in the previous step, enter your proxy URL in the **Configure proxy URL** field.
+
+       <Note>
+         The installer uses this URL to access the internet for downloading container images and other dependencies. The URL must be accessible from the Linux host where you run the installer.
+       </Note>
+
+    1. If you selected the private registry option in the previous step, enter your registry URL in the **Configure registry URL** field.
+
+        <Note>
+          The installer uses this URL to pull container images during installation. The URL must be accessible from the Linux host where you run the installer and from the Kubernetes cluster.
+        </Note>
 
     1. SSH into the Linux host where you want to install BloodHound Enterprise.
 
-    1. From the portal, copy and run the command to download the installer archive on the Linux host.
+    1. From the portal, copy and run the command to download the archive of installation assets on your Linux host.
 
        Placeholder example:
 
@@ -74,7 +130,7 @@ TODO: Run end-to-end test to validate and finish steps.
        curl -f "<url>" -H "Authorization: Bearer <token>" -o bloodhound-enterprise-<version>.tar.gz
        ```
 
-    1. From the portal, copy and run the command to extract the installer archive on the Linux host.
+    1. From the portal, copy and run the command to extract the archive of installation assets on your Linux host.
 
        Placeholder example:
 
@@ -83,15 +139,25 @@ TODO: Run end-to-end test to validate and finish steps.
        ```
 
        <Note>
-         The installer archive contains the embedded cluster application and all necessary dependencies, including the k0s Kubernetes distribution. The installer will set up everything for you on a single Linux host.
+         The installer archive contains the embedded cluster application and all necessary dependencies, including the k0s Kubernetes distribution and your license file. The installer will set up everything for you on a single Linux host.
        </Note>
 
-    1. From the portal, copy and run the install command on the Linux host, providing the path to your license file.
-
-       TODO: Verify license file location during end-to-end test. Based on Replicated v2 docs (and inferred for v3), the license should be present in the extracted archive directory; the portal also exposes a separate license download as a fallback.
+    1. Copy all files from the `assets/` directory to the home directory on your Linux host.
 
        <Note>
-         After extraction, your `license.yaml` file is present alongside the installer binary. The portal also exposes a separate license download if you need to re-fetch it.
+         This is a temporary workaround for a known issue with the installer script.
+       </Note>
+
+       Placeholder example:
+
+       ```bash
+       cp assets/* ~/
+       ```
+
+    1. From the portal, copy and run the install command on your Linux host, providing the path to your license file.
+
+       <Note>
+         After extraction, your `license.yaml` file is present alongside all installation assets.
        </Note>
 
        Placeholder example:
@@ -100,29 +166,89 @@ TODO: Run end-to-end test to validate and finish steps.
        sudo ./bloodhound-enterprise install --license license.yaml
        ```
 
-    1. Complete the following installation steps on the Linux host:
+    1. TODO: Manage certificate (self-signed vs custom).
 
-       - Copy password
-       - Certificate management
-       - Firewall settings
-       - Test connectivity
+    1. Connect to the web interface to continue the installation. Open the following URL in your browser:
+
+       ```http
+       https://<server-ip>:30080
+       ```
+
+       <Note>
+         Clicking **Finish** on the installer page in the portal _does not_ open the Installation Wizard. If you click **Finish** before completing the  installation steps on the Linux host _and_ before completing the Installation Wizard, you won't see any active instances in the **Update** tab in the portal. Instead, you'll see a message about the pending installation with a link to the Installation Wizard URL.
+
+         We recommend waiting to click **Finish** until after you complete the installation steps on the Linux host and in the Installation Wizard.
+       </Note>
   </Step>
   <Step title="Run the setup wizard">
-    <Note>
-      If you have an existing PostgreSQL database, make sure to have the connection details ready for the installation process. You can also choose to use the bundled PostgreSQL instance that comes with the installer.
-    </Note>
+    Open the URL provided at the end of the installation process on your Linux host to access the Installation Wizard. The wizard guides you through the final steps to complete the installation.
 
-    1. Open the URL provided at the end of the installation process on the Linux host to access the setup wizard.
+    Enter the password that you used to install BloodHound Enterprise on your Linux host.
+  </Step>
+  <Step title="Configure">
 
-     1. Complete the setup wizard steps in the UI:
+    The Installation Wizard guides you through the final configuration steps to complete the installation. Follow the prompts to enter the necessary information and complete each step.
 
-        | Step | Notes |
-        | --- | --- |
-        | **Domain Configuration** | Use a lowercase hostname with no underscores. Kubernetes ingress rules require lowercase hostnames. |
-        | **Application Access** | Configure how users reach the BloodHound Enterprise application. |
-        | **Certificates** | Choose whether to have the installer generate a TLS certificate for HTTPS access or upload your own. We recommend uploading your own certificates. |
-        | **Database Configuration** | Choose between the embedded PostgreSQL database or provide connection details for an external PostgreSQL database. |
-        | **Run Preflight Checks** | Review and resolve any blocking checks before continuing the installation. |
+    **Domain Configuration**
+
+    Use a lowercase hostname with no underscores. Kubernetes ingress rules require lowercase hostnames.
+
+    <Frame>
+      <img src="/images/on-premises/installer-domain-config.png" alt="A screenshot showing the domain configuration step of the BloodHound Enterprise web-based installer" />
+    </Frame>
+
+    **Application Access**
+
+    Configure how users reach the BloodHound Enterprise application.
+
+    <Frame>
+      <img src="/images/on-premises/installer-app-access.png" alt="A screenshot showing the application access configuration step of the BloodHound Enterprise web-based installer" />
+    </Frame>
+
+    **Certificates**
+
+    Choose whether to have the installer generate a TLS certificate for HTTPS access or upload your own. We recommend uploading your own certificates.
+
+    <Frame>
+      <img src="/images/on-premises/installer-certificates.png" alt="A screenshot showing the certificate configuration step of the BloodHound Enterprise web-based installer" />
+    </Frame>
+
+    **Database Configuration**
+
+    Choose between the embedded PostgreSQL database or provide connection details for an external PostgreSQL database.
+
+    <Frame>
+      <img src="/images/on-premises/installer-database-config.png" alt="A screenshot showing the database configuration step of the BloodHound Enterprise web-based installer" />
+    </Frame>
+  </Step>
+  <Step title="Set Up">
+    After completing the configuration steps, the installer sets up the environment settings for your installation.
+
+    <Frame>
+      <img src="/images/on-premises/installer-setup.png" alt="A screenshot showing the setup step of the BloodHound Enterprise web-based installer" />
+    </Frame>
+  </Step>
+  <Step title="Run Preflight Checks">
+
+    Review and resolve any blocking checks before continuing the installation.
+
+    <Frame>
+      <img src="/images/on-premises/installer-preflight-checks.png" alt="A screenshot showing the preflight checks step of the BloodHound Enterprise web-based installer" />
+    </Frame>
+    
+    {/* TODO: Add more details about common preflight check failures and how to resolve them. */}
+
+    When you see the Installation Complete message, click **Finish** to complete the installation and access your BloodHound Enterprise tenant.
+
+    <Frame>
+      <img src="/images/on-premises/installer-success.png" alt="A screenshot showing the installation success step of the BloodHound Enterprise web-based installer" />
+    </Frame>
+  </Step>
+  <Step title="Finish">
+    When you see the Installation Complete message, go back to the installer portal and click **Finish**.
+    <Frame>
+      <img src="/images/on-premises/installer-complete.png" alt="A screenshot showing the installation complete step of the BloodHound Enterprise web-based installer" />
+    </Frame>
   </Step>
   <Step title="Access BloodHound Enterprise">
     Access the BloodHound Enterprise tenant and complete the following next steps:
@@ -184,10 +310,8 @@ TODO: Run end-to-end test to validate flags, ConfigValues schema, and finish ste
 
     1. Run the install command on the Linux host with the `--headless`, `--config-values`, and `--installer-password` flags, providing the paths to your license file and ConfigValues file.
 
-       TODO: Verify license file location during end-to-end test. Based on Replicated v2 docs (and inferred for v3), the license should be present in the extracted archive directory; the portal also exposes a separate license download as a fallback.
-
        <Note>
-         After extraction, your `license.yaml` file is present alongside the installer binary. The portal also exposes a separate license download if you need to re-fetch it.
+         After extraction, your `license.yaml` file is present alongside all installation assets.
        </Note>
 
        ```bash
@@ -284,7 +408,7 @@ TODO: Need to clean this section up and verify the commands against the latest i
       View BloodHound Enterprise logs:
 
       ```bash
-      kubectl logs -n [NAMESPACE] [POD_NAME]
+      kubectl logs -n [NAMESPACE] [NAME]
       ```
       </Tab>
     </Tabs>
