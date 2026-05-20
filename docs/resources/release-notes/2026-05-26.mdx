@@ -44,16 +44,113 @@ sidebarTitle: "2026-05-26"
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
-  ## Expanded Cypher query support
-  {/*BED-8294, BED-8261, BED-5292, BED-7062, BED-7060, BED-7055, BED-5740*/}
+  {/*BED-8261*/}
 
-  Write more complete Cypher queries on PostgreSQL backends with expanded support for:
+  ## Filter paths by relationship properties
 
-  | Category | Added support |
-  |---|---|
-  | Path introspection | [`nodes()`](/analyze-data/explore/cypher-supported#nodes), [`relationships()`](/analyze-data/explore/cypher-supported#relationships), [`startNode()`](/analyze-data/explore/cypher-supported#startnode), [`endNode()`](/analyze-data/explore/cypher-supported#endnode) |
-  | List navigation | [`head()`](/analyze-data/explore/cypher-supported#head), [`tail()`](/analyze-data/explore/cypher-supported#tail), [`last()`](/analyze-data/explore/cypher-supported#last) |
-  | Clauses and expressions | `ORDER BY`, `WITH`, `UNWIND`, array/entity comparisons |
+  Use [`relationships()`](https://github.com/opencypher/openCypher/blob/main/tck/features/expressions/path/Path2.feature), [`startNode()`](https://github.com/opencypher/openCypher/tree/main/tck/features/expressions/graph), and [`endNode()`](https://github.com/opencypher/openCypher/tree/main/tck/features/expressions/graph) to inspect and filter individual relationships within a matched path.
+
+  These functions give you access to the edges and their endpoint nodes during traversal, enabling precise filtering on relationship properties. Queries that use these functions in Neo4j now work on PostgreSQL-backed BloodHound environments.
+
+  ```cypher
+  MATCH (g1:Group), (g2:Group)
+  WHERE g1.name STARTS WITH 'DOMAIN USERS@'
+    AND g2.name STARTS WITH 'DOMAIN ADMINS@'
+  MATCH p = shortestPath((g1)-[*1..]->(g2))
+  WHERE NONE(rel IN relationships(p)
+        WHERE type(rel) = 'HasSession'
+          AND startNode(rel).name = 'DF-WIN10-DEV01.DUMPSTER.FIRE')
+  RETURN p
+  ```
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
+  {/*BED-8294*/}
+
+  ## Inspect path nodes with `nodes()`
+
+  Access the ordered list of nodes in a matched path using [`nodes()`](https://github.com/opencypher/openCypher/blob/main/tck/features/expressions/path/Path1.feature).
+
+  `nodes(p)` returns all nodes in a path as an ordered list, making it possible to inspect or filter specific positions within a traversal result without splitting the query into multiple parts.
+
+  ```cypher
+  MATCH p = (:Computer)-[:HasSession]->(:User)
+  RETURN nodes(p)
+  ```
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
+  {/*BED-7055*/}
+
+  ## Flatten collections with `UNWIND`
+
+  Transform a list back into individual rows using [`UNWIND`](https://github.com/opencypher/openCypher/blob/main/tck/features/clauses/unwind/Unwind1.feature).
+
+  `UNWIND` iterates over a list expression and outputs one row per element. This is especially useful after `collect()` aggregation when you need to apply further filtering, transformations, or sorting to the collected values.
+
+  ```cypher
+  MATCH (u:User)
+  WHERE u.name CONTAINS 'A'
+  WITH collect(u.name) AS names
+  UNWIND names AS name
+  RETURN name
+  LIMIT 100
+  ```
+
+  <Note>
+    Queries using `UNWIND` return tabular results. Use the table view in the Cypher search panel to review the output — these results will not render as a graph.
+  </Note>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
+  {/*BED-5292*/}
+
+  ## Navigate lists with `head()` and `tail()`
+
+  Access the first element or all elements after the first in a list using [`head()`](https://github.com/opencypher/openCypher/blob/main/tck/features/expressions/list/List7.feature) and [`tail()`](https://github.com/opencypher/openCypher/blob/main/tck/features/expressions/list/List9.feature).
+
+  These functions are particularly useful in quantifier expressions to filter paths based on properties at specific positions within a node or relationship list.
+
+  ```cypher
+  MATCH p = (:GPO)-[r:GPLink|Contains*1..]->(:Base)
+  WHERE HEAD(r).enforced
+  RETURN p
+  ```
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
+  {/*BED-7060*/}
+
+  ## Build multi-part queries with `WITH`
+
+  Chain query parts and pass intermediate results between them using [`WITH`](https://github.com/opencypher/openCypher/tree/main/tck/features/clauses/with).
+
+  `WITH` lets you aggregate, filter, or alias results from one part of a query before continuing to the next. Complex queries that use `WITH` for aggregation and path materialization now work more reliably on PostgreSQL backends.
+
+  ```cypher
+  MATCH p = shortestPath((u:User)-[:MemberOf*1..]->(g:Group))
+  WITH DISTINCT g AS Group, COUNT(u) AS UserCount
+  RETURN Group.name, UserCount
+  ORDER BY UserCount DESC
+  LIMIT 5
+  ```
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
+  {/*BED-7062*/}
+
+  ## Sort query results with `ORDER BY`
+
+  Sort Cypher query results in ascending or descending order using [`ORDER BY`](https://github.com/opencypher/openCypher/tree/main/tck/features/clauses/return-orderby).
+
+  `ORDER BY` can be used with `RETURN` or `WITH` to sort results by any projected value. Ascending order is the default; append `DESC` for descending order.
+
+  ```cypher
+  WITH [2, 3, 1, 5, 4] AS list
+  UNWIND list AS num
+  RETURN num
+  ORDER BY num DESC
+  ```
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
