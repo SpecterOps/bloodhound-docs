@@ -1,7 +1,5 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-
 export const Checklist = ({ checklistKey, title, children }) => {
   const [items, setItems] = useState([]);
 

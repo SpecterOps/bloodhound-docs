@@ -35,7 +35,7 @@ You can install BloodHound Enterprise using either the **UI-guided installer** o
 | Method | Use this when |
 | --- | --- |
 | **Web-based installer** | You want a guided, interactive setup. After you run the install command, the installer prints a URL that you open in a browser (from any machine that can reach the host on the Installation Wizard port) and configures BloodHound Enterprise through the UI. Recommended for first-time installations and one-off deployments. |
-| **CLI-based installer** | You want a non-interactive, scriptable install. You provide a pre-built `ConfigValues` file and the installer password as flags, and preflight checks run on the command line instead of in the UI. Recommended for automated or repeatable deployments. |
+| **CLI-based installer** | You want a non-interactive, scriptable install. You provide a pre-built `ConfigValues` file and the Installation Wizard password as flags, and preflight checks run on the command line instead of in the UI. Recommended for automated or repeatable deployments. |
 
 <Tip>
   Both methods produce the same installed cluster and application. The CLI method requires you to prepare a `ConfigValues` file ahead of time; the web-based installer collects those values interactively.
@@ -47,13 +47,16 @@ The web-based installer provides an interactive setup experience through a web i
 
 <Steps>
   <Step title="Navigate to the web-based installer">
-    The web-based installer is available through the **SpecterOps - BloodHound Enterprise Portal**.
-    
-    If you don't have access, contact your team administrator or your BloodHound Enterprise account team to request an invitation.
+    The web-based installer is available through the **SpecterOps - BloodHound Enterprise Portal**. You'll work with two interfaces during installation:
+
+    - The **Installer** tab in the portal generates the download and install commands you run on your Linux host. The **Update** tab in the portal tracks active installations.
+    - The **Installation Wizard** is a companion UI served from your Linux host on port `30080`. After the initial install completes, you use the Installation Wizard to finish configuration (domain, certificates, database) and run preflight checks.
+
+    If you don't have access to the portal, contact your team administrator or your BloodHound Enterprise account team to request an invitation.
 
     1. Log in to the [SpecterOps - BloodHound Enterprise Portal](https://enterprise.replicated.com/bloodhound-enterprise).
 
-    1. Click the **Install** tab at the top of the page.
+    1. Click the **Install** tab at the top of the page to open the **Installer page**.
 
        <Note>
          The installation options displayed on this page depend on the licensing associated with your account.
@@ -76,7 +79,9 @@ The web-based installer provides an interactive setup experience through a web i
          If you choose the proxy option, a **Configure proxy URL** field appears on the next page of the installer where you can enter your proxy URL. The installer also adds `--proxy $YOUR_PROXY_URL` to the download _and_ install commands to ensure the installer can access the internet through your proxy.
        </Note>
 
-    1. Click the toggle for **Show instructions to relocate images to your private registry** if you need to create a custom image pipeline with full control over storage location, logging, and configuration options.
+    1. Click the toggle for **Show instructions to relocate images to your private registry** if your environment requires the cluster to pull container images from a private registry you control.
+    
+       This is typically required for air-gapped or restricted networks, or to meet internal supply-chain and compliance requirements.
 
        <Note>
          If you choose this option, the next page of the installer provides a field for entering your private registry URL and instructions for running the necessary commands on your Linux host to:
@@ -95,7 +100,7 @@ The web-based installer provides an interactive setup experience through a web i
     1. Click **Continue**.
   </Step>
   <Step title="Download & install BloodHound Enterprise">
-    The BloodHound Enterprise Portal generates the exact download and install commands for your release, including a signed URL, a short-lived bearer token, and your specific version.
+    The portal generates the exact download and install commands for your release, including a signed URL, a short-lived bearer token, and your specific version.
     
     <Note>
       Always copy and run the commands from the portal. The snippets below are placeholder examples that show the shape of each command, not runnable commands.
@@ -107,13 +112,13 @@ The web-based installer provides an interactive setup experience through a web i
 
     1. In the **Select Version** field, choose the version of BloodHound Enterprise you want to install.
 
-    1. If you selected the proxy option in the previous step, enter your proxy URL in the **Configure proxy URL** field.
+    1. If you selected the proxy option in the previous installation options, enter your proxy URL in the **Configure proxy URL** field.
 
        <Note>
          The installer uses this URL to access the internet for downloading container images and other dependencies. The URL must be accessible from the Linux host where you run the installer.
        </Note>
 
-    1. If you selected the private registry option in the previous step, enter your registry URL in the provided field.
+    1. If you selected the private registry option in the previous installation options, enter your registry URL in the provided field.
 
         <Note>
           The installer uses this URL to pull container images during installation. The URL must be accessible from the Linux host where you run the installer and from the Kubernetes cluster.
@@ -134,7 +139,7 @@ The web-based installer provides an interactive setup experience through a web i
        Placeholder example:
 
        ```bash
-       tar -xvzf bloodhound-enterprise.tar.gz
+       tar -xvzf bloodhound-enterprise-<version>.tar.gz
        ```
 
        <Note>
@@ -168,39 +173,33 @@ The web-based installer provides an interactive setup experience through a web i
     1. Enter an admin password when prompted on the Linux host.
     
        <Note>
-         This password is used to log in to the Admin Console and the Installation Wizard later.
+         This is the **Installation Wizard password**. You use it to log in to the Installation Wizard later.
        </Note>
 
-    1. TODO: Manage certificate (self-signed vs custom).
+    1. When the installer prompts you to generate a self-signed certificate for the Installation Wizard, accept the prompt.
 
-       - Install fails if you don't generate a self-signed certificate when prompted on the Linux host.
+       The installer uses this certificate to serve the Installation Wizard over HTTPS on port `30080`. The install fails if you decline:
 
-         ```txt
-         Error: failed to ensure TLS configuration: TLS setup failed: user declined to generate a certificate
-         ```
-      
-       - If I already have a certificate, can I use it instead of generating a self-signed one? If so, how do I provide it to the installer?
-
-       - Or is it better to just use a self-signed and then replace it with a custom certificate in the Installation Wizard?
+       <Note>
+         The install command doesn't accept a flag for providing your own certificate at this stage. Generate the self-signed certificate now, then upload your custom certificate later in the Installation Wizard's **Certificates** step.
+       </Note>
 
     1. You can access the Installation Wizard at the following URL after the installation completes:
 
        ```http
-       https://<linux-host-ip>:30080
+       https://<linux-hostname-or-ip>:30080
        ```
 
        As mentioned in the pre-installation checklist, the Installation Wizard listens on port `30080`. If you haven't already done so, expose this port on the Linux host.
 
        <Note>
-         Clicking **Finish** on the installer page in the portal _does not_ open the Installation Wizard. If you click **Finish** before completing the  installation steps on the Linux host _and_ before completing the Installation Wizard, you won't see any active instances in the **Update** tab in the portal. Instead, you'll see a message about the pending installation with a link to the Installation Wizard URL.
-
-         We recommend waiting to click **Finish** until after you complete the installation steps on the Linux host and in the Installation Wizard.
+         Don't click **Finish** on the **Install** tab in the portal yet — see the **Finish** step later in this procedure.
        </Note>
   </Step>
-  <Step title="Run the setup wizard">
-    The wizard guides you through the final steps to complete the installation.
+  <Step title="Log in to the Installation Wizard">
+    Open the Installation Wizard URL in a browser and enter the admin password that you set when you ran the install command on your Linux host.
 
-    Enter the password that you used to install BloodHound Enterprise on your Linux host.
+    The wizard guides you through the final configuration steps and preflight checks.
   </Step>
   <Step title="Configure">
 
@@ -210,17 +209,21 @@ The web-based installer provides an interactive setup experience through a web i
 
     Use a lowercase hostname with no underscores. Kubernetes ingress rules require lowercase hostnames.
 
-    For **production** deployments, this should match the [DNS A record](/on-premises/embedded-cluster/system-requirements#dns) you created for the BloodHound Enterprise FQDN in the pre-install checklist.
+    - For **production** deployments, this should match the [DNS A record](/on-premises/embedded-cluster/system-requirements#dns) you created for the BloodHound Enterprise FQDN in the pre-install checklist.
 
-    For **testing** purposes, this can be a hostname that resolves to the Linux host's IP address in your local `/etc/hosts` file. For example:
+    - For **testing** purposes, this can be a hostname that resolves to the Linux host's IP address in your local `/etc/hosts` file. For example:
 
-    ```txt
-    192.168.1.50   bloodhound-enterprise.test
-    ```
+      ```txt
+      192.168.1.50   bloodhound-enterprise.test
+      ```
 
-    <Frame>
-      <img src="/images/on-premises/installer-domain-config.png" alt="A screenshot showing the domain configuration step of the BloodHound Enterprise web-based installer" />
-    </Frame>
+      <Frame>
+        <img src="/images/on-premises/installer-domain-config.png" alt="A screenshot showing the domain configuration step of the BloodHound Enterprise web-based installer" />
+      </Frame>
+
+      <Note>
+        Port `443` must be open on the Linux host and reachable from the browser you use to access the BloodHound Enterprise application.
+      </Note>
 
     **Application Access**
 
@@ -242,12 +245,18 @@ The web-based installer provides an interactive setup experience through a web i
 
     Choose between the embedded PostgreSQL database or provide connection details for an external PostgreSQL database.
 
+    <Note>
+      If you choose to use an external PostgreSQL database, ensure that the database is running PostgreSQL 18 and is reachable from the Linux host where BloodHound Enterprise is installed.
+    </Note>
+
     <Frame>
       <img src="/images/on-premises/installer-database-config.png" alt="A screenshot showing the database configuration step of the BloodHound Enterprise web-based installer" />
     </Frame>
   </Step>
   <Step title="Set Up">
-    After completing the configuration steps, the installer sets up the environment settings for your installation.
+    Configure the network settings the embedded cluster uses to communicate internally and reach external services.
+    
+    Accept the defaults unless your environment requires specific overrides.
 
     <Frame>
       <img src="/images/on-premises/installer-setup.png" alt="A screenshot showing the setup step of the BloodHound Enterprise web-based installer" />
@@ -263,34 +272,50 @@ The web-based installer provides an interactive setup experience through a web i
     
     {/* TODO: Add more details about common preflight check failures and how to resolve them. */}
 
-    When you see the Installation Complete message, click **Finish** to complete the installation and access your BloodHound Enterprise tenant.
+    When you see the Installation Complete message, click **Finish** to exit the Installation Wizard.
 
     <Frame>
       <img src="/images/on-premises/installer-success.png" alt="A screenshot showing the installation success step of the BloodHound Enterprise web-based installer" />
     </Frame>
   </Step>
   <Step title="Finish">
-    When you see the Installation Complete message, go back to the installer portal and click **Finish**. You'll be redirected to the **Update** tab in the Admin Console, where you can view your active installation.
+    After exiting the Installation Wizard, return to the **Install** tab in the portal and click **Finish**. You'll be redirected to the **Update** tab, where you can view your active installation.
+
     <Frame>
-      <img src="/images/on-premises/online-instances.png" alt="A screenshot showing the Update tab with active installations in the BloodHound Enterprise portal" />
+      <img src="/images/on-premises/online-instances.png" alt="A screenshot showing the Update tab with active installations in the BloodHound Enterprise Portal" />
     </Frame>
 
-    On your Linux host, you can now press `Ctrl+C` to exit the installation process and close the web interface. The BloodHound Enterprise application is now running and accessible at the FQDN you configured in the Installation Wizard.
+    Back on your Linux host, press `Ctrl+C` to exit the installation process and stop the web installer. BloodHound Enterprise continues running and is accessible at the FQDN you configured in the Installation Wizard.
   </Step>
   <Step title="Access BloodHound Enterprise">
     In a browser, navigate to the BloodHound Enterprise FQDN you configured in the Installation Wizard.
     
-    The login information is not the same as the Admin Console password you used to install BloodHound Enterprise.
+    <Note>
+      The login information is not the same as the Installation Wizard.
+    </Note>
 
-    The default username is `admin`. The default password is available in the logs on the Linux host where you installed BloodHound Enterprise. Run the following command to retrieve the password:
-
-    ```bash
-    sudo ./bloodhound-enterprise shell # Load the kubectl shell environment
-    kubectl get po -A # List all pods in the cluster
-    kubectl logs -n [NAMESPACE] [POD_NAME] | grep "Initial Password Set To:" # Replace [NAMESPACE] and [POD_NAME] with the appropriate values for your installation
-    ```
+    The default username is `admin`. The default password is written to the BloodHound application logs on the Linux host.
     
-    Next steps:
+    To retrieve the password, load the `kubectl` shell environment and inspect the deployment logs:
+
+    1. Load the `kubectl` shell environment:
+
+       ```bash
+       sudo ./bloodhound-enterprise shell
+       ```
+
+    1. Print the initial admin password from the `bloodhound` deployment's logs:
+
+       ```bash
+       kubectl logs -n bloodhound-enterprise deployment/bloodhound | grep "Initial Password Set To:"
+       ```
+
+       <Note>
+         Targeting the deployment avoids needing to look up the current pod name, which changes between installations and restarts.
+       </Note>
+  </Step>
+  <Step title="Next steps">
+    With BloodHound Enterprise installed and accessible, complete the following next steps:
 
     - [Create users](/manage-bloodhound/auth/users-and-roles)
     - [Configure collectors](/install-data-collector/overview)
@@ -299,15 +324,15 @@ The web-based installer provides an interactive setup experience through a web i
 
 ### CLI-based installer
 
-The CLI-based installer runs the install non-interactively from the command line. You provide your configuration values as a file and your Admin Console password as a flag, and the installer runs preflight checks and completes the deployment without opening a browser.
+The CLI-based installer runs the install non-interactively from the command line. You provide your configuration values as a file and your Installation Wizard password as a flag, and the installer runs preflight checks and completes the deployment without opening a browser.
 
 This method is suited to automated, scripted, or repeatable deployments.
 
 TODO: Run end-to-end test to validate flags, ConfigValues schema, and finish steps.
 
 <Steps>
-  <Step title="Navigate to the installer portal">
-    Log in to the [SpecterOps - BloodHound Enterprise Portal](https://enterprise.replicated.com/bloodhound-enterprise) to retrieve the installer download command and your license file.
+  <Step title="Navigate to the Installer page">
+    Log in to the [BloodHound Enterprise Portal](https://enterprise.replicated.com/bloodhound-enterprise) and click the **Install** tab to open the **Installer page**, where you'll retrieve the installer download command and your license file.
 
     <Note>
       If you don't have access, contact your team administrator or your BloodHound Enterprise account team to request an invitation.
@@ -323,7 +348,7 @@ TODO: Run end-to-end test to validate flags, ConfigValues schema, and finish ste
     </Note>
   </Step>
   <Step title="Download & install BloodHound Enterprise">
-    The BloodHound Enterprise Portal generates the exact download command for your release, including a signed URL and a short-lived bearer token. You construct the install command locally by adding the headless flags to the base install command.
+    The portal generates the exact download command for your release, including a signed URL and a short-lived bearer token. You construct the install command locally by adding the headless flags to the base install command.
 
     <Note>
       Copy the download command from the portal — the snippet below is a placeholder example, not a runnable command.
@@ -402,17 +427,15 @@ sudo ./bloodhound-enterprise install \
   --yes
 ```
 
-## Access the cluster
+## Troubleshooting
 
-When troubleshooting, it can be useful to list the cluster and view logs using the `kubectl` command line tool.
-
-TODO: Need to clean this section up and verify the commands against the latest installer.
+When troubleshooting, you can inspect cluster state and view logs using the `kubectl` command line tool.
 
 <Steps>
-  <Step title="SSH into a controller node">
-    SSH into a controller node on the Linux host where the embedded cluster is running.
+  <Step title="SSH into the Linux host">
+    SSH into the Linux host where BloodHound Enterprise is installed.
   </Step>
-  <Step title="Load kubectl shell">
+  <Step title="Load the kubectl shell environment">
     Run the following command to load the `kubectl` shell environment:
 
      ```bash
@@ -427,16 +450,16 @@ TODO: Need to clean this section up and verify the commands against the latest i
     Use the available binaries as needed. See the following tabs for common cluster inspection commands:
 
     <Tabs>
-      <Tab title="Processes">
-      List all running processes in the cluster:
+      <Tab title="Pods">
+      List all pods across every namespace:
 
       ```bash
-      kubectl get po -A
+      kubectl get pods -A
       ```
 
       </Tab>
       <Tab title="Services">
-      List all services in the cluster:
+      List all services across every namespace:
 
       ```bash
       kubectl get services -A
@@ -444,11 +467,13 @@ TODO: Need to clean this section up and verify the commands against the latest i
 
       </Tab>
       <Tab title="Logs">
-      View BloodHound Enterprise logs:
+      View logs for a specific pod:
 
       ```bash
-      kubectl logs -n [NAMESPACE] [POD_NAME]
+      kubectl logs -n [namespace] [pod-name]
       ```
+
+      BloodHound application pods run in the `bloodhound-enterprise` namespace.
       </Tab>
     </Tabs>
   </Step>
