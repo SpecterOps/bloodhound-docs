@@ -28,24 +28,11 @@ The following checklist summarizes the install-blocking gates and pre-deployment
 - For online installs, allow outbound HTTPS to `replicated.app`, `proxy.replicated.com`, and `registry.replicated.com`; for air-gapped installs, download the installer bundle ahead of time
 </Checklist>
 
-## Installation methods
-
-You can install BloodHound Enterprise using either the **UI-guided installer** or the **CLI-based installer**. Choose the method that fits how you want to configure and deploy the application.
-
-| Method | Use this when |
-| --- | --- |
-| **Web-based installer** | You want a guided, interactive setup. After you run the install command, the installer prints a URL that you open in a browser (from any machine that can reach the host on the Installation Wizard port) and configures BloodHound Enterprise through the UI. Recommended for first-time installations and one-off deployments. |
-| **CLI-based installer** | You want a non-interactive, scriptable install. You provide a pre-built `ConfigValues` file and the Installation Wizard password as flags, and preflight checks run on the command line instead of in the UI. Recommended for automated or repeatable deployments. |
-
-<Tip>
-  Both methods produce the same installed cluster and application. The CLI method requires you to prepare a `ConfigValues` file ahead of time; the web-based installer collects those values interactively.
-</Tip>
-
-### Web-based installer
+## Web-based installer
 
 The web-based installer provides an interactive setup experience through a web interface. It guides you through configuration steps such as domain setup, certificate management, and database connectivity.
 
-#### Configure install options
+### Configure install options
 
 The web-based installer is available through the **SpecterOps - BloodHound Enterprise Portal**. You'll work with two interfaces during installation:
 
@@ -106,7 +93,7 @@ The web-based installer is available through the **SpecterOps - BloodHound Enter
   </Step>
 </Steps>
 
-#### Install on the Linux host
+### Install on the Linux host
 
 The installation instructions page generates the exact download and install commands for your release, including a signed URL, a short-lived bearer token, and your specific version.
 
@@ -210,7 +197,7 @@ The following screenshot shows an example of the install instructions page in th
   </Step>
 </Steps>
 
-#### Configure the environment
+### Configure the environment
 
 The Installation Wizard guides you through the final configuration steps to complete the installation. Follow the prompts to enter the necessary information and complete each step.
 
@@ -302,7 +289,7 @@ The Installation Wizard guides you through the final configuration steps to comp
   </Step>
 </Steps>
 
-#### Access BloodHound Enterprise
+### Access BloodHound Enterprise
 
 The last step of the installation process is to access the BloodHound Enterprise application in a browser and log in with the default admin credentials.
 
@@ -340,99 +327,6 @@ The last step of the installation process is to access the BloodHound Enterprise
     - [Configure collectors](/install-data-collector/overview)
   </Step>
 </Steps>
-
-### CLI-based installer
-
-The CLI-based installer runs the install non-interactively from the command line. You provide your configuration values as a file and your Installation Wizard password as a flag, and the installer runs preflight checks and completes the deployment without opening a browser.
-
-This method is suited to automated, scripted, or repeatable deployments.
-
-<Steps>
-  <Step title="Prepare the ConfigValues file">
-    Create a `ConfigValues` YAML file on the Linux host with the configuration values the installer would otherwise collect through the UI (domain configuration, application access, certificates, and database configuration).
-
-    TODO: Document the BloodHound Enterprise `ConfigValues` schema and provide an annotated example.
-
-    <Note>
-      If you have an existing PostgreSQL database, include the connection details in the `ConfigValues` file. To use the bundled PostgreSQL instance, set the corresponding database option instead.
-    </Note>
-  </Step>
-  <Step title="Download & install BloodHound Enterprise">
-    The portal generates the exact download command for your release, including a signed URL and a short-lived bearer token. You construct the install command locally by adding the headless flags to the base install command.
-
-    <Note>
-      Copy the download command from the portal — the snippet below is a placeholder example, not a runnable command.
-    </Note>
-
-    1. In the **Select Version** field, choose the version of BloodHound Enterprise you want to install.
-
-    1. SSH into the Linux host where you want to install BloodHound Enterprise.
-
-    1. From the portal, copy and run the command to download the installer archive on the Linux host.
-
-       **Example:**
-
-       ```bash
-       curl -f "<url>" -H "Authorization: Bearer <token>" -o bloodhound-enterpriseLhC35jJua_CVAn52QHE_8yF0PzAa9zzl.tar.gz
-       ```
-
-    1. Extract the installer archive on the Linux host.
-
-       ```bash
-       tar -xvzf bloodhound-enterprise.tar.gz
-       ```
-
-    1. Run the install command on the Linux host with the `--headless`, `--config-values`, and `--installer-password` flags, providing the paths to your license file and ConfigValues file.
-
-       <Note>
-         After extraction, your `license.yaml` file is present alongside all installation assets.
-       </Note>
-
-       ```bash
-       sudo ./bloodhound-enterprise install \
-         --license license.yaml \
-         --headless \
-         --config-values config-values.yaml \
-         --installer-password <password>
-       ```
-
-       <Note>
-         Host preflight checks run automatically on the command line. Resolve any blocking failures and re-run the install command before continuing.
-       </Note>
-  </Step>
-  <Step title="Access BloodHound Enterprise">
-    See the [Access BloodHound Enterprise](/on-premises/embedded-cluster/install#access-bloodhound-enterprise) section above for instructions on retrieving the initial admin password and logging in to the application.
-  </Step>
-</Steps>
-
-#### Ignore preflight checks
-
-In non-production environments where you need to proceed past failing preflight checks (for example, an automated test pipeline running on undersized hardware), you can skip preflight enforcement at install time.
-
-<Warning>
-  Skipping host preflight checks is not recommended for production installations. The host preflights guard against conditions — undersized hardware, slow disks, incompatible kernels, missing filesystem options — that cause BloodHound Enterprise to fail or perform poorly under load.
-</Warning>
-
-Pass the following flags to the install command:
-
-| Flag | Effect |
-| --- | --- |
-| `--ignore-host-preflights` | Skips Embedded Cluster host preflight checks (CPU, RAM, disk latency, kernel, filesystem, and so on). |
-| `--ignore-app-preflights` | Skips application-level preflight checks defined by BloodHound Enterprise. |
-| `--yes` | Auto-confirms the interactive prompt that `--ignore-host-preflights` would otherwise emit. Required for unattended installs. |
-
-Example:
-
-```bash
-sudo ./bloodhound-enterprise install \
-  --license license.yaml \
-  --headless \
-  --config-values config-values.yaml \
-  --installer-password [password] \
-  --ignore-host-preflights \
-  --ignore-app-preflights \
-  --yes
-```
 
 ## Troubleshooting
 
