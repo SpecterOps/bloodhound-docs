@@ -24,7 +24,7 @@ The following checklist summarizes the install-blocking gates and pre-deployment
 - Back the host with SSD storage (P99 write latency ≤10ms) — the installer blocks on spinning disk
 - Stand up a [reverse proxy](/on-premises/embedded-cluster/system-requirements#reverse-proxy) with your SSL certificate to terminate HTTPS in front of BloodHound Enterprise
 - Create a [DNS A record](/on-premises/embedded-cluster/system-requirements#dns) for the BloodHound Enterprise FQDN that resolves for both users and collectors
-- Open inbound TCP `443` (users and collectors) and `30080` (Admin Console, restricted to admins)
+- Open inbound TCP `443` (users and collectors) and `30080` (Installation Wizard)
 - For online installs, allow outbound HTTPS to `replicated.app`, `proxy.replicated.com`, and `registry.replicated.com`; for air-gapped installs, download the installer bundle ahead of time
 </Checklist>
 
@@ -34,7 +34,7 @@ You can install BloodHound Enterprise using either the **UI-guided installer** o
 
 | Method | Use this when |
 | --- | --- |
-| **Web-based installer** | You want a guided, interactive setup. After you run the install command, the installer prints a URL that you open in a browser (from any machine that can reach the host on the Admin Console port) and configures BloodHound Enterprise through the UI. Recommended for first-time installations and one-off deployments. |
+| **Web-based installer** | You want a guided, interactive setup. After you run the install command, the installer prints a URL that you open in a browser (from any machine that can reach the host on the Installation Wizard port) and configures BloodHound Enterprise through the UI. Recommended for first-time installations and one-off deployments. |
 | **CLI-based installer** | You want a non-interactive, scriptable install. You provide a pre-built `ConfigValues` file and the installer password as flags, and preflight checks run on the command line instead of in the UI. Recommended for automated or repeatable deployments. |
 
 <Tip>
@@ -79,12 +79,11 @@ The web-based installer provides an interactive setup experience through a web i
     1. Click the toggle for **Show instructions to relocate images to your private registry** if you need to create a custom image pipeline with full control over storage location, logging, and configuration options.
 
        <Note>
-         If you choose this option, the next page of the installer provides instructions for running the necessary commands on your Linux host:
+         If you choose this option, the next page of the installer provides a field for entering your private registry URL and instructions for running the necessary commands on your Linux host to:
 
-         - Entering your private registry URL
-         - Pulling the necessary container images
-         - Tagging them with your private registry URL
-         - Pushing them to your registry
+         - Pull the necessary container images
+         - Tag them with your private registry URL
+         - Push them to your registry
 
         The installer also adds `--registry $YOUR_REGISTRY_URL` to the install command to ensure the cluster pulls images from your registry.
        </Note>
@@ -114,7 +113,7 @@ The web-based installer provides an interactive setup experience through a web i
          The installer uses this URL to access the internet for downloading container images and other dependencies. The URL must be accessible from the Linux host where you run the installer.
        </Note>
 
-    1. If you selected the private registry option in the previous step, enter your registry URL in the **Configure registry URL** field.
+    1. If you selected the private registry option in the previous step, enter your registry URL in the provided field.
 
         <Note>
           The installer uses this URL to pull container images during installation. The URL must be accessible from the Linux host where you run the installer and from the Kubernetes cluster.
@@ -135,7 +134,7 @@ The web-based installer provides an interactive setup experience through a web i
        Placeholder example:
 
        ```bash
-       tar -xvzf bloodhound-enterprise-<version>.tar.gz
+       tar -xvzf bloodhound-enterprise.tar.gz
        ```
 
        <Note>
@@ -166,13 +165,31 @@ The web-based installer provides an interactive setup experience through a web i
        sudo ./bloodhound-enterprise install --license license.yaml
        ```
 
+    1. Enter an admin password when prompted on the Linux host.
+    
+       <Note>
+         This password is used to log in to the Admin Console and the Installation Wizard later.
+       </Note>
+
     1. TODO: Manage certificate (self-signed vs custom).
 
-    1. Connect to the web interface to continue the installation. Open the following URL in your browser:
+       - Install fails if you don't generate a self-signed certificate when prompted on the Linux host.
+
+         ```txt
+         Error: failed to ensure TLS configuration: TLS setup failed: user declined to generate a certificate
+         ```
+      
+       - If I already have a certificate, can I use it instead of generating a self-signed one? If so, how do I provide it to the installer?
+
+       - Or is it better to just use a self-signed and then replace it with a custom certificate in the Installation Wizard?
+
+    1. You can access the Installation Wizard at the following URL after the installation completes:
 
        ```http
-       https://<server-ip>:30080
+       https://<linux-host-ip>:30080
        ```
+
+       As mentioned in the pre-installation checklist, the Installation Wizard listens on port `30080`. If you haven't already done so, expose this port on the Linux host.
 
        <Note>
          Clicking **Finish** on the installer page in the portal _does not_ open the Installation Wizard. If you click **Finish** before completing the  installation steps on the Linux host _and_ before completing the Installation Wizard, you won't see any active instances in the **Update** tab in the portal. Instead, you'll see a message about the pending installation with a link to the Installation Wizard URL.
@@ -181,7 +198,7 @@ The web-based installer provides an interactive setup experience through a web i
        </Note>
   </Step>
   <Step title="Run the setup wizard">
-    Open the URL provided at the end of the installation process on your Linux host to access the Installation Wizard. The wizard guides you through the final steps to complete the installation.
+    The wizard guides you through the final steps to complete the installation.
 
     Enter the password that you used to install BloodHound Enterprise on your Linux host.
   </Step>
@@ -192,6 +209,14 @@ The web-based installer provides an interactive setup experience through a web i
     **Domain Configuration**
 
     Use a lowercase hostname with no underscores. Kubernetes ingress rules require lowercase hostnames.
+
+    For **production** deployments, this should match the [DNS A record](/on-premises/embedded-cluster/system-requirements#dns) you created for the BloodHound Enterprise FQDN in the pre-install checklist.
+
+    For **testing** purposes, this can be a hostname that resolves to the Linux host's IP address in your local `/etc/hosts` file. For example:
+
+    ```txt
+    192.168.1.50   bloodhound-enterprise.test
+    ```
 
     <Frame>
       <img src="/images/on-premises/installer-domain-config.png" alt="A screenshot showing the domain configuration step of the BloodHound Enterprise web-based installer" />
@@ -245,13 +270,27 @@ The web-based installer provides an interactive setup experience through a web i
     </Frame>
   </Step>
   <Step title="Finish">
-    When you see the Installation Complete message, go back to the installer portal and click **Finish**.
+    When you see the Installation Complete message, go back to the installer portal and click **Finish**. You'll be redirected to the **Update** tab in the Admin Console, where you can view your active installation.
     <Frame>
-      <img src="/images/on-premises/installer-complete.png" alt="A screenshot showing the installation complete step of the BloodHound Enterprise web-based installer" />
+      <img src="/images/on-premises/online-instances.png" alt="A screenshot showing the Update tab with active installations in the BloodHound Enterprise portal" />
     </Frame>
+
+    On your Linux host, you can now press `Ctrl+C` to exit the installation process and close the web interface. The BloodHound Enterprise application is now running and accessible at the FQDN you configured in the Installation Wizard.
   </Step>
   <Step title="Access BloodHound Enterprise">
-    Access the BloodHound Enterprise tenant and complete the following next steps:
+    In a browser, navigate to the BloodHound Enterprise FQDN you configured in the Installation Wizard.
+    
+    The login information is not the same as the Admin Console password you used to install BloodHound Enterprise.
+
+    The default username is `admin`. The default password is available in the logs on the Linux host where you installed BloodHound Enterprise. Run the following command to retrieve the password:
+
+    ```bash
+    sudo ./bloodhound-enterprise shell # Load the kubectl shell environment
+    kubectl get po -A # List all pods in the cluster
+    kubectl logs -n [NAMESPACE] [POD_NAME] | grep "Initial Password Set To:" # Replace [NAMESPACE] and [POD_NAME] with the appropriate values for your installation
+    ```
+    
+    Next steps:
 
     - [Create users](/manage-bloodhound/auth/users-and-roles)
     - [Configure collectors](/install-data-collector/overview)
@@ -374,10 +413,10 @@ TODO: Need to clean this section up and verify the commands against the latest i
     SSH into a controller node on the Linux host where the embedded cluster is running.
   </Step>
   <Step title="Load kubectl shell">
-    Run the following command to load the `kubectl` shell environment where `APP_SLUG` is the unique slug for the application.
+    Run the following command to load the `kubectl` shell environment:
 
      ```bash
-     sudo ./APP_SLUG shell
+     sudo ./bloodhound-enterprise shell
      ```
 
      <Note>
@@ -408,7 +447,7 @@ TODO: Need to clean this section up and verify the commands against the latest i
       View BloodHound Enterprise logs:
 
       ```bash
-      kubectl logs -n [NAMESPACE] [NAME]
+      kubectl logs -n [NAMESPACE] [POD_NAME]
       ```
       </Tab>
     </Tabs>
@@ -417,34 +456,3 @@ TODO: Need to clean this section up and verify the commands against the latest i
     When finished, type `exit` or press `Ctrl + D` to exit the shell.
   </Step>
 </Steps>
-
-### Filesystem layout
-
-Embedded clusters are built on [k0s](https://k0sproject.io/). All cluster data lives under a single root:
-
-<Tree>
-  <Tree.Folder name="/var/lib/embedded-cluster/ <- 40 GB minimum required here" defaultOpen>
-    <Tree.File name="bin/ <- EC and k0s binaries" />
-    <Tree.Folder name="k0s/ <- k0s data directory" defaultOpen>
-      <Tree.Folder name="pki/" defaultOpen>
-        <Tree.File name="admin.conf <- cluster kubeconfig" />
-      </Tree.Folder>
-      <Tree.File name="kubelet/ <- kubelet state and pod volumes" />
-      <Tree.File name="containerd/ <- container images and overlay snapshots" />
-      <Tree.File name="etcd/ <- etcd data (internal etcd)" />
-    </Tree.Folder>
-    <Tree.File name="registry/ <- in-cluster registry (airgap installs only)" />
-    <Tree.File name="charts/ <- Helm chart cache" />
-  </Tree.Folder>
-</Tree>
-
-### Relevant paths
-
-The following paths are relevant for troubleshooting the embedded cluster installation:
-
-| Path | Contents |
-| --- | --- |
-| `/etc/embedded-cluster/` | EC configuration |
-| `/var/log/embedded-cluster-install.log` | Installation log |
-| `/run/k0s/` | k0s runtime sockets and PID files |
-| `/etc/k0s/k0s.yaml` | k0s cluster config (generated, do not edit directly) |  
