@@ -17,14 +17,15 @@ As Sharphound is launched with a PowerShell script instead of running as a servi
 ### Configure user permissions
 
 The Active Directory details collected by SharpHound depend on the permissions that the user running SharpHound has within the Domain.
-A regular, non-privileged user can run Shaprhound and collect a significant amount of information, but some of the Edges can only be collected by users with elevated permissions within the Domain.
 
-At this time there are two main paths that could give the SharpHound gMSA account the permissions needed to collect the required Active Directory information:
+A regular, non-privileged user can run Shaprhound and collect a significant amount of information Active Directory, but using an account that has certain permissions enables the SharpHound executable to collect all of the possible pertinent information from Active Directory for the best possible analysis by BloodHound. See [SharpHound Data and Permissions](/collect-data/sharphound-data-permissions) for an overview.
+
+At this time there are two main paths that could give the SharpHound gMSA account the permissions needed to collect all required Active Directory information:
 
 - **Method 1**: Make the SharpHound gMSA account a member of the Local Administrators group on all computers in the domain.
-- **Method 2**: Make the SharpHound gMSA account a member of the Domain Admins group.
+- **Method 2**: Grant the SharpHound gMSA account the least-privilege permission set described in [Least-Privileged Collection](/collect-data/enterprise-collection/least-privileged-collection).
 
-Using an account that has Domain Admins permissions enables the SharpHound executable to collect all of the possible pertinent information from Active Directory for the best possible analysis by BloodHound.
+<Warning>The SharpHound collection service account does not require `Domain Admin` membership.</Warning>
 
 #### Implement gMSA account protections
 Regardless of whether the permissions that are given to the SharpHound gMSA account are using Method 1 or Method 2, consider additional protections.
@@ -132,7 +133,7 @@ To create the scheduled task with the GUI:
 3. Configure the scheduled task with this **Action**:
 
     -  **Program / script**: `powershell.exe`
-    - **Arguments**: `-ExecutionPolicy ByPass -File C:\Support\SharpHound.ps1`
+    - **Arguments**: `-ExecutionPolicy ByPass -File C:\Support\SharpHound\Sharphound_Collection.ps1`
 
 4. Click **OK** on the **Edit Action**.
 5. Configure the scheduled task to run as a standard user account at this time.
