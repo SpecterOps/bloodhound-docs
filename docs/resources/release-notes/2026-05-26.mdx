@@ -1,0 +1,189 @@
+---
+title: 2026-05-26 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-05-26"
+---
+
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-05-26 | v9.2.0 | No release | v2.13.0 | No release |
+ 
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  ## Eligible Roles in the Entity Panel
+  {/*BED-7309*/}
+
+  Review privileged role context directly from the **Entity Panel** with a new **Eligible Roles** accordion for supported Azure principals.
+
+  The accordion shows whether a user or group is eligible to activate a privileged role through [`AZRoleEligible`](/resources/edges/az-role-eligible) relationships and whether that principal can approve a role activation request through [`AZRoleApprover`](/resources/edges/az-role-approver) relationships. 
+  
+  This gives you quick, node-level context without requiring you to inspect attack paths, which improves usability and discoverability during graph exploration.
+
+  <Frame>
+    <img src="/images/release_notes/9_2_0/eligible-roles.png" alt="Screenshot of Eligible Roles accordion in the Entity Panel" style={{ width: "100%" }} />
+  </Frame>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  ## Search Result Node Selection
+  {/*BED-8159*/}
+
+  Move from **Search** results to entity analysis faster with automatic node selection and immediate **Entity Panel** context.
+
+  When you click a search result, the corresponding node is now automatically selected in the graph, and the **Entity Panel** opens with that node's details. 
+  
+  This eliminates the extra step of manually clicking the node after searching, streamlining your workflow and allowing you to quickly pivot from search results to deeper analysis.
+
+  <Frame>
+    <img src="/images/release_notes/9_2_0/search-selection.gif" alt="Animated view of Search result selection and Entity Panel opening" style={{ width: "100%" }} />
+  </Frame>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
+  {/*BED-8261, BED-8294*/}
+
+  ## Relationship and Node Filtering Support
+
+  Use [`relationships()`](/analyze-data/explore/cypher-supported#relationships), [`startNode()`](/analyze-data/explore/cypher-supported#startnode), [`endNode()`](/analyze-data/explore/cypher-supported#endnode), and [`nodes()`](/analyze-data/explore/cypher-supported#nodes) functions to inspect paths, filter by relationship data and endpoint node properties, and access the ordered list of nodes in traversal order.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
+  {/*BED-7055*/}
+
+  ## List Expansion
+
+  Expand a list into individual rows using [`UNWIND`](/analyze-data/explore/cypher-supported#unwind-a-list-into-rows).
+
+  `UNWIND` transforms a list expression into individual rows, making it possible to filter, aggregate, or sort each value separately.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
+  {/*BED-5292*/}
+
+  ## List Navigation
+
+  Access the first element in a list or all elements _except_ the first element in a list.
+
+  The [`head()`](/analyze-data/explore/cypher-supported#head) and [`tail()`](/analyze-data/explore/cypher-supported#tail) functions help you inspect list values returned by other Cypher expressions, including node and relationship lists derived from paths.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
+  {/*BED-7062*/}
+
+  ## Query Result Sorting
+
+  Sort Cypher query results in ascending or descending order using the [`ORDER BY`](/analyze-data/explore/cypher-supported#order-by) clause.
+
+  Use `ORDER BY` with `RETURN` or `WITH` to sort results by a projected value. Ascending order is the default; append `DESC` for descending order.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
+  {/*BED-7060*/}
+
+  ## Multi-part Query Support
+
+  Chain query parts and pass intermediate results between them using the [`WITH`](/analyze-data/explore/cypher-supported#build-multi-part-queries) clause.
+
+  `WITH` lets you aggregate, filter, or alias results from one part of a query before continuing to the next. Complex queries that use `WITH` for aggregation and path materialization now work more reliably on PostgreSQL backends.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
+  ## Faster LIMIT Clause Evaluation
+
+  [`LIMIT`](/analyze-data/explore/cypher-supported#skip-and-limit) clauses now evaluate significantly faster on PostgreSQL backends. Queries like the following return results near-instantaneously instead of hitting memory limits:
+
+  ```cypher
+  MATCH p=(a:User)-[*1..3]->(c:Computer)
+  RETURN p LIMIT 20
+  ```
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  ## Stronger OpenGraph Kind Validation
+  {/*BED-8072*/}
+
+  BloodHound now rejects uploads that use the reserved `tag_` prefix (case-insensitive) in custom node and edge kinds. This applies to both extension definition schemas and data payloads.
+
+  If you maintain [extension definition schemas](/opengraph/developer/graph-definition#namespacing) or [data payloads](/opengraph/developer/graph-data), update any affected kinds to avoid failed uploads.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  ## Updated Node Schema
+  {/*BED-8080*/}
+
+  The OpenGraph [node JSON schema](/opengraph/developer/nodes#schema) now demonstrates [`environmentid`](/opengraph/developer/nodes#param-properties-environmentid) and [`collected`](/opengraph/developer/nodes#param-properties-collected) properties.
+
+  This provides clearer guidance for extension developers building payloads that align with BloodHound ingest expectations, especially for extensions that produce findings and risk metrics.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Risk Metrics"]}>
+  ## Exposure Tooltip Improvements
+  {/*BED-7803*/}
+
+  <img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }}/>
+
+  The **Exposed** tooltip on the [Attack Paths](/analyze-data/findings/attack-paths) page now uses platform-agnostic language. Previously, it defined exposure in terms of Active Directory and Entra object types only. As [OpenGraph extensions](/opengraph/overview) expand BloodHound beyond Active Directory and Azure, that definition is no longer accurate.
+
+  The updated tooltip instead describes exposure as a percentage of _identities_ that can reach a privileged asset through at least one attack path.
+
+  <Frame>
+    <img src="/images/release_notes/9_2_0/exposure-tooltip.png" alt="Screenshot of updated Exposed tooltip on Attack Paths page" style={{ width: "100%" }} />
+  </Frame>
+</Update>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## Analysis
+  
+  - {/*BED-7256*/} Resolved an ADCS post-processing issue where managed service accounts (gMSA and sMSA) could be incorrectly filtered from certificate enrollment paths when certificate templates have `SubjectAltRequireDNS` or `SubjectAltRequireDomainDNS` enabled.
+
+  - {/*BED-5998*/} Resolved an issue where [`CoerceAndRelayNTLMToADCS`](/resources/edges/coerce-and-relay-ntlm-to-adcs) edges could be incorrectly dropped and recreated during analysis, resetting their `first_seen` property even when no change occurred.
+  
+    In BloodHound Enterprise, this could cause related findings to appear remediated and then be rediscovered.
+
+  ## API
+
+  - {/*BED-8214*/} Resolved an issue where non-administrator users could trigger the **Analyze Now** API action through direct requests.
+  - {/*BED-8218, BED-8252*/} Resolved issues where filtering string fields with numeric or boolean-like values was interpreted incorrectly, causing API errors or incorrect filtering behavior.
+
+  ## Cypher
+
+  - {/*BED-8260*/} Resolved an issue where variable-length relationships with a lower bound of `0` did not correctly handle zero-hop matching; when a relationship resolves to `0` hops, the nodes on either side now bind to the same node.
+  - {/*BED-7883*/} Resolved an issue where Cypher equality comparisons for `objectid` values could fail when the values contained special characters.
+  - {/*BED-6595*/} Resolved an issue where combining `AD_ATTACK_PATHS` and `AZ_ATTACK_PATHS` edge shortcuts with the pipe character (`|`) would fail to return results from both shortcuts.
+  - {/*BED-5945*/} Resolved an issue where filtering edges by `lastseen` using duration-based date ranges would fail with a type compatibility error.
+
+  ## UI
+
+  - {/*BED-7580, BED-7308*/} Resolved an issue where importing many files at once (such as a large Cypher query library) caused the file list to expand beyond the viewport, pushing the **Upload** button off-screen and requiring users to zoom out to proceed. File lists now scroll within the dialog.
+  - {/*BED-8283*/} Resolved an issue where the **Administration** pop-out panel in the navigation sidebar could close before users selected an option.
+  - {/*BED-8109*/} Resolved an issue where filtering the **Finished Jobs Log** after paging could show empty results due to stale page state.
+  - {/*BED-8073*/} Resolved an issue where graph labels could render on top of node icons, reducing readability.
+  - {/*BED-7102*/} Resolved an issue where password validation in the UI for creating users was inconsistent with the API validation rules.
+
+  ## Access Control
+  
+  <img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }}/>
+
+  - {/*BED-7916*/} Resolved an issue where ETAC-scoped users could see unauthorized environments in filters on the **Attack Paths**, **Explore**, and **Posture** pages.
+  - {/*BED-7916*/} Resolved an issue where ETAC-scoped users could not view data from their assigned environments on the **Explore** page.
+  - {/*BED-7916*/} Resolved an issue where administrators could not assign an environment defined by an OpenGraph extension to a user during ETAC configuration.
+</Update>
+
+<Update label="SharpHound" tags={["Fixed Issues"]}>
+  ## Collection and Edge Accuracy
+
+  - {/*BED-6632*/} Resolved an issue where local principal kinds were labeled inconsistently, which could lead to incorrect handling of local group and local user objects.
+  - {/*BED-7625*/} Resolved an issue where [`AllowedToDelegate`](/resources/edges/allowed-to-delegate) edges were not created when `msDS-AllowedToDelegateTo` values existed but specific delegation flags were not set.
+</Update>
+
+<Update label="AzureHound" tags={["Fixed Issues"]}>
+  ## Collection Compatibility
+
+  <img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }}/>
+
+  {/*BED-8176*/} Resolved an issue for hosted `edge-*` AzureHound container images where an invalid collector version string caused BloodHound to reject uploads from the collector as unsupported.
+</Update>
