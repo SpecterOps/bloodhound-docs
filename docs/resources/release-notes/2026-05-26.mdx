@@ -44,23 +44,11 @@ sidebarTitle: "2026-05-26"
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
-  {/*BED-8261*/}
+  {/*BED-8261, BED-8294*/}
 
-  ## Relationship and Endpoint Filtering
+  ## Relationship and Node Filtering Support
 
-  Use [`relationships()`](/analyze-data/explore/cypher-supported#relationships), [`startNode()`](/analyze-data/explore/cypher-supported#startnode), and [`endNode()`](/analyze-data/explore/cypher-supported#endnode) functions to inspect and filter relationships and their endpoint nodes within a matched path.
-
-  These functions give you access to the edges in a path and the nodes at each edge's start and end, enabling precise filtering on relationship data and endpoint node properties.
-</Update>
-
-<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
-  {/*BED-8294*/}
-
-  ## Path Node Inspection
-
-  Access the ordered list of nodes in a matched path using [`nodes()`](/analyze-data/explore/cypher-supported#nodes).
-
-  `nodes(p)` returns all nodes in a path in traversal order.
+  Use [`relationships()`](/analyze-data/explore/cypher-supported#relationships), [`startNode()`](/analyze-data/explore/cypher-supported#startnode), [`endNode()`](/analyze-data/explore/cypher-supported#endnode), and [`nodes()`](/analyze-data/explore/cypher-supported#nodes) functions to inspect paths, filter by relationship data and endpoint node properties, and access the ordered list of nodes in traversal order.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
@@ -103,6 +91,17 @@ sidebarTitle: "2026-05-26"
   `WITH` lets you aggregate, filter, or alias results from one part of a query before continuing to the next. Complex queries that use `WITH` for aggregation and path materialization now work more reliably on PostgreSQL backends.
 </Update>
 
+<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
+  ## Faster LIMIT Clause Evaluation
+
+  [`LIMIT`](/analyze-data/explore/cypher-supported#skip-and-limit) clauses now evaluate significantly faster on PostgreSQL backends. Queries like the following return results near-instantaneously instead of hitting memory limits:
+
+  ```cypher
+  MATCH p=(a:User)-[*1..3]->(c:Computer)
+  RETURN p LIMIT 20
+  ```
+</Update>
+
 <Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
   ## Stronger OpenGraph Kind Validation
   {/*BED-8072*/}
@@ -141,9 +140,9 @@ sidebarTitle: "2026-05-26"
   
   - {/*BED-7256*/} Resolved an ADCS post-processing issue where managed service accounts (gMSA and sMSA) could be incorrectly filtered from certificate enrollment paths when certificate templates have `SubjectAltRequireDNS` or `SubjectAltRequireDomainDNS` enabled.
 
-  - {/*BED-5998*/}<img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }}/>
-    
-    Resolved an issue where **Tier Zero Computer Vulnerable to Coercion-based NTLM Relay to ADCS (ESC8) Attack** findings could appear remediated, disappear, and then be rediscovered with a new `first_seen` value even when no real remediation occurred.
+  - {/*BED-5998*/} Resolved an issue where [`CoerceAndRelayNTLMToADCS`](/resources/edges/coerce-and-relay-ntlm-to-adcs) edges could be incorrectly dropped and recreated during analysis, resetting their `first_seen` property even when no change occurred.
+  
+    In BloodHound Enterprise, this could cause related findings to appear remediated and then be rediscovered.
 
   ## API
 
@@ -184,5 +183,7 @@ sidebarTitle: "2026-05-26"
 <Update label="AzureHound" tags={["Fixed Issues"]}>
   ## Collection Compatibility
 
-  - {/*BED-8176*/} Resolved an issue for hosted `edge-*` AzureHound container images where an invalid collector version string caused BloodHound to reject uploads from the collector as unsupported.
+  <img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }}/>
+
+  {/*BED-8176*/} Resolved an issue for hosted `edge-*` AzureHound container images where an invalid collector version string caused BloodHound to reject uploads from the collector as unsupported.
 </Update>
