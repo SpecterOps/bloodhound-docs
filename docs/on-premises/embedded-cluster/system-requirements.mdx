@@ -1,11 +1,11 @@
 ---
 title: System Requirements
-description: Review hardware, software, and network requirements for the embedded cluster deployment option of BloodHound Enterprise on-premises.
+description: Review hardware, software, and network requirements for the embedded cluster deployment option of an on-premises instance of BloodHound Enterprise.
 ---
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-This page defines the infrastructure, network, collector, and security prerequisites for an embedded cluster deployment of BloodHound Enterprise on-premises.
+This page defines the infrastructure, network, collector, and security prerequisites for an embedded cluster deployment of an on-premises instance of BloodHound Enterprise.
 
 ## BloodHound Enterprise host
 
@@ -17,17 +17,17 @@ Undersized compute can still install successfully but will degrade graph analysi
 
 | Requirement | Specification | Preflight |
 | --- | --- | --- |
-| OS | Any Linux with systemd (RHEL, Ubuntu, Rocky, etc.) | Blocks install |
+| OS | Any systemd-based Linux distribution | Blocks install |
 | Architecture | x86-64 only (no ARM) | Blocks install |
 | Kernel | 4.3+ | Blocks install |
 | cgroups | v1 or v2 | Blocks install |
 | Filesystem | XFS with ftype=1; ext4 is fine | Blocks install |
-| SELinux | Supported (Embedded Cluster 2.8.0+) | - |
+| SELinux | Supported (embedded cluster 2.8.0+) | - |
 | Access | Root or sudo | Blocks install |
 | CPU | 48 cores | No check, but required for performance |
-| RAM | 160 GiB | No check, but required for performance |
-| Storage | 680 GiB SSD (640 app/db + 40 cluster) | No check, but required for performance |
-| Disk latency | P99 write \<=10ms. Use SSDs. | Blocks install |
+| RAM | 160 GB | No check, but required for performance |
+| Storage | 680 GB SSD (640 app/db + 40 cluster) | No check, but required for performance |
+| Disk latency | P99 write \<=10ms (use SSDs) | Blocks install |
 
 <Warning>
   Not supported: STIG/CIS-hardened images, single-stack IPv6.
@@ -44,10 +44,10 @@ BloodHound Enterprise requires PostgreSQL 18. During installation, you can eithe
 
 ## Reverse proxy
 
-BloodHound Enterprise listens on HTTP port `8080` (unencrypted). A reverse proxy must sit in front of it to terminate HTTPS on port `443` with an SSL certificate that you provide.
+BloodHound Enterprise listens on HTTP port 8080 (unencrypted). A reverse proxy must sit in front of it to terminate HTTPS on port 443 with an SSL certificate that you provide.
 
 <Warning>
-  Without a reverse proxy, login credentials, API tokens, and Active Directory collection data are transmitted in cleartext. Port `8080` is appropriate only for local testing and must not be exposed to the network.
+  Without a reverse proxy, login credentials, API tokens, and Active Directory collection data are transmitted in cleartext. Port 8080 is appropriate only for local testing and must not be exposed to the network.
 </Warning>
 
 If you already run a reverse proxy or load balancer (nginx, traefik, F5, HAProxy, etc.), add a new entry for the BloodHound Enterprise fully qualified domain name (FQDN). If not, a standalone nginx instance with a minimal configuration file is sufficient.
@@ -57,7 +57,7 @@ If you already run a reverse proxy or load balancer (nginx, traefik, F5, HAProxy
 | Solution | Any reverse proxy (nginx, traefik, F5, HAProxy, etc.) |
 | SSL certificate | Customer-provided; terminates HTTPS at the proxy |
 | Required headers | X-Forwarded-Proto and X-Forwarded-For (so BloodHound Enterprise knows the original client) |
-| Backend target | HTTP `8080` on the BloodHound Enterprise server |
+| Backend target | HTTP 8080 on the BloodHound Enterprise server |
 
 ## DNS
 
@@ -92,152 +92,26 @@ The outbound destinations from the BloodHound Enterprise server (online install 
 
 | Destination | Port | Purpose |
 | --- | --- | --- |
-| replicated.app, proxy.replicated.com, registry.replicated.com | 443 | Installer, updates, image registry, license validation |
+| `replicated.app`<br/>`proxy.replicated.com`<br/>`registry.replicated.com` | 443 | Installer, updates, image registry, license validation |
 
 <Note>
   **Recommendation**
   
-  Use the online installation model whenever possible. If the BloodHound Enterprise server can reach the listed destinations on port `443`, installation and future updates remain automated.
+  Use the online installation model whenever possible. If the BloodHound Enterprise server can reach the listed destinations on port 443, installation and future updates remain automated.
   
   In air-gapped environments, skip the outbound rules but expect every update to be a manual download, transfer, and apply cycle.
 </Note>
 
 ## Collectors
 
-Both SharpHound Enterprise and AzureHound Enterprise can run on the same Windows host.
+Collectors run separately from the BloodHound Enterprise host and upload data to it over HTTPS. Provision collector hosts according to the requirements in the relevant collector documentation.
 
-See the [SharpHound (Active Directory)](/on-premises/embedded-cluster/system-requirements#sharphound-enterprise) and [AzureHound (Entra ID / Azure)](/on-premises/embedded-cluster/system-requirements#azurehound-enterprise) sections for collector-specific details.
+| Collector | Use case | Requirements |
+| --- | --- | --- |
+| SharpHound Enterprise | Active Directory data collection | [SharpHound Enterprise system requirements](/install-data-collector/install-sharphound/system-requirements) |
+| AzureHound Enterprise | Entra ID and Azure data collection | [AzureHound Enterprise system requirements](/install-data-collector/install-azurehound/system-requirements) |
+| OpenHound for BloodHound Enterprise | Platform data collection, such as GitHub, Jamf, and Okta | [OpenHound for BloodHound Enterprise system requirements](/openhound/enterprise/system-requirements) |
 
 <Note>
-  If running both collectors on the same host, the hardware requirements stack. Provision the combined specification below.
+  SharpHound Enterprise and AzureHound Enterprise can run on the same Windows host. If co-locating both collectors, combine their individual hardware requirements when provisioning the host.
 </Note>
-
-| Resource | SharpHound | AzureHound | Co-located total |
-| --- | --- | --- | --- |
-| CPU | 6 cores | 6 cores | 12 cores |
-| RAM | 32 GB | 32 GB | 64 GB |
-| Disk | 20 GB | 20 GB | 40 GB |
-| OS | Windows Server 2019+ | Windows Server 2019+ | Windows Server 2019+ |
-| .NET | 4.7.2+ | N/A (standalone binary) | 4.7.2+ |
-
-If deploying on separate hosts, provision each to the individual specifications in the sections below.
-
-### SharpHound Enterprise
-
-SharpHound collects Active Directory data (objects, relationships, ACLs, sessions) and sends it to BHE over HTTPS. It runs as a signed Windows service under a domain account.
-
-<Warning>
-  SharpHound is code-signed by SpecterOps but still requires allowlisting. EDR tools detect the collection behavior (LDAP enumeration, SAM-R calls, Kerberos ticket requests), not the binary signature.
-  
-  Exclude SharpHound by hash or publisher certificate in your endpoint security platform before the first collection. MDI may also trigger lateral movement alerts. Notify the SOC before collection starts.
-</Warning>
-
-Deploy one collector per AD forest or domain. SharpHound and AzureHound can run on the same host.
-
-#### Server hardware
-
-| Resource | Specification |
-| --- | --- |
-| CPU | 6 physical cores |
-| RAM | 32 GB |
-| Disk | 20 GB (logging) |
-
-#### Server software
-
-| Requirement | Specification |
-| --- | --- |
-| OS | Windows Server 2019+ |
-| .NET | 4.7.2+ |
-
-#### Service account
-
-| Requirement | Specification |
-| --- | --- |
-| Account type | Domain user account or gMSA (recommended for hardening) |
-| User Rights Assignment | "Log on as a service" on the collector server (required or service will not start) |
-| Domain Admins | Not required. Authenticated Users is sufficient for basic AD structure collection. |
-| Privileged collection (optional) | Local admin on domain computers for sessions, local groups, user rights, NTLM, DC/CA registry |
-| AD tombstoning | If enabled, read permissions on the Deleted Objects container |
-| Authentication to AD | Kerberos (default) |
-| Authentication to BHE | Token-based (auth.json, generated from BHE UI) |
-
-#### Network
-
-SharpHound tries LDAPS (636) first, then falls back to LDAP (389). LDAP channel signing is used for all queries. LDAPS is enforceable.
-
-| Destination | Port | Protocol | Purpose |
-| --- | --- | --- | --- |
-| Domain controllers | 88 | TCP/UDP | Kerberos Authentication |
-| Domain controllers | 53 | TCP/UDP | DNS SRV record lookups to locate DCs |
-| Domain controllers | 636 | TCP | LDAPS AD object collection (tried first) |
-| Domain controllers | 389 | TCP/UDP | LDAP AD object collection (fallback) |
-| Domain controllers | 445 | TCP | SMB Privileged collection: sessions, local groups, DC/CA registry |
-| Domain controllers | 135 | TCP | RPC Privileged collection: NTLM relay-based collection |
-| All in-scope Windows systems | 445 | TCP | SMB Privileged collection: sessions, local groups (~60-100kB per system) |
-| Reverse proxy | 443 | TCP | HTTPS Upload results to BHE |
-
-### AzureHound Enterprise
-
-AzureHound collects Entra ID and Azure resource data (objects, role assignments, relationships) and sends it to BloodHound Enterprise over HTTPS. One App Registration is required per Entra ID tenant.
-
-<Note>
-  Skip this section entirely if Azure / Entra ID is not in scope for the POV. AzureHound can run on the same host as SharpHound.
-</Note>
-
-#### Multiple Entra ID tenants
-
-One AzureHound server can collect from multiple tenants, but the deployment model changes. Multiple tenants require Scheduled Tasks instead of a Windows Service.
-
-| Per tenant requirement | What to provision |
-| --- | --- |
-| App Registration | One per tenant (single tenant, no redirect URI) |
-| Permissions | Full set per tenant (Directory Reader + Graph API + Azure Reader) |
-| Config file | One config.json per tenant, in separate directories |
-| Scheduled Task | One per tenant, running as SYSTEM, repeating every 5 minutes |
-| Binary | One shared `azurehound.exe`, each task points to its own config |
-
-#### Server hardware
-
-| Resource | Specification |
-| --- | --- |
-| CPU | 6 physical cores |
-| RAM | 32 GB |
-| Disk | 20 GB (logging) |
-
-#### Server software
-
-| Requirement | Specification |
-| --- | --- |
-| Option 1 | Windows Server 2019+ with .NET 4.7.2+ |
-| Option 2 | Docker |
-| Option 3 | Kubernetes |
-
-#### Permissions
-
-Both the Directory Reader role and the Directory.Read.All API permission are required. They overlap, but AzureHound relies on both for complete collection.
-
-| Permission | Type | Notes |
-| --- | --- | --- |
-| Directory Reader | Entra ID directory role | Must be permanently active (not PIM-eligible only) |
-| Directory.Read.All | Graph API application permission | Admin consent required |
-| RoleManagement.Read.All | Graph API application permission | Admin consent required |
-| Reader | Azure RBAC role | On all subscriptions; ideally at tenant root group scope |
-
-#### Authentication
-
-| Requirement | Specification |
-| --- | --- |
-| Method | Certificate-based (recommended) or client secret |
-| App Registration | One per Entra ID tenant (single tenant, no redirect URI needed) |
-| Certificate | PEM-encoded; auto-generated by AzureHound CLI or custom; 1-year expiry |
-| Authentication to BHE | Token-based (same mechanism as SharpHound) |
-
-#### Network
-
-| Destination | Port | Purpose |
-| --- | --- | --- |
-| login.microsoftonline.com | 443 | Authentication to Entra ID (required) |
-| msidentity.com | 443 | Authentication CNAME (required) |
-| graph.microsoft.com | 443 | Entra ID data collection |
-| management.azure.com | 443 | Azure Resource Manager data collection |
-| Reverse proxy | 443 | Upload results to BHE |

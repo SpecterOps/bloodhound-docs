@@ -7,8 +7,14 @@ export const Checklist = ({ checklistKey, title, children }) => {
     // Load saved state from localStorage
     const saved = localStorage.getItem(`checklist-${checklistKey}`);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      setItems(parsed);
+      try {
+        const parsed = JSON.parse(saved);
+        setItems(parsed);
+      } catch {
+        // Fall back to the default unchecked state if saved data is malformed.
+        const listItems = document.querySelectorAll(`[data-checklist="${checklistKey}"] li`);
+        setItems(new Array(listItems.length).fill(false));
+      }
     } else {
       // Initialize based on number of list items
       const listItems = document.querySelectorAll(`[data-checklist="${checklistKey}"] li`);
