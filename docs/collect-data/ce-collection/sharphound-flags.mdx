@@ -32,10 +32,15 @@ Here are the less common CollectionMethods and what they do:
 * **DCOM:** Just collect the members of the Distributed COM Users group on each domain-joined computer
 * **PSRemote:** Just collect the members of the Remote Management group on each domain-joined computer
 * **ObjectProps** \- Performs Object Properties collection for properties such as LastLogon or PwdLastSet
+* **SPNTargets** \- Just collect Service Principal Name (SPN) target information from Active Directory objects. This helps identify service relationships such as MSSQL service accounts and related target systems.
 * **UserRights** \- Just collect User Rights Assignment from domain computers (needs admin)
 * **CARegistry** \- Just collect ADCS properties from registry of Certificate Authority servers
 * **DCRegistry** \- Just collect properties from registry of Domain Controller servers
 * **CertServices** \- Just collect ADCS objects from Certificate Services
+* **WebClientService** \- Just check whether the WebClient service is running on domain-joined Windows systems. This data supports NTLM relay-related attack paths.
+* **LdapServices** \- Just collect LDAP service configuration information from domain controllers, including LDAP/LDAPS authentication behavior. This data supports NTLM relay-related attack paths.
+* **SmbInfo** \- Just collect SMB configuration information from domain-joined Windows systems, such as SMB service settings. This data supports NTLM relay-related attack paths.
+* **NTLMRegistry** \- Just collect NTLM-related registry values from domain-joined Windows systems. This data supports NTLM relay-related attack paths.
 
 For example, to collect sessions:
 ```
@@ -211,7 +216,7 @@ Password for local Administrator to be used if DoLocalAdminSessionEnum is set.
 
 When SharpHound is scanning a remote system to collect user sessions and local group memberships, it first checks to see if port 445 is open on that system. This helps speed up SharpHound collection by not attempting unnecessary function calls when systems aren’t even online. By default, SharpHound will wait 2000 milliseconds (2 seconds) to get a response when scanning 445 on the remote system. You can decrease this if you’re on a fast LAN, or increase it if you need to. For example, to tell SharpHound to wait just 1000 milliseconds (1 second) before skipping to the next host:
 ```
-C:\> SharpHound.exe --PortScanTimeout 1000
+C:\> SharpHound.exe --PortCheckTimeout 1000
 ```
 ### SkipPortCheck
 
