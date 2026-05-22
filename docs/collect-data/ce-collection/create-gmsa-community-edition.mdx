@@ -18,30 +18,19 @@ As Sharphound is launched with a PowerShell script instead of running as a servi
 
 The Active Directory details collected by SharpHound depend on the permissions that the user running SharpHound has within the Domain.
 
-A regular, non-privileged user can run Shaprhound and collect a significant amount of information Active Directory, but using an account that has certain permissions enables the SharpHound executable to collect all of the possible pertinent information from Active Directory for the best possible analysis by BloodHound. See [SharpHound Data and Permissions](/collect-data/sharphound-data-permissions) for an overview.
+A regular, non-privileged user can run SharpHound and collect a significant amount of information from Active Directory, but some local system data requires additional permissions on the in-scope computers. See [SharpHound Data and Permissions](/collect-data/sharphound-data-permissions) for an overview.
 
-At this time there are two main paths that could give the SharpHound gMSA account the permissions needed to collect all required Active Directory information:
+Grant collection permissions directly to the SharpHound gMSA account. There are two recommended paths:
 
-- **Method 1**: Make the SharpHound gMSA account a member of the Local Administrators group on all computers in the domain.
+- **Method 1**: Explicitly make the SharpHound gMSA account a member of the local `Administrators` group on in-scope computers.
 - **Method 2**: Grant the SharpHound gMSA account the least-privilege permission set described in [Least-Privileged Collection](/collect-data/enterprise-collection/least-privileged-collection).
 
-<Warning>The SharpHound collection service account does not require `Domain Admin` membership.</Warning>
+<Warning>The SharpHound collection service account does not require `Domain Admin` membership. `Domain Admins` receives local administrator access on domain-joined computers by default, but that is implicit access and the `Domain Admins` membership gives many other unnecessary permissions. Use explicit local administrator assignment or least-privilege delegation instead.</Warning>
 
 #### Implement gMSA account protections
-Regardless of whether the permissions that are given to the SharpHound gMSA account are using Method 1 or Method 2, consider additional protections.
+After granting collection permissions, consider additional protections for the gMSA account.
 
 See [SharpHound Enterprise Service Hardening](/manage-bloodhound/securing-bloodhound-and-collectors/sharphound-hardening) to learn about protections you can implement to prevent the SharpHound gMSA account from being compromised and leveraged by an attacker.
-
-The gMSA account should be a member of the Active Directory **Protected Users** group.
-[Tiering the Sharphound gMSA account access](install-data-collector/install-sharphound/tiered-collector-strategy) is another methodology you can implement.
-
-#### Configure the gMSA account as a Domain Admin
-
-Add the gMSA account to the **Domain Admins** group.
-
-<Note>The account has a `$` at the end of it. Enter the account in this format when adding it to the **Domain Admins** group.</Note>
-
-You should also add the gMSA account to the **Protected Users** group. If you're not familiar with the Active Directory **Protected Users** groups, refer to the [Microsoft Documentation](https://learn.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/protected-users-security-group). There are a number of benefits to using this group to protect privileged accounts from being vulnerable to NTLM Relay attacks and other credential attacks.
 
 ## Create a SharpHound PowerShell script to run as a scheduled task
 
@@ -105,7 +94,7 @@ To create the scheduled task with PowerShell:
     $arg = "-ExecutionPolicy ByPass -NoProfile -File C:\Support\SharpHound\Sharphound_Collection.ps1"
     $ta = New-ScheduledTaskAction -Execute C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe  -Argument $arg
     $tt = New-ScheduledTaskTrigger -At 9:00 -Weekly -DaysOfWeek Monday
-    $ap = New-ScheduledTaskPrincipal -UserID 2022TESTING\t0_gMSA_SHS$ -LogonType Password 
+    $ap = New-ScheduledTaskPrincipal -UserID DOMAIN\t0_gMSA_SHS$ -LogonType Password 
     Register-ScheduledTask SharpHoundCollection –Action $ta –Trigger $tt –Principal $ap
     ```
 2. Construct the PowerShell commands needed for your environment in preparation for executing them in an elevated PowerShell shell.
@@ -153,13 +142,14 @@ At this point you should see the scheduled task setup to run using the user acco
 Run this following command to modify the scheduled task to run as the gMSA account:
 
 ```
-schtasks /change /TN \SharpHound /RU 2022TESTING\t0_gMSA_SHS$ /RP
+schtasks /change /TN \SharpHound /RU DOMAIN\t0_gMSA_SHS$ /RP
 ```
 
 An alternate PowerShell method of modifying the scheduled task to run as the gMSA account:
 
 ```
-New-ScheduledTaskPrincipal -Id SharpHound -UserID Domain\GMServiceAccount$ -LogonType Password -RunLevel Highest
+$principal = New-ScheduledTaskPrincipal -UserID DOMAIN\t0_gMSA_SHS$ -LogonType Password -RunLevel Highest
+Set-ScheduledTask -TaskName SharpHound -Principal $principal
 ```
 
 You should see a message stating that command was successful.
