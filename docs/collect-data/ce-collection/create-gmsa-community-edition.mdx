@@ -28,7 +28,7 @@ Grant collection permissions directly to the SharpHound gMSA account. There are 
 <Warning>The SharpHound collection service account does not require `Domain Admin` membership. `Domain Admins` receives local administrator access on domain-joined computers by default, but that is implicit access and the `Domain Admins` membership gives many other unnecessary permissions. Use explicit local administrator assignment or least-privilege delegation instead.</Warning>
 
 #### Implement gMSA account protections
-After granting collection permissions, consider additional protections for the gMSA account.
+After granting collection permissions, consider additional protections for the gMSA account. We highly recommend membership in the `Protected Users` group.
 
 See [SharpHound Enterprise Service Hardening](/manage-bloodhound/securing-bloodhound-and-collectors/sharphound-hardening) to learn about protections you can implement to prevent the SharpHound gMSA account from being compromised and leveraged by an attacker.
 
@@ -137,12 +137,12 @@ To create the scheduled task with the GUI:
 2. Configure the scheduled task to run on the desired schedule.
 3. Configure the scheduled task with this **Action**:
 
-    -  **Program / script**: `powershell.exe`
-    - **Arguments**: `-ExecutionPolicy ByPass -File "C:\Program Files\SharpHound\SharpHound_Collection.ps1"`
+    -  **Program / script**: `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`
+    - **Arguments**: `-ExecutionPolicy ByPass -NoProfile -File ".\SharpHound_Collection.ps1"`
     - **Start in**: `C:\Program Files\SharpHound`
 
 4. Click **OK** on the **Edit Action**.
-5. Configure the scheduled task to run as a standard user account at this time.
+5. Leave the default run-account selection for now — you'll change it to the gMSA in a later step.
 6. Click **OK** on the scheduled task to complete the creation.
 7. Provide the password for the standard user account when prompted and click **OK**.
 
@@ -152,18 +152,22 @@ At this point you should see the scheduled task setup to run using the user acco
         <img src="/assets/sharphound-gmsa-gui-task-setup.png" alt=""/>
     </Frame>
 
-Run this following command to modify the scheduled task to run as the gMSA account:
+Modify the scheduled task to run as the gMSA account with PowerShell
 
-```powershell
-schtasks /change /TN \SharpHound /RU "$($env:USERDOMAIN)\t0_gMSA_SHS$" /RP
-```
+Either using:
 
-An alternate PowerShell method of modifying the scheduled task to run as the gMSA account:
+    - `schtasks`
 
-```powershell
-$principal = New-ScheduledTaskPrincipal -UserID "$($env:USERDOMAIN)\t0_gMSA_SHS$" -LogonType Password -RunLevel Highest
-Set-ScheduledTask -TaskName SharpHound -Principal $principal
-```
+        ```powershell
+        schtasks /change /TN \SharpHound /RU "$($env:USERDOMAIN)\t0_gMSA_SHS$" /RP
+        ```
+
+    - `New-ScheduledTaskPrincipal`
+
+        ```powershell
+        $principal = New-ScheduledTaskPrincipal -UserID "$($env:USERDOMAIN)\t0_gMSA_SHS$" -LogonType Password -RunLevel Highest
+        Set-ScheduledTask -TaskName SharpHound -Principal $principal
+        ```
 
 You should see a message stating that command was successful.
 
@@ -173,7 +177,7 @@ If you open the scheduled task you should see that the account it will run as is
 
 To test the scheduled task running as the gMSA account, right click on the scheduled task and click **Run**.
 
-When completed, a zip file should appear with the results.
+When completed, a zip file should appear in `C:\Program Files\SharpHound\Results\`, and a log file in `C:\Program Files\SharpHound\Logs\`
 
 ----
 <Check><Icon icon="heart" iconType="solid" /> Thank you to [@robertstrom](https://github.com/robertstrom) for your contribution and permission in modifying your [original docs](https://github.com/robertstrom/SharphoundgMSA/tree/main) for inclusion in BloodHound's documentation for other users!</Check>
