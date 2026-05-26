@@ -7,7 +7,7 @@ import { Checklist} from '/snippets/components/checklist.jsx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-In the [Deployment Overview](/on-premises/embedded-cluster/overview), we covered the high-level overview of the embedded cluster deployment option for on-premises instances of BloodHound Enterprise. This guide provides step-by-step instructions for installing and configuring BloodHound Enterprise with the embedded cluster installer.
+In the [Overview](/on-premises/overview), we covered the high-level overview of the embedded cluster deployment option for on-premises instances of BloodHound Enterprise. This guide provides step-by-step instructions for installing and configuring BloodHound Enterprise with the embedded cluster installer.
 
 The embedded cluster installer bundles a Kubernetes distribution (k0s) with the BloodHound Enterprise application, so you can deploy everything on a single Linux host without needing to set up Kubernetes separately.
 
@@ -16,14 +16,14 @@ The embedded cluster installer bundles a Kubernetes distribution (k0s) with the 
 The following checklist summarizes the install-blocking gates and pre-deployment work that must be completed before running the installer.
 
 <Note>
-  For detailed host sizing, collector specifications, supported filesystems and kernel versions, and the complete set of preflight checks the installer enforces, see the full [system requirements](/on-premises/embedded-cluster/system-requirements).
+  For detailed host sizing, collector specifications, supported filesystems, and kernel versions, see the full [system requirements](/on-premises/system-requirements).
 </Note>
 
-<Checklist checklistKey="embedded-cluster-install">
-- Provision a dedicated x86-64 Linux host (any distribution with systemd) with root or sudo access, sized per the [BloodHound Enterprise host](/on-premises/embedded-cluster/system-requirements#bloodhound-enterprise-host) specification
+<Checklist checklistKey="embedded-cluster-pre-install">
+- Provision a dedicated x86-64 Linux host (any distribution with systemd) with root or sudo access, sized per the [BloodHound Enterprise host](/on-premises/system-requirements#bloodhound-enterprise-host) specification
 - Back the host with SSD storage (P99 write latency ≤10ms) — the installer blocks on spinning disk
-- Stand up a [reverse proxy](/on-premises/embedded-cluster/system-requirements#reverse-proxy) with your SSL certificate to terminate HTTPS in front of BloodHound Enterprise
-- Create a [DNS A record](/on-premises/embedded-cluster/system-requirements#dns) for the BloodHound Enterprise FQDN that resolves for both users and collectors
+- Stand up a [reverse proxy](/on-premises/system-requirements#reverse-proxy) with your SSL certificate to terminate HTTPS in front of BloodHound Enterprise
+- Create a [DNS A record](/on-premises/system-requirements#dns) for the BloodHound Enterprise FQDN that resolves for both users and collectors
 - Open inbound TCP `443` (users and collectors) and `30080` (Installation Wizard)
 - For online installs, allow outbound HTTPS to `replicated.app`, `proxy.replicated.com`, and `registry.replicated.com`; for air-gapped installs, download the installer bundle ahead of time
 </Checklist>
@@ -210,7 +210,7 @@ The Installation Wizard guides you through the final configuration steps to comp
   <Step title="Domain Configuration">
     Use a lowercase hostname with no underscores. Kubernetes ingress rules require lowercase hostnames.
 
-    - For **production** deployments, this should match the [DNS A record](/on-premises/embedded-cluster/system-requirements#dns) you created for the BloodHound Enterprise FQDN in the pre-install checklist.
+    - For **production** deployments, this should match the [DNS A record](/on-premises/system-requirements#dns) you created for the BloodHound Enterprise FQDN in the pre-install checklist.
 
     - For **testing** purposes, this can be a hostname that resolves to the Linux host's IP address in your local `/etc/hosts` file. For example:
 
