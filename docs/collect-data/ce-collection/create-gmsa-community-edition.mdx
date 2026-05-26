@@ -144,34 +144,26 @@ To create the scheduled task with the GUI:
 4. Click **OK** on the **Edit Action**.
 5. Leave the default run-account selection for now — you'll change it to the gMSA in a later step.
 6. Click **OK** on the scheduled task to complete the creation.
-7. Provide the password for the standard user account when prompted and click **OK**.
-
-At this point you should see the scheduled task setup to run using the user account you previously configured.
+7. Provide the password for the standard user account when prompted and click **OK**. At this point you should see the scheduled task setup to run using the user account you previously configured.
 
      <Frame>
         <img src="/assets/sharphound-gmsa-gui-task-setup.png" alt=""/>
     </Frame>
 
-Modify the scheduled task to run as the gMSA account with PowerShell
-
-Either using:
-
-    - `schtasks`
+8. Modify the scheduled task to run as the gMSA account with PowerShell:
+    - Option A: `schtasks`
 
         ```powershell
         schtasks /change /TN \SharpHound /RU "$($env:USERDOMAIN)\t0_gMSA_SHS$" /RP
         ```
-
-    - `New-ScheduledTaskPrincipal`
+    - Option B: `New-ScheduledTaskPrincipal`
 
         ```powershell
         $principal = New-ScheduledTaskPrincipal -UserID "$($env:USERDOMAIN)\t0_gMSA_SHS$" -LogonType Password -RunLevel Highest
         Set-ScheduledTask -TaskName SharpHound -Principal $principal
         ```
 
-You should see a message stating that command was successful.
-
-If you open the scheduled task you should see that the account it will run as is the gMSA account.
+9. You should see a message stating that command was successful. If you open the scheduled task you should see that the account it will run as is the gMSA account.
 
 ### Test the SharpHound scheduled task
 
