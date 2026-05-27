@@ -1,0 +1,26 @@
+---
+title: 'GH_HasVariable'
+description: 'Repository has access to this variable (org-level or repo-level)'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Source: [GH_Repository](/opengraph/extensions/github/nodes/gh_repository)
+- Destination: [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable), [GH_RepoVariable](/opengraph/extensions/github/nodes/gh_repovariable)
+- Traversable: ✅
+
+## General Information
+
+The traversable GH_HasVariable edge represents the relationship between a repository and the variables accessible within that context. This edge shows which variables are available in which scopes. Repositories can have access to both organization-level variables (scoped by visibility to all, private, or selected repositories) and repository-level variables defined directly on the repo. This edge is traversable because any principal that can push code to a repository (via [GH_CanWriteBranch](/opengraph/extensions/github/edges/gh_canwritebranch) or [GH_CanCreateBranch](/opengraph/extensions/github/edges/gh_cancreatebranch)) can write a workflow that reads variable values at runtime, and variables may contain configuration data useful for lateral movement such as deployment URLs, service names, or environment identifiers.
+
+
+```mermaid
+graph LR
+    node1("GH_Repository GitHound")
+    node2("GH_OrgVariable ENVIRONMENT_URL")
+    node3("GH_RepoVariable NODE_VERSION")
+    node1 -- GH_HasVariable --> node2
+    node1 -- GH_HasVariable --> node3
+```

@@ -39,26 +39,38 @@ To collect Active Directory data with SharpHound and ingest it into BloodHound f
     * SMB/RPC on 445/TCP to all in-scope domain-joined Windows systems
     * SMB/RPC on 135/TCP to all in-scope domain-joined Windows systems for NTLM relay-based collection
     * Approximately 60-100kB network bandwidth per collection to each in-scope domain-joined Windows system
-* \[Optional\] If performing DC Registry and CA Registry collection (see [DC Registry and CA Registry details](/collect-data/permissions))
+* \[Optional\] If performing DC Registry and CA Registry collection (see [DC Registry and CA Registry details](/collect-data/sharphound-data-permissions))
     * SMB/RPC on 445/TCP to all DCs and domain-joined CAs
 
 ## Service Account Requirements
 
 Run the SharpHound Enterprise service under a domain-joined account that has the **Log on as a service** User Rights Assignment on the SharpHound Enterprise server. This account can be a traditional user account or a [Group Managed Service Account (gMSA)](/install-data-collector/install-sharphound/create-gmsa).
 
-The service account needs permissions to collect data from your target domains and systems, but it does not need to be a member of `Domain Admins`.
+The service account needs permissions to collect data from your target domains and domain-joined systems as detailed in [SharpHound Data Collection and Permissions](/collect-data/sharphound-data-permissions).
 
-For [privileged collection](/collect-data/enterprise-collection/privileged-collection), adding the account to local administrator groups on domain computers works. However, we recommend a least-privilege approach: grant only the permissions required for the specific data types you plan to collect.
+We recommend following [SharpHound Enterprise Service Hardening](/manage-bloodhound/securing-bloodhound-and-collectors/sharphound-hardening).
+
+<Warning>The SharpHound collection service account does not require `Domain Admin` membership.</Warning>
 
 | Data type | Default permissions | Least-privileged option |
 |---|---|---|
-| [Active Directory Structure](/collect-data/permissions#active-directory-structure-data) | `Authenticated Users` can read most required data via LDAP | Delegate additional read permissions where needed (for example, restricted AD objects and dMSA) |
-| [Local Group Membership](/collect-data/permissions#local-group-membership) | Local `Administrators` | Delegate Remote SAM access with Group Policy configuration |
-| [User Rights Assignments](/collect-data/permissions#user-rights-assignments) | Local `Administrators` | No known delegation path today |
-| [NTLM](/collect-data/permissions#ntlm) | Local `Administrators` | Delegate registry access with Group Policy or registry configuration |
-| [Sessions](/collect-data/permissions#sessions) | Local `Administrators` | On Windows Server, `Print Operators` can be used; Windows desktops still require local `Administrators` |
-| [Certificate Services](/collect-data/permissions#certificate-services) | `Authenticated Users` can collect most ADCS LDAP data | Already least-privileged by default for LDAP-collected certificate services data |
-| [CA Registry](/collect-data/permissions#ca-registry) | `Authenticated Users` can collect CA registry data when AD CS is installed | No additional delegation is typically required |
-| [DC Registry](/collect-data/permissions#dc-registry) | Local `Administrators` on domain controllers | Delegate access via Group Policy or registry configuration for required paths |
+| [Active Directory Structure](/collect-data/sharphound-data-permissions#active-directory-structure-data) | `Authenticated Users` can read most required data via LDAP | Delegate additional read permissions where needed (for example, restricted AD objects and dMSA) |
+| [Local Group Membership](/collect-data/sharphound-data-permissions#local-group-membership) | Local `Administrators` | Delegate Remote SAM access with Group Policy configuration |
+| [User Rights Assignments](/collect-data/sharphound-data-permissions#user-rights-assignments) | Local `Administrators` | No known delegation path today |
+| [NTLM](/collect-data/sharphound-data-permissions#ntlm) | Local `Administrators` | Delegate registry access with Group Policy or registry configuration |
+| [Sessions](/collect-data/sharphound-data-permissions#sessions) | Local `Administrators` | On Windows Server, `Print Operators` can be used; Windows desktops still require local `Administrators` |
+| [Certificate Services](/collect-data/sharphound-data-permissions#certificate-services) | `Authenticated Users` can collect most ADCS LDAP data | Already least-privileged by default for LDAP-collected certificate services data |
+| [CA Registry](/collect-data/sharphound-data-permissions#ca-registry) | `Authenticated Users` can collect CA registry data when AD CS is installed | No additional delegation is typically required |
+| [DC Registry](/collect-data/sharphound-data-permissions#dc-registry) | Local `Administrators` on domain controllers | Delegate access via Group Policy or registry configuration for required paths |
 
 <Note>If Active Directory tombstoning is enabled, the service account must also have [read permissions](https://learn.microsoft.com/en-us/troubleshoot/windows-server/identity/non-administrators-view-deleted-object-container) on the deleted objects container.</Note>
+
+### Integrated Windows Authentication (IWA)
+
+If you want to use IWA for SharpHound, the following additional requirements apply:
+
+* Active Directory Federation Services (ADFS) server must be accessible in your network environment
+  <Note>Both the system running SharpHound and the BloodHound Enterprise tenant require network connectivity to the ADFS server</Note>
+* Service account must be [configured](/install-data-collector/install-sharphound/configure-adfs-iwa) in ADFS to support Windows authentication for SharpHound
+* Client ID property must be registered in ADFS (provided during [collector client creation](/collect-data/enterprise-collection/create-collector))
+* Local SharpHound configuration must include [IWA-specific properties](/install-data-collector/install-sharphound/local-configuration#integrated-windows-authentication-iwa) in the `settings.json` file

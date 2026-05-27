@@ -1,0 +1,336 @@
+---
+title: Graph Definition
+description: Define structured graph behavior for OpenGraph extensions with an extension definition schema.
+---
+
+import FeatureFlagNote from "/snippets/feature-flag.mdx";
+import FindingsAndMetrics from '/snippets/opengraph/extensions/findings-requirements.mdx';
+
+<img
+  noZoom
+  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise and Community Edition"
+/>
+
+An extension definition schema tells BloodHound how to interpret, interact with, and represent extension-specific [data payloads](/opengraph/developer/graph-data). Use it when you want your extension to produce a <Tooltip tip="A graph generated from a data payload that also conforms to an installed extension definition schema." cta="Learn more" href="/opengraph/overview#structured-graphs">structured graph</Tooltip> and enable advanced analysis features in BloodHound.
+
+<Tip>
+  If you only need <Tooltip tip="A graph generated from a data payload that conforms to the minimum JSON schema only." cta="Learn more" href="/opengraph/overview#generic-graphs">generic graph</Tooltip> support, upload a valid OpenGraph data payload and skip this page.
+</Tip>
+
+An extension definition schema is a JSON file that OpenGraph extension developers provide for BloodHound users to install on the [OpenGraph Management](/opengraph/extensions/manage) page before they upload data payloads that conform to the schema.
+
+This page describes the components of an extension definition schema. For a full example of how these components work together, see the [example schema](/opengraph/developer/graph-definition#example-schema) section at the end of the page.
+
+```json
+{
+  "schema": { ... },
+  "node_kinds": [ ... ],
+  "relationship_kinds": [ ... ],
+  "environments": [ ... ],
+  "relationship_findings": [ ... ]
+}
+```
+
+<ResponseField name="schema" type="object" required>
+  Extension metadata identifying the extension, including version and namespace.
+</ResponseField>
+<ResponseField name="node_kinds" type="array" required>
+  Defines custom node types and their visual representations for an extension.
+</ResponseField>
+<ResponseField name="relationship_kinds" type="array" required>
+  Defines custom edge types and their traversability behavior for an extension.
+</ResponseField>
+<ResponseField name="environments" type="array">
+  Defines the environments for a platform and identifies which node kinds an extension treats as principals within each environment.
+  
+  BloodHound Enterprise uses these environment definitions to group analysis, findings, and metrics.
+</ResponseField>
+<ResponseField name="relationship_findings" type="array">
+  Defines the findings and remediation guidance BloodHound Enterprise uses when relationships of the specified kind represent potential Attack Paths in a target environment (based on Privilege Zone rules).
+</ResponseField>
+
+## Namespacing
+
+BloodHound uses namespaces to organize graph data. Each extension has a namespace key, which is used as a prefix in relevant `name` fields to indicate that the data belongs to that namespace. Namespacing allows multiple extensions to define similar graph data without conflicts, because the namespace prefix makes each name unique.
+
+With the exception of `schema.name`, all `name` fields must follow these namespacing rules to avoid collisions with built-in graph elements and other extensions. This does not apply to `display_name` fields, which are used only for human-readable labels.
+
+- Must be unique within the extension
+- Must be prefixed with the extension's namespace separated by an underscore (for example, `namespace_Name`)
+- Must include more than just the namespace prefix
+
+Although the `schema.name` field does not use a namespace prefix, it must still be unique for each extension. BloodHound treats extensions with matching `schema.name` fields as the same extension and overwrites existing extension definition schemas when uploaded.
+
+<Warning>
+  - If names are not unique or properly namespaced, schema uploads fail validation.
+  - `TAG` is a reserved namespace prefix and cannot be used.
+</Warning>
+
+## Findings and metrics
+
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ "width":"20%" }}
+/>
+
+<FeatureFlagNote />
+
+<FindingsAndMetrics />
+
+## `schema`
+
+Defines metadata about the extension itself.
+
+```json
+{
+  "name": "SOOkta",
+  "display_name": "Okta Extension (by SpecterOps)",
+  "version": "v2.8.1",
+  "namespace": "Okta"
+}
+```
+
+<ResponseField name="name" type="string" required>
+  Unique name that identifies an extension in BloodHound.
+</ResponseField>
+<ResponseField name="display_name" type="string" required>
+  Human-readable label shown for this extension in BloodHound.
+</ResponseField>
+<ResponseField name="version" type="string" required>
+  Extension schema version in semantic version format, for example `v1.0.0`.
+</ResponseField>
+<ResponseField name="namespace" type="string" required>
+  Namespace key used as a prefix for all `name` fields in the `node_kinds`, `relationship_kinds`, and `relationship_findings` arrays to indicate that the data belongs to that namespace.
+</ResponseField>
+
+## `node_kinds`
+
+Defines all node types in your extension. Each node kind represents an entity type (for example: user, device, or environment).
+
+```json
+[
+  {
+    "name": "Okta_User",
+    "display_name": "Okta User",
+    "description": "An Okta user account",
+    "is_display_kind": true,
+    "icon": "user",
+    "color": "#d33115"
+  }
+]
+```
+
+<ResponseField name="name" type="string" required>
+  Unique node kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules. For each node in a data payload to be included in a [structured graph](/opengraph/overview#structured-graphs), at least one value in its `kinds` array must match a `node_kinds.name` defined in the extension definition schema.
+
+  The node schema for an environment must be defined here to be used for findings and metrics in BloodHound Enterprise.
+</ResponseField>
+<ResponseField name="display_name" type="string" required>
+  Human-readable label shown for this node kind in BloodHound.
+</ResponseField>
+<ResponseField name="description" type="string">
+  Optional description that explains what the node kind represents.
+</ResponseField>
+<ResponseField name="is_display_kind" type="boolean">
+  Determines whether to use the `icon` and `color` definitions for nodes of this kind in the graph.
+</ResponseField>
+<ResponseField name="icon" type="string">
+  Optional Font Awesome [icon name](https://fontawesome.com/search?s=solid) (without the "fa-" prefix) to show for nodes of this kind in the graph.
+</ResponseField>
+<ResponseField name="color" type="string">
+  Optional Hex color code (in `#RGB` or `#RRGGBB` format, the `#` is required) to apply to nodes of this kind in the graph.
+</ResponseField>
+
+## `relationship_kinds`
+
+Defines what kind of connections exist. Each relationship kind represents a specific type of connection that can exist between nodes.
+
+```json
+[
+  {
+    "name": "Okta_ResetPassword",
+    "description": "Ability to reset passwords or temporary credentials for scoped Okta users",
+    "is_traversable": true
+  }
+]
+```
+
+<ResponseField name="name" type="string" required>
+  Unique relationship kind identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules. For each edge in a data payload to be included in a [structured graph](/opengraph/overview#structured-graphs), `kind` must match a `relationship_kinds.name` defined in the extension definition schema.
+</ResponseField>
+<ResponseField name="description" type="string">
+  Optional description of what the relationship means.
+</ResponseField>
+<ResponseField name="is_traversable" type="boolean">
+  Controls whether edges of this relationship kind are used for pathfinding and Attack Path detection.
+
+  When `is_traversable` is set to `true` on a relationship kind, all edges of that kind inherit the same traversability behavior. Only <Tooltip tip="Represents a relationship where the starting node can take control of the ending node to a degree that lets an attacker abuse the ending node's outgoing edges" cta="Learn more" href="/resources/edges/traversable-edges">traversable edges</Tooltip> are included in pathfinding and considered for findings and metrics.
+</ResponseField>
+
+## `environments`
+
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ "width":"20%" }}
+/>
+
+Environments are platform-specific groupings of nodes that BloodHound Enterprise uses to scope findings and metrics. Each environment definition specifies which node kinds represent <Tooltip tip="An entity in a system that can authenticate, be assigned permissions, and serve as a basis for risk metric calculations.">principals</Tooltip> within each environment.
+
+```json
+[
+  {
+    "environment_kind": "Okta_Organization",
+    "source_kind": "Okta",
+    "principal_kinds": [
+      "Okta_User",
+      "Okta_Application",
+      "Okta_ApiServiceIntegration"
+    ]
+  }
+]
+```
+
+<ResponseField name="environment_kind" type="string" required>
+  Represents which node type within the extension is considered an environment for organizational and analytics purposes. Must match a node kind defined in the `node_kinds` array.
+
+  For findings and metrics in BloodHound Enterprise, the [`graph.nodes.properties.environmentid`](/opengraph/developer/nodes#param-properties-environmentid) field for applicable nodes in the data payload must match this field.
+</ResponseField>
+<ResponseField name="source_kind" type="string" required>
+  Source kind that associates this environment definition with a specific platform for environment organization and selection. See [Data source](/opengraph/developer/graph-data#data-source) for details.
+</ResponseField>
+<ResponseField name="principal_kinds" type="array" required>
+  Node kinds defined by this extension/schema that BloodHound should treat as <Tooltip tip="An entity in a system that can authenticate, be assigned permissions, and serve as a basis for risk metric calculations.">principals</Tooltip>. Must match a `node_kinds.name` defined in this schema.
+
+  BloodHound Enterprise incorporates these node kinds in findings and metrics.
+</ResponseField>
+
+## `relationship_findings`
+
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ "width":"20%" }}
+/>
+
+Defines findings based on relationships. Each finding represents a single instance of an <Tooltip tip="A chain of abusable privileges and user behaviors that creates direct or indirect connections between principals." cta="Learn more" href="/analyze-data/findings/attack-paths#attack-paths">Attack Path</Tooltip>. BloodHound Enterprise identifies instances of a traversable edge targeting a node of higher privilege (violating a Privilege Zone boundary), analyzes the risk, and provides remediation guidance.
+
+<Tip>
+  **Best practice**
+
+  If a finding `name` would match its associated `relationship_kind`, include `_Finding` as a suffix in the name to distinguish them.
+  
+  For example:
+
+  - Relationship kind name: `Okta_ResetPassword`
+  - Finding name: `Okta_ResetPassword_Finding`
+</Tip>
+
+```json
+[
+  {
+    "name": "Okta_ResetPassword_Finding",
+    "display_name": "Password Reset Permission Across Privilege Zones",
+    "environment_kind": "Okta_Organization",
+    "relationship_kind": "Okta_ResetPassword",
+    "remediation": {
+      "short_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "long_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      "short_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "long_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+    }
+  }
+]
+```
+
+<ResponseField name="name" type="string" required>
+  Unique finding identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules and be unique across all schema definition names, including node kinds, relationship kinds, and findings.
+</ResponseField>
+<ResponseField name="display_name" type="string">
+  Human-readable label shown for this finding in BloodHound.
+</ResponseField>
+<ResponseField name="environment_kind" type="string" required>
+  Environment kind where this finding should be evaluated. Must match an `environments.environment_kind` and `node_kinds.name` defined in any installed extension definition schema.
+
+  For intra-extension findings, this typically matches the environment kind defined by the same extension schema. For cross-platform findings (for example, hybrid relationships), the impacted environment kind may be different.
+</ResponseField>
+<ResponseField name="relationship_kind" type="string" required>
+  Relationship kind that contributes to this finding when matching edges are present and the edge crosses a Privilege Zone boundary. Must match a `relationship_kinds.name` defined in any installed extension definition schema.
+</ResponseField>
+<ResponseField name="remediation" type="object">
+  Remediation guidance to resolve the finding, including both short and long forms.
+</ResponseField>
+<ResponseField name="remediation.short_description" type="string">
+  A concise summary of the recommended remediation action.
+</ResponseField>
+<ResponseField name="remediation.long_description" type="string">
+  A detailed explanation of the finding and its cause, which can include Markdown formatting for better readability.
+</ResponseField>
+<ResponseField name="remediation.short_remediation" type="string">
+  A concise summary of the steps to remediate the finding.
+</ResponseField>
+<ResponseField name="remediation.long_remediation" type="string">
+  A detailed, step-by-step guide to remediate the finding, which can include Markdown formatting for better readability.
+</ResponseField>
+
+## Example schema
+
+The following example schema is based on Okta to illustrate how the different components of the schema work together.
+
+```json
+{
+  "schema": {
+    "name": "SOOkta",
+    "display_name": "Okta Extension (by SpecterOps)",
+    "version": "v1.0.0",
+    "namespace": "Okta"
+  },
+  "node_kinds": [
+    {
+      "name": "Okta_User",
+      "display_name": "Okta User",
+      "description": "An Okta user account",
+      "is_display_kind": true,
+      "icon": "user",
+      "color": "#d33115"
+    }
+  ],
+  "relationship_kinds": [
+    {
+      "name": "Okta_ResetPassword",
+      "description": "Ability to reset passwords or temporary credentials for scoped Okta users",
+      "is_traversable": true
+    }
+  ],
+  "environments": [
+    {
+      "environment_kind": "Okta_Organization",
+      "source_kind": "Okta",
+      "principal_kinds": [
+        "Okta_User",
+        "Okta_Application",
+        "Okta_ApiServiceIntegration"
+      ]
+    }
+  ],
+  "relationship_findings": [
+    {
+      "name": "Okta_ResetPassword_Finding",
+      "display_name": "Password Reset Permission Across Privilege Zones",
+      "environment_kind": "Okta_Organization",
+      "relationship_kind": "Okta_ResetPassword",
+      "remediation": {
+        "short_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+        "long_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+        "short_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+        "long_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+      }
+    }
+  ]
+}
+```

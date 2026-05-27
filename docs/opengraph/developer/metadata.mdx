@@ -1,0 +1,66 @@
+---
+title: OpenGraph Metadata
+description: Learn how metadata influences ingestion and metrics behavior.
+sidebarTitle: Metadata
+---
+
+<img
+  noZoom
+  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise and CE"
+/>
+
+The `metadata` object defines payload-wide ingest behavior.
+
+One of its primary uses is registering a `source_kind`, which facilitates organizing and managing graph data by [source](/opengraph/developer/graph-data#data-source).
+
+```json highlight={3}
+{
+  "metadata": {
+    "source_kind": "GitHub"
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  }
+}
+```
+
+<Note>
+  The `metadata` object is optional for both <Tooltip tip="A graph generated from a data payload that conforms to the minimum JSON schema only." cta="Learn more" href="/opengraph/overview#generic-graphs">generic graphs</Tooltip> and <Tooltip tip="A graph generated from a data payload that also conforms to an installed extension definition schema." cta="Learn more" href="/opengraph/overview#structured-graphs">structured graphs</Tooltip>.
+</Note>
+
+<ResponseField name="metadata" type="object">
+  Optional top-level metadata object that configures payload-wide ingest behavior.
+
+  The `metadata` object accepts only `source_kind`. Any other fields cause validation errors.
+</ResponseField>
+<ResponseField name="source_kind" type="string">
+  Source system label used to register a source kind and apply it to all nodes in a data payload. During ingestion, BloodHound appends this value to each node's `kinds` array.
+
+  You can register a `source_kind` through the `metadata` object or through the extension definition schema. Once registered, BloodHound reuses it for subsequent uploads with the same node kinds, even if the payload omits `metadata.source_kind`.
+</ResponseField>
+
+## Schema
+
+Use the following JSON schema for validation requirements.
+
+```json
+{
+    "title": "Metadata",
+    "description": "Optional metadata about the ingest payload",
+    "type": "object",
+    "properties": {
+        "source_kind": {
+            "type": ["string","null"]
+        }
+    },
+    "additionalProperties": false
+}
+``` 
+
+## Troubleshooting
+
+- **`source_kind` does not appear in expected nodes:** Verify that `metadata` is at the top level of the data payload and not nested under `graph`.
+
+- **Unexpected kind labels after ingest:** Confirm that your `source_kind` value is intentional because `metadata.source_kind` appends it to every node in the data payload.

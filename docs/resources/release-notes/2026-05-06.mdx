@@ -1,0 +1,153 @@
+---
+title: 2026-05-06 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-05-06"
+---
+
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-05-06 | v9.1.0 | No release | No release | v2.12.1 |
+ 
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+<Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
+  ## Database Management
+  {/*BED-7813*/}
+
+  Manage graph cleanup tasks more predictably from the **Database Management** page.
+
+  The **HasSession** option has been nested within the **Active Directory** graph data source for a more consistent administration workflow.
+
+  <Frame>
+    <img src="/images/release_notes/9_1_0/db-mgmt-hassession.png" alt="Database Management page showing new HasSession deletion controls" />
+  </Frame>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  ## Cypher Query Results
+  {/*BED-7540*/}
+
+  Work through Cypher query results with panel behavior that adapts to the number of returned nodes.
+
+  When a query returns a single node, the **Entity Panel** opens directly to that node and the Search, Pathfinding, and Cypher menu remains expanded.
+  
+  When a query returns multiple nodes, the **Entity Panel** does not open and the Search, Pathfinding, and Cypher menu collapses to allow more space for the graph and to encourage selecting specific nodes of interest from the results.
+
+  <Frame>
+    <img src="/images/release_notes/9_1_0/query-result-behavior.gif" alt="Animated GIF showing updated behavior when a query returns multiple nodes" />
+  </Frame>
+
+  ## Subcategories for Saved Queries
+  {/*BED-7541*/}
+  
+  Scroll through **Saved Queries** with clearer subcategories and less repeated labeling.
+  <Frame>
+    <img src="/images/release_notes/9_1_0/saved-queries-subcategories.gif" alt="Animated GIF showing new subcategories for saved queries" />
+  </Frame>
+
+  ## Entity Panel Controls
+  {/*BED-7537*/}
+  
+  The **Entity Panel** now has collapse controls on the left and close controls on the right for more intuitive interaction and to reduce accidental panel closures.
+
+  <Frame>
+    <img src="/images/release_notes/9_1_0/entity-panel-controls.gif" alt="Animated GIF showing updated entity panel controls" />
+  </Frame>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  ## Custom Icons
+  {/*BED-7783*/}
+
+  Designate the default icon and color for nodes matching a given kind in an OpenGraph data payload.
+
+  BloodHound now uses the `"is_display_kind": true` field in an extension definition schema's `node_kinds` array to determine which icon and color to apply to matching nodes in the graph.
+
+  ## Extension Management API
+  {/*BED-7501*/}
+
+  Manage OpenGraph extensions with more granular read and write permissions.
+
+  Extension management now provides separate permissions for extension schema administration and related data access:
+
+  - Users with the Power User, Auditor, User, and Read-only roles can view installed extensions, including associated findings and edges.
+  - Only users with the Administrator role can upload or delete extension definition schemas. The **Upload** and **Delete** extension buttons are disabled for all other roles.
+
+  <Note>
+    See [User Role Definitions](/manage-bloodhound/auth/users-and-roles#user-role-definitions) for a full breakdown of OpenGraph extension permissions.
+  </Note>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Post-Processing"]}>
+  ## Optimized Graph Indices
+  {/*BED-8131*/}
+  
+  Graph query and path lookup operations are faster in this release due to improved index coverage on edge data.
+  
+  BloodHound now uses optimized graph indices that cover the columns most frequently accessed during traversals, reducing the need for additional row lookups.
+  
+  ## Incremental Edge Updates
+  {/*BED-8098, BED-8097*/}
+
+  <Tooltip tip="A phase of analysis in which BloodHound models structural aspects that are inherent to a given system but are not directly collected as data." cta="Learn more" href="/analyze-data/findings/analysis#post-processing">Post-processing</Tooltip> runs faster and more efficiently for several edge types in this release.
+
+  BloodHound now updates the following edges incrementally only, writing changes when edges are added or removed instead of deleting and recreating all edges of each type during every post-processing run:
+
+  - [`Owns`](/resources/edges/owns)
+  - [`WriteOwner`](/resources/edges/write-owner)
+  - [`AZMGAddMember`](/resources/edges/az-mg-add-member)
+  - [`AZMGAddOwner`](/resources/edges/az-mg-add-owner)
+  - [`AZMGAddSecret`](/resources/edges/az-mg-add-secret)
+  - [`AZMGGrantAppRoles`](/resources/edges/az-mg-grant-app-roles)
+  - [`AZMGGrantRole`](/resources/edges/az-mg-grant-role)
+</Update>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## API and Authentication
+
+  - {/*BED-8094*/} Resolved an issue where filtering in the **API Explorer** only matched endpoint tags and did not reliably include matching API paths.
+  - {/*BED-7931*/} Resolved an issue where the **API Explorer** showed an outdated request example for [`POST /api/v2/clear-database`](/reference/database/delete-your-bloodhound-data) that did not include newer OpenGraph delete options.
+  - {/*BED-7516*/} Resolved an issue where deleting a client through [`DELETE /api/v2/clients/{id}`](/reference/clients/delete-client) did not generate expected audit log entries.
+  - {/*BED-7761*/} Resolved an issue where users created through SSO and OIDC sign-in did not consistently receive the correct [Environment Targeted Access Control (ETAC)](/manage-bloodhound/auth/environment-targeted-access-control) environment access based on their assigned role.
+
+  ## Graph Processing
+
+  - {/*BED-8028, BED-8058*/} Resolved Neo4j kind-handling issues where relationship types were not included when fetching available kinds from the database and edge deletion by kind could fail against Neo4j backends.
+  - {/*BED-8034*/} Resolved an issue where cross-product analysis could return duplicated results when entities belonged to overlapping groups.
+  - {/*BED-6773*/} Resolved an issue where certain Azure nodes could be misclassified as Active Directory groups based on SID-suffix matching during post-processing.
+  - {/*BED-4754*/} Resolved an issue where [`AZAddOwner`](/resources/edges/az-add-owner) relationships were not created as expected during post-processing.
+  - {/*BED-7936*/} Resolved an issue where histogram metric bucket count calculations for SharpHound data returned per-bucket counts instead of cumulative values.
+
+  ## OpenGraph
+
+  - {/*BED-7781*/} Resolved an issue where a single unresolved [`property_matchers`](/opengraph/developer/schema#match-by-property) array in an OpenGraph data payload could cause other valid payload entries to fail in the same file upload.
+  - {/*BED-7700*/} Resolved an issue where OpenGraph extension installation recreated existing extensions and related records instead of performing a true upsert, causing unnecessary ID sequence churn even when no material schema changes were made.
+  - {/*BED-7463, BED-7483*/} Resolved an issue where concurrent ingest and changelog flush activity could deadlock and interrupt processing, causing repeated `Error reading ingest file` failures.
+  - {/*BED-7932*/} Resolved an issue where OpenGraph findings did not display severity color because severity values were not returned correctly.
+  - {/*BED-7768*/} Resolved an issue where selecting the **All `<environment>`** filter did not correctly include all data scoped to an OpenGraph extension.
+  - {/*BED-7762*/} Resolved an issue where object IDs could appear with an appended timestamp in the **Entity Panel** after specific OpenGraph node upsert sequences.
+
+  ## Explore
+
+  - {/*BED-7860*/} Resolved an issue where the space bar keyboard key was unresponsive in the **Cypher Query** editor.
+  - {/*BED-7939*/} Resolved an issue where long edge names in the **Pathfinding Edge Filter** could overlap.
+  - {/*BED-7586*/} Resolved an issue where help text contrast in the **Search** tab was too low in dark mode.
+  - {/*BED-4761*/} Resolved an issue in BloodHound Community Edition where selected nodes could not be unselected to return the graph to a clear state.
+  - {/*BED-4495*/} Resolved an issue where arrowheads in the graph could become visually misaligned when multiple edges connected the same nodes.
+
+  ## Navigation and Table Layout
+
+  - {/*BED-7898*/} Resolved an issue where multiple table views had inconsistent column header alignment.
+  - {/*BED-7904*/} Resolved an issue where the BloodHound logo could shrink and eventually disappear as browser height decreased.
+  - {/*BED-7881*/} Resolved an issue where the sidebar navigation area could become non-scrollable at reduced browser heights.
+</Update>
+
+<Update label="AzureHound" tags={["Fixed Issues"]}>
+  ## Collection Reliability
+
+  - {/*BED-6542*/} Resolved an issue where AzureHound could create incorrect [`AZContains`](/resources/edges/az-contains) edges across tenant boundaries.
+  - {/*BED-4600*/} Resolved an issue where AzureHound jobs could appear to continue running after collection and ingest completed, resulting in inconsistent job state and follow-on failures.
+</Update>

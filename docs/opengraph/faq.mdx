@@ -9,26 +9,39 @@ description: "The following are common questions about OpenGraph"
 <AccordionGroup>
 <Accordion title="Can I define my own icons in OpenGraph?">
 Yes you can!
-You can find all the details [here](/opengraph/custom-icons)
+You can find all the details [here](/opengraph/developer/custom-icons)
 </Accordion>
 <Accordion title="Can I delete data ingested via OpenGraph?">
 Yes you can!
 
-You can remove generic data by using one of the following three (3) options:
+You can remove generic data by using one of the following three options:
 
 1. Cypher commands in the Explore UI
-    - Requires `enable_cypher_mutations: true` in config. For more info [click here](/manage-bloodhound/bh-config#enable-cypher-mutations)
 
-2. Admin UI → Database Management page
-    - The following checkboxes will be displayed
-    - All Data
-    - Active Directory Data
-    - Azure Data
-    - … X Data (there will be 0 or more checkboxes here that allow you to delete any data that had been ingested with a `source_kind` provided)
-    - Sourceless Data (checking this box will delete all entities that do not have a kind that can be found in the `source_kinds` table.  You can observe the `source_kinds` your BloodHound instance is currently aware of by calling `GET api/v2/graphs/source_kinds`.)
+   Requires `enable_cypher_mutations: true` in config. For more info [click here](/manage-bloodhound/bh-config#enable-cypher-mutations)
 
-3. API: `Clear-Database`
-    - See the [OpenGraph API Page](/opengraph/api) for more information
+1. Admin UI → Database Management page
+
+   The following checkboxes will be displayed:
+
+     - All Data
+     - Active Directory Data
+        - HasSession edges
+
+          Use the **HasSession edges** option when you need to refresh time-sensitive session data without deleting the rest of the collected graph.
+
+          <Note>Manual **HasSession** edge deletion is generally only necessary in BloodHound Community. In BloodHound Enterprise, **HasSession** edges reconcile automatically by [retention](/collect-data/enterprise-collection/data-retention#data-retention) and only need manual deletion when you want an immediate session data refresh.</Note>
+
+     - Azure Data
+     - … X Data
+     
+       There will be 0 or more checkboxes here that allow you to delete any data that had been ingested with a `source_kind` provided.
+
+     - Sourceless Data
+     
+        Checking this box will delete all entities that do not have a kind that can be found in the `source_kinds` table.  You can observe the `source_kinds` your BloodHound instance is currently aware of by calling `GET /api/v2/graphs/source_kinds`.
+
+1. API: [`/api/v2/clear-database`](/reference/database/delete-your-bloodhound-data)
 
 </Accordion>
 <Accordion title="Do custom nodes & edges work with Search and Pathfinding?">
@@ -36,7 +49,7 @@ Yes! BloodHound supports **Search** and **Pathfinding** for [_structured_](/open
 
 For [_generic_](/opengraph/extensions/manage#generic-graphs) graphs, only **Search** is supported.
 
-Filtering by OpenGraph node types in **Search** is not yet supported.
+Pathfinding, findings, and analysis require traversable relationship kinds defined in an extension definition schema. Generic graph data does not define traversability and is treated as non-traversable.
 
 <Note>
 All forms of OpenGraph data support Cypher querying in general.
@@ -71,5 +84,9 @@ Use a two-step upload process when building hybrid paths.
 - **First payload (isolated subgraph)**: Upload only your OpenGraph nodes and edges and set `source_kind` in `metadata`. Ensure that every node has at least one edge within this payload (for example, connect nodes to each other or to a root node and add a containment edge, such as `(:OGRoot)-[:OGContains]->(:YourNode)`). Do not link to AD/AZ objects in this payload.
 
 - **Second payload (linking AD/AZ nodes)**: Link the isolated subgraph's nodes to the AD/AZ nodes that connect your subgraph to existing AD/AZ entities. This avoids cross-source side effects when `source_kind` is present.
+
+  <Note>
+    Do **not** define `source_kind` in the second payload.
+  </Note>
 </Accordion>
 </AccordionGroup>

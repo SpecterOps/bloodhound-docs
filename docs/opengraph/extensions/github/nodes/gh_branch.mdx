@@ -1,0 +1,67 @@
+---
+title: 'GH_Branch'
+description: 'A named reference in a repository representing a line of development'
+icon: '/images/extensions/github/gh_branch.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+Represents a Git branch within a repository. Branch nodes capture basic branch information and whether the branch is protected. Protection rule details are stored in separate [GH_BranchProtectionRule](/opengraph/extensions/github/nodes/gh_branchprotectionrule) nodes, linked via [GH_ProtectedBy](/opengraph/extensions/github/edges/gh_protectedby) edges.
+
+## Edges
+
+<Note>
+The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
+</Note>
+
+### Inbound Edges
+
+| Edge Type | Source Node Types | Traversable |
+| --------- | ----------------- | ----------- |
+| [GH_CanEditProtection](/opengraph/extensions/github/edges/gh_caneditprotection) | [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | ✅ |
+| [GH_CanWriteBranch](/opengraph/extensions/github/edges/gh_canwritebranch) | [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole), [GH_User](/opengraph/extensions/github/nodes/gh_user), [GH_Team](/opengraph/extensions/github/nodes/gh_team) | ✅ |
+| [GH_HasBranch](/opengraph/extensions/github/edges/gh_hasbranch) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
+| [GH_ProtectedBy](/opengraph/extensions/github/edges/gh_protectedby) | [GH_BranchProtectionRule](/opengraph/extensions/github/nodes/gh_branchprotectionrule) | ❌ |
+
+### Outbound Edges
+
+| Edge Type | Destination Node Types | Traversable |
+| --------- | ---------------------- | ----------- |
+| [GH_CanAssumeIdentity](/opengraph/extensions/github/edges/gh_canassumeidentity) | [AZFederatedIdentityCredential](/resources/nodes/az-federated-identity-credential), `AWSRole` | ✅ |
+| [GH_HasEnvironment](/opengraph/extensions/github/edges/gh_hasenvironment) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | ❌ |
+
+## Properties
+
+| Property Name    | Data Type | Description                                                                    |
+| ---------------- | --------- | ------------------------------------------------------------------------------ |
+| objectid         | string    | A unique identifier for the branch: `REF_kwDOMuFnXLNyZWZzL2hlYWRzL0NhblB1c2gz` |
+| name             | string    | The fully qualified branch name (e.g., `repo\main`).                           |
+| short_name       | string    | The branch reference name (e.g., `main`).                                      |
+| node_id          | string    | Same as objectid.                                                              |
+| environment_name | string    | The name of the environment (GitHub organization).                             |
+| environmentid    | string    | The node_id of the environment (GitHub organization).                          |
+| protected        | boolean   | Whether the branch has a protection rule.                                      |
+
+## Diagram
+
+```mermaid
+flowchart TD
+    GH_Branch[fa:fa-code-branch GH_Branch]
+    GH_Repository[fa:fa-box-archive GH_Repository]
+    GH_RepoRole[fa:fa-user-tie GH_RepoRole]
+    GH_BranchProtectionRule[fa:fa-shield GH_BranchProtectionRule]
+    GH_Environment[fa:fa-leaf GH_Environment]
+    GH_User[fa:fa-user GH_User]
+    GH_Team[fa:fa-user-group GH_Team]
+    AZFederatedIdentityCredential[fa:fa-id-card AZFederatedIdentityCredential]
+
+
+    GH_Repository -.->|GH_HasBranch| GH_Branch
+    GH_BranchProtectionRule -.->|GH_ProtectedBy| GH_Branch
+    GH_Branch -.->|GH_HasEnvironment| GH_Environment
+    GH_Branch -->|GH_CanAssumeIdentity| AZFederatedIdentityCredential
+    GH_RepoRole -->|GH_CanWriteBranch| GH_Branch
+    GH_RepoRole -->|GH_CanEditProtection| GH_Branch
+    GH_User -->|GH_CanWriteBranch| GH_Branch
+    GH_Team -->|GH_CanWriteBranch| GH_Branch
+```
