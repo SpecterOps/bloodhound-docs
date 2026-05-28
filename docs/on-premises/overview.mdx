@@ -1,0 +1,80 @@
+---
+title: On-premises BloodHound Enterprise
+sidebarTitle: Overview
+description: Learn about self-hosted deployment for BloodHound Enterprise, giving you full control over your infrastructure and data.
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+An on-premises deployment of BloodHound Enterprise is a self-hosted option that runs on infrastructure that you own. It gives you complete control over your deployment while delivering the same powerful capabilities as the SpecterOps-hosted version.
+
+You maintain full control over:
+
+- **Data residency** - All collected data stays within your environment
+- **Infrastructure** - Deploy on your own servers or virtual machines
+- **Updates** - Control when and how updates are applied
+- **Network isolation** - Run in air-gapped or restricted network environments
+
+## SaaS vs on-premises
+
+On-premises deployments provide the same core BloodHound Enterprise functionality, but differ in infrastructure management and control.
+
+**Choose on-premises if you:**
+
+- Require data to remain within your infrastructure
+- Need full control over the deployment environment
+- Have existing infrastructure and operational expertise
+- Prefer to manage updates and maintenance on your own schedule
+
+**Choose SaaS if you:**
+
+- Want SpecterOps to manage infrastructure and updates
+- Don't have dedicated infrastructure or Kubernetes expertise
+- Want automatic updates and new features as they're released
+
+## Deployment
+
+On-premises deployments of BloodHound Enterprise use an **embedded cluster** deployment option. An embedded cluster packages BloodHound Enterprise and a Kubernetes cluster together for deployment on a single Linux host.
+
+This option is based on the open-source Kubernetes distribution [k0s](https://docs.k0sproject.io/stable/), includes a built-in installation UI, exposes the application through a built-in ingress path, and runs <Tooltip tip="Automated checks that verify your Kubernetes cluster is ready for a BloodHound Enterprise installation or upgrade.">preflight checks</Tooltip>. It does not require existing Kubernetes infrastructure or operational expertise.
+
+An embedded cluster deployment has two primary parts:
+
+- **BloodHound Enterprise host**
+  - Runs the BloodHound Enterprise application on Linux
+  - Includes a bundled Kubernetes cluster (k0s)
+  - Can use an external PostgreSQL database
+- **Collector hosts and services**
+  - Run one or more collectors that upload configuration data to BloodHound Enterprise
+  - SharpHound Enterprise runs as a Windows service for on-premises Active Directory and AD CS collection
+  - AzureHound Enterprise runs as a containerized service for Entra ID, Azure Resource Manager, and Microsoft Graph collection
+  - OpenHound for BloodHound Enterprise runs as a containerized service for supported platform collection, such as GitHub, Jamf, and Okta
+
+
+<Note>
+  **Key data and security characteristics**
+
+  - Collectors gather _configuration data_ to map identity relationships
+  - Data is transmitted over HTTPS with TLS
+  - Collectors _do not_ store collected data locally
+  - You control upload authorization with a [collection schedule](/collect-data/enterprise-collection/collection-schedule) in BloodHound Enterprise
+</Note>
+
+## Installation
+
+The installation process involves the following steps:
+
+| Step | What happens | Typical time |
+| --- | --- | --- |
+| 1. Confirm prerequisites | Validate Linux host, PostgreSQL 18 (if using an external database), ports, and access. | 0.5-2 hours |
+| 2. Install BloodHound Enterprise | Use the web-based installer for a guided setup. | 30-60 min |
+| 3. Configure connectivity | Configure hostname, ingress, SSL/TLS, and database connections. | 30-60 min |
+| 4. Install and deploy collectors | Prepare collector systems and deploy the collectors you need. | 5-15 min each |
+| 5. Run first collection | Start with the simplest collection level to minimize friction. | Varies |
+| 6. Review results | Validate identity Attack Paths and plan next actions. | Varies |
+
+## Next steps
+
+- Review the [architecture](/on-premises/architecture) and [system requirements](/on-premises/system-requirements) with infrastructure and security owners in your organization.
+- Coordinate with your organizational stakeholders to schedule the installation window.
+- Proceed to the full [installation guide](/on-premises/install) for step-by-step commands and troubleshooting.

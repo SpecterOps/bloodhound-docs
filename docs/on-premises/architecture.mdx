@@ -1,0 +1,59 @@
+---
+title: Architecture
+description: Understand the architecture, components, and data flow of on-premises deployments of BloodHound Enterprise.
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+On-premises deployments of BloodHound Enterprise give you full control over your deployment infrastructure while maintaining the same powerful identity security capabilities as the SaaS version.
+
+## Deployment architecture
+
+On-premises deployments of BloodHound Enterprise consist of two primary parts:
+
+- **BloodHound Enterprise host** - Runs the BloodHound application, database, and supporting infrastructure
+- **Collector hosts** - Run lightweight collector services (SharpHound, AzureHound, or OpenHound) to gather data from your identity infrastructure
+
+### Core components
+
+All on-premises deployments include the following core application components:
+
+| Component | Purpose |
+|-----------|---------|
+| **BloodHound Enterprise API** | Application server, UI, graph analysis, and collector ingestion |
+| **PostgreSQL 18.x** | Database server for application data and graph storage |
+
+### Deployment-specific components
+
+Embedded cluster deployments include the following infrastructure and management components:
+
+| Component | Purpose |
+|-----------|---------|
+| **k0s Kubernetes distribution** | Bundled Kubernetes distribution that runs BloodHound Enterprise on your Linux host |
+| **Embedded ingress controller** | Exposes the BloodHound Enterprise application endpoint and terminates HTTPS for the configured FQDN by default |
+| **Installation Wizard** | Host-local web UI that completes configuration and runs <Tooltip tip="Automated checks that verify your Kubernetes cluster is ready for a BloodHound Enterprise installation or upgrade.">preflight checks</Tooltip> |
+| **SpecterOps - BloodHound Enterprise Portal** | Hosted portal that provides installer access, generates deployment-specific installation commands, and tracks online installations and updates |
+
+### Data collectors
+
+Collectors run separately from the BloodHound Enterprise host and gather configuration data from your identity infrastructure:
+
+| Collector | Target Environment | Data Collected |
+|-----------|-------------------|----------------|
+| **SharpHound Enterprise** | Active Directory | AD objects, relationships, ACLs, sessions |
+| **AzureHound Enterprise** | Azure / Entra ID | Azure AD objects, role assignments, resource relationships |
+| **OpenHound** | Other identity providers, platforms, and custom sources | Varies by source; data collected and converted into BloodHound Enterprise-compatible graphs |
+
+## Data flow
+
+Data flows through the system in the following sequence:
+
+1. **Collection** - Collectors gather configuration data from Active Directory, Entra ID, or other identity sources
+2. **Transmission** - Data is transmitted over encrypted HTTPS/TLS to the BloodHound Enterprise API
+3. **Processing** - The BloodHound Enterprise API processes and stores data in PostgreSQL
+4. **Analysis** - Graph analysis identifies privilege relationships and Attack Paths
+5. **Visualization** - Results are displayed in the BloodHound Enterprise UI
+
+<Note>
+  Collectors have zero local storage of collected data. All data is transmitted directly to the BloodHound Enterprise host and stored in PostgreSQL.
+</Note>

@@ -1,0 +1,116 @@
+---
+title: System Requirements
+description: Review hardware, software, and network requirements for the embedded cluster deployment option of an on-premises instance of BloodHound Enterprise.
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+This page defines the infrastructure, network, collector, and security prerequisites for an embedded cluster deployment of an on-premises instance of BloodHound Enterprise.
+
+## BloodHound Enterprise host
+
+Provision one Linux VM to the required specification below. BloodHound Enterprise uses an all-in-one deployment model for embedded cluster installations.
+
+The application and Kubernetes run on the same host, along with the bundled PostgreSQL database if you choose that option during installation (see [Database](#database)).
+
+<Note>
+  Undersized compute can still install successfully but will degrade graph analysis under load. The disk latency check is a hard gate, so spinning disk blocks the installer.
+</Note>
+
+| Requirement | Specification | Preflight |
+| --- | --- | --- |
+| OS | Any systemd-based Linux distribution | Blocks install |
+| Architecture | x86-64 only (no ARM) | Blocks install |
+| Kernel | 4.3+ | Blocks install |
+| cgroups | v1 or v2 | Blocks install |
+| Filesystem | XFS with ftype=1; ext4 is fine | Blocks install |
+| SELinux | Supported (embedded cluster 2.8.0+) | - |
+| Access | Root or sudo | Blocks install |
+| CPU | 48 cores | No check, but required for performance |
+| RAM | 160 GB | No check, but required for performance |
+| Storage | 680 GB SSD (640 app/db + 40 cluster) | No check, but required for performance |
+| Disk latency | P99 write \<=10ms (use SSDs) | Blocks install |
+
+<Warning>
+  Not supported: STIG/CIS-hardened images, single-stack IPv6.
+</Warning>
+
+## Database
+
+BloodHound Enterprise requires PostgreSQL 18. During installation, you can either use the bundled PostgreSQL instance that runs on the BloodHound Enterprise host, or provide connection details for an external PostgreSQL database that you manage.
+
+| Requirement | Specification |
+| --- | --- |
+| PostgreSQL version | 18 |
+| Port | 5432 (TCP) |
+
+## Reverse proxy
+
+Embedded cluster deployments include a built-in ingress controller that exposes BloodHound Enterprise over HTTPS on port `443` by default. In the Installation Wizard, you configure the application FQDN, select **Ingress**, and either generate a TLS certificate or upload your own certificate and key.
+
+An external reverse proxy or load balancer is optional. Use one only if your environment requires capabilities such as a corporate WAF, centralized certificate management, or hostname multiplexing.
+
+<Warning>
+  Do not expose BloodHound Enterprise over unencrypted HTTP. Users and collectors should connect to the application over HTTPS.
+</Warning>
+
+| Requirement | Specification |
+| --- | --- |
+| Default access pattern | Embedded cluster ingress on port `443` |
+| TLS certificate | Generated in the Installation Wizard or customer-provided |
+| External reverse proxy | Optional for WAF, centralized certificate management, or hostname multiplexing |
+
+## DNS
+
+Create one `A` record for the BloodHound Enterprise FQDN. By default, it should resolve to the Linux host that runs the embedded cluster. If you use an external reverse proxy or load balancer, it should resolve to that frontend instead. The record must be resolvable from both user workstations and collector hosts.
+
+If collectors operate in separate network segments or separate DNS zones, the same record must resolve there as well or uploads will fail.
+
+<Warning>
+  Without a DNS record, users must connect by IP address, and SSL certificates will not validate.
+</Warning>
+
+## Network/firewall
+
+BloodHound Enterprise requires two inbound ports and (for online installations) outbound HTTPS access to the packaging service.
+
+<Note>
+  No inbound internet access is required and BloodHound Enterprise does not need to be reachable from the internet.
+</Note>
+
+Open the following ports. For air-gapped environments, skip the outbound rules entirely.
+
+### Inbound
+
+The inbound ports to the BloodHound Enterprise server are:
+
+| Port | Protocol | Purpose |
+| --- | --- | --- |
+| 443 | TCP | User and collector HTTPS access (via embedded cluster ingress or an optional external reverse proxy) |
+| 30080 | TCP | Installation Wizard access (restrict to admins) |
+
+### Outbound
+
+The outbound destinations from the BloodHound Enterprise server (online install only) are:
+
+| Destination | Port | Purpose |
+| --- | --- | --- |
+| `replicated.app`<br/>`proxy.replicated.com`<br/>`registry.replicated.com` | 443 | Installer, updates, image registry, license validation |
+
+<Note>
+  **Recommendation**
+  
+  Use the online installation model whenever possible. If the BloodHound Enterprise server can reach the listed destinations on port 443, installation and future updates remain automated.
+  
+  In air-gapped environments, skip the outbound rules but expect every update to be a manual download, transfer, and apply cycle.
+</Note>
+
+## Collectors
+
+Collectors run separately from the BloodHound Enterprise host and upload data to it over HTTPS. Provision collector hosts according to the requirements in the relevant collector documentation.
+
+| Collector | Use case | Requirements |
+| --- | --- | --- |
+| SharpHound Enterprise | Active Directory data collection | [SharpHound Enterprise system requirements](/install-data-collector/install-sharphound/system-requirements) |
+| AzureHound Enterprise | Entra ID and Azure data collection | [AzureHound Enterprise system requirements](/install-data-collector/install-azurehound/system-requirements) |
+| OpenHound for BloodHound Enterprise | Platform data collection, such as GitHub, Jamf, and Okta | [OpenHound for BloodHound Enterprise system requirements](/openhound/enterprise) |
