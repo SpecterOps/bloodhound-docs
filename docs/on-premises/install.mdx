@@ -22,7 +22,7 @@ The following checklist summarizes the install-blocking gates and pre-deployment
 <Checklist checklistKey="embedded-cluster-pre-install">
 - Provision a dedicated x86-64 Linux host (any distribution with systemd) with root or sudo access, sized per the [BloodHound Enterprise host](/on-premises/system-requirements#bloodhound-enterprise-host) specification
 - Back the host with SSD storage (P99 write latency ≤10ms) — the installer blocks on spinning disk
-- Stand up a [reverse proxy](/on-premises/system-requirements#reverse-proxy) with your SSL certificate to terminate HTTPS in front of BloodHound Enterprise
+- Plan the HTTPS endpoint for the BloodHound Enterprise FQDN. By default, the embedded cluster ingress serves the application on port `443`; add an external [reverse proxy](/on-premises/system-requirements#reverse-proxy) only if your environment requires one
 - Create a [DNS A record](/on-premises/system-requirements#dns) for the BloodHound Enterprise FQDN that resolves for both users and collectors
 - Open inbound TCP `443` (users and collectors) and `30080` (Installation Wizard)
 - For online installs, allow outbound HTTPS to `replicated.app`, `proxy.replicated.com`, and `registry.replicated.com`; for air-gapped installs, download the installer bundle ahead of time
@@ -37,7 +37,7 @@ The web-based installer provides an interactive setup experience through a web i
 The web-based installer is available through the **SpecterOps - BloodHound Enterprise Portal**. You'll work with two interfaces during installation:
 
 - The **Installer** tab in the portal generates the download and install commands you run on your Linux host. The **Update** tab in the portal tracks active and inactive online installations.
-- The **Installation Wizard** is a companion UI served from your Linux host on port `30080`. After the initial install completes, you use the Installation Wizard to finish configuration (domain, certificates, database) and run preflight checks.
+- The **Installation Wizard** is a companion UI served from your Linux host on port `30080`. After the initial install completes, you use the Installation Wizard to finish configuration (domain, certificates, database) and run <Tooltip tip="Automated checks that verify your Kubernetes cluster is ready for a BloodHound Enterprise installation or upgrade.">preflight checks</Tooltip>.
 
 <Steps>
   <Step title="Navigate to the web-based installer">
@@ -143,10 +143,6 @@ The following screenshot shows an example of the install instructions page in th
   <Step title="Copy installation assets to your home directory">
     Copy all files from the `assets/` directory to the home directory on your Linux host.
 
-    <Note>
-      This is a temporary workaround for a known issue with the installer script.
-    </Note>
-
     **Example:**
 
     ```bash
@@ -203,9 +199,15 @@ The Installation Wizard guides you through the final configuration steps to comp
 
 <Steps>
   <Step title="Log in to the Installation Wizard">
-    The wizard guides you through the final configuration steps and preflight checks.
+    The wizard guides you through the final configuration steps and <Tooltip tip="Automated checks that verify your Kubernetes cluster is ready for a BloodHound Enterprise installation or upgrade.">preflight checks</Tooltip>.
 
     Open the Installation Wizard URL in a browser and enter the admin password that you set when you ran the install command on your Linux host.
+
+    <Note>
+      Browsers display a certificate warning at `https://<linux-hostname-or-ip>:30080` because the Installation Wizard uses the self-signed certificate generated during install; this is expected.
+
+      If your browser blocks the self-signed certificate, export the certificate presented on port `30080`, add it to the trusted root/intermediate certificate store as appropriate, then reload the page.
+    </Note>
   </Step>
   <Step title="Domain Configuration">
     Use a lowercase hostname with no underscores. Kubernetes ingress rules require lowercase hostnames.
@@ -225,9 +227,17 @@ The Installation Wizard guides you through the final configuration steps to comp
       <Note>
         Port `443` must be open on the Linux host and reachable from the browser you use to access the BloodHound Enterprise application.
       </Note>
-    </Step>
+  </Step>
   <Step title="Application Access">
     Configure how users reach the BloodHound Enterprise application.
+
+    <Note>
+      **Recommended default:** Select **Ingress** for most deployments.
+
+      **Why:** The embedded cluster includes its own ingress controller for the BloodHound Enterprise FQDN. **Ingress** uses that built-in path and lets the installer handle HTTPS termination on port `443` with the certificate you configure in the next step.
+
+      Choose **ClusterIP**, **NodePort**, or **LoadBalancer** only if your environment already requires one of those Kubernetes service exposure patterns or you are integrating with your own frontend networking layer.
+    </Note>
 
     <Frame>
       <img src="/images/on-premises/installer-app-access.png" alt="A screenshot showing the application access configuration step of the BloodHound Enterprise web-based installer" />
@@ -235,6 +245,12 @@ The Installation Wizard guides you through the final configuration steps to comp
   </Step>
   <Step title="Certificates">
     Choose whether to have the installer generate a TLS certificate for HTTPS access to your BloodHound Enterprise instance or upload your own.
+
+    <Note>
+      This certificate is used by the embedded cluster ingress that serves the BloodHound Enterprise application on port `443`.
+
+      Upload your own certificate if your organization requires a certificate issued by your internal or public certificate authority.
+    </Note>
 
     <Frame>
       <img src="/images/on-premises/installer-certificates.png" alt="A screenshot showing the certificate configuration step of the BloodHound Enterprise web-based installer" />
@@ -262,7 +278,9 @@ The Installation Wizard guides you through the final configuration steps to comp
   </Step>
   <Step title="Run Preflight Checks">
 
-    Review and resolve any blocking checks before continuing the installation.
+    Review and resolve any blocking preflight checks before continuing the installation.
+
+    Preflight checks verify that your cluster meets the requirements for a BloodHound Enterprise installation or upgrade before deployment begins.
 
     <Frame>
       <img src="/images/on-premises/installer-preflight-checks.png" alt="A screenshot showing the preflight checks step of the BloodHound Enterprise web-based installer" />

@@ -46,24 +46,23 @@ BloodHound Enterprise requires PostgreSQL 18. During installation, you can eithe
 
 ## Reverse proxy
 
-BloodHound Enterprise listens on HTTP port 8080 (unencrypted). A reverse proxy must sit in front of it to terminate HTTPS on port 443 with an SSL certificate that you provide.
+Embedded cluster deployments include a built-in ingress controller that exposes BloodHound Enterprise over HTTPS on port `443` by default. In the Installation Wizard, you configure the application FQDN, select **Ingress**, and either generate a TLS certificate or upload your own certificate and key.
+
+An external reverse proxy or load balancer is optional. Use one only if your environment requires capabilities such as a corporate WAF, centralized certificate management, or hostname multiplexing.
 
 <Warning>
-  Without a reverse proxy, login credentials, API tokens, and Active Directory collection data are transmitted in cleartext. Port 8080 is appropriate only for local testing and must not be exposed to the network.
+  Do not expose BloodHound Enterprise over unencrypted HTTP. Users and collectors should connect to the application over HTTPS.
 </Warning>
-
-If you already run a reverse proxy or load balancer (nginx, traefik, F5, HAProxy, etc.), add a new entry for the BloodHound Enterprise fully qualified domain name (FQDN). If not, a standalone nginx instance with a minimal configuration file is sufficient.
 
 | Requirement | Specification |
 | --- | --- |
-| Solution | Any reverse proxy (nginx, traefik, F5, HAProxy, etc.) |
-| SSL certificate | Customer-provided; terminates HTTPS at the proxy |
-| Required headers | X-Forwarded-Proto and X-Forwarded-For (so BloodHound Enterprise knows the original client) |
-| Backend target | HTTP 8080 on the BloodHound Enterprise server |
+| Default access pattern | Embedded cluster ingress on port `443` |
+| TLS certificate | Generated in the Installation Wizard or customer-provided |
+| External reverse proxy | Optional for WAF, centralized certificate management, or hostname multiplexing |
 
 ## DNS
 
-Create one `A` record that resolves the BloodHound Enterprise FQDN to the reverse proxy IP address. The record must be resolvable from both user workstations and collector hosts.
+Create one `A` record for the BloodHound Enterprise FQDN. By default, it should resolve to the Linux host that runs the embedded cluster. If you use an external reverse proxy or load balancer, it should resolve to that frontend instead. The record must be resolvable from both user workstations and collector hosts.
 
 If collectors operate in separate network segments or separate DNS zones, the same record must resolve there as well or uploads will fail.
 
@@ -87,7 +86,7 @@ The inbound ports to the BloodHound Enterprise server are:
 
 | Port | Protocol | Purpose |
 | --- | --- | --- |
-| 443 | TCP | User and collector HTTPS access (via reverse proxy) |
+| 443 | TCP | User and collector HTTPS access (via embedded cluster ingress or an optional external reverse proxy) |
 | 30080 | TCP | Installation Wizard access (restrict to admins) |
 
 ### Outbound
@@ -115,7 +114,3 @@ Collectors run separately from the BloodHound Enterprise host and upload data to
 | SharpHound Enterprise | Active Directory data collection | [SharpHound Enterprise system requirements](/install-data-collector/install-sharphound/system-requirements) |
 | AzureHound Enterprise | Entra ID and Azure data collection | [AzureHound Enterprise system requirements](/install-data-collector/install-azurehound/system-requirements) |
 | OpenHound for BloodHound Enterprise | Platform data collection, such as GitHub, Jamf, and Okta | [OpenHound for BloodHound Enterprise system requirements](/openhound/enterprise) |
-
-<Note>
-  SharpHound Enterprise and AzureHound Enterprise can run on the same Windows host. If co-locating both collectors, combine their individual hardware requirements when provisioning the host.
-</Note>
