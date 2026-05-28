@@ -3,6 +3,8 @@ title: Supported Cypher Syntax
 description: "This page documents the supported openCypher Syntax that BloodHound officially supports"
 ---
 
+import CypherMutationsNote from '/snippets/cypher-mutations.mdx';
+
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 # Purpose
@@ -103,25 +105,64 @@ where u.objectid = 'UUID-1234-567890'
 return p
 ```
 
-## Return Options[](#return-options)
+## Build multi-part queries
 
-### Order
+Use `WITH` to pass intermediate results from one query part to the next. You can use `WITH` to filter, aggregate, sort, or alias results before continuing the query.
 
-``` Cypher
-match (n:User)
-where n.hasPassword
-return n order by n.name
+```cypher
+MATCH p = shortestPath((u:User)-[:MemberOf*1..]->(g:Group))
+WITH DISTINCT g AS targetGroup, COUNT(u) AS userCount
+RETURN targetGroup.name, userCount
+ORDER BY userCount DESC
+LIMIT 5
 ```
 
-### Skip and Limit
+## Result Ordering and Pagination
+
+### `ORDER BY`
+
+Use `ORDER BY` with `RETURN` or `WITH` to sort results by a projected value. Ascending order is the default; append `DESC` for descending order.
+
+```cypher
+match (u:User)
+return u.name
+order by u.name desc
+limit 10
+```
+
+### `SKIP` and `LIMIT`
+
+Use `SKIP` and `LIMIT` with `RETURN` or `WITH` to paginate or trim a result set after sorting.
+
+```cypher
+match (n:User)
+return n
+order by n.name
+skip 10
+limit 100
+```
+
+## Entity Creation[](#entity-creation)
+
+<CypherMutationsNote clause="CREATE" />
+
+### Create nodes
 
 ``` Cypher
-match (n:User)
-where n.hasPassword
-return n order by n.name skip 10 limit 100
+create (n:User {name: 'alice', objectid: 'UUID-1234-567890'})
+return n
+```
+
+### Create relationships
+
+``` Cypher
+create (u:User {name: 'alice'})-[r:MemberOf]->(g:Group {name: 'admins'})
+return r
 ```
 
 ## Entity Updates[](#entity-updates)
+
+<CypherMutationsNote clause="SET" />
 
 ### Setting Properties and Labels
 
@@ -154,6 +195,8 @@ remove r.special_property
 
 ## Entity Deletion[](#entity-deletion)
 
+<CypherMutationsNote clause="DELETE" />
+
 ``` Cypher
 match (s:User)
 detach delete s
@@ -164,6 +207,22 @@ match ()-[r:MemberOf]->()
 delete r
 ```
 
+## Unwind a list into rows
+
+Expand a list into individual rows for further filtering, aggregation, or sorting.
+
+```cypher
+match (u:User)
+where u.name contains "A"
+with collect(u.name) as temp
+unwind temp as usernames
+return usernames
+limit 100
+```
+
+<Note>
+  Queries that use `UNWIND` return tabular results only.
+</Note>
 
 ## Supported Query Filters
 
@@ -469,14 +528,64 @@ The `size` function is expected to behave differently if the given expression ev
 the function returns the number of Unicode characters present in the text value. This behavior is currently not
 supported in CySQL translation.
 
+### `nodes`
+
+Returns an ordered list of all nodes in a matched path.
+
+```cypher
+match p = ()-[]->()
+return nodes(p)
+```
+
+### `relationships`
+
+Returns the ordered relationship list for a path.
+
+```cypher
+match p = ()-[]->()
+return relationships(p)
+```
+
+### `startNode`
+
+Returns the start node for a relationship reference.
+
+```cypher
+match p = (a)-[*1..]->(b)
+where none(r in relationships(p) where startNode(r).name = 'blocked')
+return p
+```
+
+### `endNode`
+
+Returns the end node for a relationship reference.
+
+```cypher
+match ()-[r]->() return endNode(r)
+```
+
+### `head`
+
+Returns the first element of a list.
+
+```cypher
+match p = ()-[]->()
+return head(nodes(p))
+```
+
+### `tail`
+
+Returns all elements of a list except the first.
+
+```cypher
+match p = ()-[]->()
+return tail(nodes(p))
+```
+
 ## Known Defects in Supported Components[](#known-defects)
 
 The below issues are known defects. They are classified as defects of CySQL as the intent is to correctly support their
 use.
-
-### Entity Creation
-
-The `create` reserved Cypher keyword is currently unsupported. Future support of it is planned.
 
 ### `labels` Function
 
@@ -493,12 +602,6 @@ return n
 
 While currently implemented this function returns the smallint array of labels associated with a node when referenced in
 CySQL. Future support to convert the smallint array of node labels into text values is planned.
-
-### Pattern Lookup Functions
-
-The pattern lookup functions `head`, `tail`, and `last` are not currently supported. These functions are typically used to reference different parts of a matched pattern.
-
-Support for them is planned for a future version of CySQL.
 
 ### Unpacking Arrays of Entities for Comparison
 
@@ -554,7 +657,6 @@ efforts may be pursued to add support for these language features.
 * Pattern Comprehensions
 * Existential Subqueries (e.g. exists)
 * Merge Statements
-* Unwind Expressions
 * Pattern Predicates using Recursive Expansion
 
 ## Differences between Cypher and CySQL[](#cysql-differences)
