@@ -93,8 +93,10 @@ The upgrade scripts perform the following steps in order:
         echo "Reading overrides from ${env_file} ..."
         while IFS='=' read -r key val; do
             [[ "${key}" =~ ^[[:space:]]*# ]] && continue
-            key="${key// /}"
-            val="${val// /}"
+            key="${key#"${key%%[![:space:]]*}"}"   # trim leading
+            key="${key%"${key##*[![:space:]]}"}"   # trim trailing
+            val="${val#"${val%%[![:space:]]*}"}"   # trim leading
+            val="${val%"${val##*[![:space:]]}"}"   # trim trailing
             case "${key}" in
                 POSTGRES_USER)     pg_user="${val}" ;;
                 POSTGRES_PASSWORD) pg_pass="${val}" ;;
@@ -412,7 +414,7 @@ After the script finishes running, confirm that the database is healthy and your
     Confirm that PostgreSQL 18 is running:
 
     ```bash
-    docker compose exec app-db psql -U bloodhound -d bloodhound -c "SELECT version();"
+    docker compose exec app-db psql -U [POSTGRES_USER] -d [POSTGRES_DB] -c "SELECT version();"
     ```
     
     The output should include `PostgreSQL 18`.
