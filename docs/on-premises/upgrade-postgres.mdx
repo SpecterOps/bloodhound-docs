@@ -1,0 +1,149 @@
+---
+title: Upgrade an external PostgreSQL database
+description: Upgrade an external PostgreSQL database from version 16 to 18 for BloodHound Enterprise on-premises deployments.
+sidebarTitle: Upgrade PostgreSQL
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+This guide applies to on-premises BloodHound Enterprise customers who chose to use an **external** PostgreSQL database instead of the PostgreSQL database bundled with the embedded cluster. If you use the embedded cluster's bundled database, it is managed by Replicated and is not affected by this guide.
+
+BloodHound Enterprise requires PostgreSQL 18. If your external database is still running PostgreSQL 16, follow the steps on this page to upgrade. For context on configuring an external database during installation, see the [Database Configuration](/on-premises/install#database-configuration) step in the install guide.
+
+<Warning>
+  The PostgreSQL 18 Docker image uses a different volume mount path than version 16. If your external database runs in Docker, you cannot simply update the image tag — the volume mount point has changed.
+
+  | PostgreSQL version | Volume mount path |
+  |---|---|
+  | 16 (and earlier) | `/var/lib/postgresql/data` |
+  | 18 (and later) | `/var/lib/postgresql` |
+
+  Starting a PostgreSQL 18 container against an existing PostgreSQL 16 volume will fail.
+</Warning>
+
+## Before you begin
+
+<Warning>
+  Back up your database before starting the upgrade. Verify that your backup is complete and restorable before proceeding.
+</Warning>
+
+Confirm the following before you begin:
+
+- You have access to a PostgreSQL 18 instance (or can upgrade your existing host to PostgreSQL 18)
+- You have sufficient disk space for a full database dump (allow at least 1.5× your current database size)
+- Your database administrator is available to adapt commands to your specific environment
+- You know your PostgreSQL connection details (host, port, username, database name)
+
+<Note>
+  The exact commands in this guide vary depending on how your external database is deployed (Docker, bare-metal, VM, or managed service). Work with your database administrator to adapt the procedure to your environment. For a concrete Docker Compose reference, see the [Community Edition upgrade guide](/get-started/upgrade-postgres).
+</Note>
+
+## Upgrade process
+
+<Steps>
+  <Step title="Stop BloodHound Enterprise">
+
+    Stop the BloodHound Enterprise application to prevent new writes to the database during the migration.
+
+    For embedded cluster deployments, you can stop the application using the Replicated Admin Console, or by scaling down the BloodHound deployment:
+
+    ```bash
+    kubectl scale deployment bloodhound --replicas=0 -n <namespace>
+    ```
+
+    Confirm that the application has stopped and is no longer writing to the database before continuing.
+
+  </Step>
+  <Step title="Dump the PostgreSQL 16 database">
+
+    Use `pg_dump` to export your existing database to a compressed dump file. Replace the placeholder values with your actual connection details:
+
+    ```bash
+    pg_dump -h <host> -p 5432 -U <username> -d <database> -Fc -Z 9 -f pg16_backup.dump
+    ```
+
+    Verify that the dump file was created and has a non-zero size before continuing.
+
+  </Step>
+  <Step title="Back up your data directory">
+
+    If your PostgreSQL instance uses a data volume or directory, create a backup of it before making changes. The exact method depends on your deployment:
+
+    - **Docker**: Copy the volume using `docker run` with an alpine container (see the [CE upgrade guide](/get-started/upgrade-postgres) for an example).
+    - **Bare-metal or VM**: Use your standard snapshot or backup tooling to create a point-in-time copy of the PostgreSQL data directory.
+
+  </Step>
+  <Step title="Upgrade PostgreSQL to version 18">
+
+    Upgrade your PostgreSQL instance to version 18 using the method appropriate for your environment:
+
+    - **Docker**: Update the image tag to `postgres:18` and update the volume mount path from `/var/lib/postgresql/data` to `/var/lib/postgresql`. Remove the old data volume and let PostgreSQL 18 initialize a fresh one.
+    - **Package manager (apt/yum)**: Follow the [official PostgreSQL upgrade documentation](https://www.postgresql.org/docs/18/upgrading.html) for your Linux distribution.
+    - **Managed service (RDS, Cloud SQL, etc.)**: Use your cloud provider's major version upgrade feature.
+
+    <Note>
+      PostgreSQL major version upgrades are not backward-compatible. After upgrading to PostgreSQL 18, you cannot start the service against a PostgreSQL 16 data directory without first restoring from your dump file.
+    </Note>
+
+  </Step>
+  <Step title="Restore the database">
+
+    After PostgreSQL 18 is running, restore the database from the dump file:
+
+    ```bash
+    pg_restore -h <host> -p 5432 -U <username> -d <database> --clean --if-exists pg16_backup.dump
+    ```
+
+    Wait for the restore to complete before proceeding.
+
+  </Step>
+  <Step title="Restart BloodHound Enterprise">
+
+    Start the BloodHound Enterprise application and confirm it connects to the upgraded database successfully.
+
+    For embedded cluster deployments, scale the deployment back up:
+
+    ```bash
+    kubectl scale deployment bloodhound --replicas=1 -n <namespace>
+    ```
+
+  </Step>
+</Steps>
+
+## Verify the upgrade
+
+After the application restarts, confirm that the database is healthy and your data is intact.
+
+<Steps>
+  <Step title="Confirm the PostgreSQL version">
+
+    Connect to your PostgreSQL instance and run the following query to confirm PostgreSQL 18 is running:
+
+    ```sql
+    SELECT version();
+    ```
+
+    The output should include `PostgreSQL 18`.
+
+  </Step>
+  <Step title="Log in to BloodHound Enterprise">
+
+    Open your browser and navigate to your BloodHound Enterprise instance. Log in and verify that your data, collectors, and configuration are intact.
+
+  </Step>
+  <Step title="Monitor application logs">
+
+    Review the BloodHound Enterprise application logs for any database connection errors or migration issues immediately after restart.
+
+  </Step>
+</Steps>
+
+## Clean up
+
+After you have verified that the upgrade was successful and your data is intact, remove the temporary dump file and any volume backups you created during the migration.
+
+```bash
+rm pg16_backup.dump
+```
+
+Remove any snapshot or volume backups using the tools appropriate for your environment.
