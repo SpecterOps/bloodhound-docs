@@ -1,12 +1,13 @@
 ---
 title: Upgrade PostgreSQL
-description: Migrate BloodHound Community Edition from PostgreSQL 16 to 18 using the provided upgrade scripts for Windows and Linux/macOS.
-sidebarTitle: Upgrade PostgreSQL
+description: Migrate BloodHound Community Edition from PostgreSQL 16 to 18.
 ---
 
 <img noZoom src="/assets/community-edition-pill-tag.svg" alt="Applies to BloodHound CE only" />
 
-BloodHound Community Edition is upgrading its bundled PostgreSQL database from version 16 to version 18. PostgreSQL 18 delivers meaningful performance improvements and sets the foundation for faster in-place upgrades in future releases. However, the upgrade introduces a **breaking change** to the Docker volume mount path that prevents a simple image tag update.
+BloodHound Community Edition is upgrading its bundled PostgreSQL database from version 16 to version 18. PostgreSQL 18 enables new capabilities and delivers meaningful performance improvements.
+
+However, the upgrade introduces a **breaking change** to the Docker volume mount path that prevents a simple image tag update.
 
 <Warning>
   The PostgreSQL 18 Docker image uses a different volume mount path than version 16. Starting a PostgreSQL 18 container against an existing PostgreSQL 16 volume will fail. You must migrate your data using the scripts provided on this page.
@@ -22,13 +23,9 @@ The upgrade scripts on this page automate the migration by dumping your existing
 ## Prerequisites
 
 - Docker with the Compose V2 plugin (`docker compose`, not `docker-compose`)
-- Sufficient free disk space for the database dump file and a volume backup (allow at least 2× your current PostgreSQL volume size)
+- Sufficient free disk space for the database dump file and a volume backup
 - PowerShell 5.1 or later (Windows), or bash (Linux/macOS)
 - Your BloodHound CE installation must be accessible and running before you begin
-
-<Note>
-  If you installed BloodHound CE using the BloodHound CLI, your `docker-compose.yml` is located at `~/.config/bloodhound` by default.
-</Note>
 
 ## Before you begin
 
@@ -396,12 +393,12 @@ The upgrade scripts perform the following steps in order:
 
 ## Verify the upgrade
 
-After the script completes, confirm that the database is healthy and your data is intact.
+After the script finishes running, confirm that the database is healthy and your data is intact.
 
 <Steps>
   <Step title="Check the container status">
 
-    Run the following command to confirm all containers are running:
+    Confirm all containers are running:
 
     ```bash
     docker compose ps
@@ -412,21 +409,12 @@ After the script completes, confirm that the database is healthy and your data i
   </Step>
   <Step title="Confirm the PostgreSQL version">
 
-    Run the following command to confirm that PostgreSQL 18 is running:
+    Confirm that PostgreSQL 18 is running:
 
-    <Tabs>
-      <Tab title="Linux/macOS (bash)">
-        ```bash
-        docker compose exec app-db psql -U bloodhound -d bloodhound -c "SELECT version();"
-        ```
-      </Tab>
-      <Tab title="Windows (PowerShell)">
-        ```powershell
-        docker compose exec app-db psql -U bloodhound -d bloodhound -c "SELECT version();"
-        ```
-      </Tab>
-    </Tabs>
-
+    ```bash
+    docker compose exec app-db psql -U bloodhound -d bloodhound -c "SELECT version();"
+    ```
+    
     The output should include `PostgreSQL 18`.
 
   </Step>

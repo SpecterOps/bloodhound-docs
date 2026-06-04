@@ -1,14 +1,14 @@
 ---
 title: Upgrade an external PostgreSQL database
-description: Upgrade an external PostgreSQL database from version 16 to 18 for BloodHound Enterprise on-premises deployments.
+description: Upgrade an external PostgreSQL database from version 16 to 18 for on-premises deployments of BloodHound Enterprise.
 sidebarTitle: Upgrade PostgreSQL
 ---
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-This guide applies to on-premises BloodHound Enterprise customers who chose to use an **external** PostgreSQL database instead of the PostgreSQL database bundled with the embedded cluster. If you use the embedded cluster's bundled database, it is managed by Replicated and is not affected by this guide.
+This guide applies to on-premises deployments of BloodHound Enterprise using an **external** PostgreSQL database instead of the PostgreSQL database bundled with the embedded cluster.
 
-BloodHound Enterprise requires PostgreSQL 18. If your external database is still running PostgreSQL 16, follow the steps on this page to upgrade. For context on configuring an external database during installation, see the [Database Configuration](/on-premises/install#database-configuration) step in the install guide.
+PostgreSQL 18 enables new capabilities, delivers meaningful performance improvements, and is required for BloodHound Enterprise. If your external database is still running PostgreSQL 16, follow the steps on this page to upgrade and migrate your data.
 
 <Warning>
   The PostgreSQL 18 Docker image uses a different volume mount path than version 16. If your external database runs in Docker, you cannot simply update the image tag — the volume mount point has changed.
@@ -30,7 +30,7 @@ BloodHound Enterprise requires PostgreSQL 18. If your external database is still
 Confirm the following before you begin:
 
 - You have access to a PostgreSQL 18 instance (or can upgrade your existing host to PostgreSQL 18)
-- You have sufficient disk space for a full database dump (allow at least 1.5× your current database size)
+- You have sufficient disk space for a full database dump
 - Your database administrator is available to adapt commands to your specific environment
 - You know your PostgreSQL connection details (host, port, username, database name)
 
@@ -43,7 +43,7 @@ Confirm the following before you begin:
 <Steps>
   <Step title="Stop BloodHound Enterprise">
 
-    Stop the BloodHound Enterprise application to prevent new writes to the database during the migration.
+    Stop the BloodHound Enterprise application to prevent new writes to the database during the upgrade.
 
     For embedded cluster deployments, you can stop the application using the Replicated Admin Console, or by scaling down the BloodHound deployment:
 
@@ -67,19 +67,12 @@ Confirm the following before you begin:
   </Step>
   <Step title="Back up your data directory">
 
-    If your PostgreSQL instance uses a data volume or directory, create a backup of it before making changes. The exact method depends on your deployment:
-
-    - **Docker**: Copy the volume using `docker run` with an alpine container (see the [CE upgrade guide](/get-started/upgrade-postgres) for an example).
-    - **Bare-metal or VM**: Use your standard snapshot or backup tooling to create a point-in-time copy of the PostgreSQL data directory.
+    If your PostgreSQL instance uses a data volume or directory, create a backup of it before making changes. The exact method depends on your deployment.
 
   </Step>
   <Step title="Upgrade PostgreSQL to version 18">
 
-    Upgrade your PostgreSQL instance to version 18 using the method appropriate for your environment:
-
-    - **Docker**: Update the image tag to `postgres:18` and update the volume mount path from `/var/lib/postgresql/data` to `/var/lib/postgresql`. Remove the old data volume and let PostgreSQL 18 initialize a fresh one.
-    - **Package manager (apt/yum)**: Follow the [official PostgreSQL upgrade documentation](https://www.postgresql.org/docs/18/upgrading.html) for your Linux distribution.
-    - **Managed service (RDS, Cloud SQL, etc.)**: Use your cloud provider's major version upgrade feature.
+    Upgrade your PostgreSQL instance to version 18 using the method appropriate for your environment.
 
     <Note>
       PostgreSQL major version upgrades are not backward-compatible. After upgrading to PostgreSQL 18, you cannot start the service against a PostgreSQL 16 data directory without first restoring from your dump file.
