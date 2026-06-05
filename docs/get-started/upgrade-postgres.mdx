@@ -47,351 +47,170 @@ The upgrade scripts perform the following steps in order:
 
 ## Run the upgrade script
 
-<Tabs>
-  <Tab title="Linux/macOS (bash)">
+Save the following script to a file (for example, `upgrade-pg.ps1`) and run it in PowerShell with `.\upgrade-pg.ps1`.
 
-    Save the following script to a file (for example, `upgrade-pg.sh`) and run it with `bash upgrade-pg.sh`.
+```powershell
+#Requires -Version 5.1
+<#
+.SYNOPSIS
+    Migrates BloodHound Community Edition PostgreSQL from 16 to 18.
+.DESCRIPTION
+    Walks through dumping the PG 16 database, backing up the Docker volume,
+    upgrading to PG 18, and restoring the data. Requires Docker with the
+    Compose V2 plugin.
+#>
 
-    ```bash
-    #!/usr/bin/env bash
-    # Migrates BloodHound Community Edition PostgreSQL from 16 to 18.
-    # Walks through dumping the PG 16 database, backing up the Docker volume,
-    # upgrading to PG 18, and restoring the data. Requires Docker with the
-    # Compose V2 plugin.
+$ErrorActionPreference = "Stop"
 
-    set -euo pipefail
+function Write-Step  { param([string]$Msg) Write-Host "`n=== $Msg ===" -ForegroundColor Cyan }
+function Write-Ok    { param([string]$Msg) Write-Host $Msg -ForegroundColor Green }
+function Write-Warn  { param([string]$Msg) Write-Host $Msg -ForegroundColor Yellow }
 
-    step()  { echo -e "\n\033[0;36m=== $* ===\033[0m"; }
-    ok()    { echo -e "\033[0;32m$*\033[0m"; }
-    warn()  { echo -e "\033[0;33m$*\033[0m"; }
+# ── 1. Gather inputs ────────────────────────────────────────────────────────
+Write-Step "BloodHound PostgreSQL 16 -> 18 Migration"
 
-    # ── 1. Gather inputs ────────────────────────────────────────────────────────
-    step "BloodHound PostgreSQL 16 -> 18 Migration"
+$defaultDir = Join-Path $HOME ".config" "bloodhound"
+$composeDir = Read-Host "Enter the directory containing docker-compose.yml (default: $defaultDir)"
+if ([string]::IsNullOrWhiteSpace($composeDir)) { $composeDir = $defaultDir }
+$composeDir = [System.IO.Path]::GetFullPath($composeDir.Replace("~", $HOME))
+$composeFile = Join-Path $composeDir "docker-compose.yml"
 
-    default_dir="${HOME}/.config/bloodhound"
-    read -rp "Enter the directory containing docker-compose.yml (default: ${default_dir}): " compose_dir
-    compose_dir="${compose_dir:-${default_dir}}"
-    compose_dir="$(cd "${compose_dir/#\~/$HOME}" && pwd)"
-    compose_file="${compose_dir}/docker-compose.yml"
+if (-not (Test-Path $composeFile)) {
+    Write-Error "docker-compose.yml not found at $composeFile"; exit 1
+}
 
-    if [[ ! -f "${compose_file}" ]]; then
-        echo "Error: docker-compose.yml not found at ${compose_file}" >&2; exit 1
-    fi
+$defaultDump = Join-Path $composeDir "pg16_backup.dump"
+$dumpPath = Read-Host "Enter path for the database dump file (default: $defaultDump)"
+if ([string]::IsNullOrWhiteSpace($dumpPath)) { $dumpPath = $defaultDump }
+$dumpPath = [System.IO.Path]::GetFullPath($dumpPath.Replace("~", $HOME))
 
-    default_dump="${compose_dir}/pg16_backup.dump"
-    read -rp "Enter path for the database dump file (default: ${default_dump}): " dump_path
-    dump_path="${dump_path:-${default_dump}}"
-    dump_path="${dump_path/#\~/$HOME}"
+# ── 2. Read credentials (.env then defaults) ────────────────────────────────
+$pgUser = "bloodhound"; $pgPass = "bloodhoundcommunityedition"; $pgDb = "bloodhound"
 
-    # ── 2. Read credentials (.env then defaults) ────────────────────────────────
-    pg_user="bloodhound"
-    pg_pass="bloodhoundcommunityedition"
-    pg_db="bloodhound"
-
-    env_file="${compose_dir}/.env"
-    if [[ -f "${env_file}" ]]; then
-        echo "Reading overrides from ${env_file} ..."
-        while IFS='=' read -r key val; do
-            [[ "${key}" =~ ^[[:space:]]*# ]] && continue
-            key="${key#"${key%%[![:space:]]*}"}"   # trim leading
-            key="${key%"${key##*[![:space:]]}"}"   # trim trailing
-            val="${val#"${val%%[![:space:]]*}"}"   # trim leading
-            val="${val%"${val##*[![:space:]]}"}"   # trim trailing
-            case "${key}" in
-                POSTGRES_USER)     pg_user="${val}" ;;
-                POSTGRES_PASSWORD) pg_pass="${val}" ;;
-                POSTGRES_DB)       pg_db="${val}"   ;;
-            esac
-        done < "${env_file}"
-    fi
-    echo "Credentials: user=${pg_user}  db=${pg_db}"
-
-    # ── 3. Resolve volume name ──────────────────────────────────────────────────
-    project_name="$(basename "${compose_dir}" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9_-')"
-    volume_name="${project_name}_postgres-data"
-
-    if ! docker volume ls --format '{{.Name}}' | grep -qx "${volume_name}"; then
-        echo "Error: Docker volume '${volume_name}' not found. Is BloodHound installed?" >&2; exit 1
-    fi
-    echo "Project: ${project_name}   Volume: ${volume_name}"
-
-    # ── 4. Confirm ──────────────────────────────────────────────────────────────
-    warn "\nThis script will:"
-    echo "  1. Stop the BloodHound app (keep PG 16 running)"
-    echo "  2. Dump the PG 16 database to: ${dump_path}"
-    echo "  3. Stop all containers"
-    echo "  4. Create a backup copy of the PostgreSQL data volume"
-    echo "  5. Update docker-compose.yml to use PostgreSQL 18"
-    echo "  6. Start PG 18 and restore the database"
-    echo "  7. Start the full BloodHound stack"
-
-    read -rp $'\nProceed? (y/N): ' confirm
-    [[ "${confirm}" =~ ^[Yy]$ ]] || { echo "Cancelled."; exit 0; }
-
-    # ── Helper: run docker compose with project context ──────────────────────────
-    dc() {
-        docker compose -f "${compose_file}" --project-directory "${compose_dir}" "$@"
+$envFile = Join-Path $composeDir ".env"
+if (Test-Path $envFile) {
+    Write-Host "Reading overrides from $envFile ..."
+    Get-Content $envFile | ForEach-Object {
+        if ($_ -match '^\s*POSTGRES_USER\s*=\s*(.+)$')     { $pgUser = $Matches[1].Trim() }
+        if ($_ -match '^\s*POSTGRES_PASSWORD\s*=\s*(.+)$')  { $pgPass = $Matches[1].Trim() }
+        if ($_ -match '^\s*POSTGRES_DB\s*=\s*(.+)$')        { $pgDb   = $Matches[1].Trim() }
     }
+}
+Write-Host "Credentials: user=$pgUser  db=$pgDb"
 
-    # ── 5. Stop app, keep PG 16 alive ───────────────────────────────────────────
-    step "Stopping BloodHound application container"
-    dc stop bloodhound
-    ok "BloodHound app stopped."
+# ── 3. Resolve volume name ──────────────────────────────────────────────────
+$projectName = (Split-Path $composeDir -Leaf).ToLower() -replace '[^a-z0-9_-]',''
+$volumeName  = "${projectName}_postgres-data"
 
-    step "Ensuring PostgreSQL 16 is running"
-    dc start app-db
-    sleep 5
+$volExists = docker volume ls --format "{{.Name}}" | Where-Object { $_ -eq $volumeName }
+if (-not $volExists) {
+    Write-Error "Docker volume '$volumeName' not found. Is BloodHound installed?"
+    exit 1
+}
+Write-Host "Project: $projectName   Volume: $volumeName"
 
-    # ── 6. Dump database ────────────────────────────────────────────────────────
-    step "Dumping PostgreSQL 16 database"
-    dc exec app-db pg_dump -U "${pg_user}" -d "${pg_db}" -Fc -Z 9 -f /tmp/pg16_backup.dump
-    dc cp app-db:/tmp/pg16_backup.dump "${dump_path}"
+# ── 4. Confirm ──────────────────────────────────────────────────────────────
+Write-Warn "`nThis script will:"
+Write-Host "  1. Stop the BloodHound app (keep PG 16 running)"
+Write-Host "  2. Dump the PG 16 database to: $dumpPath"
+Write-Host "  3. Stop all containers"
+Write-Host "  4. Create a backup copy of the PostgreSQL data volume"
+Write-Host "  5. Update docker-compose.yml to use PostgreSQL 18"
+Write-Host "  6. Start PG 18 and restore the database"
+Write-Host "  7. Start the full BloodHound stack"
 
-    dump_size="$(wc -c < "${dump_path}")"
-    ok "Database dumped (${dump_size} bytes) -> ${dump_path}"
+$confirm = Read-Host "`nProceed? (y/N)"
+if ($confirm -notin @('y','Y')) { Write-Host "Cancelled."; exit 0 }
 
-    # ── 7. Stop everything ──────────────────────────────────────────────────────
-    step "Stopping all containers"
-    dc down
-    ok "All containers stopped."
+# ── Helper: run docker compose with project context ──────────────────────────
+function Invoke-DC {
+    $dcArgs = @("-f", $composeFile, "--project-directory", $composeDir) + $args
+    & docker compose @dcArgs
+    if ($LASTEXITCODE -ne 0) { throw "docker compose failed (exit $LASTEXITCODE)" }
+}
 
-    # ── 8. Copy the volume ──────────────────────────────────────────────────────
-    step "Backing up PostgreSQL data volume"
-    backup_vol="${volume_name}-pg16-backup"
-    docker volume create "${backup_vol}" > /dev/null
-    docker run --rm \
-        -v "${volume_name}:/source:ro" \
-        -v "${backup_vol}:/backup" \
-        alpine sh -c "cp -a /source/. /backup/"
-    ok "Volume copied to: ${backup_vol}"
+# ── 5. Stop app, keep PG 16 alive ───────────────────────────────────────────
+Write-Step "Stopping BloodHound application container"
+Invoke-DC stop bloodhound
+Write-Ok "BloodHound app stopped."
 
-    # ── 9. Update docker-compose.yml ────────────────────────────────────────────
-    step "Updating docker-compose.yml to PostgreSQL 18"
-    bak_file="${compose_dir}/docker-compose.yml.pg16.bak"
-    cp "${compose_file}" "${bak_file}"
-    echo "Compose file backed up to: ${bak_file}"
+Write-Step "Ensuring PostgreSQL 16 is running"
+Invoke-DC start app-db
+Start-Sleep -Seconds 5
 
-    # Update image tag
-    sed -i.tmp "s|image: docker\.io/library/postgres:16|image: docker.io/library/postgres:18|g" "${compose_file}"
-    # PG 18+ expects the mount at /var/lib/postgresql (not /var/lib/postgresql/data).
-    sed -i.tmp "s|postgres-data:/var/lib/postgresql/data|postgres-data:/var/lib/postgresql|g" "${compose_file}"
-    rm -f "${compose_file}.tmp"
+# ── 6. Dump database ────────────────────────────────────────────────────────
+Write-Step "Dumping PostgreSQL 16 database"
+Invoke-DC exec app-db pg_dump -U $pgUser -d $pgDb -Fc -Z 9 -f /tmp/pg16_backup.dump
+Invoke-DC cp app-db:/tmp/pg16_backup.dump $dumpPath
 
-    if ! grep -q "postgres:18" "${compose_file}"; then
-        echo "Error: Could not find postgres:18 after update — check compose file manually." >&2; exit 1
-    fi
-    ok "docker-compose.yml updated (image + volume mount path)."
+$dumpSize = (Get-Item $dumpPath).Length
+Write-Ok "Database dumped ($dumpSize bytes) -> $dumpPath"
 
-    # ── 10. Remove old volume, start PG 18 ──────────────────────────────────────
-    step "Removing old PostgreSQL data volume"
-    docker volume rm "${volume_name}" > /dev/null
-    ok "Old volume removed (backup preserved at ${backup_vol})."
+# ── 7. Stop everything ──────────────────────────────────────────────────────
+Write-Step "Stopping all containers"
+Invoke-DC down
+Write-Ok "All containers stopped."
 
-    step "Starting PostgreSQL 18"
-    dc up -d app-db
+# ── 8. Copy the volume ──────────────────────────────────────────────────────
+Write-Step "Backing up PostgreSQL data volume"
+$backupVol = "${volumeName}-pg16-backup"
+docker volume create $backupVol | Out-Null
+docker run --rm -v "${volumeName}:/source:ro" -v "${backupVol}:/backup" `
+    alpine sh -c "cp -a /source/. /backup/"
+Write-Ok "Volume copied to: $backupVol"
 
-    echo "Waiting for PostgreSQL 18 to become healthy..."
-    health=""
-    for i in $(seq 1 30); do
-        sleep 2
-        health="$(docker inspect --format '{{.State.Health.Status}}' "${project_name}-app-db-1" 2>/dev/null || true)"
-        [[ "${health}" == "healthy" ]] && break
-    done
-    [[ "${health}" == "healthy" ]] || warn "Container not yet healthy — continuing anyway."
+# ── 9. Update docker-compose.yml ────────────────────────────────────────────
+Write-Step "Updating docker-compose.yml to PostgreSQL 18"
+$bakFile = Join-Path $composeDir "docker-compose.yml.pg16.bak"
+Copy-Item $composeFile $bakFile
+Write-Host "Compose file backed up to: $bakFile"
 
-    # ── 11. Restore database ────────────────────────────────────────────────────
-    step "Restoring database into PostgreSQL 18"
-    dc cp "${dump_path}" app-db:/tmp/pg16_backup.dump
-    dc exec app-db pg_restore -U "${pg_user}" -d "${pg_db}" --clean --if-exists /tmp/pg16_backup.dump
-    ok "Database restored."
+$content = Get-Content $composeFile -Raw
+$updated = $content -replace 'image:\s*docker\.io/library/postgres:16', 'image: docker.io/library/postgres:18'
+if ($updated -eq $content) { Write-Error "Could not find postgres:16 image reference in compose file"; exit 1 }
+# PG 18+ expects the mount at /var/lib/postgresql (not /var/lib/postgresql/data).
+$updated = $updated -replace 'postgres-data:/var/lib/postgresql/data', 'postgres-data:/var/lib/postgresql'
+[System.IO.File]::WriteAllText($composeFile, $updated)
+Write-Ok "docker-compose.yml updated (image + volume mount path)."
 
-    # ── 12. Start full stack ─────────────────────────────────────────────────────
-    step "Starting full BloodHound stack"
-    dc up -d
-    ok "BloodHound stack is starting."
+# ── 10. Remove old volume, start PG 18 ──────────────────────────────────────
+Write-Step "Removing old PostgreSQL data volume"
+docker volume rm $volumeName | Out-Null
+Write-Ok "Old volume removed (backup preserved at $backupVol)."
 
-    # ── Done ─────────────────────────────────────────────────────────────────────
-    step "Migration Complete"
-    ok "PostgreSQL upgraded from 16 to 18."
-    echo "  Database dump : ${dump_path}"
-    echo "  Volume backup : ${backup_vol}"
-    echo "  Compose backup: ${bak_file}"
-    warn "\nOnce verified, you can clean up with:"
-    echo "  docker volume rm ${backup_vol}"
-    echo "  rm '${bak_file}'"
-    echo "  rm '${dump_path}'"
-    ```
+Write-Step "Starting PostgreSQL 18"
+Invoke-DC up -d app-db
 
-  </Tab>
-  <Tab title="Windows (PowerShell)">
+Write-Host "Waiting for PostgreSQL 18 to become healthy..."
+for ($i = 0; $i -lt 30; $i++) {
+    Start-Sleep -Seconds 2
+    $health = docker inspect --format "{{.State.Health.Status}}" "${projectName}-app-db-1" 2>$null
+    if ($health -eq "healthy") { break }
+}
+if ($health -ne "healthy") { Write-Warn "Container not yet healthy — continuing anyway." }
 
-    Save the following script to a file (for example, `upgrade-pg.ps1`) and run it in PowerShell with `.\upgrade-pg.ps1`.
+# ── 11. Restore database ────────────────────────────────────────────────────
+Write-Step "Restoring database into PostgreSQL 18"
+Invoke-DC cp $dumpPath app-db:/tmp/pg16_backup.dump
+Invoke-DC exec app-db pg_restore -U $pgUser -d $pgDb --clean --if-exists /tmp/pg16_backup.dump
+Write-Ok "Database restored."
 
-    ```powershell
-    #Requires -Version 5.1
-    <#
-    .SYNOPSIS
-        Migrates BloodHound Community Edition PostgreSQL from 16 to 18.
-    .DESCRIPTION
-        Walks through dumping the PG 16 database, backing up the Docker volume,
-        upgrading to PG 18, and restoring the data. Requires Docker with the
-        Compose V2 plugin.
-    #>
+# ── 12. Start full stack ─────────────────────────────────────────────────────
+Write-Step "Starting full BloodHound stack"
+Invoke-DC up -d
+Write-Ok "BloodHound stack is starting."
 
-    $ErrorActionPreference = "Stop"
-
-    function Write-Step  { param([string]$Msg) Write-Host "`n=== $Msg ===" -ForegroundColor Cyan }
-    function Write-Ok    { param([string]$Msg) Write-Host $Msg -ForegroundColor Green }
-    function Write-Warn  { param([string]$Msg) Write-Host $Msg -ForegroundColor Yellow }
-
-    # ── 1. Gather inputs ────────────────────────────────────────────────────────
-    Write-Step "BloodHound PostgreSQL 16 -> 18 Migration"
-
-    $defaultDir = Join-Path $HOME ".config" "bloodhound"
-    $composeDir = Read-Host "Enter the directory containing docker-compose.yml (default: $defaultDir)"
-    if ([string]::IsNullOrWhiteSpace($composeDir)) { $composeDir = $defaultDir }
-    $composeDir = [System.IO.Path]::GetFullPath($composeDir.Replace("~", $HOME))
-    $composeFile = Join-Path $composeDir "docker-compose.yml"
-
-    if (-not (Test-Path $composeFile)) {
-        Write-Error "docker-compose.yml not found at $composeFile"; exit 1
-    }
-
-    $defaultDump = Join-Path $composeDir "pg16_backup.dump"
-    $dumpPath = Read-Host "Enter path for the database dump file (default: $defaultDump)"
-    if ([string]::IsNullOrWhiteSpace($dumpPath)) { $dumpPath = $defaultDump }
-    $dumpPath = [System.IO.Path]::GetFullPath($dumpPath.Replace("~", $HOME))
-
-    # ── 2. Read credentials (.env then defaults) ────────────────────────────────
-    $pgUser = "bloodhound"; $pgPass = "bloodhoundcommunityedition"; $pgDb = "bloodhound"
-
-    $envFile = Join-Path $composeDir ".env"
-    if (Test-Path $envFile) {
-        Write-Host "Reading overrides from $envFile ..."
-        Get-Content $envFile | ForEach-Object {
-            if ($_ -match '^\s*POSTGRES_USER\s*=\s*(.+)$')     { $pgUser = $Matches[1].Trim() }
-            if ($_ -match '^\s*POSTGRES_PASSWORD\s*=\s*(.+)$')  { $pgPass = $Matches[1].Trim() }
-            if ($_ -match '^\s*POSTGRES_DB\s*=\s*(.+)$')        { $pgDb   = $Matches[1].Trim() }
-        }
-    }
-    Write-Host "Credentials: user=$pgUser  db=$pgDb"
-
-    # ── 3. Resolve volume name ──────────────────────────────────────────────────
-    $projectName = (Split-Path $composeDir -Leaf).ToLower() -replace '[^a-z0-9_-]',''
-    $volumeName  = "${projectName}_postgres-data"
-
-    $volExists = docker volume ls --format "{{.Name}}" | Where-Object { $_ -eq $volumeName }
-    if (-not $volExists) {
-        Write-Error "Docker volume '$volumeName' not found. Is BloodHound installed?"
-        exit 1
-    }
-    Write-Host "Project: $projectName   Volume: $volumeName"
-
-    # ── 4. Confirm ──────────────────────────────────────────────────────────────
-    Write-Warn "`nThis script will:"
-    Write-Host "  1. Stop the BloodHound app (keep PG 16 running)"
-    Write-Host "  2. Dump the PG 16 database to: $dumpPath"
-    Write-Host "  3. Stop all containers"
-    Write-Host "  4. Create a backup copy of the PostgreSQL data volume"
-    Write-Host "  5. Update docker-compose.yml to use PostgreSQL 18"
-    Write-Host "  6. Start PG 18 and restore the database"
-    Write-Host "  7. Start the full BloodHound stack"
-
-    $confirm = Read-Host "`nProceed? (y/N)"
-    if ($confirm -notin @('y','Y')) { Write-Host "Cancelled."; exit 0 }
-
-    # ── Helper: run docker compose with project context ──────────────────────────
-    function Invoke-DC {
-        $dcArgs = @("-f", $composeFile, "--project-directory", $composeDir) + $args
-        & docker compose @dcArgs
-        if ($LASTEXITCODE -ne 0) { throw "docker compose failed (exit $LASTEXITCODE)" }
-    }
-
-    # ── 5. Stop app, keep PG 16 alive ───────────────────────────────────────────
-    Write-Step "Stopping BloodHound application container"
-    Invoke-DC stop bloodhound
-    Write-Ok "BloodHound app stopped."
-
-    Write-Step "Ensuring PostgreSQL 16 is running"
-    Invoke-DC start app-db
-    Start-Sleep -Seconds 5
-
-    # ── 6. Dump database ────────────────────────────────────────────────────────
-    Write-Step "Dumping PostgreSQL 16 database"
-    Invoke-DC exec app-db pg_dump -U $pgUser -d $pgDb -Fc -Z 9 -f /tmp/pg16_backup.dump
-    Invoke-DC cp app-db:/tmp/pg16_backup.dump $dumpPath
-
-    $dumpSize = (Get-Item $dumpPath).Length
-    Write-Ok "Database dumped ($dumpSize bytes) -> $dumpPath"
-
-    # ── 7. Stop everything ──────────────────────────────────────────────────────
-    Write-Step "Stopping all containers"
-    Invoke-DC down
-    Write-Ok "All containers stopped."
-
-    # ── 8. Copy the volume ──────────────────────────────────────────────────────
-    Write-Step "Backing up PostgreSQL data volume"
-    $backupVol = "${volumeName}-pg16-backup"
-    docker volume create $backupVol | Out-Null
-    docker run --rm -v "${volumeName}:/source:ro" -v "${backupVol}:/backup" `
-        alpine sh -c "cp -a /source/. /backup/"
-    Write-Ok "Volume copied to: $backupVol"
-
-    # ── 9. Update docker-compose.yml ────────────────────────────────────────────
-    Write-Step "Updating docker-compose.yml to PostgreSQL 18"
-    $bakFile = Join-Path $composeDir "docker-compose.yml.pg16.bak"
-    Copy-Item $composeFile $bakFile
-    Write-Host "Compose file backed up to: $bakFile"
-
-    $content = Get-Content $composeFile -Raw
-    $updated = $content -replace 'image:\s*docker\.io/library/postgres:16', 'image: docker.io/library/postgres:18'
-    if ($updated -eq $content) { Write-Error "Could not find postgres:16 image reference in compose file"; exit 1 }
-    # PG 18+ expects the mount at /var/lib/postgresql (not /var/lib/postgresql/data).
-    $updated = $updated -replace 'postgres-data:/var/lib/postgresql/data', 'postgres-data:/var/lib/postgresql'
-    [System.IO.File]::WriteAllText($composeFile, $updated)
-    Write-Ok "docker-compose.yml updated (image + volume mount path)."
-
-    # ── 10. Remove old volume, start PG 18 ──────────────────────────────────────
-    Write-Step "Removing old PostgreSQL data volume"
-    docker volume rm $volumeName | Out-Null
-    Write-Ok "Old volume removed (backup preserved at $backupVol)."
-
-    Write-Step "Starting PostgreSQL 18"
-    Invoke-DC up -d app-db
-
-    Write-Host "Waiting for PostgreSQL 18 to become healthy..."
-    for ($i = 0; $i -lt 30; $i++) {
-        Start-Sleep -Seconds 2
-        $health = docker inspect --format "{{.State.Health.Status}}" "${projectName}-app-db-1" 2>$null
-        if ($health -eq "healthy") { break }
-    }
-    if ($health -ne "healthy") { Write-Warn "Container not yet healthy — continuing anyway." }
-
-    # ── 11. Restore database ────────────────────────────────────────────────────
-    Write-Step "Restoring database into PostgreSQL 18"
-    Invoke-DC cp $dumpPath app-db:/tmp/pg16_backup.dump
-    Invoke-DC exec app-db pg_restore -U $pgUser -d $pgDb --clean --if-exists /tmp/pg16_backup.dump
-    Write-Ok "Database restored."
-
-    # ── 12. Start full stack ─────────────────────────────────────────────────────
-    Write-Step "Starting full BloodHound stack"
-    Invoke-DC up -d
-    Write-Ok "BloodHound stack is starting."
-
-    # ── Done ─────────────────────────────────────────────────────────────────────
-    Write-Step "Migration Complete"
-    Write-Ok "PostgreSQL upgraded from 16 to 18."
-    Write-Host "  Database dump : $dumpPath"
-    Write-Host "  Volume backup : $backupVol"
-    Write-Host "  Compose backup: $bakFile"
-    Write-Warn "`nOnce verified, you can clean up with:"
-    Write-Host "  docker volume rm $backupVol"
-    Write-Host "  Remove-Item '$bakFile'"
-    Write-Host "  Remove-Item '$dumpPath'"
-    ```
-
-  </Tab>
-</Tabs>
+# ── Done ─────────────────────────────────────────────────────────────────────
+Write-Step "Migration Complete"
+Write-Ok "PostgreSQL upgraded from 16 to 18."
+Write-Host "  Database dump : $dumpPath"
+Write-Host "  Volume backup : $backupVol"
+Write-Host "  Compose backup: $bakFile"
+Write-Warn "`nOnce verified, you can clean up with:"
+Write-Host "  docker volume rm $backupVol"
+Write-Host "  Remove-Item '$bakFile'"
+Write-Host "  Remove-Item '$dumpPath'"
+```
 
 ## Verify the upgrade
 
