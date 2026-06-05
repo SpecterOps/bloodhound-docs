@@ -6,11 +6,11 @@ sidebarTitle: Install and configure
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-The BloodHound Enterprise integration for Google SecOps lets you ingest attack path findings into Google SecOps so analysts can investigate and respond without leaving the platform. This guide shows you how to import the required packages, configure the integration instance, and enable the connector that creates cases, alerts, and events.
+The BloodHound Enterprise integration for Google SecOps lets you ingest Attack Path findings into Google SecOps so analysts can investigate and respond without leaving the platform. This guide shows you how to import the required packages, configure the integration instance, and enable the connector that creates cases, alerts, and events.
 
 Use this integration to:
 
-- Create Google SecOps cases from BloodHound Enterprise attack path findings
+- Create Google SecOps cases from BloodHound Enterprise Attack Path findings
 - Investigate findings with BloodHound Enterprise asset lookup and path validation actions
 - Group related alerts by source domain to keep investigations organized
 
@@ -18,12 +18,10 @@ Use this integration to:
 
 Before you begin, ensure that you have the following:
 
-- A Google SecOps tenant with permission to import integration packages, import playbooks, and configure connectors
+- A Google SecOps tenant
 - A BloodHound Enterprise tenant
-- A BloodHound Enterprise API key/ID pair
+- A BloodHound Enterprise [non-personal API key/ID pair](/integrations/bloodhound-api/working-with-api#create-a-non-personal-api-key%2Fid-pair) with the **Auditor** role
 - The integration ZIP package and playbook ZIP package for the BloodHound Enterprise Google SecOps integration
-
-<Note>For long-lived integrations, use a [non-personal API key/ID pair](/integrations/bloodhound-api/working-with-api#create-a-non-personal-api-key%2Fid-pair).</Note>
 
 ## Import the required packages
 
@@ -32,25 +30,55 @@ Before you configure the integration, import both the custom integration package
 <Steps>
   <Step title="Import the custom integration package">
     1. Log in to your Google SecOps tenant.
-    2. Go to **Response** > **IDE**.
-    3. In the **Integrations** section, click the **List View** icon.
-    4. Click **Import Package**.
-    5. Select the BloodHound Enterprise Google SecOps integration ZIP package.
-    6. Confirm that **BloodHound Enterprise - Google SecOps** appears in the integrations list after the import finishes.
+    1. Go to **Response** > **IDE**.
+    1. In the **Integrations** section, click the **List View** icon.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-1-1-integrations-list-view.png"
+           alt="Google SecOps Integrations section in list view."
+           />
+       </Frame>
+
+    1. Click **Import Package**.
+    1. Select the BloodHound Enterprise Google SecOps integration ZIP package.
+    1. Confirm that **BloodHound Enterprise - Google SecOps** appears in the integrations list after the import finishes.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-1-3-imported-integration.png"
+           alt="Imported BloodHound Enterprise - Google SecOps integration shown in the integrations list."
+         />
+       </Frame>
   </Step>
 
   <Step title="Import the playbook package">
     1. Go to **Response** > **Playbooks**.
-    2. Click the **List View** icon.
-    3. Click **Import**.
-    4. Select the BloodHound playbook ZIP package.
-    5. Confirm that **BloodHound Attack Path Alerts Playbook** appears in the imported playbooks list after the import finishes.
+    1. Click the **List View** icon.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-1-5-playbooks-list-view.png"
+           alt="Google SecOps Playbooks section in list view."
+         />
+       </Frame>
+
+    1. Click **Import**.
+    1. Select the BloodHound playbook ZIP package.
+    1. Confirm that **BloodHound Attack Path Alerts Playbook** appears in the imported playbooks list after the import finishes.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-1-7-imported-playbook.png"
+           alt="Imported BloodHound Attack Path Alerts Playbook shown in the playbooks list."
+         />
+       </Frame>
   </Step>
 </Steps>
 
 ## Install and configure the integration
 
-After you import the packages, install the integration instance and connect it to your BloodHound Enterprise tenant.
+After you import the packages, install the integration instance in Google SecOps and connect it to your BloodHound Enterprise tenant.
 
 <Steps>
   <Step title="Open the integration">
@@ -70,58 +98,162 @@ After you import the packages, install the integration instance and connect it t
     | **Token Key** | The API token key used to sign and authorize requests |
 
     Save the configuration after you enter the required values.
+
+    <Frame>
+      <img
+        src="/images/integrations/google-secops/fig-2-1-integration-configure.png"
+        alt="BloodHound Enterprise - Google SecOps integration configuration form."
+      />
+    </Frame>
   </Step>
 
   <Step title="Verify the integration configuration">
     1. Click **Test** to validate the server URL and API credentials.
-    2. Confirm that the test succeeds before you continue.
+    1. Confirm that the test succeeds before you continue.
 
-    <Tip>A successful test confirms that Google SecOps can connect to the BloodHound Enterprise API with the supplied credentials.</Tip>
+        <Frame>
+          <img
+            src="/images/integrations/google-secops/fig-2-2-test-success.png"
+            alt="Successful integration test result in Google SecOps."
+          />
+        </Frame>
+
+        <Note>
+          A successful test confirms that Google SecOps can connect to the BloodHound Enterprise API with the supplied credentials.
+
+          If the test fails, review the error message and confirm that the server URL, token ID, and token key are correct. You can also refer to the [troubleshooting guide](/integrations/google-secops/troubleshoot) for more help diagnosing common issues.
+        </Note>
   </Step>
 </Steps>
 
 ## Configure the connector
 
-The connector retrieves attack path findings from BloodHound Enterprise and creates the corresponding cases, alerts, and events in Google SecOps.
+The connector retrieves Attack Path findings from BloodHound Enterprise and creates the corresponding cases, alerts, and events in Google SecOps.
+
+<Tip>
+  You can manually trigger the connector to run a one-time ingestion of BloodHound Enterprise findings, or you can enable it to run on a schedule.
+</Tip>
 
 <Steps>
   <Step title="Create the connector">
     1. Go to **Settings** > **SOAR Settings** > **Ingestion** > **Connector**.
-    2. Click **Create New Connector**.
-    3. Select the BloodHound connector that you want to configure.
+    1. Click **Create New Connector**.
+    1. Select the BloodHound Enterprise connector that you want to configure.
   </Step>
 
   <Step title="Configure connector parameters">
     1. Open the **Parameter** tab.
-    2. Enter the required values for the connector.
+    1. Enter the required values for the connector.
 
-    | Field | Description |
-    | --- | --- |
-    | **BloodHound Enterprise Server** | The URL of your BloodHound Enterprise tenant |
-    | **Token ID** | The API token ID used for authentication |
-    | **Token Key** | The API token key used to sign requests |
-    | **Selected BloodHound Environments** | The BloodHound Enterprise environments that the connector should query |
-    | **Selected Finding Types** | The attack path finding categories that the connector should ingest |
-    | **Run Every** | The interval at which the connector polls BloodHound Enterprise |
-    | **Product Field Name** | The source field name that Google SecOps should use for the product value |
-    | **Event Field Name** | The source field name that Google SecOps should use for the event value |
+       | Field | Description |
+       | --- | --- |
+       | **BloodHound Enterprise Server** | The URL of your BloodHound Enterprise tenant |
+       | **Token ID** | The API token ID used for authentication |
+       | **Token Key** | The API token key used to sign requests |
+       | **Selected BloodHound Environments** | The BloodHound Enterprise environments that the connector should query |
+       | **Selected Finding Types** | The Attack Path finding categories that the connector should ingest |
+       | **Run Every** | The interval at which the connector polls BloodHound Enterprise |
+       | **Product Field Name** | The source field name that Google SecOps should use for the product value |
+       | **Event Field Name** | The source field name that Google SecOps should use for the event value |
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-3-1-connector-parameters.png"
+           alt="BloodHound connector Parameter tab in Google SecOps."
+         />
+       </Frame>
   </Step>
 
   <Step title="Test the connector">
-    1. Open the **Testing** tab.
-    2. Click **Test Connector** to run a one-time execution.
-    3. Review the generated alerts and the debug logs.
-    4. Click **Log to System** if you want to create cases from the generated test alerts.
+    The connector test validates connectivity, connector logic, and the required parameter values without requiring you to enable the connector first.
 
-    <Note>The connector test validates connectivity, connector logic, and the required parameter values without requiring you to enable the connector first.</Note>
+    1. Open the **Testing** tab.
+    1. Click **Test Connector** to run a one-time execution.
+    1. Review the generated alerts and the debug logs.
+    1. Click **Log to System** if you want to create cases from the generated test alerts.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-3-2-test-connector.png"
+           alt="Connector Testing tab showing the Test Connector action."
+         />
+       </Frame>
   </Step>
 
   <Step title="Enable the connector and logging">
     1. Enable the toggle for **Attack Paths Alert**.
-    2. Open the **Logs** tab.
-    3. Enable the **Log Connection** toggle if logging is not already enabled.
-    4. Confirm in the logs that alerts are created successfully.
-    5. Open the **Cases** page to review the resulting cases, alerts, and events.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-3-4-connector-running.png"
+           alt="Connector page after the connector is enabled."
+         />
+       </Frame>
+
+    1. Open the **Logs** tab.
+    1. Enable the **Log Connection** toggle if logging is not already enabled.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-3-6-connector-logs.png"
+           alt="Connector logs showing generated alerts."
+         />
+       </Frame>
+
+    1. Confirm in the logs that alerts are created successfully.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-3-5-enable-log-connection.png"
+           alt="Connector Logs tab showing the Log Connection toggle."
+         />
+       </Frame>
+
+    1. Open the **Cases** page to review the resulting cases, alerts, and events.
+  </Step>
+</Steps>
+
+## Map and model alerts
+
+Alerts are not mapped and modeled by default. Configure field mappings before you move the integration into regular analyst workflows.
+
+<Steps>
+  <Step title="Open Mapping and Modeling">
+    Open the Google SecOps settings menu and select **Mapping and Modeling**.
+  </Step>
+
+  <Step title="Select the mapping family">
+    For this example, use the **Default** family to classify alerts under a predefined set of rules.
+
+    1. Choose the **Default** family.
+
+    1. Open the **Visualization** tab.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-7-2-default-family.png"
+           alt="Google SecOps Mapping and Modeling page with the Default family selected."
+         />
+       </Frame>
+  </Step>
+
+  <Step title="Map the required fields">
+    Map the incoming alert fields to the corresponding event fields.
+
+    1. Ensure that **StartTime** and **EndTime** are configured correctly.
+
+       These fields are crucial for defining the time frame of the events.
+
+    1. Save the mapping configuration.
+
+    1. Test the mapping with sample alerts before you use it in production.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-7-3-visualization-mapping.png"
+           alt="Visualization tab showing alert field mappings in Google SecOps."
+         />
+       </Frame>
   </Step>
 </Steps>
 
@@ -129,20 +261,34 @@ The connector retrieves attack path findings from BloodHound Enterprise and crea
 
 Configure alert grouping so Google SecOps groups related BloodHound Enterprise alerts into one case per source domain.
 
+Grouping alerts from the same domain into a single case allows for:
+
+-	Easier investigation and triage
+-	Clear, organized case structures
+-	Domain-specific incident visibility
+-	Scalable response workflows
+
 <Steps>
   <Step title="Create an alert grouping rule">
     1. Go to **SOAR Settings** > **Advanced** > **Alert Grouping**.
-    2. Click **Add Rule**.
-    3. Configure the rule with the following values:
+    1. Click **Add Rule**.
+    1. Configure the rule with the following values:
 
-    | Setting | Value |
-    | --- | --- |
-    | **Category** | `Data Source` |
-    | **Value** | `BloodHound Enterprise - Google SecOps` |
-    | **Group By** | `Entities` |
-    | **Grouping Entity** | `SourceDomain` |
+       | Setting | Value |
+       | --- | --- |
+       | **Category** | `Data Source` |
+       | **Value** | `BloodHound Enterprise - Google SecOps` |
+       | **Group By** | `Entities` |
+       | **Grouping Entity** | `SourceDomain` |
 
-    Save the rule after you enter the values.
+       Save the rule after you enter the values.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-7-4-alert-grouping-rule.png"
+           alt="Alert grouping rule configuration for the BloodHound Enterprise - Google SecOps integration."
+         />
+       </Frame>
   </Step>
 </Steps>
 
@@ -150,4 +296,8 @@ With this rule in place, Google SecOps groups all alerts for the same source dom
 
 ## Next steps
 
-After the connector is running, learn how to [investigate cases and alerts](/integrations/google-secops/use) and [troubleshoot common issues](/integrations/google-secops/troubleshoot).
+After the connector is running, use [cases and alerts](/integrations/google-secops/use) in Google SecOps to investigate BloodHound Enterprise findings.
+
+<Note>
+  For help resolving issues, see [troubleshoot common issues](/integrations/google-secops/troubleshoot).
+</Note>
