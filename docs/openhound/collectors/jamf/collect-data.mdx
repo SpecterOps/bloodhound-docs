@@ -12,42 +12,71 @@ This page covers configuring the OpenHound Jamf collector for your Jamf Pro tena
 ## Prerequisites
 
 * OpenHound installed with the Jamf collector included. Follow the OpenHound [installation](/openhound/community) instructions to set up OpenHound for BloodHound Community Edition. The Jamf collector is included by default in the OpenHound container image.
-* A Jamf Pro account with permissions to access the Jamf Pro API. See the options below for recommended roles and permissions.
+* Credentials to authenticate against the Jamf Pro API. See the options below for details on supported authentication methods.
 
-<Note>The OpenHound setup instructions for BloodHound Community Edition also apply to BloodHound Enterprise users, for now.</Note>
+<Note>
+  The OpenHound setup instructions for BloodHound Community Edition also apply to BloodHound Enterprise users.
+</Note>
 
-### Auditor Account (Recommended)
+## Choose an authentication method
 
-Create a [new account](https://docs.jamf.com/10.36.0/jamf-pro/install-guide-linux/Jamf_Pro_User_Accounts_and_Groups.html) directly assigned or part of a group assigned the "Auditor" default Jamf Pro role with "Full Access". 
+The OpenHound Jamf collector supports two authentication methods. Use the API client method whenever possible.
 
-This account will have restricted read permissions to Jamf Pro objects.
+### API client (recommended)
 
-### Administrator Account
+Authenticate with a [Jamf Pro API client](https://learn.jamf.com/en-US/bundle/jamf-pro-documentation-current/page/API_Roles_and_Clients.html) using the OAuth client credentials flow. API clients are not tied to a user account, can be scoped to a specific API role, and can be rotated or revoked independently.
 
-The OpenHound Jamf collector can authenticate using username and password for an account that has the default "Administrator" role with "Full Access" or member of a group with the "Administrator" role and "Full Access".
+To prepare credentials for this method:
 
-This is the least secure option and does not follow the best practice of least-privilege.
+1. In Jamf Pro, create an [API role](https://learn.jamf.com/en-US/bundle/jamf-pro-documentation-current/page/API_Roles_and_Clients.html) that grants the read privileges required by the collector.
+1. Create an API client and assign it the API role from the previous step.
+1. Generate a client secret for the API client and record the client ID and client secret.
+
+### Username and password
+
+Authenticate with a Jamf Pro user account. Create a [new account](https://learn.jamf.com/en-US/bundle/jamf-pro-documentation-current/page/Jamf_Pro_User_Accounts_and_Groups.html), or use an existing one, that is directly assigned or a member of a group assigned to one of the following roles with "Full Access":
+
+- **Auditor** (recommended) - Provides restricted read permissions to Jamf Pro objects and follows least privilege.
+- **Administrator** - Grants full administrative access. Use only when an Auditor account is not available.
 
 ## Configure OpenHound
 
-The following OpenHound configuration parameters are required to run the Jamf collector. These can either be set
-via the `[sources.source.jamf]` section of the secrets file or via environment variables using the `SOURCES__SOURCE__JAMF` prefix.
+Credentials for the Jamf collector are configured under the `[sources.source.jamf.credentials]` section of the secrets file, or via environment variables that use the `SOURCES__SOURCE__JAMF__CREDENTIALS` prefix.
 
-| Parameter Name | Environment Variable            | Description                                                                        |
-|----------------|---------------------------------|------------------------------------------------------------------------------------|
-| `username`     | \{PREFIX\}__USERNAME | The username of the account used to authenticate to the Jamf Pro API.              |
-| `password`     | \{PREFIX\}__PASSWORD | The password of the account used to authenticate to the Jamf Pro API.              |
-| `host`         | \{PREFIX\}__HOST     | The full host/url of the Jamf Pro tenant. For example: `https://jamf.example.com`. |
+<Warning>
+  The credentials configuration structure changed in a recent release of the OpenHound Jamf collector. If you are upgrading from an earlier version, move existing `username`, `password`, and `host` values from `[sources.source.jamf]` into `[sources.source.jamf.credentials]` and update any matching environment variables to use the new `SOURCES__SOURCE__JAMF__CREDENTIALS` prefix.
+</Warning>
 
+### API client parameters
 
-### Example Configuration
+| Parameter name  | Environment variable          | Description                                                                                       |
+|-----------------|-------------------------------|---------------------------------------------------------------------------------------------------|
+| `client_id`     | \{PREFIX\}__CLIENT_ID         | The client ID of the Jamf Pro API client used to authenticate to the Jamf Pro API.                |
+| `client_secret` | \{PREFIX\}__CLIENT_SECRET     | The client secret of the Jamf Pro API client used to authenticate to the Jamf Pro API.            |
+| `host`          | \{PREFIX\}__HOST              | The full host URL of the Jamf Pro tenant. For example: `https://tenant.jamfcloud.com`.            |
+
 ```toml title="secrets.toml"
-[sources.source.jamf]
-username = "myusername"
+[sources.source.jamf.credentials]
+client_id = "myclientid"
+client_secret = "myclientsecret"
 host = "https://tenant.jamfcloud.com"
-password = "mypassword"
 ```
 
-## Running OpenHound and Collecting Data
+### Username and password parameters
+
+| Parameter name | Environment variable      | Description                                                                            |
+|----------------|---------------------------|----------------------------------------------------------------------------------------|
+| `username`     | \{PREFIX\}__USERNAME      | The username of the account used to authenticate to the Jamf Pro API.                  |
+| `password`     | \{PREFIX\}__PASSWORD      | The password of the account used to authenticate to the Jamf Pro API.                  |
+| `host`         | \{PREFIX\}__HOST          | The full host URL of the Jamf Pro tenant. For example: `https://tenant.jamfcloud.com`. |
+
+```toml title="secrets.toml"
+[sources.source.jamf.credentials]
+username = "myusername"
+password = "mypassword"
+host = "https://tenant.jamfcloud.com"
+```
+
+## Run OpenHound and collect data
 
 <RunAndCollect source="Jamf" env="Pro tenant" />
