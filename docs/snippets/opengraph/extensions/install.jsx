@@ -20,7 +20,7 @@ export const InstallExtension = ({
           <strong>BloodHound Enterprise</strong>:{' '}
           {enterpriseEmbedded ? (
             <>
-              In BloodHound Enterprise {enterpriseEmbeddedVersion} and later, the official SpecterOps-supported {source} schema is pre-installed. Use the <a href="/opengraph/extensions/manage">OpenGraph Management</a> page to verify the installed version or upload a newer supported schema manually when you need an out-of-cycle update.
+              In BloodHound Enterprise {enterpriseEmbeddedVersion} and later, {source} is supported as a built-in extension. Use the <a href="/opengraph/extensions/manage">OpenGraph Management</a> page to verify the installed version or update to a newer version manually outside the standard BloodHound Enterprise release cycle.
             </>
           ) : (
             <>
