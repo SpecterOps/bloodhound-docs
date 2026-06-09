@@ -25,13 +25,13 @@ Use cases for custom installation include:
 This installation method provides more control over each configuration file and works well for running multiple BHCE instances on a single machine.
 
 <Steps>
-  
+
   <Step title="Install Docker Desktop">
-  
+
     Follow the instructions in the [Docker documentation](https://docs.docker.com/get-started/get-docker/) to install Docker Desktop for your operating system.
 
     <Note>Docker Desktop must be running to build and test BHCE. Start Docker Desktop on your machine.</Note>
-  
+
   </Step>
 
   <Step title="Create installation directory">
@@ -42,7 +42,7 @@ This installation method provides more control over each configuration file and 
     mkdir bhce
     cd bhce
     ```
-  
+
   </Step>
 
   <Step title="Download configuration files">
@@ -51,7 +51,7 @@ This installation method provides more control over each configuration file and 
 
     - [`docker-compose.yml`](https://github.com/SpecterOps/BloodHound/blob/main/examples/docker-compose/docker-compose.yml)
     - [`bloodhound.config.json`](https://github.com/SpecterOps/BloodHound/blob/main/examples/docker-compose/bloodhound.config.json)
-  
+
   </Step>
 
   <Step title="Add configuration files">
@@ -68,7 +68,7 @@ This installation method provides more control over each configuration file and 
 
     <Step title="Start BloodHound">
 
-    Now that your files are ready, you can bring the containers up using the following command: 
+    Now that your files are ready, you can bring the containers up using the following command:
     ```bash
     docker compose up
     ```
@@ -138,7 +138,7 @@ The code repository contains all the necessary files to build BHCE. Follow these
     ```bash
     just init
     ```
-  
+
   </Step>
 
   <Step title="Start development environment">
@@ -154,20 +154,20 @@ The code repository contains all the necessary files to build BHCE. Follow these
   <Step title="Compile BHCE">
 
     The BloodHound team maintains a Python tool called [`stbernard`](https://github.com/SpecterOps/BloodHound/wiki/packages/go/stbernard/README.md) for building and testing the project.
-    
+
     To build locally, run the following command:
 
     ```bash
     just build
     ```
-    
+
     The build process generates all artifacts in the `dist/` directory.
 
     <Tip>
     See the following resources for next steps:
 
     - [Source code wiki](https://github.com/SpecterOps/BloodHound/wiki/Development#quick-start) on GitHub for testing and debugging details.
-    
+
     - [Customizations](/get-started/custom-installation#customizations) section below to modify your installation as needed.
     </Tip>
 
@@ -224,7 +224,7 @@ If you are currently using a Neo4j backend database and want to change to Postgr
       },
       "version": 1,
       "work_dir": "/opt/bloodhound/work"
-    }                        
+    }
     ```
 
   </Step>
@@ -297,7 +297,7 @@ If you are currently using a Neo4j backend database and want to change to Postgr
 
         services:
           app-db:
-            image: docker.io/library/postgres:16
+            image: docker.io/library/postgres:18
             environment:
               - PGUSER=${POSTGRES_USER:-bloodhound}
               - POSTGRES_USER=${POSTGRES_USER:-bloodhound}
@@ -307,7 +307,7 @@ If you are currently using a Neo4j backend database and want to change to Postgr
             # ports:
             #   - 127.0.0.1:${POSTGRES_PORT:-5432}:5432
             volumes:
-              - postgres-data:/var/lib/postgresql/data
+              - postgres-data:/var/lib/postgresql
             healthcheck:
               test:
                 [
@@ -385,7 +385,7 @@ If you are currently using a PostgreSQL backend database and want to change to N
         app-db:
           labels:
             name: "bhce_postgres"
-          image: docker.io/library/postgres:16
+          image: docker.io/library/postgres:18
           environment:
             - PGUSER=${POSTGRES_USER:-bloodhound}
             - POSTGRES_USER=${POSTGRES_USER:-bloodhound}
@@ -395,7 +395,7 @@ If you are currently using a PostgreSQL backend database and want to change to N
           # ports:
           #   - 127.0.0.1:${POSTGRES_PORT:-5432}:5432
           volumes:
-            - postgres-data:/var/lib/postgresql/data
+            - postgres-data:/var/lib/postgresql
           healthcheck:
             test:
               [
@@ -520,7 +520,7 @@ To secure BHCE with HTTPS, add your certificate information to the `tls` block i
   <Step title="Configure TLS settings">
 
     In the `bloodhound.config.json` file, set `cert_file` and `key_file` to the paths where the certificate and key will be available **inside the container**.
-    
+
     These values must match the container-side destination of the volume mount you add in the next step, not the location of the files on your host:
 
     ```json title="bloodhound.config.json"
@@ -567,11 +567,11 @@ To secure BHCE with HTTPS, add your certificate information to the `tls` block i
   <Step title="Verify HTTPS">
 
     Browse to `https://127.0.0.1:8080` and confirm that BloodHound loads over HTTPS.
-    
+
     The default URL is `http://127.0.0.1:8080`, so make sure to change the protocol to `https://` in the address bar.
 
     The listening port is unchanged. TLS is negotiated on the same port that the BloodHound service binds to by default (`8080`).
-    
+
     <Note>
       Browsers display a certificate warning when you use a self-signed certificate; this is expected and does not occur with a CA-issued certificate.
     </Note>
@@ -597,7 +597,7 @@ Follow these steps to run multiple BHCE instances on a single machine.
   <Step title="Change default BHCE port">
 
     In the `docker-compose.yml` file, update the BloodHound service port binding to use a different port.
-    
+
     The following example uses port `8585` instead of the default `8080` port:
 
     ```yaml
@@ -630,12 +630,12 @@ Follow these steps to run multiple BHCE instances on a single machine.
 
 ### Expose BHCE outside of `localhost`
 
-You might need to access your BHCE instance from another computer than the one it is installed on. The default installation does not 
+You might need to access your BHCE instance from another computer than the one it is installed on. The default installation does not
 expose the port outside of `localhost`. To do it, you will need to change the IP address that the BloodHound UI binds to.
 
 In the `docker-compose.yml` file, update the BloodHound service port binding to use a different IP Address.
 
-The following example uses IP `0.0.0.0` to bind the port `8080` to _all_ interfaces and IP Addresses on the machine. If the machine has multiple IP Addresses, you can set that specific IP Address. 
+The following example uses IP `0.0.0.0` to bind the port `8080` to _all_ interfaces and IP Addresses on the machine. If the machine has multiple IP Addresses, you can set that specific IP Address.
 
 ```yaml
 - ${BLOODHOUND_HOST:-0.0.0.0}:${BLOODHOUND_PORT:-8080}:8080
