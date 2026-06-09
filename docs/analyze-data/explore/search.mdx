@@ -7,13 +7,13 @@ description: Search for objects and visualize relationships between them in the 
 
 After [uploading data](/get-started/quickstart/community-edition-quickstart#get-data-into-bloodhound) to BloodHound, use the **Explore** page to search for objects and visualize their relationships. The graph displays <Tooltip headline="nodes" tip="Part of the graph construct and refers to an entity in the network, such as a user, computer, group, or domain. Two nodes can be connected by an edge." cta="See the docs" href="/resources/nodes/overview">nodes</Tooltip> and <Tooltip headline="edges" tip="Part of the graph construct and refers to a relationship between two nodes, such as group membership or session information." cta="See the docs" href="/resources/edges/overview">edges</Tooltip>, helping you understand your environment and identify potential attack paths.
 
-BloodHound supports multiple data sources, including Active Directory, Azure (Entra ID), and other identity services through [OpenGraph](/opengraph/overview).
-
-<Note>BloodHound supports all search methods for [structured](/opengraph/extensions/manage#structured-graphs) graphs. If you're exploring [generic](/opengraph/extensions/manage#generic-graphs) graphs, you can use the **Search** and **Cypher** search methods only.</Note>
-
 <Note>If your account uses [Environment Targeted Access Control (ETAC)](/manage-bloodhound/auth/environment-targeted-access-control), search results and graph data are limited to the environments you can access.</Note>
 
+BloodHound supports multiple data sources, including Active Directory, Azure (Entra ID), and other identity services through [OpenGraph](/opengraph/overview).
+
 The **Explore** page provides the following methods for searching for objects and visualizing their relationships:
+
+<Note>BloodHound supports all search methods for [structured](/opengraph/extensions/manage#structured-graphs) graphs. If you're exploring [generic](/opengraph/extensions/manage#generic-graphs) graphs, you can use the **Search** and **Cypher** search methods only.</Note>
 
 <CardGroup cols={3}>
   <Card title="Search" icon="magnifying-glass" href="/analyze-data/explore-objects#search">
@@ -113,9 +113,78 @@ The graph on the **Explore** page provides a visual representation of the object
 
 The following example shows a graph based on the example in the [Pathfinding](/analyze-data/explore/search#pathfinding) section above, which finds paths from a user named "bob" to a group named "domain admins".
 
-<img src="/images/explore/graph-example.png" alt="An example graph view on the Explore page"/>
+<Frame>
+  <img src="/images/explore/graph-example.png" alt="An example graph view on the Explore page" />
+</Frame>
 
 The graph displays the nodes and edges that connect user `BOB@PHANTOM.CORP` to group `DOMAIN ADMINS@PHANTOM.CORP`, allowing you to visually explore the relationships between objects.
+
+### Object interaction
+
+You can interact with nodes and edges in the graph to view detailed information about them in the **Entity** panel. For nodes, you can right-click to perform more actions using the [context menu](/analyze-data/explore/search#context-menu).
+
+When you click a node, BloodHound dims unrelated nodes and edges and highlights every path that traverses the selected node. This includes inbound and outbound object control paths, making it easier to isolate how the selected node participates in the current graph.
+
+For example, clicking `USERS@PHANTOM.CORP` in the previous graph highlights the path through that node to `DOMAIN ADMINS@PHANTOM.CORP` and dims the other paths that do not traverse it.
+
+<Frame>
+  <img src="/images/explore/graph-example-highlight.png" alt="An example graph view showing full path highlighting in the Explore page" />
+</Frame>
+
+<Note>
+  Full-path highlighting is enabled by default. BloodHound stores this preference in the browser `localStorage` entry named `persistedState`, under `global.view.isExploreGraphHighlight`. The feature stays enabled unless that value is explicitly set to `false`.
+
+  At this time, the only way to disable full-path highlighting is in your browser console. Run the following code, then reload the page:
+
+  ```javascript
+  const state = JSON.parse(localStorage.getItem('persistedState'));
+  state.global.view.isExploreGraphHighlight = false;
+  localStorage.setItem('persistedState', JSON.stringify(state));
+  ```
+</Note>
+
+#### Context menu
+
+Right-click on any node in the graph to access the context menu. Options in the context menu include:
+
+* **Set as starting node**—Set the node as the starting point in the **Pathfinding** tab and immediately draw a new graph showing paths between that node and the current ending node
+* **Set as ending node**—Set the node as the ending point in the **Pathfinding** tab and immediately draw a new graph showing paths between the current starting node and that node
+* **Add to/Remove from Tier Zero**—Mark or unmark the node as a member of the Tier Zero privilege zone. Adding automatically triggers analysis to tag the object; removing requires manually editing the zone rule to remove the object.
+* **Add to/Remove from Owned**—Mark or unmark the node as compromised in the Privilege Zones page. Adding automatically triggers analysis to tag the object; removing requires manually editing the label rule to remove the object.
+* **Copy**—Copy the node's name, object ID, or a Cypher query to your clipboard for use in other searches or documentation
+
+#### Entity panel
+
+The **Entity** panel on the **Explore** page displays detailed object properties and relationships. The information is displayed in an accordion format based on the selected node or edge, which can vary depending on your data source.
+
+<Note>For built-in node and edge types (AD/AZ), BloodHound displays structured data organized into the accordions described below. For OpenGraph data, BloodHound displays all values from the [`properties`](/opengraph/developer/nodes) object as a flat list, without the structured accordions.</Note>
+
+For nodes, expanding each accordion reveals more detail and dynamically updates the graph. For example, expanding the **Sessions** accordion shows all computers where the node has active sessions and updates the graph.
+
+BloodHound displays the following information in the **Entity** panel when you click on a node (if the information is available in your data):
+
+| Accordion                     | Description                                                                                     |
+|-------------------------------|-------------------------------------------------------------------------------------------------|
+| **Object Information**        | Displays the collected properties and attributes of a selected object<br/><br/>See [node reference](/resources/nodes/overview) for details about each node type |
+| **Sessions**                  | List of objects where the selected node has active sessions                                    |
+| **Members**                   | List of objects that are members of the selected node                                          |
+| **Member Of**                 | List of objects where the selected node is a member                                           |
+| **Local Admin Privileges**    | List of objects where the selected node has local administrator privileges                     |
+| **Execution Privileges**      | List of objects where the selected node has execution privileges                               |
+| **Inbound Object Control**     | List of objects that can control the selected node                                            |
+| **Outbound Object Control**    | List of objects that the selected node can control                                            |
+
+BloodHound displays the following information in the **Entity** panel when you click on an edge (if the information is available in your data):
+
+| Accordion | Description |
+|----------|-------------|
+| **Relationship Information** | System details about the relationship between two nodes connected by a selected edge |
+| **General** | A detailed description of the relationship between the two nodes connected by a selected edge |
+| **Abuse** | Step-by-step guidance, tools, and techniques for abusing the relationship represented by an edge to compromise or gain control over a target principal |
+| **OPSEC** | Operational security implications and detection risks associated with abusing a particular edge |
+| **References** | Links to publicly available resources used to create the above information |
+
+<Tip>This information is also available for each edge in the [reference](/resources/edges/overview) documentation.</Tip>
 
 ### Visualization options
 
@@ -216,50 +285,3 @@ Use the graph visualization options at the bottom of the **Explore** page to cus
     </Tabs>
 
 <Note>Graph visualization options are available across all search methods. The **Table** layout is available for Cypher searches only.</Note>
-
-### Object interaction
-
-You can interact with nodes and edges in the graph to view detailed information about them in the **Entity** panel. For nodes, you can right-click to perform more actions using the context menu.
-
-#### Context menu
-
-Right-click on any node in the graph to access the context menu. Options in the context menu include:
-
-* **Set as starting node**—Set the node as the starting point in the **Pathfinding** tab and immediately draw a new graph showing paths between that node and the current ending node
-* **Set as ending node**—Set the node as the ending point in the **Pathfinding** tab and immediately draw a new graph showing paths between the current starting node and that node
-* **Add to/Remove from Tier Zero**—Mark or unmark the node as a member of the Tier Zero privilege zone. Adding automatically triggers analysis to tag the object; removing requires manually editing the zone rule to remove the object.
-* **Add to/Remove from Owned**—Mark or unmark the node as compromised in the Privilege Zones page. Adding automatically triggers analysis to tag the object; removing requires manually editing the label rule to remove the object.
-* **Copy**—Copy the node's name, object ID, or a Cypher query to your clipboard for use in other searches or documentation
-
-#### Entity panel
-
-The **Entity** panel on the **Explore** page displays detailed object properties and relationships. The information is displayed in an accordion format based on the selected node or edge, which can vary depending on your data source.
-
-<Note>For built-in node and edge types (AD/AZ), BloodHound displays structured data organized into the accordions described below. For OpenGraph data, BloodHound displays all values from the [`properties`](/opengraph/developer/nodes) object as a flat list, without the structured accordions.</Note>
-
-For nodes, expanding each accordion reveals more detail and dynamically updates the graph. For example, expanding the **Sessions** accordion shows all computers where the node has active sessions and updates the graph.
-
-BloodHound displays the following information in the **Entity** panel when you click on a node (if the information is available in your data):
-
-| Accordion                     | Description                                                                                     |
-|-------------------------------|-------------------------------------------------------------------------------------------------|
-| **Object Information**        | Displays the collected properties and attributes of a selected object<br/><br/>See [node reference](/resources/nodes/overview) for details about each node type |
-| **Sessions**                  | List of objects where the selected node has active sessions                                    |
-| **Members**                   | List of objects that are members of the selected node                                          |
-| **Member Of**                 | List of objects where the selected node is a member                                           |
-| **Local Admin Privileges**    | List of objects where the selected node has local administrator privileges                     |
-| **Execution Privileges**      | List of objects where the selected node has execution privileges                               |
-| **Inbound Object Control**     | List of objects that can control the selected node                                            |
-| **Outbound Object Control**    | List of objects that the selected node can control                                            |
-
-BloodHound displays the following information in the **Entity** panel when you click on an edge (if the information is available in your data):
-
-| Accordion | Description |
-|----------|-------------|
-| **Relationship Information** | System details about the relationship between two nodes connected by a selected edge |
-| **General** | A detailed description of the relationship between the two nodes connected by a selected edge |
-| **Abuse** | Step-by-step guidance, tools, and techniques for abusing the relationship represented by an edge to compromise or gain control over a target principal |
-| **OPSEC** | Operational security implications and detection risks associated with abusing a particular edge |
-| **References** | Links to publicly available resources used to create the above information |
-
-<Tip>This information is also available for each edge in the [reference](/resources/edges/overview) documentation.</Tip>
