@@ -45,9 +45,13 @@ SpecterOps has developed several extensions that follow this model, including:
   Only users with the Administrator [role](/manage-bloodhound/auth/users-and-roles#user-role-definitions) can upload and delete extension definition schemas. Non-administrator users can view installed extensions, findings, and edges.
 </Note>
 
+In BloodHound Enterprise v9.3.0 and later, the official SpecterOps-supported GitHub, Jamf, and Okta extension schemas are pre-installed in the product. BloodHound Enterprise installs or updates those schemas based on semantic version comparison at startup.
+
+In BloodHound Community, Administrators still manage schemas manually. Administrators also manage custom or companion schemas such as SCIM manually in Enterprise.
+
 ### Before you begin
 
-Complete the following steps before installing an extension or uploading structured graph data:
+Complete the following steps before you verify or install an extension and upload structured graph data:
 
 <Note>
   Only users with the Administrator [role](/manage-bloodhound/auth/users-and-roles#user-role-definitions) can manage extensions.
@@ -63,18 +67,18 @@ Complete the following steps before installing an extension or uploading structu
     	  Support for extension-defined **Findings** in BloodHound Enterprise is a SpecterOps-managed feature. If it is not enabled in your environment, contact your account team for assistance.
   		</Note>
 	</Step>
-	<Step title="Get extension artifacts">
-		How you obtain extensions and collectors depends on your BloodHound edition and how they are distributed:
+		<Step title="Get extension artifacts">
+			How you obtain extensions and collectors depends on your BloodHound edition and how they are distributed:
 
 
-		- **BloodHound Community**: Users can download and use [publicly available](/opengraph/library) community-built extensions and collectors from GitHub repositories.
+			- **BloodHound Community**: Users can download and use [publicly available](/opengraph/library) community-built extensions and collectors from GitHub repositories.
 
-		- **BloodHound Enterprise**: Customers can also use publicly available extensions and collectors, but they may also acquire official SpecterOps-provided extensions. Official extensions include detailed findings and remediation guidance.
-		
-		  <Note>
-		    Contact your account team for availability.
-		  </Note>
-	</Step>
+			- **BloodHound Enterprise**: In v9.3.0 and later, the official SpecterOps-supported GitHub, Jamf, and Okta extension schemas are pre-installed. Use the **OpenGraph Management** page to verify the installed version. You can still upload publicly available, companion, or custom schemas manually as needed.
+
+			  <Note>
+			    Official Enterprise extensions can include detailed findings and remediation guidance when that feature is enabled in your environment. Contact your account team for availability.
+			  </Note>
+		</Step>
 	<Step title="Review prerequisites">
 		After you obtain an extension and collector, review the prerequisites in the extension-specific setup documentation.
 		
@@ -84,7 +88,9 @@ Complete the following steps before installing an extension or uploading structu
 
 ### Workflow
 
-The workflow for generic and structured OpenGraph data is largely the same. The main difference is that structured graphs require an Administrator to install the extension during initial setup. After that, users with read access can view installed extensions and use the resulting structured graph data, while only Administrators can upload or delete extension definition schemas. See [User Role Definitions](/manage-bloodhound/auth/users-and-roles#user-role-definitions) for a full breakdown of permissions.
+The workflow for generic and structured OpenGraph data is largely the same. The main difference is that structured graphs require an Administrator to make sure the extension definition schema is available during initial setup, either by verifying a pre-installed schema or by uploading one manually.
+
+After that, users with read access can view installed extensions and use the resulting structured graph data, while only Administrators can upload or delete extension definition schemas. See [User Role Definitions](/manage-bloodhound/auth/users-and-roles#user-role-definitions) for a full breakdown of permissions.
 
 <Note>
 	For [OpenHound](/openhound/overview) collectors (GitHub, Jamf, and Okta), upload behavior depends on both deployment model and BloodHound edition. Only BloodHound Enterprise can accept payloads directly through the API. BloodHound Community requires manual file upload.
@@ -97,7 +103,7 @@ The following diagram provides a high-level overview of the recommended workflow
 The initial setup workflow is not strictly linear and not all steps are required. For example, importing Saved Queries and creating extension-specific Privilege Zone rules are optional.
 
 <Note>
-  For generic graphs, the workflow is minimal: users may optionally import Saved Queries (if any). Installing an extension definition schema and updating Privilege Zone rules is not required.
+  For generic graphs, the workflow is minimal: users may optionally import Saved Queries (if any). Verifying or installing an extension definition schema and updating Privilege Zone rules is not required.
 </Note>
 
 ```mermaid
@@ -108,9 +114,9 @@ flowchart TB
         b-->c["Run<br/>collector"]
     end
 
-	subgraph upload[Install Extension]
-		f["Install extension<br/>definition schema"]
-        f-->g["Import Cypher<br/>saved queries"]
+	subgraph upload[Verify or Install Extension]
+		f["Verify or install extension<br/>definition schema"]
+	    f-->g["Import Cypher<br/>saved queries"]
 		g-->h["Update Privilege<br/>Zone rules"]
 	end
 
@@ -180,70 +186,110 @@ sequenceDiagram
 	User->>BloodHound: Explore and analyze data
 ```
 
-### Install an extension
+### Verify or install an extension
 
-Installing an extension involves uploading the extension definition schema to BloodHound, which validates the schema and makes it available for use with compatible data payloads.
+Before you upload structured OpenGraph data, make sure BloodHound has the matching extension definition schema.
+
+In BloodHound Enterprise v9.3.0 and later, the official SpecterOps-supported GitHub, Jamf, and Okta schemas are pre-installed and usually only need verification. In BloodHound Community (and for custom or companion schemas, such as SCIM), Administrators install the schema manually.
 
 <Note>
-  Only users with the Administrator [role](/manage-bloodhound/auth/users-and-roles#user-role-definitions) can upload and delete extension definition schemas.
+  Only users with the Administrator [role](/manage-bloodhound/auth/users-and-roles#user-role-definitions) can install and delete extension definition schemas.
 </Note>
 
-After installing, BloodHound produces structured graphs for data payloads that conform to the extension.
+After the schema is installed, BloodHound produces structured graphs for data payloads that conform to the extension.
 
 <Steps>
   <Step title="Open the OpenGraph Management page">
 	In the left menu, click **Administration** > **OpenGraph Management**.
   </Step>
-  <Step title="Upload the extension definition schema">
-	1. Click **Upload File** to open a file system dialog or drag and drop an extension definition schema file onto the canvas.
+  <Step title="Verify or install schemas">
+		Choose the path that matches your scenario: 
 
-	1. Click **Upload** to begin the schema installation and validation process.
+		<Tabs>
+		  <Tab title="Verify pre-installed schemas">
+			Confirm the extension definition schemas appear in the list of active extensions.
 
-	   <img
-		src="/images/opengraph/extensions/manage/upload-extension-schema.png"
-		alt="A screenshot showing the OpenGraph Management page with the Upload Schema Files dialog open, allowing the user to select a file and upload it."
-		style= {{ width: "50%" }}
-	   />
-  </Step>
-  <Step title="Confirm installation">
-	Confirm the extension appears in the list of active extensions.
+			For example, the GitHub, Jamf, and Okta schemas should be visible in the list in BloodHound Enterprise.
 
-	<Note>
-	You may need to refresh the page to see the newly installed extension in the list of active extensions.
-	</Note>
+			<Frame>
+			  <img
+				src="/images/opengraph/extensions/manage/verify-extension-schema.png"
+				alt="A screenshot showing the OpenGraph Management page showing the list of active extensions."
+				style= {{ width: "100%" }}
+			  />
+			</Frame>
+		  </Tab>
+		  <Tab title="Install a schema">
+			1. Click **Upload File** to open a file system dialog or drag and drop an extension definition schema file onto the canvas.
 
-	<Frame>
-	  <img
-	    src="/images/opengraph/extensions/manage/active-extensions-list.png"
-		alt="A screenshot showing the OpenGraph Management page with the list of active extensions, highlighting the newly installed extension."
-	  />
-	</Frame>
+			1. Click **Upload** to begin the schema installation and validation process.
+
+				<Frame>
+				  <img
+				    src="/images/opengraph/extensions/manage/upload-extension-schema.png"
+				    alt="A screenshot showing the OpenGraph Management page with the Upload Schema Files dialog open, allowing the user to select a file and upload it."
+				    style= {{ width: "50%" }}
+				  />
+				</Frame>
+
+			1. Confirm the extension appears in the list of active extensions and that the version shown matches the schema you expect BloodHound to use.
+
+			   <Note>
+			     You may need to refresh the page to see the newly installed extension in the list of active extensions.
+			   </Note>
+
+			   <Frame>
+			     <img
+				   src="/images/opengraph/extensions/manage/active-extensions-list.png"
+				   alt="A screenshot showing the OpenGraph Management page with the list of active extensions, highlighting the newly installed extension."
+				 />
+			   </Frame>
+		  </Tab>
+		</Tabs>
   </Step>
 </Steps>
 
 ### Update an extension
 
-Collectors and extensions are versioned separately to allow for more flexible updates, but this requires coordination to maintain compatibility and support. Follow these guidelines for managing updates:
+Collectors and extensions are versioned separately to allow for more flexible updates, but this requires coordination to maintain compatibility and support. 
+
+In BloodHound Enterprise v9.3.0 and later, the built-in GitHub, Jamf, and Okta extensions also follow automatic startup update rules.
+
+| If the installed version is... | Compared with the built-in version | BloodHound action at startup |
+|---|---|---|
+| Older | Semantically less than built-in | Replace it with the built-in version |
+| The same | Semantically equal to built-in | Leave it unchanged |
+| Newer | Semantically greater than built-in | Leave it unchanged |
+
+Follow these guidelines for managing updates:
 
 - Do not update collectors independently without confirming extension definition schema compatibility.
 - Update collectors and extension definition schemas together whenever possible.
-- If you use SpecterOps-provided extensions or collectors, coordinate update cycles with your account team.
+- Coordinate with your account team if you want to update a built-in extension to another version outside the standard BloodHound Enterprise release cycle. 
+
+  <Note>
+    While you can update built-in extensions manually, we recommend coordinating with your account team to ensure compatibility and support.
+  </Note>
 
 To update an extension, upload the new version using the same process as installing a new extension. BloodHound validates the new extension definition schema and replaces the old version with the new one.
 
+{/* TODO(doc validation): Verify the UI behavior when an Administrator manually uploads an older rollback version over an embedded extension. Confirm whether deleting that manual version falls back to the embedded schema immediately, requires restart, or is blocked. */}
+
 ### Delete an extension
 
-Deleting an extension removes the extension definition schema from BloodHound, but leaves the underlying data intact. Associated data reverts to generic graphs—structured graph capabilities are no longer available—but you can still use node search and Cypher queries on the [Explore](/analyze-data/explore/search#search) page to explore the data.
+Deleting an extension removes the extension definition schema from BloodHound, but leaves the underlying data intact. Associated data reverts to generic graphs, which means structured graph capabilities are no longer available. You can still use node search and Cypher queries on the [Explore](/analyze-data/explore/search#search) page to explore the data.
 
 If you want to delete the data associated with an extension, you can do so separately on the **Database Management** page.
 
-To delete an extension, click the <Icon icon="trash"/> (trash) icon next to it in the list of active extensions and confirm the deletion in the prompt.
+To delete a removable custom or manually installed extension, click the <Icon icon="trash"/> (trash) icon next to it in the list of active extensions and confirm the deletion in the prompt.
 
-<Note>You cannot delete built-in extensions that come with BloodHound, but you can delete custom extensions that you have installed.</Note>
+<Note>
+  You cannot delete built-in extensions that come with BloodHound Enterprise. You can delete custom extensions and other schemas that BloodHound exposes as removable in the UI.
+</Note>
 
 ## Upload data
 
-After an Administrator installs an extension, users can upload data payloads that conform to the extension definition schema and take advantage of structured graph capabilities in BloodHound.
+After an Administrator installs an extension or verifies that a schema is present, users can upload data payloads that conform to the extension definition schema and take advantage of structured graph capabilities in BloodHound.
 
 For extensions that use OpenHound collectors (GitHub, Jamf, and Okta), AzureHound, or SharpHound, how data is uploaded depends on your BloodHound edition:
 
