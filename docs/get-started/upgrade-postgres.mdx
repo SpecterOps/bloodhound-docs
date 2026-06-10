@@ -85,22 +85,32 @@ if ([string]::IsNullOrWhiteSpace($dumpPath)) { $dumpPath = $defaultDump }
 $dumpPath = [System.IO.Path]::GetFullPath($dumpPath.Replace("~", $HOME))
 
 # ── 2. Read credentials (.env then defaults) ────────────────────────────────
-$pgUser = "bloodhound"; $pgPass = "bloodhoundcommunityedition"; $pgDb = "bloodhound"
+$pgUser = "bloodhound"; $pgDb = "bloodhound"
 
 $envFile = Join-Path $composeDir ".env"
 if (Test-Path $envFile) {
     Write-Host "Reading overrides from $envFile ..."
     Get-Content $envFile | ForEach-Object {
         if ($_ -match '^\s*POSTGRES_USER\s*=\s*(.+)$')     { $pgUser = $Matches[1].Trim() }
-        if ($_ -match '^\s*POSTGRES_PASSWORD\s*=\s*(.+)$')  { $pgPass = $Matches[1].Trim() }
         if ($_ -match '^\s*POSTGRES_DB\s*=\s*(.+)$')        { $pgDb   = $Matches[1].Trim() }
     }
 }
 Write-Host "Credentials: user=$pgUser  db=$pgDb"
 
-# ── 3. Resolve volume name ──────────────────────────────────────────────────
-$projectName = (Split-Path $composeDir -Leaf).ToLower() -replace '[^a-z0-9_-]',''
-$volumeName  = "${projectName}_postgres-data"
+# ── 3. Resolve project and volume names via Docker Compose ───────────────────
+$dcBase = @("-f", $composeFile, "--project-directory", $composeDir)
+
+$projectName = (docker compose @dcBase config --format json | ConvertFrom-Json).name
+if ([string]::IsNullOrWhiteSpace($projectName)) {
+    Write-Error "Could not determine Compose project name."; exit 1
+}
+
+$declaredVols = @(docker compose @dcBase config --volumes)
+$pgVolDecl = $declaredVols | Where-Object { $_ -match 'postgres-data' } | Select-Object -First 1
+if (-not $pgVolDecl) {
+    Write-Error "No 'postgres-data' volume declared in compose config."; exit 1
+}
+$volumeName = "${projectName}_${pgVolDecl}"
 
 $volExists = docker volume ls --format "{{.Name}}" | Where-Object { $_ -eq $volumeName }
 if (-not $volExists) {
@@ -169,7 +179,10 @@ $content = Get-Content $composeFile -Raw
 $updated = $content -replace 'image:\s*docker\.io/library/postgres:16', 'image: docker.io/library/postgres:18'
 if ($updated -eq $content) { Write-Error "Could not find postgres:16 image reference in compose file"; exit 1 }
 # PG 18+ expects the mount at /var/lib/postgresql (not /var/lib/postgresql/data).
+# It manages version-specific subdirectories under that path automatically.
+$beforeMount = $updated
 $updated = $updated -replace 'postgres-data:/var/lib/postgresql/data', 'postgres-data:/var/lib/postgresql'
+if ($updated -eq $beforeMount) { Write-Error "Could not find postgres-data:/var/lib/postgresql/data volume mount in compose file"; exit 1 }
 [System.IO.File]::WriteAllText($composeFile, $updated)
 Write-Ok "docker-compose.yml updated (image + volume mount path)."
 
@@ -181,13 +194,19 @@ Write-Ok "Old volume removed (backup preserved at $backupVol)."
 Write-Step "Starting PostgreSQL 18"
 Invoke-DC up -d app-db
 
-Write-Host "Waiting for PostgreSQL 18 to become healthy..."
+# Resolve the actual container name for app-db from Compose
+$appDbContainer = (docker compose @dcBase ps --format "{{.Name}}" app-db).Trim()
+if ([string]::IsNullOrWhiteSpace($appDbContainer)) {
+    Write-Error "Could not determine container name for app-db service."; exit 1
+}
+
+Write-Host "Waiting for PostgreSQL 18 to become healthy ($appDbContainer)..."
 for ($i = 0; $i -lt 30; $i++) {
     Start-Sleep -Seconds 2
-    $health = docker inspect --format "{{.State.Health.Status}}" "${projectName}-app-db-1" 2>$null
+    $health = docker inspect --format "{{.State.Health.Status}}" $appDbContainer 2>$null
     if ($health -eq "healthy") { break }
 }
-if ($health -ne "healthy") { Write-Warn "Container not yet healthy — continuing anyway." }
+if ($health -ne "healthy") { Write-Error "Container '$appDbContainer' is not healthy (status: $health). Aborting migration."; exit 1 }
 
 # ── 11. Restore database ────────────────────────────────────────────────────
 Write-Step "Restoring database into PostgreSQL 18"
@@ -235,7 +254,7 @@ After the script finishes running, confirm that the database is healthy and your
     ```bash
     docker compose exec app-db psql -U [POSTGRES_USER] -d [POSTGRES_DB] -c "SELECT version();"
     ```
-    
+
     The output should include `PostgreSQL 18`.
 
   </Step>
