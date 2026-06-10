@@ -45,9 +45,9 @@ SpecterOps has developed several extensions that follow this model, including:
   Only users with the Administrator [role](/manage-bloodhound/auth/users-and-roles#user-role-definitions) can upload and delete extension definition schemas. Non-administrator users can view installed extensions, findings, and edges.
 </Note>
 
-In BloodHound Enterprise v9.3.0 and later, these are built-in extensions. BloodHound Enterprise automatically installs or updates them based on semantic version comparison at startup.
+In BloodHound Enterprise v9.3.0 and later, GitHub, Jamf, and Okta are pre-installed. BloodHound Enterprise automatically installs or updates these built-in extensions at startup based on semantic version comparison. Administrators still manage custom or companion extension definition schemas, such as SCIM, manually.
 
-In BloodHound Community, Administrators still manage schemas manually. Administrators also manage custom or companion schemas such as SCIM manually in Enterprise.
+In BloodHound Community, Administrators manage all extension definition schemas manually.
 
 ### Before you begin
 
@@ -73,10 +73,12 @@ Complete the following steps before you verify or install an extension and uploa
 
 			- **BloodHound Community**: Users can download and use [publicly available](/opengraph/library) community-built extensions and collectors from GitHub repositories.
 
-			- **BloodHound Enterprise**: In v9.3.0 and later, GitHub, Jamf, and Okta are built-in extensions. Use the **OpenGraph Management** page to verify the installed version. You can still manually upload publicly available, companion, or custom extensions as needed.
+			- **BloodHound Enterprise**: In v9.3.0 and later, GitHub, Jamf, and Okta are supported as pre-installed extensions. Use the **OpenGraph Management** page to verify the installed version. You can still manually upload publicly available, companion, or custom extensions as needed.
+
+			  If you need a newer version of a pre-installed extension outside the standard BloodHound Enterprise release cycle, coordinate with your account team.
 
 			  <Note>
-			    Built-in extensions can include detailed findings and remediation guidance when that feature is enabled in your environment. Contact your account team for availability.
+			    Pre-installed extensions can include detailed findings and remediation guidance when that feature is enabled in your environment. Contact your account team for availability.
 			  </Note>
 		</Step>
 	<Step title="Review prerequisites">
@@ -88,9 +90,9 @@ Complete the following steps before you verify or install an extension and uploa
 
 ### Workflow
 
-The workflow for generic and structured OpenGraph data is largely the same. The main difference is that structured graphs require an Administrator to make sure the extension definition schema is available during initial setup, either by verifying a built-in schema or by uploading one manually.
+The workflow for generic and structured OpenGraph data is largely the same. The main difference is that structured graphs require an extension definition schema to be installed. An Administrator can ensure availability either by verifying a pre-installed extension or by uploading one manually.
 
-After that, users with read access can view installed extensions and use the resulting structured graph data, while only Administrators can upload or delete extension definition schemas. See [User Role Definitions](/manage-bloodhound/auth/users-and-roles#user-role-definitions) for a full breakdown of permissions.
+After that, users with read access can view installed extensions and use the resulting structured graph data. If changes are needed, only Administrators can upload or delete extension definition schemas. See [User Role Definitions](/manage-bloodhound/auth/users-and-roles#user-role-definitions) for a full breakdown of permissions.
 
 <Note>
   For [OpenHound](/openhound/overview) collectors (GitHub, Jamf, and Okta), upload behavior depends on both deployment model and BloodHound edition. Only BloodHound Enterprise can accept payloads directly through the API. BloodHound Community requires manual file upload.
@@ -190,10 +192,12 @@ sequenceDiagram
 
 Before you upload structured OpenGraph data, make sure BloodHound has the matching extension definition schema.
 
-In BloodHound Enterprise v9.3.0 and later, GitHub, Jamf, and Okta are built-in extensions and usually only need verification. In BloodHound Community (and for custom or companion schemas, such as SCIM), Administrators must install the extensions manually.
+In BloodHound Enterprise v9.3.0 and later, GitHub, Jamf, and Okta are supported as pre-installed extensions and usually only need verification. Administrators still manage custom or companion extension definition schemas, such as SCIM, manually.
+
+In BloodHound Community, Administrators manage all extension definition schemas manually.
 
 <Note>
-  Only users with the Administrator [role](/manage-bloodhound/auth/users-and-roles#user-role-definitions) can install and delete extension definition schemas.
+  Only users with the Administrator [role](/manage-bloodhound/auth/users-and-roles#user-role-definitions) can install, update, and delete extension definition schemas.
 </Note>
 
 After the extension is installed, BloodHound produces structured graphs for data payloads that conform to the extension.
@@ -202,14 +206,14 @@ After the extension is installed, BloodHound produces structured graphs for data
   <Step title="Open the OpenGraph Management page">
 	In the left menu, click **Administration** > **OpenGraph Management**.
   </Step>
-  <Step title="Verify or install schemas">
+  <Step title="Verify or install extensions">
 		Choose the path that matches your scenario: 
 
 		<Tabs>
 		  <Tab title="Verify pre-installed extensions">
 			Confirm the extension appears in the list of active extensions.
 
-			For example, the built-in GitHub, Jamf, and Okta schemas should be visible in the list in BloodHound Enterprise.
+			For example, confirm that BloodHound Enterprise lists the built-in Active Directory and Azure extensions and the pre-installed GitHub, Jamf, and Okta extensions.
 
 			<Frame>
 			  <img
@@ -251,11 +255,15 @@ After the extension is installed, BloodHound produces structured graphs for data
 
 ### Update an extension
 
-Collectors and extensions are versioned separately to allow for more flexible updates, but this requires coordination to maintain compatibility and support. 
+Collectors and extensions are versioned separately. To avoid compatibility issues, do not update collectors independently without confirming extension compatibility. Update collectors and extension definition schemas together whenever possible.
 
-In BloodHound Enterprise v9.3.0 and later, the built-in GitHub, Jamf, and Okta extensions also follow automatic update rules.
+To update an extension, upload the new version using the same process as installing a new extension. BloodHound validates the new extension definition schema and replaces the earlier version with the new one.
 
-During a BloodHound Enterprise release, the system compares built-in extension versions with the latest versions for that release and keeps whichever version is newer:
+#### Automatic updates
+
+In BloodHound Enterprise v9.3.0 and later, the pre-installed GitHub, Jamf, and Okta extensions follow automatic update rules.
+
+During a BloodHound Enterprise release, the system compares pre-installed extension versions with the latest versions for that release and keeps whichever version is newer:
 
 | System condition | System action |
 |---|---|
@@ -264,19 +272,13 @@ During a BloodHound Enterprise release, the system compares built-in extension v
 | Installed versions match the latest versions | No action taken |
 | Installed versions are newer than the latest versions | No action taken |
 
-Follow these guidelines for managing updates:
+If you want to update a pre-installed extension outside the standard BloodHound Enterprise release cycle, coordinate with your account team.
 
-- Do not update collectors independently without confirming extension definition schema compatibility.
-- Update collectors and extension definition schemas together whenever possible.
-- Coordinate with your account team if you want to update a built-in extension to another version outside the standard BloodHound Enterprise release cycle. 
+<Note>
+  You can manually install an older version of a pre-installed extension. However, this rollback does not persist across application restarts.
 
-  <Note>
-    While you can update built-in extensions manually, we recommend coordinating with your account team to ensure compatibility and support.
-  </Note>
-
-To update an extension, upload the new version using the same process as installing a new extension. BloodHound validates the new extension definition schema and replaces the old version with the new one.
-
-{/* TODO(doc validation): Verify the UI behavior when an Administrator manually uploads an older rollback version over a built-in extension. Confirm whether deleting that manual version falls back to the built-in schema immediately, requires restart, or is blocked. */}
+  During a release, BloodHound Enterprise installs the latest versions of all pre-installed extensions. Contact your account team if you need help maintaining a rollback across releases.
+</Note>
 
 ### Delete an extension
 
@@ -284,10 +286,12 @@ Deleting an extension removes the extension definition schema from BloodHound, b
 
 If you want to delete the data associated with an extension, you can do so separately on the **Database Management** page.
 
-To delete a removable custom or manually installed extension, click the <Icon icon="trash"/> (trash) icon next to it in the list of active extensions and confirm the deletion in the prompt.
+To delete an extension, click the <Icon icon="trash"/> (trash) icon next to it in the list of active extensions and confirm the deletion in the prompt.
 
 <Note>
-  You cannot delete built-in extensions.
+  You cannot delete built-in schemas such as Active Directory and Azure.
+  
+  In BloodHound Enterprise, Administrators can delete pre-installed extensions, but they will be reinstalled at the next application restart.
 </Note>
 
 ## Upload data
