@@ -131,6 +131,22 @@ The graph displays the nodes and edges that connect user `BOB@PHANTOM.CORP` to g
 
 You can interact with nodes and edges in the graph to view detailed information about them in the [Entity panel](/analyze-data/explore/search#entity-panel). For nodes, you can right-click to perform more actions using the [context menu](/analyze-data/explore/search#context-menu).
 
+BloodHound clips long node labels by default to keep dense graphs readable. When you select a node, BloodHound shows that node's full label.
+
+<Note>
+  BloodHound stores the label clipping preference in the browser `localStorage` entry named `persistedState`, under `global.view.isExploreGraphLabelClip`.
+
+  If you want to disable label clipping, open your browser's developer tools, run the following code in the console, and reload the page:
+
+  ```javascript
+  const state = JSON.parse(localStorage.getItem('persistedState'));
+  state.global.view.isExploreGraphLabelClip = false;
+  localStorage.setItem('persistedState', JSON.stringify(state));
+  ```
+
+  To restore the default behavior, set `state.global.view.isExploreGraphLabelClip = true`.
+</Note>
+
 When you click a node, BloodHound dims unrelated nodes and edges and highlights every path that traverses the selected node. This includes inbound and outbound object control paths, making it easier to isolate how the selected node participates in the current graph.
 
 For example, clicking `USERS@PHANTOM.CORP` in the previous graph highlights the path through that node to `DOMAIN ADMINS@PHANTOM.CORP` and dims the other paths that do not traverse it.
@@ -140,7 +156,7 @@ For example, clicking `USERS@PHANTOM.CORP` in the previous graph highlights the 
 </Frame>
 
 <Note>
-  Full-path highlighting is enabled by default. BloodHound stores this preference in the browser `localStorage` entry named `persistedState`, under `global.view.isExploreGraphHighlight`. The feature stays enabled unless that value is explicitly set to `false`.
+  BloodHound stores the full-path highlighting preference in the browser `localStorage` entry named `persistedState`, under `global.view.isExploreGraphHighlight`.
 
   If you want to disable full-path highlighting, open your browser's developer tools, run the following code in the console, and reload the page:
 
@@ -149,6 +165,8 @@ For example, clicking `USERS@PHANTOM.CORP` in the previous graph highlights the 
   state.global.view.isExploreGraphHighlight = false;
   localStorage.setItem('persistedState', JSON.stringify(state));
   ```
+
+  To restore the default behavior, set `state.global.view.isExploreGraphHighlight = true`.
 </Note>
 
 #### Context menu
