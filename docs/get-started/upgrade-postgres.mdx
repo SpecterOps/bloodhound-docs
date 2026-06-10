@@ -24,7 +24,7 @@ The upgrade scripts on this page automate the migration by dumping your existing
 
 - Docker with the Compose V2 plugin (`docker compose`, not `docker-compose`)
 - Sufficient free disk space for the database dump file and a volume backup
-- PowerShell 5.1 or later
+- PowerShell 5.1 or later (all platforms), or bash (Linux/macOS)
 - Your BloodHound CE installation must be accessible and running before you begin
 
 ## Before you begin
@@ -47,9 +47,14 @@ The upgrade scripts perform the following steps in order:
 
 ## Run the upgrade script
 
-Save the following script to a file (for example, `upgrade-pg.ps1`) and run it in PowerShell with `.\upgrade-pg.ps1`.
+Save the following script to a file and run it.
 
-```powershell
+<Tabs>
+  <Tab title="PowerShell">
+
+    Save the script as `upgrade-pg.ps1` and run it with `.\upgrade-pg.ps1`.
+
+    ```powershell
 #Requires -Version 5.1
 <#
 .SYNOPSIS
@@ -229,7 +234,183 @@ Write-Warn "`nOnce verified, you can clean up with:"
 Write-Host "  docker volume rm $backupVol"
 Write-Host "  Remove-Item '$bakFile'"
 Write-Host "  Remove-Item '$dumpPath'"
-```
+    ```
+
+  </Tab>
+  <Tab title="Linux/macOS (bash)">
+
+    Save the script as `upgrade-pg.sh`, make it executable with `chmod +x upgrade-pg.sh`, and run it with `./upgrade-pg.sh`.
+
+    ```bash
+#!/usr/bin/env bash
+# Migrates BloodHound Community Edition PostgreSQL from 16 to 18.
+# Requires Docker with the Compose V2 plugin.
+set -euo pipefail
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+step()  { printf '\n\033[36m=== %s ===\033[0m\n' "$1"; }
+ok()    { printf '\033[32m%s\033[0m\n' "$1"; }
+warn()  { printf '\033[33m%s\033[0m\n' "$1"; }
+die()   { printf '\033[31mError: %s\033[0m\n' "$1" >&2; exit 1; }
+
+dc() { docker compose -f "$COMPOSE_FILE" --project-directory "$COMPOSE_DIR" "$@"; }
+
+# ── 1. Gather inputs ────────────────────────────────────────────────────────
+step "BloodHound PostgreSQL 16 -> 18 Migration"
+
+DEFAULT_DIR="$HOME/.config/bloodhound"
+read -rp "Enter the directory containing docker-compose.yml (default: $DEFAULT_DIR): " COMPOSE_DIR
+COMPOSE_DIR="${COMPOSE_DIR:-$DEFAULT_DIR}"
+COMPOSE_DIR="${COMPOSE_DIR/#\~/$HOME}"
+COMPOSE_DIR="$(cd "$COMPOSE_DIR" && pwd)"
+COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
+
+[ -f "$COMPOSE_FILE" ] || die "docker-compose.yml not found at $COMPOSE_FILE"
+
+DEFAULT_DUMP="$COMPOSE_DIR/pg16_backup.dump"
+read -rp "Enter path for the database dump file (default: $DEFAULT_DUMP): " DUMP_PATH
+DUMP_PATH="${DUMP_PATH:-$DEFAULT_DUMP}"
+DUMP_PATH="${DUMP_PATH/#\~/$HOME}"
+
+# ── 2. Read credentials (.env then defaults) ────────────────────────────────
+PG_USER="bloodhound"
+PG_DB="bloodhound"
+
+ENV_FILE="$COMPOSE_DIR/.env"
+if [ -f "$ENV_FILE" ]; then
+    echo "Reading overrides from $ENV_FILE ..."
+    _val="$(grep -E '^\s*POSTGRES_USER\s*=' "$ENV_FILE" | tail -n1 | cut -d= -f2- | xargs || true)" && [ -n "$_val" ] && PG_USER="$_val"
+    _val="$(grep -E '^\s*POSTGRES_DB\s*=' "$ENV_FILE" | tail -n1 | cut -d= -f2- | xargs || true)" && [ -n "$_val" ] && PG_DB="$_val"
+fi
+echo "Credentials: user=$PG_USER  db=$PG_DB"
+
+# ── 3. Resolve project and volume names via Docker Compose ───────────────────
+PROJECT_NAME="$(docker compose -f "$COMPOSE_FILE" --project-directory "$COMPOSE_DIR" \
+    config --format json | python3 -c "import sys,json; print(json.load(sys.stdin)['name'])")"
+[ -n "$PROJECT_NAME" ] || die "Could not determine Compose project name."
+
+PG_VOL_DECL="$(docker compose -f "$COMPOSE_FILE" --project-directory "$COMPOSE_DIR" \
+    config --volumes | grep 'postgres-data' | head -n1)"
+[ -n "$PG_VOL_DECL" ] || die "No 'postgres-data' volume declared in compose config."
+
+VOLUME_NAME="${PROJECT_NAME}_${PG_VOL_DECL}"
+
+docker volume ls --format '{{.Name}}' | grep -qx "$VOLUME_NAME" \
+    || die "Docker volume '$VOLUME_NAME' not found. Is BloodHound installed?"
+
+echo "Project: $PROJECT_NAME   Volume: $VOLUME_NAME"
+
+# ── 4. Confirm ──────────────────────────────────────────────────────────────
+warn ""
+warn "This script will:"
+echo "  1. Stop the BloodHound app (keep PG 16 running)"
+echo "  2. Dump the PG 16 database to: $DUMP_PATH"
+echo "  3. Stop all containers"
+echo "  4. Create a backup copy of the PostgreSQL data volume"
+echo "  5. Update docker-compose.yml to use PostgreSQL 18"
+echo "  6. Start PG 18 and restore the database"
+echo "  7. Start the full BloodHound stack"
+
+read -rp $'\nProceed? (y/N): ' CONFIRM
+[[ "$CONFIRM" =~ ^[yY]$ ]] || { echo "Cancelled."; exit 0; }
+
+# ── 5. Stop app, keep PG 16 alive ───────────────────────────────────────────
+step "Stopping BloodHound application container"
+dc stop bloodhound
+ok "BloodHound app stopped."
+
+step "Ensuring PostgreSQL 16 is running"
+dc start app-db
+sleep 5
+
+# ── 6. Dump database ────────────────────────────────────────────────────────
+step "Dumping PostgreSQL 16 database"
+dc exec app-db pg_dump -U "$PG_USER" -d "$PG_DB" -Fc -Z 9 -f /tmp/pg16_backup.dump
+dc cp app-db:/tmp/pg16_backup.dump "$DUMP_PATH"
+
+DUMP_SIZE="$(stat -f%z "$DUMP_PATH" 2>/dev/null || stat -c%s "$DUMP_PATH")"
+ok "Database dumped ($DUMP_SIZE bytes) -> $DUMP_PATH"
+
+# ── 7. Stop everything ──────────────────────────────────────────────────────
+step "Stopping all containers"
+dc down
+ok "All containers stopped."
+
+# ── 8. Copy the volume ──────────────────────────────────────────────────────
+step "Backing up PostgreSQL data volume"
+BACKUP_VOL="${VOLUME_NAME}-pg16-backup"
+docker volume create "$BACKUP_VOL" > /dev/null
+docker run --rm -v "${VOLUME_NAME}:/source:ro" -v "${BACKUP_VOL}:/backup" \
+    alpine sh -c "cp -a /source/. /backup/"
+ok "Volume copied to: $BACKUP_VOL"
+
+# ── 9. Update docker-compose.yml ────────────────────────────────────────────
+step "Updating docker-compose.yml to PostgreSQL 18"
+BAK_FILE="$COMPOSE_DIR/docker-compose.yml.pg16.bak"
+cp "$COMPOSE_FILE" "$BAK_FILE"
+echo "Compose file backed up to: $BAK_FILE"
+
+# Replace image tag
+if ! grep -q 'docker.io/library/postgres:16' "$COMPOSE_FILE"; then
+    die "Could not find postgres:16 image reference in compose file"
+fi
+sed -i.tmp 's|image: *docker\.io/library/postgres:16|image: docker.io/library/postgres:18|' "$COMPOSE_FILE"
+
+# PG 18+ expects the mount at /var/lib/postgresql (not /var/lib/postgresql/data).
+if ! grep -q 'postgres-data:/var/lib/postgresql/data' "$BAK_FILE"; then
+    die "Could not find postgres-data:/var/lib/postgresql/data volume mount in compose file"
+fi
+sed -i.tmp 's|postgres-data:/var/lib/postgresql/data|postgres-data:/var/lib/postgresql|' "$COMPOSE_FILE"
+rm -f "${COMPOSE_FILE}.tmp"
+ok "docker-compose.yml updated (image + volume mount path)."
+
+# ── 10. Remove old volume, start PG 18 ──────────────────────────────────────
+step "Removing old PostgreSQL data volume"
+docker volume rm "$VOLUME_NAME" > /dev/null
+ok "Old volume removed (backup preserved at $BACKUP_VOL)."
+
+step "Starting PostgreSQL 18"
+dc up -d app-db
+
+# Resolve the actual container name for app-db from Compose
+APP_DB_CONTAINER="$(docker compose -f "$COMPOSE_FILE" --project-directory "$COMPOSE_DIR" \
+    ps --format '{{.Name}}' app-db | head -n1 | xargs)"
+[ -n "$APP_DB_CONTAINER" ] || die "Could not determine container name for app-db service."
+
+echo "Waiting for PostgreSQL 18 to become healthy ($APP_DB_CONTAINER)..."
+for i in $(seq 1 30); do
+    sleep 2
+    HEALTH="$(docker inspect --format '{{.State.Health.Status}}' "$APP_DB_CONTAINER" 2>/dev/null || true)"
+    [ "$HEALTH" = "healthy" ] && break
+done
+[ "$HEALTH" = "healthy" ] || die "Container '$APP_DB_CONTAINER' is not healthy (status: $HEALTH). Aborting migration."
+
+# ── 11. Restore database ────────────────────────────────────────────────────
+step "Restoring database into PostgreSQL 18"
+dc cp "$DUMP_PATH" app-db:/tmp/pg16_backup.dump
+dc exec app-db pg_restore -U "$PG_USER" -d "$PG_DB" --clean --if-exists /tmp/pg16_backup.dump
+ok "Database restored."
+
+# ── 12. Start full stack ─────────────────────────────────────────────────────
+step "Starting full BloodHound stack"
+dc up -d
+ok "BloodHound stack is starting."
+
+# ── Done ─────────────────────────────────────────────────────────────────────
+step "Migration Complete"
+ok "PostgreSQL upgraded from 16 to 18."
+echo "  Database dump : $DUMP_PATH"
+echo "  Volume backup : $BACKUP_VOL"
+echo "  Compose backup: $BAK_FILE"
+warn ""
+warn "Once verified, you can clean up with:"
+echo "  docker volume rm $BACKUP_VOL"
+echo "  rm '$BAK_FILE'"
+echo "  rm '$DUMP_PATH'"
+    ```
+
+  </Tab>
+</Tabs>
 
 ## Verify the upgrade
 
@@ -271,8 +452,23 @@ After you have verified that the upgrade was successful and your data is intact,
 
 Replace the placeholder values with the actual paths and volume name printed by the script.
 
-```powershell
-docker volume rm <backup-volume-name>
-Remove-Item 'C:\path\to\docker-compose.yml.pg16.bak'
-Remove-Item 'C:\path\to\pg16_backup.dump'
-```
+<Tabs>
+  <Tab title="PowerShell">
+
+    ```powershell
+    docker volume rm <backup-volume-name>
+    Remove-Item 'C:\path\to\docker-compose.yml.pg16.bak'
+    Remove-Item 'C:\path\to\pg16_backup.dump'
+    ```
+
+  </Tab>
+  <Tab title="Linux/macOS (bash)">
+
+    ```bash
+    docker volume rm <backup-volume-name>
+    rm '/path/to/docker-compose.yml.pg16.bak'
+    rm '/path/to/pg16_backup.dump'
+    ```
+
+  </Tab>
+</Tabs>
