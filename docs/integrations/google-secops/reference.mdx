@@ -1,0 +1,165 @@
+---
+title: Google SecOps integration design reference
+description: Technical reference for the BloodHound Enterprise integration for Google SecOps, including architecture, authentication, connector flow, and API usage.
+sidebarTitle: Design reference
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+This page explains how the BloodHound Enterprise integration for Google SecOps works. It covers the integration architecture, authentication model, connector behavior, analyst actions, and BloodHound API dependencies.
+
+<Note>
+  For setup instructions, see [Install and configure the integration](/integrations/google-secops/configure).
+</Note>
+
+## Integration type
+
+The BloodHound Enterprise integration for Google SecOps is a **vulnerability management and investigation** integration. It ingests Attack Path findings into Google SecOps and exposes on-demand actions that help analysts validate paths and enrich cases with BloodHound Enterprise data.
+
+## Use cases
+
+- Ingest BloodHound Enterprise Attack Path findings into Google SecOps on a schedule
+- Group related alerts by source domain to keep investigations organized
+- Enrich cases with BloodHound Enterprise asset details
+- Validate whether a shortest path exists between two assets
+- Use Google SecOps playbooks and response workflows with BloodHound Enterprise findings
+
+## Core design
+
+The integration has four main parts:
+
+| Component | Purpose |
+| --- | --- |
+| **Integration instance** | Stores the BloodHound Enterprise server URL, token ID, and token key used for API authentication and connection tests. |
+| **Connector** | Polls BloodHound Enterprise for Attack Path findings, normalizes the response, and sends alerts and events to Google SecOps. |
+| **Google SecOps actions** | Lets analysts run **Ping**, **Get Object Id**, **Does Path Exist**, and **Fetch Assets** during an investigation. |
+| **Alert grouping rule** | Groups related alerts into a single case per source domain when you configure the recommended grouping rule in Google SecOps. |
+
+The following diagram shows how installation, configuration, ingestion, and analyst investigation fit together across Google SecOps and BloodHound Enterprise.
+
+<Frame>
+  <img
+    src="/images/integrations/google-secops/architecture.drawio.svg" alt="Architecture diagram showing the Google SecOps integration components and workflow"
+  />
+</Frame>
+
+The workflow for installing and using the Google SecOps integration follows these stages:
+
+1. **Google SecOps Marketplace**: The integration is available from the Google SecOps marketplace inside the tenant.
+1. **App installation**: A Google SecOps administrator installs the integration from the marketplace.
+1. **Input configuration**: Google SecOps provides the configuration UI where you enter the values required for the integration.
+1. **Connector**: The connector pulls findings from BloodHound Enterprise on a schedule, then parses and normalizes alerts and events for Google SecOps.
+1. **Actions**: Analysts can use actions in playbooks to enrich investigations, automate response steps, and streamline incident handling.
+
+## Investigation model
+
+The connector produces Google SecOps alerts and events from BloodHound Enterprise findings. With the recommended alert grouping rule in place, Google SecOps groups those alerts into one case per source domain.
+
+| Object | Purpose |
+| --- | --- |
+| **Case** | Represents the investigation container for a source domain, such as `GHOST.CORP`. |
+| **Alert** | Represents a distinct BloodHound Enterprise finding or path title within the case. |
+| **Event** | Represents an individual Attack Path occurrence and its supporting details, such as object IDs and path traversal data. |
+
+## Authentication
+
+The integration uses BloodHound API signed requests. Google SecOps stores the BloodHound Enterprise credentials in the integration and connector configuration UI.
+
+Each request includes:
+
+1. `Authorization: bhesignature {token_id}`
+1. `RequestDate: {rfc3339_timestamp}`
+1. `Signature: {base64_hmac_signature}`
+
+The signature uses HMAC-SHA-256 and chains the request method, request URI, request timestamp, and request body. For more detail, see [Use the BloodHound API](/reference/overview) and [Work with the BloodHound API](/integrations/bloodhound-api/working-with-api).
+
+## Configuration inputs
+
+### Integration instance
+
+Configure the integration instance with the core BloodHound Enterprise connection details:
+
+| Field | Description |
+| --- | --- |
+| **BloodHound Enterprise Server** | The URL of your BloodHound Enterprise tenant |
+| **Token ID** | The API token ID used to authenticate requests |
+| **Token Key** | The API token key used to sign requests |
+
+### Connector
+
+Configure the connector with the ingestion scope and Google SecOps mapping values:
+
+| Field | Description |
+| --- | --- |
+| **BloodHound Enterprise Server** | The URL of your BloodHound Enterprise tenant |
+| **Token ID** | The API token ID used for authentication |
+| **Token Key** | The API token key used to sign requests |
+| **Selected BloodHound Environments** | The BloodHound Enterprise environments that the connector queries |
+| **Selected Finding Types** | The Attack Path finding categories that the connector ingests |
+| **Run Every** | The interval at which the connector polls BloodHound Enterprise |
+| **Product Field Name** | The source field name that Google SecOps uses for the product value |
+| **Event Field Name** | The source field name that Google SecOps uses for the event value |
+
+## Connector flow
+
+The connector follows this workflow during ingestion:
+
+1. Read the configured BloodHound Enterprise server, credentials, environments, and finding types.
+1. Query available environments from BloodHound Enterprise and filter them to the configured set.
+1. Query the available Attack Path finding types for each selected environment.
+1. Download the finding title, description, and remediation content for each selected finding type.
+1. Retrieve Attack Path detail records for each environment and finding type combination.
+1. Create Google SecOps alerts and events from the returned findings.
+1. Rely on Google SecOps alert grouping to roll related alerts into one case per source domain.
+1. Track previously processed finding timestamps so the connector does not recreate findings it has already ingested.
+
+## Analyst actions
+
+Google SecOps exposes the following BloodHound Enterprise actions to analysts:
+
+| Action | Purpose |
+| --- | --- |
+| **Ping** | Verifies that Google SecOps can reach the BloodHound Enterprise server with the configured credentials. |
+| **Get Object Id** | Searches for a node by name and returns matching object IDs. |
+| **Does Path Exist** | Checks whether a shortest path exists between two specified nodes. |
+| **Fetch Assets** | Retrieves detailed asset information for an object ID, including properties, relationship-based data, admin counts, and group memberships. |
+
+## API endpoints
+
+The integration depends on the following BloodHound Enterprise API endpoints:
+
+| Endpoint | Purpose |
+| --- | --- |
+| [`GET /api/v2/available-domains`](/reference/search/get-available-domains) | Lists the environments available to the configured API token |
+| [`GET /api/v2/domains/{domain_id}/available-types`](/reference/attack-paths/list-available-attack-paths) | Lists the Attack Path finding types for a selected environment |
+| [`GET /api/v2/domains/{domain_id}/details`](/reference/attack-paths/list-domain-attack-paths-details) | Returns detailed Attack Path records for a selected environment and finding type |
+| [`GET /api/v2/domains/{domain_id}/sparkline`](/reference/attack-paths/list-attack-path-sparkline-values) | Returns time-windowed Attack Path values used for finding retrieval workflows |
+| `GET /api/v2/assets/findings/{finding_type}/title` | Returns the human-readable title for a finding type |
+| `GET /api/v2/assets/findings/{finding_type}/short_description` | Returns the short description for a finding type |
+| `GET /api/v2/assets/findings/{finding_type}/short_remediation` | Returns the short remediation text for a finding type |
+| `GET /api/v2/assets/findings/{finding_type}/long_remediation` | Returns the long remediation text for a finding type |
+| [`GET /api/v2/search`](/reference/search/search-for-objects) | Searches for graph objects by name or object ID |
+| [`GET /api/v2/graphs/shortest-path`](/reference/graph/get-the-shortest-path-graph) | Returns the shortest path graph between two objects |
+| [`GET /api/v2/azure/{entity_type}`](/reference/azure-entities/get-azure-entity) | Returns Azure entity details and related entity counts for an object ID |
+
+## Error handling
+
+The functional specification calls for graceful handling and clear logging for common API failures.
+
+| Status | Meaning | Expected behavior |
+| --- | --- | --- |
+| `400` | Bad Request | Log the validation error and stop the current request |
+| `401` | Unauthorized | Log the authentication failure and prompt for corrected credentials |
+| `403` | Forbidden | Log the authorization failure and stop the current request |
+| `404` | Not Found | Log the missing endpoint or resource and skip retry |
+| `429` | Too Many Requests | Log the rate-limit condition and defer processing until a later run |
+| `5xx` | Server Error | Log the server-side failure and treat it as a connector or action error |
+
+Use the Google SecOps **Test**, **Test Connector**, and connector **Logs** views to validate configuration changes and troubleshoot failed runs. For common operator-facing issues, see [Troubleshoot the Google SecOps integration](/integrations/google-secops/troubleshoot).
+
+## Platform dependencies
+
+| Dependency | Role |
+| --- | --- |
+| **BloodHound Enterprise API** | Source of Attack Path findings, finding metadata, and analyst action results |
+| **Google SecOps** | Hosts the integration instance, connector runtime, cases, alerts, events, and playbook actions |
