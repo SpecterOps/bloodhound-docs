@@ -1,0 +1,92 @@
+---
+title: Configure an Enterprise GitHub App
+description: Create a GitHub App in a GitHub Enterprise account for OpenHound data collection.
+---
+
+import GitHubEnterprisePermissions from '/snippets/hounds/openhound-gh-enterprise-permissions.mdx';
+import GitHubRepoAndOrgPermissions from '/snippets/hounds/openhound-gh-repo-and-org-permissions.mdx';
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+This page covers creating a GitHub App in a GitHub Enterprise account so OpenHound can collect enterprise-scoped GitHub data.
+
+Use this flow when you need to install the app at the enterprise level and then reuse that same app across the organizations owned by the enterprise.
+
+<Tip>
+  For organization-only collection, use [Configure an Organization GitHub App](/openhound/collectors/github/configure-app).
+</Tip>
+
+## Before You Begin
+
+- Verify that you can create or manage GitHub Apps in the target enterprise account.
+- Verify that you can install GitHub Apps on the enterprise account and on each organization that OpenHound will collect.
+- Identify the enterprise slug you will use during configuration, such as `your-enterprise-name` from `https://github.com/enterprises/your-enterprise-name`.
+
+## Create the GitHub App
+
+Follow these steps to create a GitHub App that can be installed at the enterprise level.
+
+<Steps>
+  <Step title="Open GitHub Apps in the enterprise account">
+    Navigate to your enterprise account homepage at `https://github.com/enterprises/<enterprise-slug>`.
+
+    From the enterprise homepage, click **Settings** > **GitHub Apps** > **New GitHub App**.
+  </Step>
+  <Step title="Configure the app settings">
+    1. Configure the app with these settings:
+
+       - **GitHub App name**: Choose a unique name, such as `OpenHound-Enterprise`
+       - **Homepage URL**: We recommend pointing to the [OpenHound GitHub repository](https://github.com/SpecterOps/openhound-github)
+       - **Webhook**: Clear **Active** unless you have a separate webhook requirement
+       - **Permissions**: Set the following permissions to **Read-only**:
+
+         <Expandable title="required permissions">
+           <GitHubRepoAndOrgPermissions />
+           <GitHubEnterprisePermissions />
+         </Expandable>
+
+    1. Under **Where can this GitHub App be installed?**, select the option for organizations owned by your enterprise.
+  </Step>
+  <Step title="Create the app">
+    Click **Create GitHub App**.
+  </Step>
+  <Step title="Generate a private key">
+    On the app settings page, scroll to **Private keys** and click **Generate a private key**.
+
+    Save the downloaded `.pem` file securely. On the same page, record the **App ID** and **Client ID**.
+
+    <Note>
+      OpenHound uses the **App ID**, **Client ID**, **key path**, **enterprise name**, and **API URI** in the GitHub enterprise app collector configuration.
+    </Note>
+  </Step>
+</Steps>
+
+## Install the GitHub App
+
+Install the same GitHub App in the enterprise account and in each organization you plan to collect.
+
+<Steps>
+  <Step title="Install the app on the enterprise account">
+    Open the GitHub App settings page, click **Install App**, select the enterprise account, and complete the installation.
+  </Step>
+  <Step title="Install the app on each organization">
+    From the same GitHub App, install the app on every organization owned by the enterprise that you want OpenHound to collect.
+
+    If GitHub prompts you to choose a repository scope, select **All repositories** unless you intentionally want a partial collection.
+
+    <Note>
+      The GitHub collector enterprise orchestration expects a real enterprise installation and then enumerates related organization installations for follow-on organization collection.
+    </Note>
+  </Step>
+</Steps>
+
+## Security Considerations
+
+- Store the `.pem` private key securely and never commit it to version control.
+- Rotate private keys periodically and revoke keys that you no longer use.
+- Limit the app to the minimum repository, organization, and enterprise permissions required for collection.
+- Install the app only on the enterprise account and organizations that you intend to collect.
+
+## Next Steps
+
+After you install the enterprise GitHub App and record the required values, continue to [Configure the Collector](/openhound/collectors/github/collect-data) to set the OpenHound authentication parameters.
