@@ -1,0 +1,96 @@
+---
+title: Troubleshoot the Jira integration
+description: Learn how to diagnose and resolve common Jira integration issues with BloodHound Enterprise.
+sidebarTitle: Troubleshoot
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+Use this page to troubleshoot common issues with the BloodHound Enterprise Jira integration. Start with the connection test, then validate the project configuration and sync scope before you investigate scheduler behavior.
+
+## Test Connection fails
+
+If **Test Connection** fails, the most common causes are:
+
+- The **Domain**, **Token ID**, or **Token Key** value is incorrect
+- The BloodHound Enterprise token is expired or revoked
+- The BloodHound Enterprise URL does not include `https://`
+- Jira Cloud cannot reach the BloodHound Enterprise tenant
+
+To resolve the issue:
+
+1. Verify the **Domain**, **Token ID**, and **Token Key** values in the **Connection Settings** tab.
+1. Confirm that the API token is still active in BloodHound Enterprise.
+1. Generate a new token if the current token is invalid or compromised.
+1. Confirm that the BloodHound Enterprise tenant is reachable from the internet.
+
+## Configuration options stay unavailable
+
+The **Configuration** tab stays unavailable until the connection test succeeds.
+
+To unlock the configuration options:
+
+1. Re-enter the Jira connection values.
+1. Run **Test Connection** again.
+1. Wait for Jira to confirm that it retrieved the available BloodHound Enterprise domains.
+
+## Jira does not create issues
+
+If the integration does not create issues after a sync, check the following:
+
+- At least one **BHE Domain** is selected
+- At least one **BHE Zone** is selected
+- BloodHound Enterprise currently has active findings in the selected domains and zones
+- The issues were not already created by an earlier sync
+
+To verify the configuration:
+
+1. Open the **Configuration** tab.
+1. Confirm the selected domains and zones.
+1. Click **Run Sync Now**.
+1. Check the target Jira project again after the sync starts.
+
+## Jira uses the wrong priority or due date
+
+The integration applies the priority and due date values from your configured mappings.
+
+To correct the issue:
+
+1. Review the **Priority Mapping** values for each BloodHound Enterprise zone.
+1. Review the **Due Days** values for the Jira priorities that the integration assigns.
+1. Save the updated configuration.
+1. Run a manual sync to apply the new mapping to future updates and new issues.
+
+## Auto-closure does not close remediated issues
+
+If remediated findings do not close in Jira, the most common causes are:
+
+- **Enable Auto-Closure** is disabled
+- The configured cleanup interval has not elapsed yet
+- The Jira workflow does not provide a transition to **Done**
+- The integration has not completed a recent sync for the configured scope
+
+To resolve the issue:
+
+1. Confirm that **Enable Auto-Closure** is enabled.
+1. Review the configured **Cleanup Interval**.
+1. Confirm that the Jira project workflow supports the transition to **Done**.
+1. Run a manual sync, then wait for the hourly cleanup scheduler to evaluate orphaned issues.
+
+## Jira Service Management request types do not appear
+
+If the request type selector is empty in Jira Service Management:
+
+1. Confirm that the target project is a Jira Service Management project.
+1. Confirm that the project has incident request types available.
+1. Refresh the configuration page and rerun **Test Connection** if needed.
+
+## Common configuration messages
+
+| Message | Likely cause | Resolution |
+| --- | --- | --- |
+| `Sync already in progress` | Another sync is still running | Wait for the current sync to finish before you run another manual sync |
+| `No domains configured` | No BloodHound Enterprise domains are selected | Select one or more domains in the **Configuration** tab and save the change |
+| `Invalid domain format` | The BloodHound Enterprise URL is malformed | Enter the full tenant URL and include `https://` |
+
+If the problem continues after you validate the configuration, review the [technical reference](/integrations/atlassian/jira/reference) to confirm that the integration inputs, schedules, and API dependencies match your environment.

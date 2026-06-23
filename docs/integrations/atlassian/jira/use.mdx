@@ -1,0 +1,82 @@
+---
+title: Use Jira with BloodHound Enterprise
+description: Learn how to review and manage Jira issues created from BloodHound Enterprise findings.
+sidebarTitle: Manage Jira issues
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+After you complete the [installation and configuration](/integrations/atlassian/jira/configure), the integration syncs BloodHound Enterprise findings into Jira every five minutes. This page explains how the synced issues are structured and how to work with them in Jira.
+
+## Understand the Jira issue model
+
+The integration creates one Jira issue or incident for each synced BloodHound Enterprise finding.
+
+| Jira object | Purpose |
+| --- | --- |
+| **Issue or incident** | Represents one BloodHound Enterprise finding |
+| **Priority** | Reflects the zone-to-priority mapping that you configured |
+| **Due date** | Uses the due-day rule for the mapped Jira priority |
+| **Labels** | Adds zone and domain labels so you can filter and report on the findings |
+| **Auto-closure comment** | Explains that the finding was remediated when Jira closes the issue automatically |
+
+If you connect a Jira Service Management project, the integration uses the configured request type and incident workflow instead of a standard Jira Software issue type.
+
+## Review synced findings
+
+<Steps>
+  <Step title="Run a sync when you want immediate results">
+    1. In Jira, open **Project settings** > **Apps** > **BloodHound Enterprise Integration**.
+    1. Open the **Configuration** tab.
+    1. Click **Run Sync Now**.
+    1. Wait for Jira to confirm that the sync started.
+  </Step>
+
+  <Step title="Open the created issues">
+    1. Open the target Jira project.
+    1. View the project issue list or the Jira Service Management incident list.
+    1. Filter by labels, priority, assignee, or due date to focus on the findings you want to triage first.
+  </Step>
+
+  <Step title="Inspect a finding">
+    1. Open an issue that the integration created.
+    1. Review the synced description, labels, priority, and due date.
+    1. Use the BloodHound Enterprise link in the description to open the finding in Graph View for deeper investigation.
+  </Step>
+</Steps>
+
+## Understand the synced issue content
+
+The user guide and functional specification describe the following issue content model.
+
+| Issue field | Synced content |
+| --- | --- |
+| **Summary** | The zone, domain, affected principal, and finding ID |
+| **Description** | The finding title, Graph View link, finding description, impact details, context, and remediation guidance |
+| **Affected entities** | Source principal, target principal, and relationship details when the finding includes them |
+| **Labels** | The synced zone label and domain identifier |
+| **Start date** | The date when Jira created the issue |
+| **Due date** | The due date calculated from the configured priority mapping |
+
+## Manage remediation work in Jira
+
+Use the synced issues the same way you manage other operational work in Jira:
+
+- Assign findings to the team that owns remediation
+- Update workflow state as triage and remediation progress
+- Add comments or work notes that document investigation and closure decisions
+- Use the Graph View link to move from Jira back to the BloodHound Enterprise finding when you need more context
+
+## Understand how syncing behaves
+
+The integration keeps Jira aligned with BloodHound Enterprise automatically:
+
+- It runs the main sync every five minutes
+- It creates issues for new findings and updates issues when finding details change
+- It avoids duplicates by tracking sync metadata on the Jira issues
+- It runs a cleanup scheduler hourly and closes orphaned issues when auto-closure is enabled and the cleanup interval is met
+
+## Next steps
+
+- [Troubleshoot the Jira integration](/integrations/atlassian/jira/troubleshoot)
+- [Review the technical reference](/integrations/atlassian/jira/reference)

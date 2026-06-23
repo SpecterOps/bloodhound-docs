@@ -1,0 +1,154 @@
+---
+title: Integrate BloodHound Enterprise with Jira
+description: Learn how to install and configure the Jira integration for BloodHound Enterprise.
+sidebarTitle: Install and configure
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+The BloodHound Enterprise Jira integration is a Jira Cloud app built on Atlassian Forge. It syncs BloodHound Enterprise attack path findings to Jira issues for remediation tracking. This page shows you how to install the app, connect Jira to BloodHound Enterprise, and configure sync behavior for Jira Software or Jira Service Management.
+
+Use this integration to:
+
+- Sync BloodHound Enterprise findings to Jira issues on a schedule
+- Map BloodHound zones to Jira priorities and due dates
+- Automatically close Jira issues when findings are remediated
+
+## Prerequisites
+
+Before you configure the integration, confirm that you have the following:
+
+- A Jira Cloud instance. This integration does not support Jira Data Center or Jira Server.
+- A Jira Software or Jira Service Management project where you want the integration to create issues
+- Project Administrator or Site Administrator access in Jira
+- A BloodHound Enterprise tenant with API access enabled
+- A BloodHound Enterprise API token ID and token key
+
+<Note>
+  We recommend a [non-personal API key/ID pair](/integrations/bloodhound-api/working-with-api#create-a-non-personal-api-key%2Fid-pair) because the integration stores the credentials for ongoing scheduled syncs.
+</Note>
+
+## Install the app
+
+<Steps>
+  <Step title="Install the Jira app">
+    1. Start the installation flow for the BloodHound Enterprise Jira integration from the install link or marketplace entry that your SpecterOps contact or Jira administrator provides.
+    1. Select the Jira Cloud site where you want to install the app.
+    1. Complete the installation, then open the Jira project where you want the integration to create issues.
+  </Step>
+
+  <Step title="Open the integration settings">
+    1. In Jira, open the target project.
+    1. Go to **Project settings**.
+    1. In the **Apps** section, select **BloodHound Enterprise Integration**.
+  </Step>
+</Steps>
+
+## Create a BloodHound Enterprise API token
+
+Create a token in BloodHound Enterprise before you test the Jira connection.
+
+<Steps>
+  <Step title="Open API key management">
+    1. Sign in to your BloodHound Enterprise tenant.
+    1. Go to **Profile** > **API Key Management**.
+  </Step>
+
+  <Step title="Create and store the token">
+    1. Click **Create Token**.
+    1. Enter a descriptive name such as `Jira Integration`.
+    1. Save the token, then copy the **Token ID** and **Token Key**.
+  </Step>
+</Steps>
+
+<Note>
+  Store the token key securely. BloodHound Enterprise only displays the token key once after creation.
+</Note>
+
+## Configure the Jira connection
+
+Enter the BloodHound Enterprise connection details in the **Connection Settings** tab.
+
+| Field | Description |
+| --- | --- |
+| **Domain** | The URL of your BloodHound Enterprise tenant, including `https://` |
+| **Token ID** | The BloodHound Enterprise API token ID |
+| **Token Key** | The BloodHound Enterprise API token key |
+
+<Steps>
+  <Step title="Enter the connection values">
+    1. Open the **Connection Settings** tab.
+    1. Enter the **Domain**, **Token ID**, and **Token Key** values for your BloodHound Enterprise tenant.
+  </Step>
+
+  <Step title="Test the connection">
+    1. Click **Test Connection**.
+    1. Wait for Jira to confirm that it can reach BloodHound Enterprise and retrieve the available domains.
+    1. Open the **Configuration** tab after the test succeeds.
+  </Step>
+</Steps>
+
+<Note>
+  The **Configuration** tab stays locked until the connection test succeeds.
+</Note>
+
+## Configure sync behavior
+
+Use the **Configuration** tab to define what the integration syncs and how Jira should represent the findings.
+
+| Setting | Purpose |
+| --- | --- |
+| **Issue Type / Request Type** | Chooses the Jira issue type for Jira Software projects or the request type for Jira Service Management projects |
+| **BHE Domains** | Limits sync to the selected BloodHound Enterprise environments |
+| **BHE Zones** | Limits sync to the selected BloodHound Enterprise zones, such as Tier Zero, Tier One, and Hygiene |
+| **Priority Mapping** | Maps BloodHound Enterprise zones to Jira priorities |
+| **Due Days** | Sets the due date window for each Jira priority |
+| **Enable Auto-Closure** | Enables automatic closure of Jira issues after BloodHound Enterprise no longer reports the finding |
+| **Cleanup Interval** | Defines how often the integration checks for orphaned issues |
+
+<Steps>
+  <Step title="Choose the Jira issue model">
+    1. Select the Jira issue type that should represent BloodHound Enterprise findings.
+    1. If the target project is a Jira Service Management project, select the request type that should represent the findings.
+  </Step>
+
+  <Step title="Select the sync scope">
+    1. Choose one or more **BHE Domains**.
+    1. Choose the **BHE Zones** that you want to sync into Jira.
+  </Step>
+
+  <Step title="Map priority and due dates">
+    1. Map each BloodHound Enterprise zone to the Jira priority you want to use.
+    1. Set the number of due days for each priority.
+    1. Use `None` for any priority where you do not want Jira to assign a due date.
+  </Step>
+
+  <Step title="Set auto-closure behavior">
+    1. Enable or disable **Auto-Closure**.
+    1. Set the **Cleanup Interval** from 1 to 10 days based on how often you want Jira to close remediated findings.
+  </Step>
+
+  <Step title="Save and run the first sync">
+    1. Click **Save Configuration**.
+    1. Click **Run Sync Now** to trigger the first synchronization immediately.
+  </Step>
+</Steps>
+
+<Note>
+  For Jira Service Management projects, the integration detects the project type automatically and replaces the **Issue Type** selector with a **Request Type** selector filtered to incident request types.
+</Note>
+
+## Verify the configuration
+
+After you save the configuration and run the first sync, confirm the following:
+
+- Jira starts the sync successfully
+- The configured project receives issues for findings that match the selected domains and zones
+- The created issues use the expected priority and due date values
+- Jira adds zone and domain labels that you can use for filtering
+
+## Next steps
+
+- [Use Jira with BloodHound Enterprise](/integrations/atlassian/jira/use)
+- [Troubleshoot the Jira integration](/integrations/atlassian/jira/troubleshoot)
+- [Review the technical reference](/integrations/atlassian/jira/reference)
