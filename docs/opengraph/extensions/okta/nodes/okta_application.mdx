@@ -70,16 +70,16 @@ The tables below list edges defined by the Okta extension only. Additional edges
 | ---- | ------ | ---- | ----------- |
 | `id` | `application.id` | `string` | Unique application identifier. |
 | `name` | `application.label` | `string` | Name/label of the Okta application. |
-| `displayName` | `application.label` | `string` | Display label used in BloodHound. |
-| `oktaDomain` | Collector context (non-API) | `string` | Okta organization domain where the application exists. |
-| `hasRoleAssignments` | Calculated | `bool` | Indicates whether the application is assigned any administrative roles. |
+| `display_name` | `application.label` | `string` | Display label used in BloodHound. |
+| `okta_domain` | Collector context (non-API) | `string` | Okta organization domain where the application exists. |
+| `has_role_assignments` | Calculated | `bool` | Indicates whether the application is assigned any administrative roles. |
 | `created` | `application.created` | `datetime` | Application creation timestamp. |
-| `lastUpdated` | `application.lastUpdated` | `datetime` | Last update timestamp of the app definition. |
+| `last_updated` | `application.lastUpdated` | `datetime` | Last update timestamp of the app definition. |
 | `status` | `application.status` | `string` | Current lifecycle status of the application instance. |
-| `signOnMode` | `application.signOnMode` | `string` | Sign-on protocol mode (for example `OPENID_CONNECT`, `SAML_2_0`, `AUTO_LOGIN`). |
+| `sign_on_mode` | `application.signOnMode` | `string` | Sign-on protocol mode (for example `OPENID_CONNECT`, `SAML_2_0`, `AUTO_LOGIN`). |
 | `features` | `application.features` | `string[]` | Enabled app capabilities such as SCIM provisioning and password push. |
-| `appType` | `application.name` | `string` | App type identifier (for example `office365`, `snowflake`, `githubcloud`). |
-| `userNameMapping` | `application.credentials.userNameTemplate.template` | `string` | Username mapping template used for provisioning/federation. |
+| `app_type` | `application.name` | `string` | App type identifier (for example `office365`, `snowflake`, `githubcloud`). |
+| `user_name_mapping` | `application.credentials.userNameTemplate.template` | `string` | Username mapping template used for provisioning/federation. |
 
 Individual application types may have additional properties specific to the integration or protocol:
 
@@ -87,14 +87,14 @@ Individual application types may have additional properties specific to the inte
 
 | Name | Source | Type | Description |
 | ---- | ------ | ---- | ----------- |
-| `githubOrg` | `application.settings.app.githubOrg` | `string` | GitHub organization mapped to the integration. |
+| `github_org` | `application.settings.app.githubOrg` | `string` | GitHub organization mapped to the integration. |
 
 ### Google Workspace
 
 | Name | Source | Type | Description |
 | ---- | ------ | ---- | ----------- |
 | `domain` | `application.settings.app.domain` | `string` | Google Workspace domain associated with the integration. |
-| `afwOnly` | `application.settings.app.afwOnly` | `bool` | App-specific flag indicating constrained integration behavior. |
+| `afw_only` | `application.settings.app.afwOnly` | `bool` | App-specific flag indicating constrained integration behavior. |
 
 ### Jamf Pro SAML
 
@@ -106,65 +106,65 @@ Individual application types may have additional properties specific to the inte
 
 | Name | Source | Type | Description |
 | ---- | ------ | ---- | ----------- |
-| `namingContext` | `application.settings.app.namingContext` | `string` | Naming context configured for AD-backed app integration. |
-| `filterGroupsByOU` | `application.settings.app.filterGroupsByOU` | `bool` | Whether group filtering by OU is enabled. |
-| `domainSid` | Derived from synced AD user/group SID values (not directly in app object) | `string` | Domain SID associated with AD-backed integration. |
-| `windowsTransportEnabled` | `application.settings.app.windowsTransportEnabled` | `bool` | Indicates if Windows transport is enabled. |
+| `naming_context` | `application.settings.app.namingContext` | `string` | Naming context configured for AD-backed app integration. |
+| `filter_groups_by_ou` | `application.settings.app.filterGroupsByOU` | `bool` | Whether group filtering by OU is enabled. |
+| `domain_sid` | Derived from synced AD user/group SID values (not directly in app object) | `string` | Domain SID associated with AD-backed integration. |
+| `windows_transport_enabled` | `application.settings.app.windowsTransportEnabled` | `bool` | Indicates if Windows transport is enabled. |
 
 ### Generic SAML Application
 
 | Name | Source | Type | Description |
 | ---- | ------ | ---- | ----------- |
 | `url` | `application.settings.signOn.ssoAcsUrl` (SAML 2.0) / `application.settings.signOn.ssoAcsUrlOverride` (SAML 1.1) | `string` | Primary sign-on URL exposed for SAML applications. |
-| `entityID` | `application.settings.signOn.destination` / `application.settings.signOn.audience` | `string` | SAML Entity ID for SAML integrations. |
-| `acsURL` | `application.settings.signOn.ssoAcsUrl` | `string` | Assertion Consumer Service (ACS) URL for SAML integrations. |
-| `wsFedConfigureType` | `application.settings.app.wsFedConfigureType` | `string` | WS-Federation configuration mode. |
+| `entity_id` | `application.settings.signOn.destination` / `application.settings.signOn.audience` | `string` | SAML Entity ID for SAML integrations. |
+| `acs_url` | `application.settings.signOn.ssoAcsUrl` | `string` | Assertion Consumer Service (ACS) URL for SAML integrations. |
+| `ws_fed_configure_type` | `application.settings.app.wsFedConfigureType` | `string` | WS-Federation configuration mode. |
 
 ### Generic OIDC Service Application
 
 | Name | Source | Type | Description |
 | ---- | ------ | ---- | ----------- |
-| `clientType` | `application.settings.oauthClient.applicationType` | `string` | OIDC client type (for example `web`, `native`, `browser`, `service`). |
-| `grantTypes` | `application.settings.oauthClient.grantTypes[]` | `string[]` | OAuth 2.0 grant types allowed for OIDC apps. |
-| `redirectURI` | `application.settings.oauthClient.redirectUris[]` | `string` | OIDC redirect URI configured for the integration. |
-| `initiateLoginURI` | `application.settings.oauthClient.initiateLoginUri` | `string` | Okta-initiated login URI for supported OIDC apps. |
-| `url` | Derived from OIDC sign-in URL preference (`initiateLoginUri` first, otherwise first `redirectUris[]`) | `string` | Primary sign-in URL for OIDC applications. |
-| `oauthScopes` | Derived from app grants in `PopulateOAuthScopes` / grant collection logic | `string[]` | OAuth scopes granted to the application in Okta. |
+| `client_type` | `application.settings.oauthClient.applicationType` | `string` | OIDC client type (for example `web`, `native`, `browser`, `service`). |
+| `grant_types` | `application.settings.oauthClient.grantTypes[]` | `string[]` | OAuth 2.0 grant types allowed for OIDC apps. |
+| `redirect_uri` | `application.settings.oauthClient.redirectUris[]` | `string` | OIDC redirect URI configured for the integration. |
+| `initiate_login_uri` | `application.settings.oauthClient.initiateLoginUri` | `string` | Okta-initiated login URI for supported OIDC apps. |
+| `url` | Derived from OIDC sign-in URL preference (`initiate_login_uri` first, otherwise first `redirect_uri`) | `string` | Primary sign-in URL for OIDC applications. |
+| `oauth_scopes` | Derived from app grants in `PopulateOAuthScopes` / grant collection logic | `string[]` | OAuth scopes granted to the application in Okta. |
 | `domain` | `application.settings.app.domain` | `string` | Directory or service domain associated with the app integration. |
 | `domains` | `application.settings.app.domains` | `string[]` | Domain list associated with the app integration when provided. |
-| `serviceDomain` | `application.settings.app.serviceDomain` | `string` | Service/API domain used by workflow or API-connected apps. |
-| `subDomain` | `application.settings.app.subDomain` | `string` | Subdomain value used by app-specific integrations. |
-| `regionType` | `application.settings.app.regionType` | `string` | Region suffix/type used by the app integration. |
+| `service_domain` | `application.settings.app.serviceDomain` | `string` | Service/API domain used by workflow or API-connected apps. |
+| `sub_domain` | `application.settings.app.subDomain` | `string` | Subdomain value used by app-specific integrations. |
+| `region_type` | `application.settings.app.regionType` | `string` | Region suffix/type used by the app integration. |
 
 ### Microsoft Entra ID External Authentication
 
 | Name | Source | Type | Description |
 | ---- | ------ | ---- | ----------- |
-| `microsoftDiscoveryEndpoint` | `application.settings.app.microsoftDiscoveryEndpoint` | `string` | OIDC discovery endpoint used by Microsoft integrations. |
-| `microsoftAppId` | `application.settings.app.microsoftAppId` | `string` | Microsoft application/client ID configured in the integration. |
-| `microsoftTenantId` | `application.settings.app.microsoftTenantId` | `string` | Microsoft Entra tenant GUID associated with the app integration. |
-| `requireAdminConsent` | `application.settings.app.requireAdminConsent` | `bool` | Indicates if Microsoft admin consent is required. |
+| `microsoft_discovery_endpoint` | `application.settings.app.microsoftDiscoveryEndpoint` | `string` | OIDC discovery endpoint used by Microsoft integrations. |
+| `microsoft_app_id` | `application.settings.app.microsoftAppId` | `string` | Microsoft application/client ID configured in the integration. |
+| `microsoft_tenant_id` | `application.settings.app.microsoftTenantId` | `string` | Microsoft Entra tenant GUID associated with the app integration. |
+| `require_admin_consent` | `application.settings.app.requireAdminConsent` | `bool` | Indicates if Microsoft admin consent is required. |
 
 ### Microsoft Office 365
 
 | Name | Source | Type | Description |
 | ---- | ------ | ---- | ----------- |
-| `msftTenant` | `application.settings.app.msftTenant` | `string` | Microsoft tenant short name/domain used by the Office 365 integration. |
-| `microsoftTenantId` | Calculated from `msftTenant` | `string` | Microsoft Entra tenant GUID resolved from the Office 365 onmicrosoft tenant. |
+| `msft_tenant` | `application.settings.app.msftTenant` | `string` | Microsoft tenant short name/domain used by the Office 365 integration. |
+| `microsoft_tenant_id` | Calculated from `msft_tenant` | `string` | Microsoft Entra tenant GUID resolved from the Office 365 onmicrosoft tenant. |
 
 ### Generic SWA / Browser Plugin Application
 
 | Name | Source | Type | Description |
 | ---- | ------ | ---- | ----------- |
-| `loginURL` | `application.settings.app.loginUrl` | `string` | App login URL used by SWA/browser plugin configurations. |
+| `login_url` | `application.settings.app.loginUrl` | `string` | App login URL used by SWA/browser plugin configurations. |
 | `url` | `application.settings.signOn.loginUrl` (AutoLogin) / `application.settings.app.url` (BrowserPlugin/BasicAuth/Bookmark/SPS) | `string` | Primary login URL exposed for SWA and related app types. |
-| `appFilter` | `application.settings.app.appFilter` | `string` | App-side filter expression value. |
-| `groupFilter` | `application.settings.app.groupFilter` | `string` | Group filter pattern used for provisioning/mapping. |
-| `useGroupMapping` | `application.settings.app.useGroupMapping` | `bool` | Whether group mapping is enabled for integration. |
-| `joinAllRoles` | `application.settings.app.joinAllRoles` | `bool` | Whether all discovered roles are joined/collected. |
-| `roleValuePattern` | `application.settings.app.roleValuePattern` | `string` | Role mapping pattern template for AWS role federation. |
-| `awsEnvironmentType` | `application.settings.app.awsEnvironmentType` | `string` | AWS environment identifier for AWS app integrations. |
-| `sessionDuration` | `application.settings.app.sessionDuration` | `integer` | Session duration setting (seconds) for supported app integrations. |
+| `app_filter` | `application.settings.app.appFilter` | `string` | App-side filter expression value. |
+| `group_filter` | `application.settings.app.groupFilter` | `string` | Group filter pattern used for provisioning/mapping. |
+| `use_group_mapping` | `application.settings.app.useGroupMapping` | `bool` | Whether group mapping is enabled for integration. |
+| `join_all_roles` | `application.settings.app.joinAllRoles` | `bool` | Whether all discovered roles are joined/collected. |
+| `role_value_pattern` | `application.settings.app.roleValuePattern` | `string` | Role mapping pattern template for AWS role federation. |
+| `aws_environment_type` | `application.settings.app.awsEnvironmentType` | `string` | AWS environment identifier for AWS app integrations. |
+| `session_duration` | `application.settings.app.sessionDuration` | `integer` | Session duration setting (seconds) for supported app integrations. |
 
 ## Sample Property Values
 
@@ -173,54 +173,54 @@ Individual application types may have additional properties specific to the inte
 ```yaml
 id: 0oawyp12cjglrkfId697
 name: Github Contoso
-appType: githubcloud
-displayName: Github Contoso
+app_type: githubcloud
+display_name: Github Contoso
 features: []
-githubOrg: Contoso
-hasRoleAssignments: false
-oktaDomain: contoso.okta.com
-signOnMode: SAML_2_0
+github_org: Contoso
+has_role_assignments: false
+okta_domain: contoso.okta.com
+sign_on_mode: SAML_2_0
 status: ACTIVE
-userNameMapping: ${source.login}
+user_name_mapping: ${source.login}
 created: 2025-10-31T06:08:00+00:00
-lastUpdated: 2025-10-31T06:08:01+00:00
+last_updated: 2025-10-31T06:08:01+00:00
 ```
 
 ### Google Workspace
 
 ```yaml
 id: 0oax4r57x0V5NHL2W697
-afwOnly: false
-appType: google
-displayName: Google Workspace
+afw_only: false
+app_type: google
+display_name: Google Workspace
 domain: contoso.com
 features: []
-hasRoleAssignments: false
+has_role_assignments: false
 name: Google Workspace
-oktaDomain: contoso.okta.com
-signOnMode: SAML_2_0
+okta_domain: contoso.okta.com
+sign_on_mode: SAML_2_0
 status: ACTIVE
-userNameMapping: ${source.login}
+user_name_mapping: ${source.login}
 created: 2025-11-05T09:06:48+00:00
-lastUpdated: 2025-11-05T09:07:21+00:00
+last_updated: 2025-11-05T09:07:21+00:00
 ```
 
 ### Jamf Pro SAML
 
 ```yaml
 id: 0oax4r3ud0J2WjlNh697
-appType: jamfsoftwareserver
-displayName: Jamf Pro SAML
+app_type: jamfsoftwareserver
+display_name: Jamf Pro SAML
 domain: contoso.jamfcloud.com
 features: []
-hasRoleAssignments: false
+has_role_assignments: false
 name: Jamf Pro SAML
-oktaDomain: contoso.okta.com
-signOnMode: SAML_2_0
+okta_domain: contoso.okta.com
+sign_on_mode: SAML_2_0
 status: ACTIVE
-userNameMapping: ${source.login}
+user_name_mapping: ${source.login}
 created: 2025-11-05T09:10:52+00:00
-lastUpdated: 2026-01-19T14:33:39+00:00
+last_updated: 2026-01-19T14:33:39+00:00
 ```
 
 ### OktaHound
@@ -228,14 +228,14 @@ lastUpdated: 2026-01-19T14:33:39+00:00
 ```yaml
 id: 0oaw0pujq5WtBiMYD697
 name: OktaHound
-appType: oidc_client
-clientType: service
-displayName: OktaHound
+app_type: oidc_client
+client_type: service
+display_name: OktaHound
 features: []
-grantTypes:
+grant_types:
   - client_credentials
-hasRoleAssignments: true
-oauthScopes:
+has_role_assignments: true
+oauth_scopes:
   - okta.trustedOrigins.read
   - okta.policies.read
   - okta.linkedObjects.read
@@ -279,12 +279,12 @@ oauthScopes:
   - okta.features.read
   - okta.sessions.read
   - okta.userTypes.read
-oktaDomain: integrator-5415459.okta.com
-signOnMode: OPENID_CONNECT
+okta_domain: integrator-5415459.okta.com
+sign_on_mode: OPENID_CONNECT
 status: ACTIVE
-userNameMapping: ${source.login}
+user_name_mapping: ${source.login}
 created: 2025-10-02T10:11:20+00:00
-lastUpdated: 2025-10-02T10:26:27+00:00
+last_updated: 2025-10-02T10:26:27+00:00
 ```
 
 ### Active Directory Integration
@@ -292,22 +292,22 @@ lastUpdated: 2025-10-02T10:26:27+00:00
 ```yaml
 id: 0oaxg9rhdd7ncGCXv697
 name: contoso.local
-appType: active_directory
-displayName: contoso.local
-domainSid: S-1-5-21-71365889-924527929-2677699343
+app_type: active_directory
+display_name: contoso.local
+domain_sid: S-1-5-21-71365889-924527929-2677699343
 features:
   - IMPORT_PROFILE_UPDATES
   - PROFILE_MASTERING
   - OUTBOUND_DEL_AUTH
   - IMPORT_USER_SCHEMA
   - IMPORT_NEW_USERS
-filterGroupsByOU: false
-hasRoleAssignments: false
-namingContext: contoso.local
-oktaDomain: contoso.okta.com
+filter_groups_by_ou: false
+has_role_assignments: false
+naming_context: contoso.local
+okta_domain: contoso.okta.com
 status: ACTIVE
 created: 2025-11-14T12:50:42+00:00
-lastUpdated: 2026-01-31T15:12:24+00:00
+last_updated: 2026-01-31T15:12:24+00:00
 ```
 
 ## User Name Mapping
@@ -418,7 +418,7 @@ When integrating Okta with GitHub Enterprise Cloud, each GitHub organization con
 ### Jamf Pro
 
 When integrating Okta with Jamf Pro using SAML 2.0, each Jamf Pro instance connected to Okta is represented as a separate `Okta_Application` node in BloodHound.
-The differentiator is the `domainFQDN` property:
+The differentiator is the `domain_fqdn` property:
 
 ![Jamf Pro SAML application in BloodHound](/images/extensions/okta/bloodhound-jamf-saml-properties.png)
 
@@ -428,7 +428,7 @@ It is also possible to integrate Jamf Pro with Okta using Secure Web Authenticat
 
 ## Google Workspace
 
-Similarly to the Jamf Pro SAML applications, each Google Workspace (formerly G Suite) instance connected to Okta using SAML 2.0 is represented as a separate `Okta_Application` node in BloodHound and is identified by the `domainFQDN` property:
+Similarly to the Jamf Pro SAML applications, each Google Workspace (formerly G Suite) instance connected to Okta using SAML 2.0 is represented as a separate `Okta_Application` node in BloodHound and is identified by the `domain_fqdn` property:
 
 ![Google Workspace SAML application in BloodHound](/images/extensions/okta/bloodhound-google-saml-properties.png)
 
