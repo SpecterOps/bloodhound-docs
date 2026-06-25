@@ -124,7 +124,64 @@ BHE users may use it during SharpHound Enterprise deployment or upgrades.
 8.  SharpHound Enterprise has now been upgraded.
 9.  Start the "SharpHound Delegator" service. If you can't start the service, see the section _The SharpHound Delegator Service won't start_.
 
-### Common installation issues
+## Headless Installation
+
+The standard SharpHound Enterprise installation process relies on UI-based interactions. If you need to install SharpHound Enterprise in an environment where interactive desktop sessions are unavailable or restricted, you can use the headless installation method.
+
+Headless installation allows you to install SharpHound Enterprise without user interaction, making it suitable for automation tooling or other software deployment pipelines.
+
+<Note>
+  We recommend using a [Group Managed Service Account (gMSA)](/install-data-collector/install-sharphound/create-gmsa) for the SharpHound Enterprise service account rather than a regular AD user.
+</Note>
+
+<Steps>
+  <Step title="Run the installer silently">
+  Run the SharpHound Enterprise installer with silent options:
+
+  ```powershell
+  SHSetup-<version>.exe /VERYSILENT /SUPPRESSMSGBOXES /FORCECLOSEAPPLICATIONS /LOG="BloodHound.log"
+  ```
+
+  <Note>
+    Be sure to specify the correct `<version>` of the installer in the command.
+  </Note>
+  </Step>
+  <Step title="Register and start the service">
+
+  After installation, register and start the SharpHound Delegator service. Replace the placeholder values to match your environment.
+
+  ```powershell
+  $ServiceName = "SharpHoundDelegator"
+  $DisplayName = "SharpHoundDelegator"
+  $ExecutablePath = "C:\Program Files (x86)\SHService\SHDelegator.exe"
+  $Username = "DOMAIN\service-account"
+  $Password = "<password>" # Leave blank for a gMSA
+
+  if (-not (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue)) {
+      New-Service -Name $ServiceName `
+          -BinaryPathName "`"$ExecutablePath`"" `
+          -DisplayName $DisplayName `
+          -StartupType Automatic
+  }
+
+  $svc = Get-WmiObject -Class Win32_Service -Filter "Name='$ServiceName'"
+  $null = $svc.Change(
+      $null,      # StartMode
+      $null,      # DesktopInteract
+      $null,      # ErrorControl
+      $null,      # BinaryPathName
+      $null,      # LoadOrderGroup
+      $null,      # LoadOrderGroupDependencies
+      $Username,  # ServiceAccountName
+      $Password   # Password
+  )
+
+  Start-Service -Name $ServiceName
+  ```
+  </Step>
+</Steps>
+
+## Common installation issues
 
 ### I don't see the SHDelegator Service
 
@@ -154,4 +211,3 @@ If "TempDirectory" is set to a directory, navigate to that directory, look for s
     * Validate that firewall exclusions to your BloodHound Enterprise tenant have been created appropriately
     * If you need an explicit proxy, configure it within settings.json
     * Validate TLS 1.2 connectivity to your BloodHound Enterprise tenant over port 443
-
