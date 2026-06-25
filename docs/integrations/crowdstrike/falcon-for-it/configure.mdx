@@ -4,116 +4,228 @@ description: Learn how to install and configure the CrowdStrike Falcon for IT in
 sidebarTitle: Install and configure
 ---
 
-import { Checklist} from '/snippets/components/checklist.jsx';
-
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-The CrowdStrike Falcon for IT integration collects endpoint data from Falcon-managed hosts and ingests that data into BloodHound Enterprise. This guide shows you how to install the Foundry application, configure the BloodHound Enterprise connection, deploy the scheduled queries, and verify that the ingestion workflow is ready to run.
+The BloodHound Enterprise CrowdStrike Falcon Foundry Application is a native, serverless integration that automatically collects sessions, local groups, user rights assignment (LSA), and registry key data from CrowdStrike Falcon agents installed on endpoint hosts. The application then sends that data to your BloodHound Enterprise tenant.
+
+This guide shows you how to install the Foundry application, configure the BloodHound Enterprise connection, set up the required OS queries, and confirm that telemetry reaches Falcon Next-Gen SIEM.
 
 Use this integration to:
 
-- Collect sessions, local groups, user rights assignment, and registry key data from Falcon-managed endpoints
-- Scope collection to selected CrowdStrike host groups
-- Transform collected events and ingest them into BloodHound Enterprise automatically
+- Install the app from CrowdStrike Marketplace and configure the BloodHound Enterprise connection
+- Scope Falcon for IT (FFIT) query collection to specific Falcon host groups
+- Route endpoint telemetry into Falcon Next-Gen SIEM for ingestion into BloodHound Enterprise
+
+After configuration is complete, the application handles the following actions automatically:
+
+| Automated behavior | Description |
+| --- | --- |
+| **Provision and schedule FFIT queries** | Deploys the required query set and runs it on the configured schedule for the selected Falcon host groups |
+| **Route collected data to LogScale** | Sends the collected endpoint telemetry into Falcon Next-Gen SIEM (LogScale) for processing |
+| **Run serverless ingestion** | Uses Foundry Functions to fetch, transform, and ingest data into BloodHound Enterprise |
+| **Track host reporting state** | Uses a Daily Status Table in Foundry Collections to track which hosts reported during the current cycle |
+| **Retry incomplete collection** | Retries and reconciles incomplete runs to improve host coverage |
 
 ## Prerequisites
 
 Before you begin, ensure that you have the following:
 
-- A CrowdStrike Falcon tenant with the Falcon for IT (FFIT) entitlement active
-- Falcon Agent version 7.11 or later on the endpoints that you want to collect from
-- CrowdStrike host groups configured for the assets that you want to target
-- A BloodHound Enterprise tenant URL
-- A BloodHound Enterprise [non-personal API key/ID pair](/integrations/bloodhound-api/working-with-api#create-a-non-personal-api-key%2Fid-pair) with the **Auditor** role
+| Requirement | Details |
+| --- | --- |
+| **CrowdStrike Falcon access** | A CrowdStrike Falcon account with permission to manage FFIT live asset queries, install Foundry apps, execute Fusion SOAR workflows, and access Next-Gen SIEM Event Search |
+| **Windows device** | At least one Windows device with the [CrowdStrike Falcon sensor installed](https://www.crowdstrike.com/en-us/resources/videos/how-to-install-falcon-sensor/) and visible in the Falcon host management console |
+| **Host grouping** | Add the target Windows devices to an existing or newly created Host Group. This group defines the scope of RTR script execution. |
+| **Group ID** | Locate and save your Host Group ID. You need this parameter during Managed Application configuration. |
+| **BloodHound Enterprise access** | A BloodHound Enterprise tenant URL and a BloodHound Enterprise [non-personal API key/ID pair](/integrations/bloodhound-api/working-with-api#create-a-non-personal-api-key%2Fid-pair) with the **Auditor** role |
 
-## Install the Foundry application
+## Install the application
 
-Install the CrowdStrike Foundry application from the CrowdStrike Marketplace before you configure data collection and ingestion.
-
-<Steps>
-  <Step title="Open CrowdStrike Marketplace">
-    1. Sign in to CrowdStrike Falcon with an account that can install applications.
-
-    1. Open the CrowdStrike Marketplace.
-  </Step>
-
-  <Step title="Install the BloodHound Enterprise Foundry application">
-    1. Locate the BloodHound Enterprise Foundry application.
-
-    1. Install the application.
-
-    1. Complete the setup wizard that the application provides after installation.
-  </Step>
-</Steps>
-
-## Configure the application
-
-Configure the application so it can authenticate to BloodHound Enterprise and scope collection to the correct Falcon host groups.
+Install the CrowdStrike Foundry application and configure credentials for BloodHound Enterprise.
 
 <Steps>
-  <Step title="Enter the BloodHound Enterprise connection details">
-    Configure the required fields:
+  <Step title="Install the Foundry application">
+    1. Log in to CrowdStrike Falcon with an account that has permission to install Foundry applications.
+
+    1. Go to **Foundry** > **App catalog**.
+
+       <Frame>
+         <img
+           src="/images/integrations/crowdstrike/falcon-for-it/app-catalog.png"
+           alt="A screenshot of the Foundry app catalog showing the SpecterOps BloodHound Enterprise - Data Collector application"
+           noZoom
+         />
+       </Frame>
+
+    1. Select the **SpecterOps BloodHound Enterprise - Data Collector** application.
+
+    1. Click **Install Now**.
+
+    1. After installation completes, click **Open App**.
+  </Step>
+  <Step title="Enter BloodHound Enterprise connection details">
+    Configure the connection values that the Foundry application uses to validate credentials and upload data to BloodHound Enterprise.
 
     | Field | Description |
     | --- | --- |
-    | **BloodHound Enterprise Server** | The URL of your BloodHound Enterprise tenant |
+    | **BloodHound Enterprise Domain** | The URL of your BloodHound Enterprise tenant |
     | **Token ID** | The API token ID used to authenticate requests |
     | **Token Key** | The API token key used to sign and authorize requests |
+
+    <Note>
+      This integration supports a maximum of one BloodHound Enterprise instance.
+    </Note>
+
+    <Frame>
+      <img
+        src="/images/integrations/crowdstrike/falcon-for-it/validate-and-save.png"
+        alt="A screenshot of the BloodHound Enterprise credentials form"
+        noZoom
+      />
+    </Frame>
+  </Step>
+  <Step title="Validate and save the credentials">
+    1. Click **Validate & Save Credentials**.
+
+       The application stores the validated BloodHound Enterprise API credentials in the Foundry Secret Store.
+
+    1. Confirm that validation succeeds before you continue.
   </Step>
 
-  <Step title="Define the collection scope and schedule">
-    Configure the collection inputs that control where and how the application runs.
+  <Step title="Review the installation success page">
+    After the credentials are saved successfully, click **Next** to open the **Installation Success** page.
 
-    | Field | Description |
-    | --- | --- |
-    | **Target Host Groups** | The CrowdStrike host groups that the FFIT queries target |
-    | **Collection Frequency** | The interval that triggers automated collection runs |
-    | **Max Retries and Delay** | Optional retry controls for data egress reliability |
+    Use this page to review the integration status, data collection schedules, and verification steps.
 
-    <Tip>
-      Set the collection frequency to balance data freshness with platform performance. The source design expects you to tune this value in the Falcon for IT scheduler.
-   </Tip>
-  </Step>
+    <Frame>
+      <img
+        src="/images/integrations/crowdstrike/falcon-for-it/installation-success.png"
+        alt="A screenshot of the installation success page"
+        noZoom
+      />
+    </Frame>
 
-  <Step title="Test the connection">
-    1. Run the application's **Test Connection** action.
+    <Note>
+      After installation and configuration are complete, the BloodHound Enterprise NG SIEM Workflow runs automatically every hour.
 
-    1. Confirm that the application can authenticate to the BloodHound Enterprise API before you save the configuration.
-  </Step>
-
-  <Step title="Save the configuration">
-    Save the configured values after the connection test succeeds.
+      The workflow retrieves CrowdStrike endpoint event logs from Next-Gen SIEM, transforms them to the BloodHound Enterprise schema, and uploads the data to your BloodHound Enterprise tenant.
+    </Note>
   </Step>
 </Steps>
 
-## Deploy the FFIT scheduled queries
+## Configure OS queries
 
-After you save the application configuration, the integration handles scheduled query deployment automatically. Use the following reference information to understand what the application does behind the scenes.
+Before the Foundry workflow can upload data to BloodHound Enterprise, the required Windows endpoint telemetry must exist in Falcon Next-Gen SIEM.
 
-| Automated behavior | Description |
-| --- | --- |
-| **Provision packaged queries** | The application deploys the packaged FFIT queries for sessions, local groups, user rights assignment, and registry data without requiring you to create the queries manually. |
-| **Apply host group scope** | The application maps the selected **Target Host Groups** to the FFIT query tasks so collection only runs on the designated assets. |
-| **Route results to LogScale** | The application sends the query results to the Foundry App Repository in CrowdStrike Next-Gen SIEM as LogScale events. |
-| **Track query execution state** | The application uses Foundry Collections to track job IDs and execution timestamps before it attempts data egress. |
+This section shows you how to save and schedule the required OS queries in the CrowdStrike Falcon console so your target Windows hosts continuously send data to Next-Gen SIEM.
 
-## Automated Orchestration & Ingestion
+<Steps>
+  <Step title="Open live query in FFIT">
+    1. Log in to CrowdStrike Falcon.
 
-After scheduled collection is enabled, the application also automates the ingestion workflow into BloodHound Enterprise.
+    1. Click **IT Automation** > **Run live query**.
 
-| Automated behavior | Description |
-| --- | --- |
-| **Run scheduled orchestration** | Falcon Fusion triggers the ingestion workflow on a schedule so the Foundry function can check for new events. |
-| **Fetch only new events** | The Foundry function queries the Foundry App Repository and uses a checkpoint system to retrieve only events that have not been processed yet. |
-| **Transform collected data** | The application converts the raw Falcon JSON data into the BloodHound Enterprise schema before ingestion. |
-| **Ingest data securely** | The application connects to the BloodHound Enterprise API by using the configured credentials and submits the transformed payload. |
-| **Retry incomplete or failed work** | The application uses retries and daily-status reconciliation to recover from unreachable APIs or incomplete host reporting. |
+       <Frame>
+         <img
+           src="/images/integrations/crowdstrike/falcon-for-it/run-live-query.png"
+           alt="A screenshot of the run live query interface"
+           noZoom
+         />
+       </Frame>
+  </Step>
 
-## Verify the integration workflow
+  <Step title="Filter to the target host group">
+    1. Open a new tab and click **Add Filters**.
 
-<Checklist checklistKey="integration-workflow">
-  - Confirm that the BloodHound Enterprise connection test succeeds.
-  - Confirm that the scheduled FFIT queries are enabled for the intended host groups.
-  - Confirm that the query results are routed into the Foundry App Repository in CrowdStrike Next-Gen SIEM.
-  - Confirm that the Foundry function can retrieve, transform, and ingest the collected events into BloodHound Enterprise.
-</Checklist>
+       <Frame>
+         <img
+           src="/images/integrations/crowdstrike/falcon-for-it/add-filters.png"
+           alt="A screenshot of the add filters interface"
+           noZoom
+         />
+       </Frame>
+
+    1. Set the filter key to **Host Group**.
+
+    1. Select the Falcon host group that contains the Windows devices you want to query.
+  </Step>
+
+  <Step title="Save each required OS query">
+    1. Paste one required OS query provided for the integration into the query input.
+
+    1. Open the three-dot menu and select **Save As**.
+
+    1. Enter a name for the query and save it.
+
+    <Note>The vendor guide states that you must save the required OS queries one at a time.</Note>
+  </Step>
+
+  <Step title="Schedule the query">
+    1. Open the menu next to **Run** and select **Schedule**.
+
+    1. Set **Type** to **Recurring**.
+
+    1. Set the frequency unit to **Minutes** and the interval to `60`.
+
+    1. Click **Schedule**.
+  </Step>
+
+  <Step title="Repeat for the remaining OS queries">
+    Repeat the save and schedule process for each remaining query required by the integration.
+  </Step>
+
+  <Step title="Run the saved queries">
+    1. Confirm that the target hosts are online.
+
+    1. Run the saved queries individually.
+
+    1. Review the results pane to confirm that each query returns data.
+  </Step>
+</Steps>
+
+## Verify query results
+
+Confirm that CrowdStrike routes the OS query results into Falcon Next-Gen SIEM before you run the BloodHound Enterprise workflow.
+
+<Steps>
+  <Step title="Open Event Search">
+    1. Log in to CrowdStrike Falcon.
+
+    1. Go to **Next-Gen SIEM** > **Log management** > **Event Search**.
+
+       <Frame>
+         <img
+           src="/images/integrations/crowdstrike/falcon-for-it/verify-telemetry.png"
+           alt="A screenshot of the event search interface in Falcon Next-Gen SIEM"
+           noZoom
+         />
+       </Frame>
+  </Step>
+
+  <Step title="Filter for OS query telemetry">
+    Apply a custom filter with the following values:
+
+    | Field | Value |
+    | --- | --- |
+    | **Field** | `result.event_type` |
+    | **Operator** | `is equal to` |
+    | **Value** | `bloodhound_enterprise_windows_endpoint_osquery_result` |
+  </Step>
+
+  <Step title="Confirm that events are present">
+    Confirm that matching events appear in the search results.
+    
+    These events show that the required endpoint telemetry is available for the Foundry workflow to retrieve and upload to BloodHound Enterprise in real time.
+
+    <Frame>
+      <img
+        src="/images/integrations/crowdstrike/falcon-for-it/event-logs-queries.png"
+        alt="A screenshot of the filter interface for OS query telemetry"
+        noZoom
+      />
+    </Frame>
+  </Step>
+</Steps>
+
+## Next steps
+
+After verifying the query results, you can [run the workflow and verify ingestion](/integrations/crowdstrike/falcon-for-it/use) in BloodHound Enterprise.
