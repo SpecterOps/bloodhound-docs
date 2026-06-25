@@ -8,7 +8,7 @@ sidebarTitle: Install and configure
 
 The BloodHound Enterprise CrowdStrike Falcon Foundry Application is a native, serverless integration that automatically collects sessions, local groups, user rights assignment (LSA), and registry key data from CrowdStrike Falcon agents installed on endpoint hosts. The application then sends that data to your BloodHound Enterprise tenant.
 
-This guide shows you how to install the Foundry application, configure the BloodHound Enterprise connection, set up the required OS queries, and confirm that telemetry reaches Falcon Next-Gen SIEM.
+This guide shows you how to install the Foundry application, configure the BloodHound Enterprise connection, set up the required queries, and confirm that telemetry reaches Falcon Next-Gen SIEM.
 
 Use this integration to:
 
@@ -112,11 +112,78 @@ Install the CrowdStrike Foundry application and configure credentials for BloodH
   </Step>
 </Steps>
 
-## Configure OS queries
+## Configure queries
 
 Before the Foundry workflow can upload data to BloodHound Enterprise, the required Windows endpoint telemetry must exist in Falcon Next-Gen SIEM.
 
-This section shows you how to save and schedule the required OS queries in the CrowdStrike Falcon console so your target Windows hosts continuously send data to Next-Gen SIEM.
+This section shows you how to save and schedule the required queries in the CrowdStrike Falcon console so your target Windows hosts continuously send data to Next-Gen SIEM.
+
+### Required queries
+
+Use the following four queries when you configure collection in CrowdStrike Falcon. Copy, save, and schedule each query separately.
+
+<Tabs>
+  <Tab title="Sessions">
+    ```sql
+    SELECT
+      'bloodhound_enterprise_windows_endpoint_osquery_result' AS event_type,
+      'session' AS data_type,
+      logon_id,
+      user,
+      logon_domain,
+      logon_type,
+      logon_time
+    FROM logon_sessions;
+    ```
+  </Tab>
+
+  <Tab title="Local groups">
+    ```sql
+    SELECT
+      'bloodhound_enterprise_windows_endpoint_osquery_result' AS event_type,
+      'local_groups' AS data_type,
+      g.groupname,
+      u.username
+    FROM groups g
+    JOIN user_groups ug ON g.gid = ug.gid
+    JOIN users u ON ug.uid = u.uid;
+    ```
+  </Tab>
+
+  <Tab title="User rights assignment">
+    ```sql
+    SELECT
+      'bloodhound_enterprise_windows_endpoint_osquery_result' AS event_type,
+      'user_rights_assignment' AS data_type,
+      g.groupname,
+      u.username
+    FROM groups g
+    JOIN user_groups ug ON g.gid = ug.gid
+    JOIN users u ON ug.uid = u.uid
+    WHERE g.groupname = 'Remote Desktop Users'
+      OR g.groupname = 'Administrators';
+    ```
+  </Tab>
+
+  <Tab title="Registry key">
+    ```sql
+    SELECT
+      'bloodhound_enterprise_windows_endpoint_osquery_result' AS event_type,
+      'registry_key' AS data_type,
+      name,
+      type,
+      data
+    FROM registry
+    WHERE path IN (
+      'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0\ClientAllowedNTLMServers',
+      'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0\NtlmMinClientSec',
+      'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0\NtlmMinServerSec',
+      'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0\RestrictReceivingNTLMTraffic',
+      'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0\RestrictSendingNTLMTraffic'
+    );
+    ```
+  </Tab>
+</Tabs>
 
 <Steps>
   <Step title="Open live query in FFIT">
@@ -149,14 +216,30 @@ This section shows you how to save and schedule the required OS queries in the C
     1. Select the Falcon host group that contains the Windows devices you want to query.
   </Step>
 
-  <Step title="Save each required OS query">
-    1. Paste one required OS query provided for the integration into the query input.
+  <Step title="Create the query">
+    You must configure each query individually.
 
-    1. Open the three-dot menu and select **Save As**.
+    1. In the [Required queries](/integrations/crowdstrike/falcon-for-it/configure#required-queries) tabs above, select a query.
 
-    1. Enter a name for the query and save it.
+    1. Copy the full query text.
 
-    <Note>The vendor guide states that you must save the required OS queries one at a time.</Note>
+    1. Paste the query into the CrowdStrike query input.
+
+       <Frame>
+         <img
+           src="/images/integrations/crowdstrike/falcon-for-it/query-input.png"
+           alt="A screenshot of the query input interface"
+           noZoom
+         />
+       </Frame>
+  </Step>
+
+  <Step title="Save the query">
+    1. Click the ellipsis (three-dot) menu.
+
+    1. Select **Save As**.
+
+    1. Enter a name for the query and click **Save**.
   </Step>
 
   <Step title="Schedule the query">
@@ -167,10 +250,18 @@ This section shows you how to save and schedule the required OS queries in the C
     1. Set the frequency unit to **Minutes** and the interval to `60`.
 
     1. Click **Schedule**.
+
+       <Frame>
+         <img
+           src="/images/integrations/crowdstrike/falcon-for-it/schedule-query.png"
+           alt="A screenshot of the schedule query interface"
+           noZoom
+         />
+       </Frame>
   </Step>
 
-  <Step title="Repeat for the remaining OS queries">
-    Repeat the save and schedule process for each remaining query required by the integration.
+  <Step title="Repeat for all required queries">
+    Return to the [Required queries](/integrations/crowdstrike/falcon-for-it/configure#required-queries) tabs and repeat the copy, paste, save, and schedule steps for all required queries.
   </Step>
 
   <Step title="Run the saved queries">
@@ -184,7 +275,7 @@ This section shows you how to save and schedule the required OS queries in the C
 
 ## Verify query results
 
-Confirm that CrowdStrike routes the OS query results into Falcon Next-Gen SIEM before you run the BloodHound Enterprise workflow.
+Confirm that CrowdStrike routes the query results into Falcon Next-Gen SIEM before you run the BloodHound Enterprise workflow.
 
 <Steps>
   <Step title="Open Event Search">
@@ -201,7 +292,7 @@ Confirm that CrowdStrike routes the OS query results into Falcon Next-Gen SIEM b
        </Frame>
   </Step>
 
-  <Step title="Filter for OS query telemetry">
+  <Step title="Filter for query telemetry">
     Apply a custom filter with the following values:
 
     | Field | Value |
@@ -219,7 +310,7 @@ Confirm that CrowdStrike routes the OS query results into Falcon Next-Gen SIEM b
     <Frame>
       <img
         src="/images/integrations/crowdstrike/falcon-for-it/event-logs-queries.png"
-        alt="A screenshot of the filter interface for OS query telemetry"
+        alt="A screenshot of the filter interface for query telemetry"
         noZoom
       />
     </Frame>
