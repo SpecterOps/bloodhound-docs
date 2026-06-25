@@ -1,0 +1,37 @@
+---
+title: WritePublicInformation
+description: "The principal can write to the Public-Information property set on a user or computer, including altSecurityIdentities and servicePrincipalName."
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+The Public-Information property set includes the `altSecurityIdentities` and `servicePrincipalName` attributes. The `altSecurityIdentities` attribute stores explicit certificate mappings for a principal, while `servicePrincipalName` can be abused for targeted Kerberoasting.
+
+## Abuse Info
+
+Write access to the Public-Information property set can be abused in at least two ways:
+
+1. Write access to `altSecurityIdentities` may enable an ADCS ESC14 Scenario A attack. See [WriteAltSecurityIdentities](/resources/edges/write-alt-security-identities) for the certificate requirements, exploitation steps, and cleanup guidance.
+2. Write access to `servicePrincipalName` may enable a targeted Kerberoasting attack against a user with a weak password. See [WriteSPN](/resources/edges/write-spn) for details.
+
+## Opsec Considerations
+
+For ADCS ESC14 Scenario A, the affected certificate authority retains a local copy of the issued certificate in its issued certificates store. Defenders may analyze issued certificates to identify illegitimately issued certificates and the principal that requested them.
+
+For targeted Kerberoasting, see the [WriteSPN](/resources/edges/write-spn) opsec considerations.
+
+## Edge Schema
+
+Source: [User](/resources/nodes/user), [Group](/resources/nodes/group), [Computer](/resources/nodes/computer)<br />
+Destination: [User](/resources/nodes/user), [Computer](/resources/nodes/computer)<br />
+Traversable: **Yes**
+
+## References
+
+This edge is related to the following MITRE ATT&CK technique:
+
+* [T1098: Account Manipulation](https://attack.mitre.org/techniques/T1098/)
+
+### Abuse and Opsec references
+
+* [ADCS ESC14 Abuse Technique](https://posts.specterops.io/adcs-esc14-abuse-technique-333a004dc2b9)
