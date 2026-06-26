@@ -39,58 +39,107 @@ Use this guide to install SharpHound Enterprise on a domain-joined Windows serve
   Confirm that your SharpHound service account is a member of the local **Administrators** group.
   </Step>
 
-  <Step title="Extract the archive and start the installer">
-  Extract the `.zip` archive and run **SHSetup-v#.#.#.exe** as an administrator.
-  </Step>
-
-  <Step title="Handle the SmartScreen prompt if it appears">
-  If Microsoft Defender SmartScreen displays the following warning, click **More info**.
-
-  <Frame>
-    <img src="/assets/image-41.png" alt="Microsoft Defender SmartScreen warning" style={{ width: "50%" }} />
-  </Frame>
-
-  Confirm that the publisher is **Specter Ops, Inc.**, then click **Run anyway**.
-
-  <Frame>
-    <img src="/assets/image-42.png" alt="SmartScreen prompt showing publisher details" style={{ width: "50%" }} />
-  </Frame>
-  </Step>
-
-  <Step title="Choose the installation path">
-  Select the installation path, then click **Next**.
-
-  We recommend a path that low-privileged users cannot write to, such as the default `C:\Program Files (x86)\SHService`.
-
-  <Frame>
-    <img src="/assets/image-43.png" alt="SharpHound Enterprise installer path selection" style={{ width: "75%" }}/>
-  </Frame>
+  <Step title="Extract the archive">
+  Copy the downloaded `.zip` archive to the target server and extract it.
   </Step>
 
   <Step title="Install the service">
-  Click **Install**.
+  Choose one of the following installation methods:
 
-  <Frame>
-    <img src="/assets/image-44.png" alt="SharpHound Enterprise installer ready to install" style={{ width: "75%" }} />
-  </Frame>
-  </Step>
+  <Tabs>
+    <Tab title="Interactive">
+    Use this method for standard installations where you can interact with the installer UI.
+  
+    1. Run **SHSetup-v#.#.#.exe** as an administrator.
 
-  <Step title="Provide the service account credentials">
-  Enter the SharpHound service account credentials in the format `DOMAIN\username`.
+    1. If Microsoft Defender SmartScreen displays the following warning, click **More info**.
 
-  If you use a gMSA, follow the guidance in [SharpHound hardening](/manage-bloodhound/securing-bloodhound-and-collectors/sharphound-hardening): enter credentials for a standard user account that has local administrator access during installation, then switch the service to the gMSA after installation as described in [Add the gMSA to the SharpHound Enterprise service](/install-data-collector/install-sharphound/create-gmsa).
+       <Frame>
+         <img src="/assets/image-41.png" alt="Microsoft Defender SmartScreen warning" style={{ width: "50%" }} />
+       </Frame>
 
-  <Frame>
-    <img src="/assets/image-45.png" alt="SharpHound Enterprise installer service account credentials screen" style={{ width: "50%" }} />
-  </Frame>
-  </Step>
+       Confirm that the publisher is **Specter Ops, Inc.**, then click **Run anyway**.
 
-  <Step title="Finish the installation">
-  Click **Finish**.
+       <Frame>
+         <img src="/assets/image-42.png" alt="SmartScreen prompt showing publisher details" style={{ width: "50%" }} />
+       </Frame>
 
-  <Frame>
-    <img src="/assets/image-46.png" alt="SharpHound Enterprise installer completion screen" style={{ width: "75%" }} />
-  </Frame>
+    1. Select the installation path, then click **Next**.
+
+       We recommend a path that low-privileged users cannot write to, such as the default `C:\Program Files (x86)\SHService`.
+
+       <Frame>
+         <img src="/assets/image-43.png" alt="SharpHound Enterprise installer path selection" style={{ width: "75%" }}/>
+       </Frame>
+
+    1. Click **Install**.
+
+       <Frame>
+         <img src="/assets/image-44.png" alt="SharpHound Enterprise installer ready to install" style={{ width: "75%" }} />
+       </Frame>
+
+    1. Enter the SharpHound service account credentials in the format `DOMAIN\username`.
+
+       If you use a gMSA, follow the guidance in [SharpHound hardening](/manage-bloodhound/securing-bloodhound-and-collectors/sharphound-hardening): enter credentials for a standard user account that has local administrator access during installation, then switch the service to the gMSA after installation as described in [Add the gMSA to the SharpHound Enterprise service](/install-data-collector/install-sharphound/create-gmsa).
+
+       <Frame>
+         <img src="/assets/image-45.png" alt="SharpHound Enterprise installer service account credentials screen" style={{ width: "50%" }} />
+       </Frame>
+
+    1. Click **Finish**.
+
+       <Frame>
+         <img src="/assets/image-46.png" alt="SharpHound Enterprise installer completion screen" style={{ width: "75%" }} />
+       </Frame>
+    </Tab>
+
+    <Tab title="Headless">
+    Use this method for automated deployments where interactive desktop sessions are unavailable or restricted.
+
+    <Note>
+      We recommend using a [Group Managed Service Account (gMSA)](/install-data-collector/install-sharphound/create-gmsa) for the SharpHound Enterprise service account instead of a standard Active Directory user account.
+    </Note>
+
+    Run the installer silently, then register and start the service. Replace the placeholder values to match your environment.
+
+    ```powershell
+    # Run the silent installer
+    SHSetup-<version>.exe /VERYSILENT /SUPPRESSMSGBOXES /FORCECLOSEAPPLICATIONS /LOG="BloodHound.log"
+
+    # Register and start the service
+    $ServiceName = "SHDelegator"
+    $DisplayName = "SharpHoundDelegator"
+    $ExecutablePath = "C:\Program Files (x86)\SHService\SHDelegator.exe"
+    $Username = "DOMAIN\service-account"  # For a gMSA, use the format DOMAIN\<gMSA-name>$ (include the trailing $)
+    $Password = "<password>"              # Leave blank ("") for a gMSA
+
+    if (-not (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue)) {
+        New-Service -Name $ServiceName `
+            -BinaryPathName "`"$ExecutablePath`"" `
+            -DisplayName $DisplayName `
+            -StartupType Automatic
+    }
+
+    $svc = Get-WmiObject -Class Win32_Service -Filter "Name='$ServiceName'"
+    $null = $svc.Change(
+        $null,      # StartMode
+        $null,      # DesktopInteract
+        $null,      # ErrorControl
+        $null,      # BinaryPathName
+        $null,      # LoadOrderGroup
+        $null,      # LoadOrderGroupDependencies
+        $Username,  # ServiceAccountName
+        $Password   # Password
+    )
+
+    Start-Service -Name $ServiceName
+    ```
+
+    <Note>
+      Specify the correct installer `<version>` in the command.
+    </Note>
+    </Tab>
+  </Tabs>
   </Step>
 
   <Step title="Confirm that the service is installed">
@@ -184,63 +233,6 @@ Use this guide to install SharpHound Enterprise on a domain-joined Windows serve
 
   <Step title="Verify the upgrade">
   Confirm that the service starts successfully and resumes normal communication with BloodHound Enterprise.
-  </Step>
-</Steps>
-
-## Headless installation
-
-The standard SharpHound Enterprise installation process relies on UI-based interactions. If interactive desktop sessions are unavailable or restricted, use the headless installation method instead.
-
-Headless installation is useful for automation tooling and software deployment pipelines.
-
-<Note>
-  We recommend using a [Group Managed Service Account (gMSA)](/install-data-collector/install-sharphound/create-gmsa) for the SharpHound Enterprise service account instead of a standard Active Directory user account.
-</Note>
-
-<Steps>
-  <Step title="Run the installer silently">
-  Run the SharpHound Enterprise installer with silent options:
-
-  ```powershell
-  SHSetup-<version>.exe /VERYSILENT /SUPPRESSMSGBOXES /FORCECLOSEAPPLICATIONS /LOG="BloodHound.log"
-  ```
-
-  <Note>
-    Specify the correct installer `<version>` in the command.
-  </Note>
-  </Step>
-
-  <Step title="Register and start the service">
-  After installation, register and start the SharpHoundDelegator service. Replace the placeholder values to match your environment.
-
-  ```powershell
-  $ServiceName = "SHDelegator"
-  $DisplayName = "SharpHoundDelegator"
-  $ExecutablePath = "C:\Program Files (x86)\SHService\SHDelegator.exe"
-  $Username = "DOMAIN\service-account"
-  $Password = "<password>" # Leave blank for a gMSA
-
-  if (-not (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue)) {
-      New-Service -Name $ServiceName `
-          -BinaryPathName "`"$ExecutablePath`"" `
-          -DisplayName $DisplayName `
-          -StartupType Automatic
-  }
-
-  $svc = Get-WmiObject -Class Win32_Service -Filter "Name='$ServiceName'"
-  $null = $svc.Change(
-      $null,      # StartMode
-      $null,      # DesktopInteract
-      $null,      # ErrorControl
-      $null,      # BinaryPathName
-      $null,      # LoadOrderGroup
-      $null,      # LoadOrderGroupDependencies
-      $Username,  # ServiceAccountName
-      $Password   # Password
-  )
-
-  Start-Service -Name $ServiceName
-  ```
   </Step>
 </Steps>
 
