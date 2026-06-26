@@ -29,7 +29,7 @@ Identifies principals with access to the Okta Admin Console.
 
 ```cypher
 MATCH path = (:Okta_Organization)-[:Okta_Contains]->(:Okta)-[:Okta_AppAssignment]->(console:Okta_Application)
-WHERE console.app_type = "saasure"
+WHERE console.name = "saasure"
 RETURN path
 LIMIT 1000
 ```
@@ -291,31 +291,6 @@ LIMIT 1000
 
 This query can be imported into BloodHound from the [privileged-principals-hybrid-indirect.json](https://github.com/SpecterOps/openhound-okta/tree/main/extension/saved_searches/privileged-principals-hybrid-indirect.json) file.
 
-## Privileged Users without MFA (Direct)
-
-Users who do not have multi-factor authentication enabled and directly hold privileged role assignments.
-
-```cypher
-MATCH path = (user:Okta_User)-[:Okta_HasRoleAssignment]->(:Okta_RoleAssignment)-[:Okta_ScopedTo]->(:Okta)
-WHERE user.authentication_factors = 0
-RETURN path
-LIMIT 1000
-```
-
-This query can be imported into BloodHound from the [privileged-users-no-mfa-direct.json](https://github.com/SpecterOps/openhound-okta/tree/main/extension/saved_searches/privileged-users-no-mfa-direct.json) file.
-
-## Privileged Users without MFA (Indirect)
-
-Users who do not have multi-factor authentication enabled and hold privileged role assignments through group membership.
-
-```cypher
-MATCH path = (user:Okta_User)-[:Okta_MemberOf]->(:Okta_Group)-[:Okta_HasRoleAssignment]->(:Okta_RoleAssignment)-[:Okta_ScopedTo]->(:Okta)
-WHERE user.authentication_factors = 0
-RETURN path
-LIMIT 1000
-```
-
-This query can be imported into BloodHound from the [privileged-users-no-mfa-indirect.json](https://github.com/SpecterOps/openhound-okta/tree/main/extension/saved_searches/privileged-users-no-mfa-indirect.json) file.
 
 ## Privileged Users with Old Passwords (Direct)
 
