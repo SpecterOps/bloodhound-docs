@@ -215,7 +215,7 @@ Headless installation is useful for automation tooling and software deployment p
 
   ```powershell
   $ServiceName = "SharpHoundDelegator"
-  $DisplayName = "SharpHoundDelegator"
+  $DisplayName = "SharpHound Delegator"
   $ExecutablePath = "C:\Program Files (x86)\SHService\SHDelegator.exe"
   $Username = "DOMAIN\service-account"
   $Password = "<password>" # Leave blank for a gMSA
@@ -227,17 +227,7 @@ Headless installation is useful for automation tooling and software deployment p
           -StartupType Automatic
   }
 
-  $svc = Get-WmiObject -Class Win32_Service -Filter "Name='$ServiceName'"
-  $null = $svc.Change(
-      $null,      # StartMode
-      $null,      # DesktopInteract
-      $null,      # ErrorControl
-      $null,      # BinaryPathName
-      $null,      # LoadOrderGroup
-      $null,      # LoadOrderGroupDependencies
-      $Username,  # ServiceAccountName
-      $Password   # Password
-  )
+  sc.exe config $ServiceName obj= $Username password= $Password
 
   Start-Service -Name $ServiceName
   ```
