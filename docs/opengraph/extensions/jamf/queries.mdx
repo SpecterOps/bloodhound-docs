@@ -87,7 +87,7 @@ Retrieve all nodes and edges where either a Jamf node has an inbound or outbound
 
 ```cypher
 MATCH p=(s)-[]->(t)
-WHERE s.primarykind STARTS WITH 'jamf' OR t.primarykind STARTS WITH 'jamf'
+WHERE s.primary_kind STARTS WITH 'jamf' OR t.primary_kind STARTS WITH 'jamf'
 RETURN p
 LIMIT 1000
 ```
@@ -129,17 +129,17 @@ WHERE s.name STARTS WITH 'TENANT_ADMIN'
 AND (t.name STARTS WITH 'UPDATE' OR t.name STARTS WITH 'SOL' OR t.name STARTS WITH 'JVM')
 AND (type(r) = 'jamf_UpdateAccounts' OR type(r) = 'jamf_CreateAccounts' OR type(r) = 'jamf_CreatePolicies' OR type(r) = 'jamf_AdminTo')
 OR
-s.primarykind = 'jamf_Account' AND (s.name IN ['EXAMPLE', 'REG', 'LCAIN'])
+s.primary_kind = 'jamf_Account' AND (s.name IN ['EXAMPLE', 'REG', 'LCAIN'])
 AND type(r) = 'jamf_AdminTo'
 OR
-t.primarykind STARTS WITH 'jamf_Computer' AND s.primarykind = 'jamf_Account'
+t.primary_kind STARTS WITH 'jamf_Computer' AND s.primary_kind = 'jamf_Account'
 AND s.name STARTS WITH 'AZURE'
 OR
-s.primarykind = 'jamf_Tenant'
+s.primary_kind = 'jamf_Tenant'
 AND type(r) = 'jamf_Contains'
-AND (t.primarykind = 'jamf_Site' OR t.primarykind = 'jamf_Computer')
+AND (t.primary_kind = 'jamf_Site' OR t.primary_kind = 'jamf_Computer')
 OR
-(s.primarykind = 'jamf_Site' AND t.primarykind = 'jamf_Computer')
+(s.primary_kind = 'jamf_Site' AND t.primary_kind = 'jamf_Computer')
 RETURN p
 LIMIT 1000
 ```
@@ -167,7 +167,7 @@ Targeted Filtering that limits results to starting jamf_Group nodes starting wit
 ```cypher
 MATCH p=(s)-[r]->(t)
 WHERE s.name STARTS WITH 'TENANT'
-AND s.primarykind = 'jamf_Group'
+AND s.primary_kind = 'jamf_Group'
 AND (t.name STARTS WITH 'UPDATE' OR t.name STARTS WITH 'SOL')
 AND (type(r) = 'jamf_UpdateAccounts' OR type(r) = 'jamf_CreateAccounts' OR type(r) = 'jamf_AdminTo')
 RETURN p
@@ -195,7 +195,7 @@ Get immediate edges impacting Jamf Accounts originating from Jamf Groups, swap j
 
 ```cypher
 MATCH p=(s)-[]->(t:jamf_Account)
-WHERE s.primarykind ENDS WITH 'jamf_Group'
+WHERE s.primary_kind ENDS WITH 'jamf_Group'
 RETURN p
 LIMIT 1000
 ```
@@ -221,8 +221,8 @@ Retrieve attack paths between Tier 1 nodes and Tier 0 nodes that are fully trave
 ```cypher
 MATCH p=(s)-[r*1..5]->(t)
 WHERE s.tier = 1 AND t.tier = 0
-AND s.primarykind <> 'jamf_Tenant'
-AND s.primarykind <> 'jamf_Site'
+AND s.primary_kind <> 'jamf_Tenant'
+AND s.primary_kind <> 'jamf_Site'
 AND r.traversable = True
 RETURN p
 LIMIT 1000
