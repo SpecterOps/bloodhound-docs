@@ -210,8 +210,8 @@ Headless installation is useful for automation tooling and software deployment p
   </Note>
   </Step>
 
-  <Step title="Register and start the service">
-  After installation, register and start the SharpHound Delegator service. Replace the placeholder values to match your environment.
+  <Step title="Register the service">
+  After installation, register the SharpHound Delegator service. Replace the placeholder values to match your environment.
 
   ```powershell
   $ServiceName = "SharpHoundDelegator"
@@ -227,20 +227,39 @@ Headless installation is useful for automation tooling and software deployment p
           -StartupType Automatic
   }
 
-  $svc = Get-WmiObject -Class Win32_Service -Filter "Name='$ServiceName'"
-  $null = $svc.Change(
-      $null,      # StartMode
-      $null,      # DesktopInteract
-      $null,      # ErrorControl
-      $null,      # BinaryPathName
-      $null,      # LoadOrderGroup
-      $null,      # LoadOrderGroupDependencies
-      $Username,  # ServiceAccountName
-      $Password   # Password
-  )
+  # Set the service account. For a gMSA, leave the password blank.
+  sc.exe config $ServiceName obj= "$Username" password= "$Password"
+  ```
+  </Step>
 
+  <Step title="Initialize the configuration directory">
+  Start the service once. This startup fails, but it creates the configuration and log directory in the service account's user profile: `%AppData%\Roaming\BloodHoundEnterprise`.
+
+  ```powershell
   Start-Service -Name $ServiceName
   ```
+  </Step>
+
+  <Step title="Configure the service">
+  Update `settings.json` and `auth.json` in `%AppData%\Roaming\BloodHoundEnterprise` as described in [SharpHound Enterprise Local Configuration](/install-data-collector/install-sharphound/local-configuration).
+
+  In most environments, update the following values:
+
+  - In `settings.json`, set `RestEndpoint` to your BloodHound Enterprise tenant domain in the format `CODENAME.bloodhoundenterprise.io`.
+  - In `settings.json`, if you use a proxy, set `Proxy` in the format `proxy.acme.com:8080`.
+  - [Create a BloodHound Enterprise collector client](/collect-data/enterprise-collection/create-collector), then set `Token` and `TokenID` in `auth.json` to the generated values.
+  </Step>
+
+  <Step title="Start the service and verify readiness">
+  Start the service.
+
+  ```powershell
+  Start-Service -Name $ServiceName
+  ```
+
+  If the service does not start, see [The SharpHound Delegator Service won't start](#the-sharphound-delegator-service-wont-start).
+
+  Return to BloodHound Enterprise and confirm that the client reports **🟢 Ready**.
   </Step>
 </Steps>
 
