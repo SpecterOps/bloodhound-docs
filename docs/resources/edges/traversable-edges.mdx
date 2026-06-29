@@ -3,23 +3,21 @@ title: Traversable and Non-Traversable Edge Types
 description: Details on traversable and non-traversable edge types in BloodHound
 ---
 
-<img
-  noZoom
-  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
-  alt="Applies to BloodHound Enterprise and CE"
-/>
+import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
+
+<ResourceEditionPill />
 
 ## Traversable Edges
 
 Most edges in BloodHound are traversable, representing a relationship between two nodes where the starting node can take control of the ending node to a degree that allows an attacker to abuse outgoing edges.
 
-For example, consider the ForceChangePassword edge:
+For example, consider the [ForceChangePassword](/resources/edges/force-change-password) edge:
 
 <Frame>
   <img src="/assets/image-2-74.png" />
 </Frame>
 
-The Service Desk group has permission to force change the password of Bob without knowing Bob's current password. An attacker can abuse this to change the password, log in as Bob, and exploit Bob's privileges. Traversable edges like ForceChangePassword facilitate graph traversal and enable the pathfinding logic in BloodHound.
+The Service Desk group has permission to force change the password of Bob without knowing Bob's current password. An attacker can abuse this to change the password, log in as Bob, and exploit Bob's privileges. Traversable edges like [ForceChangePassword](/resources/edges/force-change-password) facilitate graph traversal and enable the pathfinding logic in BloodHound.
 
 These are the traversable AD edge types in BloodHound:
 
@@ -66,15 +64,15 @@ These are the traversable Azure edge types in BloodHound:
 
 ## Non-Traversable Edges
 
-If you cannot abuse a given relationship between two nodes to take control of the end node, then the relationship is non-traversable. However, some non-traversable relationships can form a traversable relationship when combined. An example is the DCSync attack narrative. GetChanges and GetChangesAll permissions on the domain object combined enable you to perform the DCSync attack. GetChanges and GetChangesAll are non-traversable edges, and BloodHound uses them to produce the traversable DCSync edge in what we call the post-processing logic.
+If you cannot abuse a given relationship between two nodes to take control of the end node, then the relationship is non-traversable. However, some non-traversable relationships can form a traversable relationship when combined. An example is the [DCSync](/resources/edges/dc-sync) attack narrative. [GetChanges](/resources/edges/get-changes) and [GetChangesAll](/resources/edges/get-changes-all) permissions on the domain object combined enable you to perform the DCSync attack. GetChanges and GetChangesAll are non-traversable edges, and BloodHound uses them to produce the traversable DCSync edge in what we call the post-processing logic.
 
-Pathfinding includes only traversable edges. As a result, you might get a DCSync edge in a path like this:
+Pathfinding includes only traversable edges. As a result, you might get a [DCSync](/resources/edges/dc-sync) edge in a path like this:
 
 <Frame>
   <img src="/assets/image-2-75.png" />
 </Frame>
 
-But you will not see any GetChanges or GetChangesAll edge. However, you can use Cypher to reveal the GetChanges and GetChangeAll edges that the DCSync edge relies on:
+But you will not see any [GetChanges](/resources/edges/get-changes) or [GetChangesAll](/resources/edges/get-changes-all) edge. However, you can use Cypher to reveal the GetChanges and GetChangesAll edges that the [DCSync](/resources/edges/dc-sync) edge relies on:
 
 <Frame>
   <img src="/assets/image-2-76.png" />

