@@ -18,18 +18,14 @@ Use this guide to install SharpHound Enterprise on a domain-joined Windows serve
   <Step title="Open the Download Collectors page">
   Sign in to your BloodHound Enterprise tenant.
 
-  In the upper-right corner, click the gear icon, then click **Download Collectors**.
-
-  <Frame>
-    <img src="/assets/image-39.png" alt="Download Collectors option in BloodHound Enterprise" style={{ width: "50%" }} />
-  </Frame>
+  In the left menu, click <Icon icon="arrow-down-to-bracket" /> **Download Collectors**.
   </Step>
 
-  <Step title="Download the latest SharpHound package">
-  Click **📥 Download SharpHound v#.#.# (.zip)** for the SharpHound version marked **(Latest)**.
+  <Step title="Download the latest archive">
+  Click the latest SharpHound Enterprise version to begin downloading the `.zip` archive.
 
   <Frame>
-    <img src="/assets/image-40.png" alt="SharpHound download option marked Latest"/>
+    <img src="/images/data_collectors/sharphound-latest.png" alt="SharpHound download option marked Latest"/>
   </Frame>
   </Step>
 
@@ -100,13 +96,13 @@ Use this guide to install SharpHound Enterprise on a domain-joined Windows serve
       We recommend using a [Group Managed Service Account (gMSA)](/install-data-collector/install-sharphound/create-gmsa) for the SharpHound Enterprise service account instead of a standard Active Directory user account.
     </Note>
 
-    Run the installer silently, then register and start the service. Replace the placeholder values to match your environment.
+    Run the installer silently, then register the service. Replace the placeholder values to match your environment and SharpHound Enterprise version.
 
     ```powershell
     # Run the silent installer
     SHSetup-<version>.exe /VERYSILENT /SUPPRESSMSGBOXES /FORCECLOSEAPPLICATIONS /LOG="BloodHound.log"
 
-    # Register and start the service
+    # Register the service
     $ServiceName = "SHDelegator"
     $DisplayName = "SharpHoundDelegator"
     $ExecutablePath = "C:\Program Files (x86)\SHService\SHDelegator.exe"
@@ -131,13 +127,7 @@ Use this guide to install SharpHound Enterprise on a domain-joined Windows serve
         $Username,  # ServiceAccountName
         $Password   # Password
     )
-
-    Start-Service -Name $ServiceName
     ```
-
-    <Note>
-      Specify the correct installer `<version>` in the command.
-    </Note>
     </Tab>
   </Tabs>
   </Step>
@@ -145,11 +135,21 @@ Use this guide to install SharpHound Enterprise on a domain-joined Windows serve
   <Step title="Confirm that the service is installed">
   Confirm that the **SharpHoundDelegator** service is present.
 
-  If you do not see the service, see [I don't see the SharpHoundDelegator service](#i-dont-see-the-sharphounddelegator-service).
+  **Interactive installation**
 
   <Frame>
     <img src="/assets/image-47.png" alt="Services console showing the SharpHoundDelegator service" />
   </Frame>
+
+  **Headless installation**
+ 
+  ```powershell
+  Get-Service -Name "SHDelegator"
+  ```
+
+  <Note>
+    If you do not see the service, see [I don't see the SharpHoundDelegator service](/install-data-collector/install-sharphound/installation-upgrade#no-service).
+  </Note>
   </Step>
 
   <Step title="Switch the service account to a gMSA if needed">
@@ -158,6 +158,12 @@ Use this guide to install SharpHound Enterprise on a domain-joined Windows serve
 
   <Step title="Initialize the configuration directory">
   Start the service once.
+
+  For headless installations, run the following command:
+
+  ```powershell
+  Start-Service -Name $ServiceName
+  ```
 
   This initial startup fails, but it creates the configuration and log directory in the service account's user profile: `%AppData%\BloodHoundEnterprise`.
   </Step>
@@ -175,7 +181,15 @@ Use this guide to install SharpHound Enterprise on a domain-joined Windows serve
   <Step title="Start the service and verify readiness">
   Start the service.
 
-  If the service does not start, see [The SharpHoundDelegator service won't start](#the-sharphounddelegator-service-wont-start).
+  For headless installations, run the following command:
+
+  ```powershell
+  Start-Service -Name "SHDelegator"
+  ```
+
+  <Note>
+    If the service does not start, see [The SharpHoundDelegator service won't start](/install-data-collector/install-sharphound/installation-upgrade#no-start).
+  </Note>
 
   Return to BloodHound Enterprise and confirm that the client reports **🟢 Ready**.
 
@@ -196,18 +210,14 @@ Use this guide to install SharpHound Enterprise on a domain-joined Windows serve
   <Step title="Open the Download Collectors page">
   Sign in to your BloodHound Enterprise tenant.
 
-  In the upper-right corner, click the gear icon, then click **Download Collectors**.
-
-  <Frame>
-    <img src="/assets/image-49.png" alt="Download Collectors option for upgrading SharpHound Enterprise" style={{ width: "50%" }} />
-  </Frame>
+  In the left menu, click <Icon icon="arrow-down-to-bracket" /> **Download Collectors**.
   </Step>
 
-  <Step title="Download the latest SharpHound package">
-  Click **📥 Download SharpHound v#.#.# (.zip)** for the SharpHound version marked **(Latest)**.
+  <Step title="Download the latest archive">
+  Click the latest SharpHound Enterprise version to begin downloading the `.zip` archive.
 
   <Frame>
-    <img src="/assets/image-50.png" alt="Latest SharpHound download for upgrade"/>
+    <img src="/images/data_collectors/sharphound-latest.png" alt="Latest SharpHound download for upgrade"/>
   </Frame>
   </Step>
 
@@ -228,7 +238,9 @@ Use this guide to install SharpHound Enterprise on a domain-joined Windows serve
   <Step title="Start the service">
   Start the **SharpHoundDelegator** service.
 
-  If the service does not start, see [The SharpHoundDelegator service won't start](#the-sharphounddelegator-service-wont-start).
+  <Note>
+    If the service does not start, see [The SharpHoundDelegator service won't start](/install-data-collector/install-sharphound/installation-upgrade#no-start).
+  </Note>
   </Step>
 
   <Step title="Verify the upgrade">
@@ -238,7 +250,7 @@ Use this guide to install SharpHound Enterprise on a domain-joined Windows serve
 
 ## Common installation issues
 
-### I don't see the SharpHoundDelegator service
+### I don't see the SharpHoundDelegator service {#no-service}
 
 This issue most often has one of the following causes:
 
@@ -251,7 +263,7 @@ The installation log can help with troubleshooting. The file is `InstallUtil.Ins
   <img src="/assets/image-52.png" alt="InstallUtil installation log in the SharpHound Enterprise installation directory"/>
 </Frame>
 
-### The SharpHoundDelegator service won't start
+### The SharpHoundDelegator service won't start {#no-start}
 
 Check the `TempDirectory` value in `settings.json` as described in [SharpHound Enterprise Local Configuration](/install-data-collector/install-sharphound/local-configuration).
 
