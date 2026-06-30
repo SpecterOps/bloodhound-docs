@@ -3,12 +3,16 @@ title: ADCSESC6a
 description: The principal has permission to enroll on one or more certificate templates allowing for authentication.
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
+import AdcsEnrollmentIdentityAttributes from '/snippets/edges/adcs-enrollment-identity-attributes.mdx';
+import AdcsCertificateIssuanceOpsec from '/snippets/edges/adcs-certificate-issuance-opsec.mdx';
+
+<ResourceEditionPill />
 
 
 They also have enrollment permission for an enterprise CA with the necessary templates published. This
 enterprise CA is trusted for NT authentication in the forest, and chains up to a root CA for the forest.
-The enterprise CA is configured with the EDITF_ATTRIBUTESUBJECTALTNAME2 flag allowing enrollees to
+The enterprise CA is configured with the `EDITF_ATTRIBUTESUBJECTALTNAME2` flag allowing enrollees to
 specify a Subject Alternate Name (SAN) identifying another principal during certificate enrollment of
 any published certificate template. This setup allow an attacker principal to obtain a malicious
 certificate as any AD forest user or computer and use it for authentication and impersonation without
@@ -26,7 +30,7 @@ Certify.exe request --ca rootdomaindc.forestroot.com\forestroot-RootDomainDC-CA 
 
 The certificate PFX is printed to the console in a base64-encoded format.
 
-If the enrollment fails with an error message stating that the Email or DNS name is unavailable and cannot be added to the Subject or Subject Alternate name, then it is because the enrollee principal does not have their 'mail' or 'dNSHostName' attribute set, which is required by the certificate template. The 'mail' attribute can be set on both user and computer objects but the 'dNSHostName' attribute can only be set on computer objects. Computers have validated write permission to their own 'dNSHostName' attribute by default, but neither users nor computers can write to their own 'mail' attribute by default.
+<AdcsEnrollmentIdentityAttributes />
 
 Step 2: With Rubeus, use the certificate to authenticate to the domain and request a TGT, specifying the identity you intend to impersonate:
 
@@ -49,7 +53,7 @@ certification authority and target principal to impersonate:
 certipy req -u john@corp.local -p Passw0rd -ca corp-DC-CA -target ca.corp.local -template ESC6 -upn administrator@corp.local
 ```
 
-If the enrollment fails with an error message stating that the Email or DNS name is unavailable and cannot be added to the Subject or Subject Alternate name, then it is because the enrollee principal does not have their 'mail' or 'dNSHostName' attribute set, which is required by the certificate template. The 'mail' attribute can be set on both user and computer objects but the 'dNSHostName' attribute can only be set on computer objects. Computers have validated write permission to their own 'dNSHostName' attribute by default, but neither users nor computers can write to their own 'mail' attribute by default.
+<AdcsEnrollmentIdentityAttributes />
 
 Step 2: Request a ticket granting ticket (TGT) from the domain, specifying the certificate created in Step 1 and the IP of a domain controller::
 
@@ -63,10 +67,7 @@ supported by Certipy. See the Windows abuse section for example.
 
 ## Opsec Considerations
 
-When the affected certificate authority issues the certificate to the attacker, it will retain a local copy
-of that certificate in its issued certificates store. Defenders may analyze those issued certificates to
-identify illegitimately issued certificates and identify the principal that requested the certificate, as
-well as the target identity the attacker is attempting to impersonate.
+<AdcsCertificateIssuanceOpsec />
 
 ## Edge Schema
 

