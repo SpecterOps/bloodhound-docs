@@ -13,22 +13,39 @@ sidebarTitle: "2026-07-07"
   Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
 </Tip>
 
-<Update label="BloodHound" description="New Feature" tags={["Attack Paths"]}>
+<Update label="BloodHound" description="New Feature" tags={["Data Collection"]}>
   {/*BED-6155*/}
-  ## ADCS ESC14 Scenario A Coverage
+  ## ADCS ESC14 Scenario A Attack Paths
 
-  Analyze ADCS ESC14 Scenario A attack paths directly in BloodHound so you can identify certificate-mapping abuse paths that rely on `altSecurityIdentities`.
+  Analyze ADCS ESC14 Scenario A attack paths directly in BloodHound so you can identify explicit certificate-mapping abuse paths that rely on `altSecurityIdentities`.
 
-  This release adds graph coverage for [`WriteAltSecurityIdentities`](/resources/edges/write-alt-security-identities) and [`WritePublicInformation`](/resources/edges/write-public-information), helping you surface certificate-based privilege escalation paths that were previously harder to model and investigate.
+  In [ESC14 Scenario A](https://posts.specterops.io/adcs-esc14-abuse-technique-333a004dc2b9), an attacker who can modify a target principal's `altSecurityIdentities` attribute, or who has equivalent control through the `Public-Information` property set, can add an explicit certificate mapping that points to a certificate they control and then authenticate as the target.
+
+  This release adds graph coverage for the following edges, helping you surface certificate-based impersonation and privilege escalation paths that were previously harder to model and investigate:
+
+  - [`WriteAltSecurityIdentities`](/resources/edges/write-alt-security-identities)
+  - [`WritePublicInformation`](/resources/edges/write-public-information)
+</Update>
+
+<Update label="BloodHound" description="New Feature" tags={["API"]}>
+  {/*BED-8608, BED-8609*/}
+  ## Graph ID Lookup APIs
+
+  Retrieve details for specific OpenGraph nodes and relationships by their graph-assigned integer IDs.
+
+  BloodHound now exposes the following experimental OpenGraph API endpoints:
+
+  - [`GET /api/v2/nodes/{node_id}`](/reference/opengraph-experimental/get-node-by-graph-node-id)
+  - [`GET /api/v2/relationships/{relationship_id}`](/reference/opengraph-experimental/get-relationship-by-graph-relationship-id)
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
   {/*BED-8518, BED-8519, BED-8588*/}
-  ## Auditor Access for File Ingest and SSO Configuration
+  ## Auditor Role Access Improvements
 
-  Let auditors review **File Ingest** activity and **SSO Configuration** details without granting edit permissions.
+  Allow auditors to review **File Ingest** activity and **SSO Configuration** details without granting edit permissions.
 
-  Auditors can now access these administration views in a read-only state while actions such as uploading files or creating providers remain restricted to roles with write access.
+  Auditors can now access these administration views in a read-only state while actions, such as uploading files or creating providers, remain restricted to [roles](/manage-bloodhound/auth/users-and-roles) with write access.
 </Update>
 
 <Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
@@ -37,47 +54,30 @@ sidebarTitle: "2026-07-07"
 
   Keep long-running OpenHound jobs alive, identify deployed client versions more easily, and troubleshoot failures with clearer logs.
 
-  OpenHound now continues checking in during active collections to reduce unintended job timeouts, reports its installed version back to BloodHound for better client visibility, improves log readability, handles deferred pipeline failures more consistently, and continues collection more often when single-object errors occur.
+  OpenHound now:
+
+  - Continues checking in during active collections to reduce unintended job timeouts
+  - Continues collection more often when single-object errors occur
+  - Handles deferred pipeline failures more consistently
+  - Reports its version to BloodHound for visibility on the **Manage Clients** page
+  - Uses human-readable plain-text logs by default for file and stdout output, while keeping structured JSON as an opt-in format
 </Update>
 
-<Update label="BloodHound" description="Enhancement" tags={["API"]}>
-  {/*BED-8608, BED-8609*/}
-  ## Graph ID Lookup APIs
-
-  Retrieve specific nodes and relationships by their graph-assigned integer IDs when you need to automate graph lookups outside the UI.
-
-  BloodHound now exposes [`GET /api/v2/nodes/{node_id}`](/reference/opengraph-experimental/get-node-by-graph-node-id) and [`GET /api/v2/relationships/{relationship_id}`](/reference/opengraph-experimental/get-relationship-by-graph-relationship-id) to simplify targeted integrations and investigation workflows.
-</Update>
-
-<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
-  {/*BI-1814*/}
-  ## Higher Memory Limits for User-Generated Cypher Queries
-
-  <img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }}/>
-
-  Run more complex user-generated Cypher queries in BloodHound Enterprise and return larger **Entity Panel** sections than the previous default allowed.
-
-  This release raises the [`graph_query_memory_limit`](/manage-bloodhound/bh-config#graph_query_memory_limit) setting used for user-generated Cypher queries from `2` to `4`, increasing the memory available to those workflows in hosted enterprise environments.
-</Update>
-
-<Update label="BloodHound" description="Enhancement" tags={["Privilege Zones"]}>
+<Update label="BloodHound" description="Enhancement" tags={["Zone Builder"]}>
   {/*BED-8303, BED-7739, BED-8520*/}
   ## Privilege Zone Rule Authoring Improvements
 
   Build and validate Privilege Zone rules with less rework when you switch rule types or refine Cypher-based rules.
 
-  BloodHound now preserves rule state when you switch between Cypher and Object ID rules, prompts you to rerun Cypher when the query changes, and prevents saving Cypher rules that have not produced valid results.
-</Update>
+  BloodHound now:
 
-<Update label="BloodHound" description="Enhancement" tags={["Privilege Zones"]}>
-  {/*BED-8276, BED-8781*/}
-  ## Variable Analysis Mode
+  - Preserves rule state when you switch between Cypher and Object ID rule types
+  - Prompts you to rerun Cypher when the query changes
+  - Warns you with a confirmation dialog before saving a Cypher-based rule that returns no results
 
-  <img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }}/>
-
-  Review unrealized Privilege Zone analysis changes with Variable Analysis Mode and manage the associated feature flag more directly in supported environments.
-
-  This release adds Variable Analysis Mode support for Privilege Zone analysis workflows and makes the related feature-flag setting user-updatable.
+    <Note>
+      This helps when you expect a rule to return results after future data collection or changes in your environment.
+    </Note>
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Accessibility"]}>
@@ -87,6 +87,30 @@ sidebarTitle: "2026-07-07"
   Navigate BloodHound with clearer focus states, more consistent semantic structure, and better screen-reader labeling across key workflows.
 
   This release improves accessible names and labels in administration forms, strengthens visible keyboard focus behavior, and refines headings and page structure to better support assistive technologies.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Cypher"]}>
+  {/*BI-1814*/}
+  ## Higher Memory Limits for Cypher Queries
+
+  <img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }}/>
+
+  Run more complex Cypher queries in BloodHound Enterprise and return larger **Entity Panel** sections than the previous default allowed.
+
+  This release raises the [`graph_query_memory_limit`](/manage-bloodhound/bh-config#graph_query_memory_limit) setting for user-generated Cypher queries from 2GB to 4GB in hosted enterprise environments.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Zone Builder"]}>
+  {/*BED-8276, BED-8781*/}
+  ## Variable Analysis Mode
+
+  <img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }}/>
+
+  See Privilege Zone updates reflected in your graph faster.
+
+  When you enable **Variable Analysis Mode** on the **Early Access** page, BloodHound Enterprise can skip post-processing after Privilege Zone changes and re-run only the analysis stages needed to update the graph.
+  
+  This reduces the time it takes for updated zone definitions and related findings to appear in the graph.
 </Update>
 
 <Update label="BloodHound" tags={["Fixed Issues"]}>
@@ -127,8 +151,6 @@ sidebarTitle: "2026-07-07"
 </Update>
 
 {/* TODO(doc-follow-up):
-- Update docs/manage-bloodhound/auth/users-and-roles.mdx if Auditor access to File Ingest and SSO Configuration is now part of the supported permission matrix.
-- Review docs/manage-bloodhound/bh-config.mdx if the documented `graph_query_memory_limit` example or rollout guidance should change after the enterprise fleet configuration update ships.
 - Review docs/analyze-data/privilege-zones/rules.mdx for the rule-builder validation and state-preservation changes in this release, and confirm whether Variable Analysis Mode needs separate public documentation.
-- Review docs/collect-data/enterprise-collection/monitor.mdx, docs/collect-data/enterprise-collection/create-collector.mdx, and docs/openhound/configuration.mdx for OpenHound version visibility, long-running job heartbeat behavior, and updated troubleshooting guidance.
+- Review docs/collect-data/enterprise-collection/monitor.mdx, docs/collect-data/enterprise-collection/create-collector.mdx, and docs/openhound/configuration.mdx for OpenHound version visibility, long-running job heartbeat behavior, updated troubleshooting guidance, and configuration examples (e.g., logs).
 */}
