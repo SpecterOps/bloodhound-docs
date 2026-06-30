@@ -48,6 +48,19 @@ sidebarTitle: "2026-07-07"
   Auditors can now access these administration views in a read-only state while actions, such as uploading files or creating providers, remain restricted to [roles](/manage-bloodhound/auth/users-and-roles) with write access.
 </Update>
 
+<Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
+  {/*BED-8189*/}
+  ## Updated Default Admin Email Address
+
+  Use a more appropriate default admin email address in BloodHound Community configuration and example files.
+
+  BloodHound Community now uses `admin@example.com` instead of `spam@example.com` for the [`default_admin.email_address`](/manage-bloodhound/bh-config#default_admin-email_address) configuration property and related examples.
+
+  <Warning>
+    Existing workflows that still rely on the previous email address for initial login may need to be updated.
+  </Warning>
+</Update>
+
 <Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
   {/*BED-8777, BED-8747, BED-8746, BED-8744, BED-8693*/}
   ## More Resilient OpenHound Operations
@@ -114,27 +127,37 @@ sidebarTitle: "2026-07-07"
 </Update>
 
 <Update label="BloodHound" tags={["Fixed Issues"]}>
-  ## Analysis and API
+  ## Analysis
 
-  - {/*BED-8136*/} Resolved an issue where [`GET /api/v2/datapipe/status`](/reference/datapipe/get-datapipe-status) did not reliably update `last_analysis_run_at` and did not expose the scheduled-analysis timestamps needed to track analysis cadence.
-  - {/*BED-5572*/} Resolved an issue where multi-forest environments that shared ADCS infrastructure could produce false-positive attack paths.
-  - {/*BED-4867*/} Resolved an issue where Azure descendant `related_entity_type` requests could respond too slowly in large tenants.
+  {/*BED-5572*/} Resolved an issue where multi-forest environments that consolidated ADCS into one forest could produce false-positive ADCS ESC attack path edges when a **Computer** node belonged to a different forest than the **Enterprise CA**.
+
+  ## API
+
+  - {/*BED-8136*/} Resolved an issue where the [`GET /api/v2/datapipe/status`](/reference/datapipe/get-datapipe-status) endpoint did not reliably update `last_analysis_run_at` and did not expose the scheduled-analysis timestamps needed to track analysis cadence.
+  - {/*BED-4867*/} Resolved an issue where the [`related_entity_type`](/reference/azure-entities/get-azure-entity#parameter-related-entity-type) parameter on the **Get Azure entity** endpoint could respond too slowly for descendant objects of large **AZTenant** nodes and degrade the user experience in the UI.
+
+  ## Explore
+
+  - {/*BED-7040*/} Resolved an issue where saved query imports could fail for JSON files that used UTF-8 BOM encoding, including files packaged in ZIP archives.
   - {/*BED-7883*/} Resolved an issue where Cypher equality comparisons could fail for values that contained special characters.
 
-  ## Explore, Posture, and Privilege Zones
+  ## OpenGraph
 
-  - {/*BED-8114*/} Resolved an issue where the **Attack Paths** and **Posture** pages could show inconsistent finding counts.
-  - {/*BED-8642*/} Resolved an issue where pathfinding involving OpenGraph data could fail unexpectedly.
+  - {/*BED-8656*/} Resolved an issue where dragging a file onto the **Quick Upload** dialog on the **OpenGraph Management** page could open the wrong dialog.
+  - {/*BED-8642*/} Resolved an issue where nodes with colons in their names could disappear from the **Search** and **Pathfinding** fields.
+  - {/*BED-8570*/} Resolved an issue where the OpenGraph extension deletion dialog accepted only one character at a time, preventing confirmation.
   - {/*BED-8310*/} Resolved an issue where the Privilege Zone object details panel failed to load OpenGraph node data for rule-matched objects.
+
+  ## UI
+
+  - {/*BED-8754*/} Resolved focus-state inconsistencies on dropdown menus that could make active controls harder to distinguish.
   - {/*BED-8390*/} Resolved an issue where parts of the **Posture** page used browser localization settings inconsistently.
 
-  ## Administration, OpenGraph, and UI
+  ## Findings
 
-  - {/*BED-8656*/} Resolved an issue where dragging a file into **Quick Upload** on the **OpenGraph Management** page could open the wrong upload dialog.
-  - {/*BED-8570*/} Resolved an issue where the OpenGraph extension deletion dialog only accepted one character at a time when confirming an extension name.
-  - {/*BED-7040*/} Resolved an issue where saved-query uploads did not use the same ingest file safety checks as other upload workflows.
-  - {/*BED-8189*/} Resolved an issue in BloodHound Community where the default `admin` email address used an example value that was misleading in production-like setups.
-  - {/*BED-8754*/} Resolved focus-state inconsistencies that could make active controls harder to distinguish during keyboard navigation.
+  <img src="/assets/enterprise-edition-pill-tag.svg" alt="BloodHound Enterprise logo" style={{ width: "25%" }}/>
+
+  {/*BED-8114*/} Resolved an issue where individual attack paths and their finding counts could appear on the **Posture** page but not on the **Attack Paths** page.
 </Update>
 
 <Update label="OpenHound" tags={["Fixed Issues"]}>
