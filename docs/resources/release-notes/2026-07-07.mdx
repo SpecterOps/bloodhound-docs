@@ -1,0 +1,111 @@
+---
+title: 2026-07-07 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-07-07"
+---
+
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-07-07 | v9.4.0 | v0.2.10 | No release | No release |
+
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+<Update label="BloodHound" description="New Feature" tags={["Attack Paths"]}>
+  {/*BED-6155*/}
+  ## ADCS ESC14 Scenario A Coverage
+
+  Analyze ADCS ESC14 Scenario A attack paths directly in BloodHound so you can identify certificate-mapping abuse paths that rely on `altSecurityIdentities`.
+
+  This release adds graph coverage for [`WriteAltSecurityIdentities`](/resources/edges/write-alt-security-identities) and [`WritePublicInformation`](/resources/edges/write-public-information), helping you surface certificate-based privilege escalation paths that were previously harder to model and investigate.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
+  {/*BED-8518, BED-8519, BED-8588*/}
+  ## Auditor Access for File Ingest and SSO Configuration
+
+  Let auditors review **File Ingest** activity and **SSO Configuration** details without granting edit permissions.
+
+  Auditors can now access these administration views in a read-only state while actions such as uploading files or creating providers remain restricted to roles with write access.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-8777, BED-8747, BED-8746, BED-8744, BED-8693*/}
+  ## More Resilient OpenHound Operations
+
+  Keep long-running OpenHound jobs alive, identify deployed client versions more easily, and troubleshoot failures with clearer logs.
+
+  OpenHound now continues checking in during active collections to reduce unintended job timeouts, reports its installed version back to BloodHound for better client visibility, improves log readability, handles deferred pipeline failures more consistently, and continues collection more often when single-object errors occur.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["API"]}>
+  {/*BED-8608, BED-8609*/}
+  ## Graph ID Lookup APIs
+
+  Retrieve specific nodes and relationships by their graph-assigned integer IDs when you need to automate graph lookups outside the UI.
+
+  BloodHound now exposes [`GET /api/v2/nodes/{node_id}`](/reference/opengraph-experimental/get-node-by-graph-node-id) and [`GET /api/v2/relationships/{relationship_id}`](/reference/opengraph-experimental/get-relationship-by-graph-relationship-id) to simplify targeted integrations and investigation workflows.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Privilege Zones"]}>
+  {/*BED-8303, BED-7739, BED-8520*/}
+  ## Privilege Zone Rule Authoring Improvements
+
+  Build and validate Privilege Zone rules with less rework when you switch rule types or refine Cypher-based rules.
+
+  BloodHound now preserves rule state when you switch between Cypher and Object ID rules, prompts you to rerun Cypher when the query changes, and prevents saving Cypher rules that have not produced valid results.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Accessibility"]}>
+  {/*BED-7222, BED-7215, BED-7212, BED-8290*/}
+  ## Accessibility Improvements
+
+  Navigate BloodHound with clearer focus states, more consistent semantic structure, and better screen-reader labeling across key workflows.
+
+  This release improves accessible names and labels in administration forms, strengthens visible keyboard focus behavior, and refines headings and page structure to better support assistive technologies.
+</Update>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## Analysis and API
+
+  - {/*BED-8136*/} Resolved an issue where [`GET /api/v2/datapipe/status`](/reference/datapipe/get-datapipe-status) did not reliably update `last_analysis_run_at` and did not expose the scheduled-analysis timestamps needed to track analysis cadence.
+  - {/*BED-5572*/} Resolved an issue where multi-forest environments that shared ADCS infrastructure could produce false-positive attack paths.
+  - {/*BED-4867*/} Resolved an issue where Azure descendant `related_entity_type` requests could respond too slowly in large tenants.
+  - {/*BED-7883*/} Resolved an issue where Cypher equality comparisons could fail for values that contained special characters.
+
+  ## Explore, Posture, and Privilege Zones
+
+  - {/*BED-8114*/} Resolved an issue where the **Attack Paths** and **Posture** pages could show inconsistent finding counts.
+  - {/*BED-8642*/} Resolved an issue where pathfinding involving OpenGraph data could fail unexpectedly.
+  - {/*BED-8310*/} Resolved an issue where the Privilege Zone object details panel failed to load OpenGraph node data for rule-matched objects.
+  - {/*BED-8390*/} Resolved an issue where parts of the **Posture** page used browser localization settings inconsistently.
+
+  ## Administration, OpenGraph, and UI
+
+  - {/*BED-8656*/} Resolved an issue where dragging a file into **Quick Upload** on the **OpenGraph Management** page could open the wrong upload dialog.
+  - {/*BED-8570*/} Resolved an issue where the OpenGraph extension deletion dialog only accepted one character at a time when confirming an extension name.
+  - {/*BED-7040*/} Resolved an issue where saved-query uploads did not use the same ingest file safety checks as other upload workflows.
+  - {/*BED-8189*/} Resolved an issue in BloodHound Community where the default `admin` email address used an example value that was misleading in production-like setups.
+  - {/*BED-8754*/} Resolved focus-state inconsistencies that could make active controls harder to distinguish during keyboard navigation.
+</Update>
+
+<Update label="OpenHound" tags={["Fixed Issues"]}>
+  ## GitHub Collection Reliability
+
+  - {/*BED-8783*/} Resolved an issue where a stub `GH_Organization` node could overwrite a fully collected organization and incorrectly mark it as not collected.
+  - {/*BED-8687*/} Resolved an issue that could cause GitHub collections to fail during normalization in early 0.2.x releases.
+  - {/*BED-8689*/} Resolved issues that made large GitHub collections more likely to stall or fail when GitHub API rate limits were exhausted.
+
+  ## Jamf and Okta Collection Reliability
+
+  - {/*BED-8768, BED-8729, BED-8688*/} Resolved multiple Jamf collector failures involving preprocessing, database lookups, and ingest behavior across 0.2.x releases.
+  - {/*BED-8692*/} Resolved an issue that could cause Okta and GitHub collections to fail in Kubernetes-based deployments.
+</Update>
+
+{/* TODO(doc-follow-up):
+- Update docs/manage-bloodhound/auth/users-and-roles.mdx if Auditor access to File Ingest and SSO Configuration is now part of the supported permission matrix.
+- Review docs/analyze-data/privilege-zones/rules.mdx for the rule-builder validation and state-preservation changes in this release, and confirm whether Variable Analysis Mode needs separate public documentation.
+- Review docs/collect-data/enterprise-collection/monitor.mdx, docs/collect-data/enterprise-collection/create-collector.mdx, and docs/openhound/configuration.mdx for OpenHound version visibility, long-running job heartbeat behavior, and updated troubleshooting guidance.
+*/}
