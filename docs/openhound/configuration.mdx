@@ -28,6 +28,16 @@ log_level = "INFO"
 log_rotate_when = "midnight"
 log_interval = 1
 
+# HTTP retry/backoff for source requests; rides out API rate limits
+# (e.g. GitHub during large collections) instead of failing the run.
+request_max_attempts = 15
+request_backoff_factor = 1.3
+request_max_retry_delay = 900
+
+# Default: logs are set to human readable text
+# To switch to structured JSON instead, uncomment the line below (must be uppercase "JSON")
+# log_format = "JSON"
+
 [extract]
 workers = 4
 
@@ -44,7 +54,6 @@ workers = 4
 delete_completed_jobs=true
 truncate_staging_dataset=true
 workers=2
-
 ```
 
 ## BloodHound Enterprise configuration parameters
@@ -105,9 +114,11 @@ OpenHound checks for container indicators first, then falls back to a TTY check,
 
 By default, OpenHound writes logs as human-readable text. Set `log_format` to `JSON` to switch to structured JSON logging, which is useful for ingestion into log aggregation systems.
 
-| Runtime Option | Environment Variable | Description | Default Value |
-|-----------------|------------------------|--------------|-----------------|
-| `log_format`    | RUNTIME__LOG_FORMAT    | The log output format. Supported values are `text` and `JSON`. | text |
+`JSON` is the only value you can set for this option. To keep the default text logging, omit `log_format` from your configuration or comment it out.
+
+| Runtime Option | Environment Variable | Description |
+|-----------------|------------------------|--------------|
+| `log_format`    | RUNTIME__LOG_FORMAT    | The log output format. `JSON` is the only supported value. |
 
 <Warning>
   The value must be uppercase `JSON`. DLT's internal logger performs a case-sensitive check for `"JSON"` to decide whether to emit its own structured logs.
