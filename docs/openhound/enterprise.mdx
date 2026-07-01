@@ -77,38 +77,64 @@ Each collector requires additional configuration parameters that are unique to i
 </CardGroup>
 
 ### Full configuration example
-The following example shows the full configuration for OpenHound with the required parameters for BloodHound Enterprise as well as example parameters for the Jamf collector. The configuration is split into two files: `config.toml` for the non-sensitive OpenHound/DLT configuration parameters and `secrets.toml` for the sensitive credentials and secrets. The configuration files can be provided through compose secrets, Kubernetes Secret and ConfigMap objects or supplied via environment variables.
 
-```toml title="config.toml"
-[runtime]
-http_show_error_body = true
-log_cli_level = "WARNING"
-log_format = "JSON"
-log_rotate_when = "midnight"
+The following example shows the full configuration for OpenHound with the required parameters for BloodHound Enterprise as well as example parameters for the Jamf collector.
 
-[extract]
-workers = 8
+The configuration is split into two files:
 
-[normalize]
-workers = 3
+- `config.toml` for the non-sensitive OpenHound/DLT configuration parameters
+- `secrets.toml` for the sensitive credentials and secrets
 
-[load]
-delete_completed_jobs = true
-truncate_staging_dataset = true
-```
+You can provide these configuration files through compose secrets, Kubernetes Secret and ConfigMap objects, or environment variables.
 
-```toml title="secrets.toml"
-[sources.source.jamf]
-username = "myusername"
-host = "https://tenant.jamfcloud.com"
-password = "mypassword"
+<Tabs>
+  <Tab title="config.toml">
+    <Note>
+      For a full description of these and other available runtime parameters, see [Configuration](/openhound/configuration).
+    </Note>
+    ```toml title="config.toml"
+    [runtime]
+    http_show_error_body = true
+    log_cli_level = "WARNING"
+    log_rotate_when = "midnight"
 
-[destination.bloodhoundenterprise]
-interval = "300"
-token_key = "client_token_key"
-token_id = "client_token_id"
-url = "https://test.bloodhoundenterprise.io"
-```
+    # HTTP retry/backoff for source requests; rides out API rate limits
+    # (e.g. GitHub during large collections) instead of failing the run.
+    request_max_attempts = 15
+    request_backoff_factor = 1.3
+    request_max_retry_delay = 900
+
+    # Default: logs are set to human readable text
+    # To switch to structured JSON instead, uncomment the line below (must be uppercase "JSON")
+    # log_format = "JSON"
+
+    [extract]
+    workers = 8
+
+    [normalize]
+    workers = 3
+
+    [load]
+    delete_completed_jobs = true
+    truncate_staging_dataset = true
+    ```
+  </Tab>
+  <Tab title="secrets.toml">
+
+    ```toml title="secrets.toml"
+    [sources.source.jamf]
+    username = "myusername"
+    host = "https://tenant.jamfcloud.com"
+    password = "mypassword"
+
+    [destination.bloodhoundenterprise]
+    interval = "300"
+    token_key = "client_token_key"
+    token_id = "client_token_id"
+    url = "https://test.bloodhoundenterprise.io"
+    ```
+  </Tab>
+</Tabs>
 
 ## Deployment examples
 
