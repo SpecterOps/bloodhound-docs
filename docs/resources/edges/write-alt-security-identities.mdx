@@ -33,6 +33,12 @@ The last certificate requirement means user certificates typically do not work, 
 
 The last requirement does not apply if a domain controller has UPN mapping disabled. See [How to disable the Subject Alternative Name for UPN mapping](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/ff520074(v=ws.10)).
 
+If the attacker cannot obtain a suitable certificate from the target environment, they may also be able to use a third-party Client Authentication certificate.
+
+This works because explicit certificate mapping differs from implicit certificate mapping. Implicit mapping requires the certificate to chain to a CA certificate in the domain controller's NTAuth store. Explicit mapping does not. For explicit mapping, the certificate only needs to chain to a trusted root CA on the domain controller.
+
+Windows trusts many third-party root CAs by default, so an attacker may be able to buy or steal a third-party certificate with the Client Authentication EKU and use it for ESC14 Scenario A. For example, providers such as [SSL.com](https://www.ssl.com/products/device-machine-trust/client-authentication/) are trusted by Windows and offer client authentication certificates.
+
 The abuse is possible with the strong explicit certificate mappings `X509IssuerSerialNumber` or `X509SHA1PublicKey`. The examples below use `X509SHA1PublicKey`.
 
 ### Linux
