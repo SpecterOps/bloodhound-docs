@@ -2613,11 +2613,11 @@
           "200": {
             "$ref": "#/components/responses/binary-response"
           },
-          "400": {
-            "$ref": "#/components/responses/bad-request"
-          },
           "401": {
             "$ref": "#/components/responses/unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/not-found"
           },
           "500": {
             "$ref": "#/components/responses/internal-server-error"
@@ -7211,6 +7211,124 @@
           },
           "403": {
             "$ref": "#/components/responses/forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/too-many-requests"
+          },
+          "500": {
+            "$ref": "#/components/responses/internal-server-error"
+          }
+        }
+      }
+    },
+    "/api/v2/relationships/{relationship_id}": {
+      "parameters": [
+        {
+          "name": "relationship_id",
+          "in": "path",
+          "required": true,
+          "description": "The relationship id assigned by the graph",
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "GetRelationshipByID",
+        "summary": "Get Relationship by Graph Relationship ID",
+        "description": "**Experimental** - Returns the details of a graph relationship identified by its graph-assigned integer ID",
+        "tags": [
+          "OpenGraph (Experimental)",
+          "Community",
+          "Enterprise"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/model.relationship-details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/bad-request"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/not-found"
+          },
+          "429": {
+            "$ref": "#/components/responses/too-many-requests"
+          },
+          "500": {
+            "$ref": "#/components/responses/internal-server-error"
+          }
+        }
+      }
+    },
+    "/api/v2/nodes/{node_id}": {
+      "parameters": [
+        {
+          "name": "node_id",
+          "in": "path",
+          "required": true,
+          "description": "The node id assigned by the graph",
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "GetNodeByID",
+        "summary": "Get Node by Graph Node ID",
+        "description": "**Experimental** - Returns the details of a graph node identified by its graph-assigned integer ID",
+        "tags": [
+          "OpenGraph (Experimental)",
+          "Community",
+          "Enterprise"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/model.node-details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/bad-request"
+          },
+          "401": {
+            "$ref": "#/components/responses/unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/not-found"
           },
           "429": {
             "$ref": "#/components/responses/too-many-requests"
@@ -13976,6 +14094,15 @@
                         "last_complete_analysis_at": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "last_analysis_run_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "next_scheduled_analysis_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "The next time a scheduled analysis will run. Note this field is Enterprise-Only."
                         }
                       }
                     }
@@ -14002,7 +14129,7 @@
       "get": {
         "operationId": "GetAnalysisRequest",
         "summary": "Gets analysis request information",
-        "description": "Flags the API to request the information of an analysis request.",
+        "description": "Returns the current analysis request information. Always returns 200 OK with\nthe request details. When no request is pending, returns a zero-valued response\nwith empty strings, false booleans, null arrays, and zero timestamp.\n",
         "tags": [
           "Datapipe",
           "Community",
@@ -14010,32 +14137,43 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "OK. Returns analysis request details if one exists, or a zero-valued\nresponse if no request is pending (requested_by and request_type will be\nempty strings, requested_at will be \"0001-01-01T00:00:00Z\", booleans will\nbe false, and arrays will be null).\n",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "requested_by": {
-                      "type": "string"
-                    },
-                    "request_type": {
-                      "type": "string"
-                    },
-                    "requested_at": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "delete_all_graph": {
-                      "type": "boolean"
-                    },
-                    "delete_sourceless_graph": {
-                      "type": "boolean"
-                    },
-                    "delete_source_kinds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "requested_by": {
+                          "type": "string"
+                        },
+                        "request_type": {
+                          "type": "string"
+                        },
+                        "requested_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "delete_all_graph": {
+                          "type": "boolean"
+                        },
+                        "delete_sourceless_graph": {
+                          "type": "boolean"
+                        },
+                        "delete_source_kinds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "delete_relationships": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
                       }
                     }
                   }
@@ -14060,7 +14198,7 @@
       "put": {
         "operationId": "StartAnalysis",
         "summary": "Start analysis",
-        "description": "Flags the API to begin analyzing ingest data.",
+        "description": "Submits an analysis request attributed to the authenticated user. The\nendpoint is idempotent — at most one analysis request can be pending at a\ntime. Always returns 202 Accepted with no response body.\n",
         "tags": [
           "Datapipe",
           "Community",
@@ -21233,6 +21371,98 @@
               "$ref": "#/components/schemas/model.bh-graph.edge"
             }
           ]
+        }
+      },
+      "model.relationship-details": {
+        "type": "object",
+        "properties": {
+          "relationship_id": {
+            "type": "integer",
+            "format": "int64",
+            "readOnly": true,
+            "example": 1234567890
+          },
+          "source_node_id": {
+            "type": "integer",
+            "format": "int64",
+            "readOnly": true,
+            "example": 1234567890
+          },
+          "target_node_id": {
+            "type": "integer",
+            "format": "int64",
+            "readOnly": true,
+            "example": 1234567890
+          },
+          "kind": {
+            "type": "object",
+            "properties": {
+              "relationship_kind_id": {
+                "type": "integer",
+                "format": "int32",
+                "nullable": true
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "model.node-details": {
+        "type": "object",
+        "properties": {
+          "node_id": {
+            "type": "integer",
+            "format": "int64",
+            "readOnly": true,
+            "example": 1234567890
+          },
+          "kinds": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "node_kind_id"
+              ],
+              "properties": {
+                "node_kind_id": {
+                  "type": "integer",
+                  "format": "int32",
+                  "nullable": true,
+                  "description": "Schema node kind ID, or null if the kind is not registered in schema_node_kinds"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "The kind name from the graph node"
+                }
+              }
+            }
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "objectid": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "displayName": {
+                "type": "string"
+              },
+              "lastSeen": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "additionalProperties": true
+          }
         }
       },
       "api.params.predicate.filter.contains": {

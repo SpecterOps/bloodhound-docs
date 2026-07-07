@@ -3,7 +3,9 @@ title: SpoofSIDHistory
 description: The cross-forest trust from the target domain to the source domain has a weak SID filtering configuration (SpoofSIDHistoryBlocked = False).
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
+
+<ResourceEditionPill />
 
 The target domain allows principals of the source domain access by SIDs of the target domain in their SID history. An attacker with control over the source domain can craft access requests with manipulated SID history containing SIDs of privileged principals of the target domain to gain control over the target domain.
 
@@ -21,15 +23,15 @@ Common viable targets with indirect full control over the environment include:
 - Entra ID sync (MSOL_) accounts
 - Custom groups with administrative control over Tier Zero assets
 
-Alternatively, an attacker can target a domain controller (DC) and use resource-based constrained delegation (RBCD) to obtain a local TGT as the DC, which can then be used for a DCSync attack on the target domain. However, the RBCD attack requires control over an account (user or computer) in the target forest. If no such account is available and the default permissions for creating computers have not been restricted, the attacker can first spoof SID history against a target with permissions to create computer accounts, to then perform the RBCD attack against a DC.
+Alternatively, an attacker can target a domain controller (DC) and use resource-based constrained delegation (RBCD) to obtain a local TGT as the DC, which can then be used for a [DCSync](/resources/edges/dc-sync) attack on the target domain. However, the RBCD attack requires control over an account (user or computer) in the target forest. If no such account is available and the default permissions for creating computers have not been restricted, the attacker can first spoof SID history against a target with permissions to create computer accounts, to then perform the RBCD attack against a DC.
 
 The spoofed SID can be added to SID history at three different levels for the attacker-controlled user of the trusted domain:
 
-1. In the user's SID History AD attribute
+1. In the user's `sIDHistory` AD attribute
 2. In the user's Kerberos TGT
 3. In the user's Kerberos inter-realm TGT
 
-The first option enables the attack over both Kerberos and NTLM, whereas the latter two only apply to Kerberos authentication. However, modifying the SID History attribute is risky — it cannot be edited directly via LDAP or built-in AD tools. Mimikatz supports modifying it with the command `sid::patch` followed by `sid::add`, but `sid::patch` does not work on Windows Server 2016 and later. It is possible to modify the SID History attribute using the DSInternals command `Add-ADDBSidHistory`, but this requires stopping and restarting the NTDS service, which is not recommended in a production environment.
+The first option enables the attack over both Kerberos and NTLM, whereas the latter two only apply to Kerberos authentication. However, modifying the `sIDHistory` attribute is risky — it cannot be edited directly via LDAP or built-in AD tools. Mimikatz supports modifying it with the command `sid::patch` followed by `sid::add`, but `sid::patch` does not work on Windows Server 2016 and later. It is possible to modify the `sIDHistory` attribute using the DSInternals command `Add-ADDBSidHistory`, but this requires stopping and restarting the NTDS service, which is not recommended in a production environment.
 
 The second and third options are safer. The following example demonstrates the second option.
 
@@ -37,7 +39,7 @@ The second and third options are safer. The following example demonstrates the s
 
 **Step 1) Obtain krbtgt Credentials**
 
-The krbtgt credentials can be obtained in multiple ways with administrative access to a DC in the trusted domain, such as via a DCSync attack.
+The krbtgt credentials can be obtained in multiple ways with administrative access to a DC in the trusted domain, such as via a [DCSync](/resources/edges/dc-sync) attack.
 
 **Step 2) Forge and Inject a Golden Ticket**
 

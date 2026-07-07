@@ -3,15 +3,17 @@ title: ManageCA
 description: The principal has the "Manage CA", also known as "CA Administrator", permission on the Enterprise CA.
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
+
+<ResourceEditionPill />
 
 This permission allows the principal to configure the CA to allow subject alternate names, publish certificate templates, grant "Manage Certificates", grant enrollment rights, change certain CA flags, and more.
 
 CA Administrators can perform the following actions that may enable an ADCS escalation:
 
-1. Grant CA Officer (ManageCertificates) and approve a denied certificate request
+1. Grant CA Officer ([ManageCertificates](/resources/edges/manage-certificates)) and approve a denied certificate request
 2. Publish a certificate template (e.g. one that enables an ESC1 condition)
-3. Grant Enroll on the enterprise CA
+3. Grant [Enroll](/resources/edges/enroll) on the enterprise CA
 4. Enable the ESC6 CA flag `EDITF_ATTRIBUTESUBJECTALTNAME2`
 5. Disable the ESC11 enforcement flag `IF_ENFORCEENCRYPTICERTREQUEST` (weakens RPC enrollment security; enables relay)
 6. Disable the security extension on the enterprise CA (ESC16)
@@ -25,11 +27,11 @@ This relationship alone is not automatically a privilege escalation; however, it
 
 ### 1. Grant CA Officer and Approve a Denied Request
 
-Role separation (when enabled) prevents a single principal from holding both ManageCA and ManageCertificates, but this configuration is rare.
+Role separation (when enabled) prevents a single principal from holding both ManageCA and [ManageCertificates](/resources/edges/manage-certificates), but this configuration is rare.
 
 **Windows**
 
-Grant the CA Officer (ManageCertificates) role with Certify (v2.0):
+Grant the CA Officer ([ManageCertificates](/resources/edges/manage-certificates)) role with Certify (v2.0):
 ```cmd
 Certify.exe manage-ca --ca ca01.corp.local\CORP-CA01-CA --officer S-1-5-21-XXXXXXXXX-XXXXXXXXX-XXXXXXXXX-12345
 ```
@@ -51,7 +53,7 @@ Rubeus.exe asktgt /user:Administrator /certificate:<Base64PFX> /ptt
 ```
 
 **Linux**
-Grant CA Officer (ManageCertificates) role:
+Grant CA Officer ([ManageCertificates](/resources/edges/manage-certificates)) role:
 ```bash
 certipy ca -ca 'corp-DC-CA' -add-officer john -username john@corp.local -password 'Passw0rd'
 ```
@@ -82,7 +84,7 @@ certipy ca -ca 'corp-DC-CA' -enable-template TemplateCN -username john@corp.loca
 
 See the ADCS ESC1 abuse documentation for subsequent exploitation steps: [ADCSESC1](/resources/edges/adcs-esc1)
 
-### 3. Grant Enroll on Enterprise CA
+### 3. Grant [Enroll](/resources/edges/enroll) on Enterprise CA
 
 **Windows**
 
@@ -147,4 +149,3 @@ This edge is related to the following MITRE ATT&CK tactic and techniques:
 * [Certify wiki - Escalation Techniques - ManageCA](https://github.com/GhostPack/Certify/wiki/4-%E2%80%90-Escalation-Techniques#manageca)
 * [ESC7: Dangerous Permissions on CA (Certipy wiki)](https://github.com/ly4k/Certipy/wiki/06-%E2%80%90-Privilege-Escalation#esc7-dangerous-permissions-on-ca)
 * [AD CS: from ManageCA to RCE](https://www.tarlogic.com/blog/ad-cs-manageca-rce/)
-

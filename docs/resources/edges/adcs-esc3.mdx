@@ -4,7 +4,11 @@ description: "The principal has permission to enroll on a certificate allowing t
 certificate."
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
+import AdcsEnrollmentIdentityAttributes from '/snippets/edges/adcs-enrollment-identity-attributes.mdx';
+import AdcsCertificateIssuanceOpsec from '/snippets/edges/adcs-certificate-issuance-opsec.mdx';
+
+<ResourceEditionPill />
 
 
 They also have permission to enroll for a certificate template that permits enrollment by
@@ -24,7 +28,7 @@ Step 1: Use Certify (2.0) to request an enrollment agent certificate.
 ```cmd
 Certify.exe request --ca CORPDC01.CORP.LOCAL\CORP-CORPDC01-CA --template Vuln-EnrollmentAgent
 ```
-If the enrollment fails with an error message stating that the Email or DNS name is unavailable and cannot be added to the Subject or Subject Alternate name, then it is because the enrollee principal does not have their 'mail' or 'dNSHostName' attribute set, which is required by the certificate template. The 'mail' attribute can be set on both user and computer objects but the 'dNSHostName' attribute can only be set on computer objects. Computers have validated write permission to their own 'dNSHostName' attribute by default, but neither users nor computers can write to their own 'mail' attribute by default.
+<AdcsEnrollmentIdentityAttributes />
 
 Step 2: Use the enrollment agent certificate to issue a certificate request on behalf of another user to a certificate template that allows for authentication and permits enrollment agent enrollment.
 
@@ -32,7 +36,7 @@ Step 2: Use the enrollment agent certificate to issue a certificate request on b
 Certify.exe request-agent --ca ca01.corp.local\CORP-CA01-CA --template User --target itadmin --agent-pfx <agent cert base64>
 ```
 
-If the enrollment fails with an error message stating that the Email or DNS name is unavailable and cannot be added to the Subject or Subject Alternate name, then it is because the target principal does not have their 'mail' or 'dNSHostName' attribute set, which is required by the certificate template. Choose another target with the given attribute set.
+If the enrollment fails with an error message stating that the Email or DNS name is unavailable and cannot be added to the Subject or Subject Alternate name, then it is because the target principal does not have their `mail` or `dNSHostName` attribute set, which is required by the certificate template. Choose another target with the given attribute set.
 
 The certificate PFX is printed to the console in a base64-encoded format.
 
@@ -49,14 +53,14 @@ Step 1: Use Certify to request an enrollment agent certificate.
 certipy req -u 'user@corp.local' -p 'password' -dc-ip 'DC_IP' -target 'ca_host' -ca 'ca_name
 ```
 
-If the enrollment fails with an error message stating that the Email or DNS name is unavailable and cannot be added to the Subject or Subject Alternate name, then it is because the enrollee principal does not have their 'mail' or 'dNSHostName' attribute set, which is required by the certificate template. The 'mail' attribute can be set on both user and computer objects but the 'dNSHostName' attribute can only be set on computer objects. Computers have validated write permission to their own 'dNSHostName' attribute by default, but neither users nor computers can write to their own 'mail' attribute by default.
+<AdcsEnrollmentIdentityAttributes />
 
 Step 2: Use the enrollment agent certificate to issue a certificate request on behalf of another user to a certificate template that allow for authentication and permit enrollment agent enrollment.
 
 ```bash
 certipy req -u 'user@corp.local' -p 'password' -dc-ip 'DC_IP' -target 'ca_host' -ca 'ca_name
 ```
-Save the certificate as itadminenrollment.pem and the private key as itadminenrollment.key. If the enrollment fails with an error message stating that the Email or DNS name is unavailable and cannot be added to the Subject or Subject Alternate name, then it is because the target principal does not have their 'mail' or 'dNSHostName' attribute set, which is required by the certificate template. Choose another target with the given attribute set.
+Save the certificate as itadminenrollment.pem and the private key as itadminenrollment.key. If the enrollment fails with an error message stating that the Email or DNS name is unavailable and cannot be added to the Subject or Subject Alternate name, then it is because the target principal does not have their `mail` or `dNSHostName` attribute set, which is required by the certificate template. Choose another target with the given attribute set.
 
 Step 3: Request a ticket granting ticket (TGT) from the domain, specifying the target identity to impersonate and the PFX-formatted certificate created in Step 2.
 
@@ -65,10 +69,7 @@ certipy auth -pfx administrator.pfx -dc-ip 172.16.126.128
 ```
 ## Opsec Considerations
 
-When the affected certificate authority issues the certificate to the attacker, it will retain a local copy
-of that certificate in its issued certificates store. Defenders may analyze those issued certificates to
-identify illegitimately issued certificates and identify the principal that requested the certificate, as
-well as the target identity the attacker is attempting to impersonate.
+<AdcsCertificateIssuanceOpsec />
 
 ## Edge Schema
 

