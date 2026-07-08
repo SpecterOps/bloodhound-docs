@@ -14,10 +14,10 @@ SharpHound Enterprise is deployed as a signed Windows service, runs under the co
 To collect Active Directory data with SharpHound and ingest it into BloodHound for analysis:
 
 1.  Provision a Server that meets or exceeds the recommended Hardware, Software, and Network requirements below.
-2.  Create a Service Account or [gMSA](/install-data-collector/install-sharphound/create-gmsa) that SharpHound will run as with the Service Account Requirements below.
-3.  [Install and Upgrade SharpHound Enterprise](/install-data-collector/install-sharphound/installation-upgrade)
-4.  [Create a BloodHound Enterprise collector client](/collect-data/enterprise-collection/create-collector)
-5.  [Run an On Demand Scan](/collect-data/enterprise-collection/on-demand-scan) or [Create a data collection schedule](/collect-data/enterprise-collection/collection-schedule)
+1.  Create a Service Account or [gMSA](/install-data-collector/install-sharphound/create-gmsa) that SharpHound will run as with the Service Account Requirements below.
+1.  [Install and Upgrade SharpHound Enterprise](/install-data-collector/install-sharphound/installation-upgrade)
+1.  [Create a BloodHound Enterprise collector client](/collect-data/enterprise-collection/create-collector)
+1.  [Run an On Demand Scan](/collect-data/enterprise-collection/on-demand-scan) or [Create a data collection schedule](/collect-data/enterprise-collection/collection-schedule)
 
 <snip_system_reqs/>
 
@@ -28,21 +28,34 @@ To collect Active Directory data with SharpHound and ingest it into BloodHound f
 
 ### Network
 
-* TLS on 443/TCP to your BloodHound Enterprise SaaS tenant URL (proxy is supported)
-* LDAP to at least one domain controller in each domain requiring collection.
-    * By default, SharpHound attempts LDAP over SSL first. If LDAPS is unavailable and `ForceLDAPSSL` is disabled, SharpHound falls back to signed and sealed LDAP on the configured LDAP port.
-        * LDAP over SSL on 636/TCP (configurable port)
-        * LDAP on 389/TCP (configurable port)
-    * `ForceLDAPSSL` should be understood as a best-effort control for SharpHound's primary LDAP collection path, not as a blanket guarantee that every directory-related operation performed during collection will avoid non-LDAPS resolution paths.
-    * Some LDAP negotiation or AD structure resolution may still occur through existing .NET APIs.
-    * Do not assume that blocking TCP 389 is safe in every deployment without validating collector behavior in your version.
-    * [LDAP channel signing](https://www.hub.trimarcsecurity.com/post/ldap-channel-binding-and-signing) is used for all queries.
-* \[Optional\] If performing privileged collection (see [Why perform privileged collection in SharpHound](/collect-data/enterprise-collection/privileged-collection))
-    * SMB/RPC on 445/TCP to all in-scope domain-joined Windows systems
-    * SMB/RPC on 135/TCP to all in-scope domain-joined Windows systems for NTLM relay-based collection
-    * Approximately 60-100kB network bandwidth per collection to each in-scope domain-joined Windows system
-* \[Optional\] If performing DC Registry and CA Registry collection (see [DC Registry and CA Registry details](/collect-data/sharphound-data-permissions))
-    * SMB/RPC on 445/TCP to all DCs and domain-joined CAs
+SharpHound Enterprise needs outbound access to your BloodHound Enterprise tenant and to at least one domain controller in each domain you collect. Additional ports are required only for specific collection methods.
+
+#### Baseline Connectivity
+
+| Destination | Protocol / port | Applies to | Notes |
+| --- | --- | --- | --- |
+| BloodHound Enterprise SaaS tenant URL | TLS `443/TCP` | All deployments | Proxy is supported |
+| At least one domain controller in each collected domain | LDAPS `636/TCP` | Active Directory collection | Configurable with `LDAPSSLPort` |
+| At least one domain controller in each collected domain | LDAP `389/TCP` | Active Directory collection fallback | Configurable with `LDAPPort` |
+
+<Note>
+  SharpHound attempts LDAP over SSL first. If LDAPS is unavailable and `ForceLDAPSSL` is disabled, SharpHound falls back to signed and sealed LDAP on the configured LDAP port. SharpHound uses [LDAP channel signing](https://www.hub.trimarcsecurity.com/post/ldap-channel-binding-and-signing) for all queries.
+</Note>
+
+<Warning>
+  `ForceLDAPSSL` is a best-effort control for SharpHound's primary LDAP collection path, not a blanket guarantee that every directory-related operation during collection avoids non-LDAPS resolution paths.
+  
+  Some LDAP negotiation or AD structure resolution may still occur through existing .NET APIs. Do not assume that blocking TCP `389` is safe in every deployment without validating collector behavior in your deployed version.
+</Warning>
+
+#### Optional Connectivity
+
+| Collection method | Protocol / port | Destination | Notes |
+| --- | --- | --- | --- |
+| [Privileged collection](/collect-data/enterprise-collection/privileged-collection) | SMB/RPC `445/TCP` | All in-scope domain-joined Windows systems | Required for host-based privileged collection |
+| [Privileged collection](/collect-data/enterprise-collection/privileged-collection) | SMB/RPC `135/TCP` | All in-scope domain-joined Windows systems | Required for NTLM relay-based collection |
+| [Privileged collection](/collect-data/enterprise-collection/privileged-collection) | Approximately `60-100kB` per collection | All in-scope domain-joined Windows systems | Expected network bandwidth per collection |
+| [DC Registry and CA Registry collection](/collect-data/sharphound-data-permissions) | SMB/RPC `445/TCP` | All domain controllers and domain-joined CAs | Required for registry-based collection |
 
 ## Service Account Requirements
 
@@ -52,7 +65,9 @@ The service account needs permissions to collect data from your target domains a
 
 We recommend following [SharpHound Enterprise Service Hardening](/manage-bloodhound/securing-bloodhound-and-collectors/sharphound-hardening).
 
-<Warning>The SharpHound collection service account does not require `Domain Admin` membership.</Warning>
+<Warning>
+  The SharpHound collection service account does not require `Domain Admin` membership.
+</Warning>
 
 | Data type | Default permissions | Least-privileged option |
 |---|---|---|
@@ -65,14 +80,18 @@ We recommend following [SharpHound Enterprise Service Hardening](/manage-bloodho
 | [CA Registry](/collect-data/sharphound-data-permissions#ca-registry) | `Authenticated Users` can collect CA registry data when AD CS is installed | No additional delegation is typically required |
 | [DC Registry](/collect-data/sharphound-data-permissions#dc-registry) | Local `Administrators` on domain controllers | Delegate access via Group Policy or registry configuration for required paths |
 
-<Note>If Active Directory tombstoning is enabled, the service account must also have [read permissions](https://learn.microsoft.com/en-us/troubleshoot/windows-server/identity/non-administrators-view-deleted-object-container) on the deleted objects container.</Note>
+<Note>
+  If Active Directory tombstoning is enabled, the service account must also have [read permissions](https://learn.microsoft.com/en-us/troubleshoot/windows-server/identity/non-administrators-view-deleted-object-container) on the deleted objects container.
+</Note>
 
 ### Integrated Windows Authentication (IWA)
 
 If you want to use IWA for SharpHound, the following additional requirements apply:
 
 * Active Directory Federation Services (ADFS) server must be accessible in your network environment
-  <Note>Both the system running SharpHound and the BloodHound Enterprise tenant require network connectivity to the ADFS server</Note>
+  <Note>
+    Both the system running SharpHound and the BloodHound Enterprise tenant require network connectivity to the ADFS server.
+  </Note>
 * Service account must be [configured](/install-data-collector/install-sharphound/configure-adfs-iwa) in ADFS to support Windows authentication for SharpHound
 * Client ID property must be registered in ADFS (provided during [collector client creation](/collect-data/enterprise-collection/create-collector))
 * Local SharpHound configuration must include [IWA-specific properties](/install-data-collector/install-sharphound/local-configuration#integrated-windows-authentication-iwa) in the `settings.json` file
