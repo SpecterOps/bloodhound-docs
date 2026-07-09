@@ -14,7 +14,7 @@ This article describes how to use Cypher queries to extend the basic search func
 Cypher is a query language for graph databases (similar to SQL for relational databases). It uses an ASCII-art style syntax to describe nodes and relationships. If you can describe the path you're looking for, you can write it in Cypher.
 
 <Note>
-  This article provides an introduction to Cypher queries in BloodHound, including how to access prebuilt queries and manage saved queries. See [Write Custom Queries](#write-custom-queries) for more advanced information.
+  This article provides an introduction to Cypher queries in BloodHound, including how to access prebuilt queries and manage saved queries. See [Write Custom Queries](/analyze-data/explore/cypher-search#write-custom-queries) for more advanced information.
 </Note>
 
 ## Quickstart
@@ -30,7 +30,7 @@ When you're ready to explore prebuilt queries inside BloodHound, follow these st
     BloodHound displays prebuilt queries by default when you expand the **Saved Queries** section.
 
     <Frame>
-      <img src="/assets/saved-queries-default-view.png" alt="Default view of the Saved Queries section" />
+      <img src="/images/explore/saved-queries-default-view.png" alt="Default view of the Saved Queries section" />
     </Frame>
   </Step>
 
@@ -58,7 +58,7 @@ BloodHound provides several features to help you work with Cypher queries. These
 BloodHound offers several search and filtering options to help you find the right query quickly.
 
 <Frame>
-  <img src="/assets/saved-queries-search-filter.png" alt="Search and filter queries" />
+  <img src="/images/explore/saved-queries-search-filter.png" alt="Search and filter queries" />
 </Frame>
 
 * **Search saved queries by name**: Quickly locate specific queries using the search text box.
@@ -87,8 +87,8 @@ For example, you can:
 When you're ready to create and manage custom queries, follow these steps:
 
 <Steps>
-  <Step title="Open the Saved Queries section">
-    Click **Explore** > **Cypher** > **Saved Queries**.
+  <Step title="Open the query editor">
+    In the left menu, click **Explore** > **Cypher**.
   </Step>
 
   <Step title="Create or copy a query">
@@ -96,11 +96,11 @@ When you're ready to create and manage custom queries, follow these steps:
 
     <Tabs>
       <Tab title="Create a new custom query">
-        In the query editor at the bottom of the page, [write your custom query](#write-custom-queries) and click **Save**.
+        In the query editor, [write a custom query](/analyze-data/explore/cypher-search#write-custom-queries) and run it to see the results.
       </Tab>
 
       <Tab title="Copy an existing query">
-        Select a prebuilt or saved query from the list. Click the drop-down arrow beside **Save As** and click **Save** to create a copy of the selected query.
+        Select a prebuilt or saved query from the list. Click the drop-down arrow beside **Save As** to create a copy of the selected query.
       </Tab>
     </Tabs>
   </Step>
@@ -109,7 +109,7 @@ When you're ready to create and manage custom queries, follow these steps:
     In the *Save Query* dialog, enter a unique name and description for your query.
 
     <Frame>
-      <img src="/assets/save-query-dialog.png" alt="Save query dialog" />
+      <img src="/images/explore/save-query-dialog.png" alt="Save query dialog" />
     </Frame>
   </Step>
 
@@ -125,7 +125,7 @@ When you're ready to create and manage custom queries, follow these steps:
     To edit or delete your query, click the vertical ellipsis (three dots) next to the query name and select **Edit/Share** or **Delete**.
 
     <Frame>
-      <img src="/assets/edit-saved-query.png" alt="Edit and delete saved queries" />
+      <img src="/images/explore/edit-saved-query.png" alt="Edit and delete saved queries" />
     </Frame>
   </Step>
 </Steps>
@@ -135,7 +135,7 @@ When you're ready to create and manage custom queries, follow these steps:
 BloodHound allows you to import and export queries for easy sharing and backup.
 
 <Frame>
-  <img src="/assets/saved-queries-import-export.png" alt="Import and export queries" />
+  <img src="/images/explore/saved-queries-import-export.png" alt="Import and export queries" />
 </Frame>
 
 * **Import queries from JSON files**: Easily add new queries by dragging and dropping JSON files or compressed JSON files into the UI. BloodHound validates the files for correct syntax and notifies you of any errors.
@@ -143,27 +143,44 @@ BloodHound allows you to import and export queries for easy sharing and backup.
 
 ## Write Custom Queries
 
-One of the most overlooked features of BloodHound is the ability to enter raw Cypher queries directly into the user interface. Likely, a lot of that has to do with the fact that it's not a very emphasized feature and requires learning Cypher. However, with some work, using raw Cypher queries can let you manipulate and examine BloodHound data in custom ways to help you further understand your network or identify interesting relationships.
+BloodHound lets you run raw Cypher queries directly in the user interface. Use Cypher when you need to inspect relationships, answer targeted questions, or build analyses that go beyond the prebuilt queries.
 
-Writing Cypher queries unlocks powerful, custom analyses — from simple lookups to complex identity attack-path problems. Examples of what you can answer with queries include:
+Cypher supports everything from simple lookups to complex identity attack-path analysis. For example, you can answer questions such as:
 
-* "Which users haven't reset their passwords in 180 days?"
-* "Which low-privileged users can reach machines hosting an unconstrained gMSA?"
-* "What are the shortest paths from low-privilege users to Domain Admins?"
+- Which users have not reset their passwords in 180 days?
+- Which low-privileged users can reach machines that host an unconstrained gMSA?
+- What are the shortest paths from low-privilege users to Domain Admins?
+- Which objects are in Tier Zero?
 
-<Frame>
-  <img src="/assets/query-editor.png" alt="Cypher query editor" />
-</Frame>
+For example, use the following query to return all Tier Zero objects:
+
+```cql
+MATCH (n:Tag_Tier_Zero)
+RETURN n
+```
+
+If you need to narrow the results to a specific object type, combine labels in the same pattern. For example, to return only Tier Zero users:
+
+```cql
+MATCH (n:User:Tag_Tier_Zero)
+RETURN n
+```
+
+<Warning>
+  Do not search for Tier Zero objects by inspecting `system_tags` properties with patterns such as `coalesce(n.system_tags, [])`. Support for this pattern is temporary and will be deprecated in a future release.
+
+  BloodHound represents Tier Zero membership with the `Tag_Tier_Zero` label, so label matching is the supported and preferred approach.
+</Warning>
 
 ### Elements of the graph database
 
-Everything in the graph database is represented using common terms from graph theory, particularly **edges,** and **nodes**.
+Everything in the graph database is represented using common terms from graph theory, particularly [edges](/resources/edges/overview) and [nodes](/resources/nodes/overview).
 
-Nodes represent discrete objects that can be acted upon when moving through an environment. In BloodHound, a node can, for example, represent a User in an Active Directory environment. Read more about BloodHound nodes in [About BloodHound Nodes](/resources/nodes/overview).
+Nodes represent discrete objects in your environment. In BloodHound, a node can represent a user, group, device, repository, or another object collected from a built-in platform or an OpenGraph extension.
 
-Edges represent a relationship between two nodes and can be the action necessary to act on a node. In BloodHound, an edge can, for example, represent the relationship between a User node and a Group node through the MemberOf edge, indicating that the user is a group member. Read more about BloodHound edges in the article [About BloodHound Edges](/resources/edges/overview).
+Edges represent relationships between nodes and often describe how one object connects to (or can affect) another. In BloodHound, an edge can represent membership, administrative control, trust, or another relationship defined in the graph.
 
-Together, edges and nodes create the paths we use in BloodHound to demonstrate how different permissions in Active Directory and Azure can be executed to gain control over a given target.
+Together, nodes and edges form the paths BloodHound uses to model how access, permissions, and control flow through your environment.
 
 ### Basic Cypher
 
