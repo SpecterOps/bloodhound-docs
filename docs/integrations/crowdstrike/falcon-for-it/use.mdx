@@ -1,0 +1,163 @@
+---
+title: Use Falcon for IT with BloodHound Enterprise
+description: Learn how to run the CrowdStrike Falcon for IT workflow, review telemetry, and verify ingestion in BloodHound Enterprise.
+sidebarTitle: Run and verify
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+After you complete the [installation and configuration](/integrations/crowdstrike/falcon-for-it/configure), the CrowdStrike Foundry workflow can retrieve endpoint telemetry from Falcon Next-Gen SIEM, transform it to the BloodHound Enterprise schema, and upload it to your BloodHound Enterprise tenant.
+
+This page shows you how to run the workflow, review the available dashboard views, and verify a successful upload.
+
+The integration uses Foundry Functions and Falcon Fusion to automate BloodHound Enterprise data collection and ingestion.
+
+| Workflow stage | Description |
+| --- | --- |
+| **Fetch telemetry** | Retrieves new endpoint telemetry from Falcon Next-Gen SIEM |
+| **Transform data** | Converts the collected data to the BloodHound Enterprise schema before upload |
+| **Track host coverage** | Uses a Daily Status Table to track which hosts reported during the current cycle |
+| **Retry incomplete work** | Reconciles incomplete collection runs to improve host coverage |
+
+## Run the workflow manually
+
+The workflow runs automatically on an hourly schedule, but you can also run it manually after installation and configuration to confirm that data reaches BloodHound Enterprise successfully.
+
+<Steps>
+  <Step title="Open the workflow list">
+    1. Log in to CrowdStrike Falcon.
+    
+    1. Go to **Fusion SOAR** > **Workflows**.
+
+       <Frame>
+         <img
+           src="/images/integrations/crowdstrike/falcon-for-it/workflows.png"
+           alt="A screenshot of the workflow list interface"
+         />
+       </Frame>
+
+    1. Locate the **BloodHound Enterprise NG SIEM Workflow**.
+  </Step>
+
+  <Step title="Execute the workflow">
+    1. Open the workflow action menu and click **Execute Workflow**.
+
+       <Frame>
+         <img
+           src="/images/integrations/crowdstrike/falcon-for-it/workflow-action-menu.png"
+           alt="A screenshot of the workflow action menu"
+         />
+       </Frame>
+
+    1. In the confirmation dialog, click **Execute now**.
+
+       <Frame>
+         <img
+           src="/images/integrations/crowdstrike/falcon-for-it/execute-now.png"
+           alt="A screenshot of the execute workflow confirmation dialog"
+         />
+       </Frame>
+  </Step>
+
+  <Step title="Open the execution results">
+    1. When CrowdStrike displays the workflow execution notification, click **View**.
+
+       <Frame>
+         <img
+           src="/images/integrations/crowdstrike/falcon-for-it/view-workflow-run.png"
+           alt="A screenshot of the view execution results interface"
+         />
+       </Frame>
+
+    1. Review the real-time execution results for the run.
+    
+       <Note>
+         Record the reported job ID. You can use it to verify data ingestion in BloodHound Enterprise.
+       </Note>
+  </Step>
+</Steps>
+
+## Review the dashboard
+
+The CrowdStrike dashboard provides visibility into the data that the integration collects and uploads to BloodHound Enterprise.
+
+To navigate to the dashboard in CrowdStrike Falcon, go to **Next-Gen SIEM** > **Dashboard**.
+
+The dashboard displays the following visualizations to monitor host activity and data ingestion:
+
+| Visualization | Description |
+| --- | --- |
+| **Event Count - Data Types** | Displays a single-value metric highlighting the volume of specific BloodHound data types filtered by recent detection IDs  |
+| **Top Active Hosts** | Displays a bar chart of the top five hostnames that generated the most OS query events during the selected time range |
+| **Active Interactive Logon Sessions Tracking** | Displays a pie chart of interactive user logon sessions grouped by hostname and logon domain |
+| **Job Execution Audit Trail** | Displays a table of upload events, including job IDs, processed event counts, and upload status |
+
+<Tip>
+  The dashboard includes a global time filter that lets you adjust the reporting range across all visualizations.
+</Tip>
+
+## Verify upload events
+
+The application writes an audit event to Falcon Next-Gen SIEM after it uploads data successfully to BloodHound Enterprise.
+
+After the workflow completes successfully, confirm the upload in both Falcon Next-Gen SIEM and BloodHound Enterprise.
+
+<Steps>
+  <Step title="Open Event Search">
+    1. Log in to CrowdStrike Falcon.
+
+    1. Go to **Next-Gen SIEM** > **Log management** > **Event Search**.
+
+       <Frame>
+         <img
+           src="/images/integrations/crowdstrike/falcon-for-it/verify-telemetry.png"
+           alt="A screenshot of the event search interface in Falcon Next-Gen SIEM"
+         />
+       </Frame>
+  </Step>
+
+  <Step title="Filter for upload audit events">
+    Apply a custom filter with the following values:
+
+    | Field | Value |
+    | --- | --- |
+    | **Field** | `event_type` |
+    | **Operator** | `is equal to` |
+    | **Value** | `bloodhound_enterprise_data_collector_upload` |
+  </Step>
+
+  <Step title="Confirm the upload details">
+    1. Confirm that a matching event appears for the workflow run.
+
+    1. Review the event details for the job ID, computer count, Next-Gen SIEM event counts, and checkpoint details.
+
+    1. Record the job ID to verify data ingestion in BloodHound Enterprise.
+
+       <Frame>
+         <img
+           src="/images/integrations/crowdstrike/falcon-for-it/event-logs-upload.png"
+           alt="A screenshot of the filter interface for upload audit events"
+         />
+       </Frame>
+  </Step>
+
+  <Step title="Open the BloodHound Enterprise tenant">
+    1. Log in to your BloodHound Enterprise tenant.
+
+    1. Go to **Administration** > **Data Collection** > **File Ingest**.
+  </Step>
+
+  <Step title="Confirm the matching ingestion job">
+    Locate the latest ingestion entry and verify it against the job ID from the Falcon Next-Gen SIEM audit event.
+
+    - Confirm that the upload start time matches the workflow execution time.
+    - Confirm that the status of the job is **Complete**.
+
+    <Frame>
+      <img
+        src="/images/integrations/crowdstrike/falcon-for-it/file-ingest.png"
+        alt="A screenshot of the file ingestion management dashboard"
+      />
+    </Frame>
+  </Step>
+</Steps>
