@@ -53,6 +53,30 @@ When you're ready to explore prebuilt queries inside BloodHound, follow these st
 
 BloodHound provides several features to help you work with Cypher queries. These features enable you to search and manage your queries effectively.
 
+## Search for Tier Zero objects
+
+When you need to return Tier Zero objects in Cypher, match on the Tier Zero tag label directly:
+
+```cql
+MATCH (n:Tag_Tier_Zero)
+RETURN n
+```
+
+This is the preferred pattern for Explore workflows, saved queries, and Cypher-based Privilege Zone rules.
+
+If you need to restrict the results to a specific node type, combine labels in the same pattern:
+
+```cql
+MATCH (n:User:Tag_Tier_Zero)
+RETURN n
+```
+
+<Warning>
+  Do not search for Tier Zero objects by inspecting `system_tags` properties with patterns such as `coalesce(n.system_tags, [])`.
+
+  BloodHound materializes Tier Zero membership as the `Tag_Tier_Zero` label, so label matching is the supported and preferred approach.
+</Warning>
+
 ### Search and Filter
 
 BloodHound offers several search and filtering options to help you find the right query quickly.
