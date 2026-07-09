@@ -1,0 +1,165 @@
+---
+title: Jira integration design reference
+description: Technical reference for the Jira integration, including its Atlassian Forge architecture, schedules, and API usage.
+sidebarTitle: Design reference
+hidden: true
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+This page explains how the BloodHound Enterprise Jira integration works. It covers the Atlassian Forge app architecture, authentication model, configuration inputs, scheduler behavior, and BloodHound API dependencies.
+
+<Note>
+  For setup instructions, see [Install and configure the integration](/integrations/atlassian/jira/configure).
+</Note>
+
+## Integration type
+
+The BloodHound Enterprise Jira integration is a **vulnerability management and remediation tracking** integration. It synchronizes BloodHound Enterprise attack path findings into Jira so security and operations teams can manage remediation work in Jira Software or Jira Service Management.
+
+## Use cases
+
+- Create Jira issues automatically for BloodHound Enterprise findings
+- Route findings into Jira Software or Jira Service Management workflows
+- Map BloodHound Enterprise zones to Jira priorities and due dates
+- Keep Jira aligned with BloodHound Enterprise by closing remediated findings automatically
+
+## Core design
+
+The integration is built on the Atlassian Forge platform and uses a combination of scheduled tasks and API calls to synchronize data between BloodHound Enterprise and Jira.
+
+| Component | Purpose |
+| --- | --- |
+| **Configuration UI** | Provides the Forge project settings page where Jira administrators enter BloodHound Enterprise connection details and synchronization settings |
+| **Sync scheduler** | Pulls findings from BloodHound Enterprise every five minutes and creates Jira issues or incidents |
+| **Cleanup scheduler** | Runs hourly and closes orphaned Jira issues after the corresponding BloodHound Enterprise findings no longer exist and auto-closure is enabled |
+| **Jira project** | Hosts the created issues or incidents and provides the remediation workflow |
+
+The integration follows the following workflow:
+
+1. A Jira administrator installs the app from the Atlassian Marketplace.
+1. A project administrator opens the Forge project settings page in Jira and enters the BloodHound Enterprise connection values.
+1. The integration validates the credentials with **Test Connection**.
+1. The sync scheduler polls BloodHound Enterprise every five minutes and creates one Jira issue or incident per matching finding.
+1. The cleanup scheduler runs hourly and closes orphaned issues when the corresponding finding no longer exists in BloodHound Enterprise.
+
+## Authentication and secrets
+
+The integration uses the following security measures:
+
+| Control | Implementation |
+| --- | --- |
+| **BloodHound Enterprise authentication** | HMAC-SHA256 signed requests |
+| **Jira authorization** | Atlassian Forge OAuth 2.0 app scopes |
+| **Secret storage** | Atlassian Forge encrypted Key-Value Storage (KVS) |
+| **Data in transit** | HTTPS/TLS |
+| **Data flow** | Direct API calls from Atlassian Forge to BloodHound Enterprise |
+
+Each BloodHound Enterprise request includes:
+
+1. `Authorization: bhesignature {token_id}`
+1. `RequestDate: {rfc3339_timestamp}`
+1. `Signature: {base64_hmac_signature}`
+
+## Configuration inputs
+
+The integration exposes the following user-configurable inputs:
+
+| Input | Required | Description |
+| --- | --- | --- |
+| **BloodHound Enterprise Domain** | Yes | The URL of your BloodHound Enterprise tenant |
+| **Token ID** | Yes | The API token ID used to authenticate requests |
+| **Token Key** | Yes | The API token key used to sign requests |
+| **Issue Type / Request Type** | Yes | The Jira issue type for Jira Software or the request type for Jira Service Management |
+| **BHE Domains** | Yes | The BloodHound Enterprise environments to synchronize |
+| **BHE Zones** | Yes | The BloodHound Enterprise zones to synchronize |
+| **Priority Mapping** | Yes | The mapping between BloodHound Enterprise zones and Jira priorities |
+| **Due Days** | Yes | The number of due days to assign for each mapped priority |
+| **Enable Auto-Closure** | Yes | Enables or disables automatic closure of orphaned Jira issues |
+| **Cleanup Interval** | Yes | The number of days between orphaned-issue closure checks |
+
+The integration does not allow the Jira project key to be configured by the user because the app derives it from the Forge extension context.
+
+## Jira project behavior
+
+The integration adjusts its configuration model based on the Jira project type:
+
+| Capability | Jira Software | Jira Service Management |
+| --- | --- | --- |
+| **Issue model** | Standard Jira issue type | Incident issue type with a selected request type |
+| **Configuration field** | **Issue Type** | **Request Type** |
+| **Project detection** | Uses the configured Jira Software issue type | Detects the JSM project automatically and populates incident request types |
+
+## Sync model
+
+The integration follows the following synchronization behavior:
+
+| Setting | Value |
+| --- | --- |
+| **Sync interval** | Every 5 minutes |
+| **Cleanup scheduler** | Every hour |
+| **Cleanup interval** | 1 to 10 days, based on configuration |
+| **Synchronization scope** | Selected BloodHound Enterprise domains and zones |
+| **Manual action** | **Run Sync Now** triggers an immediate synchronization |
+
+The integration creates one Jira issue or incident for each finding that matches the selected domains and zones. It prevents duplicate issue creation by storing Jira Entity Properties in `sync_metadata`, including `findingId` and `updatedAt`.
+
+The provided Jira source documents also describe the following operational values for the synchronization workflow:
+
+| Setting | Value |
+| --- | --- |
+| **Batch size** | 500 findings per batch |
+| **Bulk Jira operations** | 50 issues per API call |
+| **Invocation timeout** | 15 minutes |
+
+## Synced Jira issue content
+
+The integration requires each Jira issue or incident to store the attack path data needed for remediation tracking.
+
+| Field | Contents |
+| --- | --- |
+| **Issue correspondence** | One unique Jira issue or incident for each BloodHound Enterprise finding |
+| **Attack path title** | The issue corresponds to the attack path title |
+| **Graph View link** | A deep link to the finding in BloodHound Enterprise |
+| **Attack path data** | Relevant finding data retrieved from BloodHound Enterprise |
+| **Remediation guidance** | Remediation steps associated with the finding |
+| **Priority and due date** | Values derived from the configured zone-to-priority and due-day mappings |
+
+## API endpoints
+
+The integration depends on the following BloodHound Enterprise API endpoints:
+
+| Endpoint | Purpose |
+| --- | --- |
+| [`GET /api/v2/available-domains`](/reference/search/get-available-domains) | Lists the environments available to the configured API token |
+| [`GET /api/v2/asset-group-tags`](/reference/asset-isolation/get-asset-group-tags) | Lists the available BloodHound Enterprise zones used for synchronization filtering |
+| [`GET /api/v2/domains/{domain_id}/available-types`](/reference/attack-paths/list-available-attack-paths) | Lists the attack path finding types for a selected environment |
+| [`GET /api/v2/domains/{domain_id}/details`](/reference/attack-paths/list-domain-attack-paths-details) | Returns detailed attack path records for a selected environment and finding type |
+| `GET /api/v2/assets/findings/{finding_type}/title.md` | Returns the title for a finding type |
+| `GET /api/v2/assets/findings/{finding_type}/short_description.md` | Returns the short description for a finding type |
+| `GET /api/v2/assets/findings/{finding_type}/short_remediation.md` | Returns the short remediation text for a finding type |
+| `GET /api/v2/assets/findings/{finding_type}/long_remediation.md` | Returns the long remediation text for a finding type |
+
+## Error handling
+
+The integration calls for centralized API error handling with logging and graceful recovery when possible.
+
+| Status | Meaning | Expected behavior |
+| --- | --- | --- |
+| `400` | Bad Request | Log the error and stop the current request gracefully |
+| `401` | Unauthorized | Log the authentication failure and skip the request |
+| `403` | Forbidden | Log the authorization failure and skip the request |
+| `404` | Not Found | Log the missing endpoint or resource and skip retry |
+| `429` | Too Many Requests | Log the rate-limit condition and apply a cooldown before a later run |
+| `5xx` | Server Error | Log the failure and treat it as a critical synchronization error |
+
+If an API request fails, the integration skips the failed operation, logs the error, and retries during a later synchronization interval.
+
+## Platform dependencies
+
+The integration relies on the following external dependencies:
+
+| Dependency | Role |
+| --- | --- |
+| **BloodHound Enterprise API** | Source of attack path findings and finding metadata |
+| **Atlassian Forge and Jira Cloud API** | Hosts the app runtime, configuration UI, and Jira issue handling |

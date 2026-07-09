@@ -1,0 +1,198 @@
+---
+title: Integrate BloodHound Enterprise with Jira
+description: Learn how to install and configure the Jira integration for BloodHound Enterprise.
+sidebarTitle: Install and configure
+hidden: true
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+The BloodHound Enterprise Jira integration is a Jira Cloud app built on Atlassian Forge. It synchronizes BloodHound Enterprise attack path findings to Jira issues for remediation tracking.
+
+This page shows you how to install the integration, connect a Jira project to BloodHound Enterprise, and configure synchronization behavior for Jira Software or Jira Service Management.
+
+Use this integration to:
+
+- Automatically synchronize BloodHound Enterprise findings with Jira every five minutes
+- Map BloodHound zones to Jira priorities and due dates
+- Automatically close Jira issues when findings are remediated
+
+## Prerequisites
+
+Before you configure the integration, confirm that you have the following:
+
+| Platform | Requirements |
+| --- | --- |
+| **Jira** | <ul><li>A Jira Cloud instance (Data Center and Server are not supported)</li><li>A Jira Software or Jira Service Management project where you want the integration to create issues</li><li>Project Administrator or Site Administrator access in Jira</li><li>Atlassian Forge CLI installed (for self-hosted installations)</li><li>Network connectivity between Jira and BloodHound Enterprise</li></ul> |
+| **BloodHound Enterprise** | <ul><li>A BloodHound Enterprise tenant</li><li>A BloodHound Enterprise [non-personal API key/ID pair](/integrations/bloodhound-api/working-with-api#create-a-non-personal-api-key%2Fid-pair) with the **Auditor** role</li></ul> |
+
+## Install the integration
+
+Install the integration in your Jira Cloud instance.
+
+<Note>
+  Atlassian requires **Organization Administrator** or **Site Administrator** privileges to install Marketplace apps in Jira Cloud.
+</Note>
+
+<Steps>
+  <Step title="Open Atlassian Marketplace">
+    Go to [Atlassian Marketplace](https://marketplace.atlassian.com/) and search for the BloodHound Enterprise Jira integration.
+  </Step>
+
+  <Step title="Start the installation">
+    1. Open the BloodHound Enterprise Jira integration listing.
+
+    1. Select **Get it now**.
+
+    1. Select the Jira Cloud site where you want to install the integration.
+  </Step>
+  <Step title="Review and install">
+    Review the installation details, then start the installation.
+  </Step>
+</Steps>
+
+## Configure connection settings
+
+Configure the connection between Jira and BloodHound Enterprise using your BloodHound Enterprise non-personal API key/ID pair.
+
+<Steps>
+  <Step title="Navigate to Connection Settings">
+    Navigate to the project where you want the integration to create issues.
+
+    1. Go to **Space Settings**.
+
+    1. In the **Apps** section, select **BloodHound Enterprise Integration**.
+
+    1. Click the **Connection Settings** tab.
+  </Step>
+  <Step title="Enter the connection values">
+    Enter the BloodHound Enterprise connection details.
+
+    | Field | Description |
+    | --- | --- |
+    | **BloodHound Enterprise Domain** | The URL of your BloodHound Enterprise tenant |
+    | **Token ID** | The API token ID used to authenticate requests |
+    | **Token Key** | The API token key used to sign and authorize requests |
+  </Step>
+
+  <Step title="Test the connection">
+
+    Before you can access the **Configuration** tab, you must successfully test the connection.
+    
+    Click **Test Connection** and wait for Jira to confirm that it can reach your BloodHound Enterprise tenant.
+  </Step>
+</Steps>
+
+## Configure synchronization settings
+
+After successfully testing the connection, you can configure how the integration should synchronize BloodHound Enterprise findings with your Jira project.
+
+The **Configuration** tab provides the following settings:
+
+| Setting | Purpose |
+| --- | --- |
+| **Issue Type / Request Type** | Chooses the Jira issue type for Jira Software projects or the request type for Jira Service Management projects |
+| **BHE Domains** | Limits synchronization to the selected BloodHound Enterprise environments |
+| **BHE Zones** | Limits synchronization to the selected BloodHound Enterprise zones, such as Tier Zero, Tier One, and Hygiene |
+| **Priority Mapping** | Maps BloodHound Enterprise zones to Jira priorities |
+| **Due Days** | Sets the due date window for each Jira priority |
+| **Enable Auto-Closure** | Enables automatic closure of Jira issues when the corresponding BloodHound Enterprise finding is no longer detected (remediated) |
+| **Cleanup Interval** | Defines how often the integration checks for orphaned issues |
+
+<Note>
+  For Jira Service Management projects, the integration detects the project type automatically and replaces the **Issue Type** selector with a **Request Type** selector filtered to incident request types.
+
+  When the integration detects a Jira Service Management project, it automatically manages the following fields:
+
+  - Service Desk ID
+  - Request Type ID
+  - Request Type Field ID
+  - Incident Request Type Name
+</Note>
+
+<Steps>
+  <Step title="Choose the Jira issue model">
+    Select the Jira issue type that should represent BloodHound Enterprise findings (for example, Task, Bug, or Story).
+  </Step>
+
+  <Step title="Select the synchronization scope">
+    The integration dynamically fetches the available domains and zones from your BloodHound Enterprise tenant.
+    
+    Select the domains and zones that you want to include in the synchronization.
+
+    1. Choose one or more **BHE Domains**.
+
+    1. Choose the **BHE Zones** that you want to synchronize with Jira.
+
+       - **Tier Zero**: Critical attack paths to high-value targets
+       - **Tier One**: Significant attack paths that require attention
+       - **Hygiene**: General security hygiene and best practices issues
+  </Step>
+
+  <Step title="Map priority and due dates">
+
+    Customize the priority and due date settings for each BloodHound Enterprise zone.
+    
+    1. Map each BloodHound Enterprise zone to the Jira priority you want to use based on your organization's policies. The default priorities are:
+
+       | Zone | Default Jira Priority |
+       | --- | --- |
+       | **Tier Zero** | Highest |
+       | **Tier One** | Low |
+       | **Hygiene** | Lowest |
+
+    1. Set the number of due days for each priority. The default due days are:
+
+       | Jira Priority | Default Due Days |
+       | --- | --- |
+       | **Highest** | 3 days |
+       | **High** | 7 days |
+       | **Medium** | 14 days |
+       | **Low** | 30 days |
+       | **Lowest** | 90 days |
+
+       <Note>
+         Use **None** to disable due dates for specific priorities.
+       </Note>
+  </Step>
+
+  <Step title="Set auto-closure behavior">
+    The integration can automatically close Jira issues when the corresponding BloodHound Enterprise finding is no longer detected (remediated).
+    
+    |Setting | Description | Options |
+    | --- | --- | --- |
+    | **Enable Auto-Closure** | Enables automatic closure of Jira issues when the corresponding BloodHound Enterprise finding is no longer detected (remediated) | Yes / No |
+    | **Cleanup Interval** | Defines how often the integration checks for (and closes) orphaned issues | 1-10 days |
+
+    When **Auto-Closure** is enabled:
+
+    - The cleanup interval runs hourly to check for orphaned issues.
+    - An issue is considered orphaned if the corresponding BloodHound Enterprise finding is no longer detected.
+    - The integration transitions orphaned issues to a **Done** status and adds a comment indicating that the issue has been automatically closed.
+
+    <Note>
+      The integration closes remediated issues according to the cleanup interval that you set. For example, if you set the interval to 3 days, the integration closes eligible issues no more than once every 3 days.
+    </Note>
+  </Step>
+
+  <Step title="Save and run the first synchronization">
+    After you have configured the integration, you can save the configuration and run the first synchronization from the **Configuration** tab.
+
+    1. Click **Save Configuration**.
+    1. Click **Run Sync Now** to trigger the first synchronization immediately.
+  </Step>
+</Steps>
+
+## Verify the configuration
+
+After you save the configuration and run the first synchronization, confirm the following:
+
+- Jira starts the synchronization successfully
+- The configured project receives issues for findings that match the selected domains and zones
+- The created issues use the expected priority and due date values
+- Jira adds zone and domain labels that you can use for filtering
+
+## Next steps
+
+- [Use Jira with BloodHound Enterprise](/integrations/atlassian/jira/use)
+- [Troubleshoot the Jira integration](/integrations/atlassian/jira/troubleshoot)
