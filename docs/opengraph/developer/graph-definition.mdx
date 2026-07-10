@@ -149,6 +149,8 @@ Defines all node types in your extension. Each node kind represents an entity ty
   <Note>
     If custom styling has already been stored for this kind, changing `is_display_kind` to `false` does not remove the existing icon or color mapping. Delete the custom icon definition through the API to remove it.
   </Note>
+
+  See [Schema Behavior Examples](/opengraph/developer/schema-behavior-examples#set-display-kinds-for-node-styling) for a comparison of how display kinds affect node appearance in BloodHound.
 </ResponseField>
 <ResponseField name="icon" type="string">
   Optional Font Awesome [icon name](https://fontawesome.com/search?s=solid) (without the "fa-" prefix) to show for nodes of this kind in the graph.
@@ -187,12 +189,12 @@ Defines what kind of connections exist. Each relationship kind represents a spec
 
 <img
   noZoom
-  src="/assets/enterprise-edition-pill-tag.svg"
-  alt="Applies to BloodHound Enterprise only"
+  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise and Community Edition"
   style={{ "width":"20%" }}
 />
 
-Environments are platform-specific groupings of nodes that BloodHound Enterprise uses to scope findings and metrics. Each environment definition specifies which node kinds represent <Tooltip tip="An entity in a system that can authenticate, be assigned permissions, and serve as a basis for risk metric calculations.">principals</Tooltip> within each environment.
+Environments are platform-specific groupings of nodes that BloodHound uses to organize environment-specific data and UI selection. In BloodHound Enterprise, these same definitions also scope findings and metrics. Each environment definition specifies which node kinds represent <Tooltip tip="An entity in a system that can authenticate, be assigned permissions, and serve as a basis for risk metric calculations.">principals</Tooltip> within each environment.
 
 ```json
 [
@@ -211,7 +213,9 @@ Environments are platform-specific groupings of nodes that BloodHound Enterprise
 <ResponseField name="environment_kind" type="string" required>
   Represents which node type within the extension is considered an environment for organizational and analytics purposes. Must match a node kind defined in the `node_kinds` array.
 
-  For findings and metrics in BloodHound Enterprise, the [`graph.nodes.properties.environmentid`](/opengraph/developer/nodes#param-properties-environmentid) field for applicable nodes in the data payload must match this field.
+  BloodHound uses this definition to organize platform-specific environments in the UI. For findings and metrics in BloodHound Enterprise, the [`graph.nodes.properties.environmentid`](/opengraph/developer/nodes#param-properties-environmentid) field for applicable nodes in the data payload must match this field.
+
+  See [Schema Behavior Examples](/opengraph/developer/schema-behavior-examples#define-environments-for-selection-and-grouping) for an example of how BloodHound uses environment definitions in the UI.
 </ResponseField>
 <ResponseField name="source_kind" type="string" required>
   Source kind that associates this environment definition with a specific platform for environment organization and selection. See [Data source](/opengraph/developer/graph-data#data-source) for details.
@@ -220,6 +224,8 @@ Environments are platform-specific groupings of nodes that BloodHound Enterprise
   Node kinds defined by this extension/schema that BloodHound should treat as <Tooltip tip="An entity in a system that can authenticate, be assigned permissions, and serve as a basis for risk metric calculations.">principals</Tooltip>. Must match a `node_kinds.name` defined in this schema.
 
   BloodHound Enterprise incorporates these node kinds in findings and metrics.
+
+  See [Schema Behavior Examples](/opengraph/developer/schema-behavior-examples#define-principal-kinds-for-findings-and-metrics) for an example of how principal definitions affect analysis scope.
 </ResponseField>
 
 ## `relationship_findings`
@@ -252,10 +258,10 @@ Defines findings based on relationships. Each finding represents a single instan
     "environment_kind": "Okta_Organization",
     "relationship_kind": "Okta_ResetPassword",
     "remediation": {
-      "short_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "long_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-      "short_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "long_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+      "short_description": "Review accounts that can reset passwords across privilege boundaries.",
+      "long_description": "This finding appears when a traversable password reset relationship crosses a Privilege Zone boundary in the target environment.",
+      "short_remediation": "Restrict password reset permissions to approved administrative roles.",
+      "long_remediation": "Review delegated password reset permissions, remove unnecessary assignments, and validate any help desk or automation workflows that still require this access."
     }
   }
 ]
@@ -277,6 +283,8 @@ Defines findings based on relationships. Each finding represents a single instan
 </ResponseField>
 <ResponseField name="remediation" type="object">
   Remediation guidance to resolve the finding, including both short and long forms.
+
+  See [Schema Behavior Examples](/opengraph/developer/schema-behavior-examples#add-remediation-text-to-relationship-findings) for an example of how finding and remediation text appears in BloodHound.
 </ResponseField>
 <ResponseField name="remediation.short_description" type="string">
   A concise summary of the recommended remediation action.
@@ -338,10 +346,10 @@ The following example schema is based on Okta to illustrate how the different co
       "environment_kind": "Okta_Organization",
       "relationship_kind": "Okta_ResetPassword",
       "remediation": {
-        "short_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-        "long_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-        "short_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-        "long_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+        "short_description": "Review accounts that can reset passwords across privilege boundaries.",
+        "long_description": "This finding appears when a traversable password reset relationship crosses a Privilege Zone boundary in the target environment.",
+        "short_remediation": "Restrict password reset permissions to approved administrative roles.",
+        "long_remediation": "Review delegated password reset permissions, remove unnecessary assignments, and validate any help desk or automation workflows that still require this access."
       }
     }
   ]
