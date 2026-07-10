@@ -1,6 +1,7 @@
 ---
-title: Schema Behavior Examples
-description: Learn how schema definitions change OpenGraph behavior in BloodHound.
+title: Build a sample OpenGraph extension
+description: Create a sample OpenGraph extension schema and payload that show how BloodHound renders, scopes, traverses, and reports on custom graph data.
+sidebarTitle: Example extension
 ---
 
 <img
@@ -9,15 +10,18 @@ description: Learn how schema definitions change OpenGraph behavior in BloodHoun
   alt="Applies to BloodHound Enterprise and Community Edition"
 />
 
-An extension definition schema does more than validate names and kinds. It also controls how BloodHound groups data, renders nodes, and decides which relationships can participate in analysis.
+An OpenGraph extension definition schema tells BloodHound how to display, scope, and analyze custom graph data. In this tutorial, you build a small sample extension for a fictional environment and add the schema fields that turn a basic payload into a structured graph.
 
-Use this page to understand the practical impact of key schema fields and how they influence BloodHound behavior. Follow the examples in order to build on the same simple domain model and see how to:
+Follow the examples in order. Each section adds one capability to the same sample extension so you can see how the schema and payload work together in BloodHound. This tutorial focuses on schema and payload behavior; extension-specific Cypher queries are outside the current scope.
 
-- Define environments to establish scope
-- Set display kinds to control the visual appearance of nodes
-- Define principal kinds to enable finding and metric analysis
-- Make relationships traversable to define attack path behavior
-- Add relationship findings to provide context and remediation guidance in BloodHound Enterprise
+By the end of this tutorial, you have a sample extension definition schema and matching payload that show how to:
+
+- Define an environment to establish analysis scope
+- Style nodes with display kinds
+- Identify principal kinds for pathfinding and metrics
+- Make relationships traversable for attack path analysis
+- Add a Privilege Zone target for finding evaluation
+- Define relationship findings with context and remediation guidance in BloodHound Enterprise
 
 ## Define environments
 
@@ -252,7 +256,7 @@ This example builds on the previous definition by adding the existing admin acco
 <Note>
   **Findings and metrics**
 
-  `principal_kinds` does not create findings by itself, and the payload does not include a separate finding object. BloodHound Enterprise derives the finding from the environment definition, the [traversable relationship kind](/opengraph/developer/schema-behavior-examples#define-relationships), the matching [relationship findings](/opengraph/developer/schema-behavior-examples#define-relationship-findings) definition, and the uploaded graph data.
+  `principal_kinds` does not create findings by itself, and the payload does not include a separate finding object. BloodHound Enterprise derives the finding from the environment definition, the [traversable relationship kind](/opengraph/developer/extension-example#define-relationships), the [Privilege Zone target](/opengraph/developer/extension-example#add-a-privilege-zone-target), the matching [relationship findings](/opengraph/developer/extension-example#define-relationship-findings) definition, and the uploaded graph data.
 </Note>
 
 <Tabs>
@@ -316,7 +320,7 @@ This example builds on the previous definition by adding the existing admin acco
 
   At this point, you won't see any visual changes in BloodHound, but the extension definition now enables findings and metrics for both `EX_User` and `EX_AdminAccount` principals in the target environment.
 
-  The remaining examples in this guide build on this definition is now ready to support findings and metrics for both `EX_User` and `EX_AdminAccount` principals in the target environment.
+  The remaining examples in this guide build on this definition to show the other conditions required for findings and metrics.
   </Tab>
 </Tabs>
 
@@ -326,7 +330,9 @@ Use [`relationship_kinds.is_traversable`](/opengraph/developer/graph-definition#
 
 When you set `is_traversable` to `true` on a relationship kind, every edge of that kind inherits the same traversability behavior. Use traversable relationships to represent conditions where the starting node can take control of the ending node to a degree that lets an attacker abuse the ending node's outgoing edges.
 
-This example connects Alice, an `EX_User` principal, to the domain admin account from the previous section. The `EX_ResetAdminPassword` relationship kind is traversable because it represents delegated password reset control from the starting node to the ending node.
+This example connects Alice, an `EX_User` principal, to the domain admin account from the previous section. It also connects the domain admin account to the domain environment so the example data contains a complete path from Alice to the domain.
+
+The `EX_ResetAdminPassword` relationship kind is traversable because it represents delegated password reset control from the starting node to the ending node. The `EX_AdministersDomain` relationship kind is also traversable because control of the admin account gives control of the domain.
 
 <Tabs>
   <Tab title="Example definition">
@@ -368,10 +374,15 @@ This example connects Alice, an `EX_User` principal, to the domain admin account
         "is_display_kind": false
       }
     ],
-    "relationship_kinds": [ // [!code ++:7]
+    "relationship_kinds": [ // [!code ++:12]
       {
         "name": "EX_ResetAdminPassword",
         "description": "Ability to reset the password for an example admin account.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_AdministersDomain",
+        "description": "Ability to administer the example domain.",
         "is_traversable": true
       }
     ],
@@ -425,7 +436,7 @@ This example connects Alice, an `EX_User` principal, to the domain admin account
           }
         }
       ],
-      "edges": [ // [!code ++:13]
+      "edges": [ // [!code ++:24]
         {
           "kind": "EX_ResetAdminPassword",
           "start": {
@@ -436,6 +447,17 @@ This example connects Alice, an `EX_User` principal, to the domain admin account
             "match_by": "id",
             "value": "example-admin-1"
           }
+        },
+        {
+          "kind": "EX_AdministersDomain",
+          "start": {
+            "match_by": "id",
+            "value": "example-admin-1"
+          },
+          "end": {
+            "match_by": "id",
+            "value": "example-domain-1"
+          }
         }
       ]
     }
@@ -443,9 +465,9 @@ This example connects Alice, an `EX_User` principal, to the domain admin account
   ```
   </Tab>
   <Tab title="BloodHound behavior">
-  - BloodHound includes every `EX_ResetAdminPassword` edge in pathfinding because the relationship kind sets `is_traversable` to `true`.
-  - The edge starts at Alice and ends at the domain admin account, which represents an abusable control relationship from the lower-privileged principal to the higher-privileged principal.
-  - Traversable edges can contribute to Attack Path detection, findings, and metrics when the other required analysis conditions are met.
+  - BloodHound includes every `EX_ResetAdminPassword` and `EX_AdministersDomain` edge in pathfinding because both relationship kinds set `is_traversable` to `true`.
+  - The path starts at Alice, reaches the domain admin account, and then reaches the domain.
+  - This path can contribute to Attack Path detection, findings, and metrics when the domain is in a higher Privilege Zone than Alice.
   - If `is_traversable` is `false`, the relationship can still exist in the graph, but BloodHound does not use edges of that kind for pathfinding, findings, or metrics.
 
     <Frame>
@@ -456,6 +478,42 @@ This example connects Alice, an `EX_User` principal, to the domain admin account
     </Frame>
   </Tab>
 </Tabs>
+
+## Create a Privilege Zone rule
+
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ "width":"20%" }}
+/>
+
+Use [Privilege Zones](/analyze-data/privilege-zones/overview) to identify which graph objects represent higher-privilege targets. BloodHound Enterprise generates Attack Path findings when a lower-privileged principal can reach a higher-privileged zone through traversable relationships.
+
+This example builds on the relationship payload from the previous section. The schema and payload define the path from Alice to the domain, but the domain must be in a higher Privilege Zone before BloodHound Enterprise can treat the path as a finding.
+
+<Steps>
+  <Step title="Open the pathfinding graph">
+    Use the [Pathfinding](/analyze-data/explore/search#pathfinding) tab on the **Explore** page to display the path from `Alice` to `CORP.EXAMPLE.DOMAIN` from the previous example.
+  </Step>
+  <Step title="Open the domain context menu">
+    Right-click the `CORP.EXAMPLE.DOMAIN` node in the graph to open the [context menu](/analyze-data/explore/search#context-menu).
+  </Step>
+  <Step title="Add the domain to Tier Zero">
+    Select **Add to Tier Zero**. BloodHound Enterprise adds the domain to the Tier Zero Privilege Zone and starts analysis.
+  </Step>
+  <Step title="Wait for analysis">
+    Wait for analysis to finish before proceeding to the next step.
+  </Step>
+</Steps>
+
+After analysis, the example data contains the required privilege boundary:
+
+- Alice is a lower-privileged `EX_User` principal.
+- The domain admin account is an `EX_AdminAccount` principal that administers the domain.
+- The domain is a Tier Zero target.
+
+With that boundary in place, the traversable path `alice -> Domain Admin -> CORP.EXAMPLE.DOMAIN` can generate a finding when the schema includes a matching `relationship_findings` definition.
 
 ## Define relationship findings
 
@@ -468,7 +526,7 @@ This example connects Alice, an `EX_User` principal, to the domain admin account
 
 Use [`relationship_findings`](/opengraph/developer/graph-definition#relationship_findings) when you want BloodHound Enterprise to attach a finding definition and remediation guidance to a relationship kind that represents an Attack Path condition.
 
-This example builds on the traversable `EX_ResetAdminPassword` relationship from the previous section. The `relationship_findings` entry adds the finding metadata and remediation text that BloodHound Enterprise can display in the UI when matching graph data satisfies the Attack Path conditions.
+This example builds on the traversable `EX_ResetAdminPassword` relationship and the Tier Zero domain target from the previous sections. The `relationship_findings` entry adds the finding metadata and remediation text that BloodHound Enterprise can display in the UI when matching graph data satisfies the Attack Path conditions.
 
 <Tabs>
   <Tab title="Example definition">
@@ -515,6 +573,11 @@ This example builds on the traversable `EX_ResetAdminPassword` relationship from
         "name": "EX_ResetAdminPassword",
         "description": "Ability to reset the password for an example admin account.",
         "is_traversable": true
+      },
+      {
+        "name": "EX_AdministersDomain",
+        "description": "Ability to administer the example domain.",
+        "is_traversable": true
       }
     ],
     "environments": [
@@ -545,11 +608,13 @@ This example builds on the traversable `EX_ResetAdminPassword` relationship from
   ```
   </Tab>
   <Tab title="Example payload">
-  Use the same payload from the traversable relationship example. Relationship findings do not require a separate payload object.
+  Use the same payload from the traversable relationship example and the same Tier Zero zone configuration from the Privilege Zone example. Relationship findings do not require a separate payload object.
   </Tab>
   <Tab title="BloodHound behavior">
-  - When BloodHound Enterprise detects a qualifying instance of the defined relationship kind in the target environment, the finding can display the custom title and remediation content from the schema.
+  - When BloodHound Enterprise detects a qualifying `EX_ResetAdminPassword` edge on a path from Alice to the Tier Zero domain, the finding can display the custom title and remediation content from the schema.
+  - The finding is based on the privilege boundary violation: Alice is lower privileged, but she can take control of the domain admin account and reach Tier Zero.
   - If you do not define a matching `relationship_findings` entry, the relationship can still exist in the graph, but BloodHound Enterprise does not have extension-provided finding and remediation text to display for that condition.
+  - If the domain is not in a higher Privilege Zone, BloodHound Enterprise does not have the privilege boundary it needs to generate this Attack Path finding.
 
     <Frame>
       <img
@@ -562,7 +627,7 @@ This example builds on the traversable `EX_ResetAdminPassword` relationship from
 
 ## Next steps
 
-Use these examples as a checklist when you design an OpenGraph extension definition schema. Start with the environment model, then add the node kinds, relationship kinds, and finding definitions that BloodHound needs to display, scope, and analyze your data.
+Use these examples as a checklist when you design an OpenGraph extension definition schema. Start with the environment model, then add the node kinds, relationship kinds, Privilege Zone targets, and finding definitions that BloodHound needs to display, scope, and analyze your data.
 
 - Review the full [extension definition schema reference](/opengraph/developer/graph-definition) before you define your schema fields.
 - Build a matching [graph data payload](/opengraph/developer/graph-data) that uses the node kinds, relationship kinds, environment IDs, and source kind from your schema.
@@ -578,4 +643,5 @@ If BloodHound does not behave the way you expect, check these common causes firs
 - The environment or payload does not include a registered `source_kind`.
 - The relationship kind is not traversable.
 - The expected node kind is not included in `principal_kinds`.
+- The target node is not in the expected Privilege Zone.
 - The finding definition references the wrong `environment_kind` or `relationship_kind`.
