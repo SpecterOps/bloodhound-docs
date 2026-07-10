@@ -1,6 +1,6 @@
 ---
 title: Schema Behavior Examples
-description: See how schema definitions change OpenGraph behavior in BloodHound.
+description: Learn how schema definitions change OpenGraph behavior in BloodHound.
 ---
 
 <img
@@ -11,9 +11,15 @@ description: See how schema definitions change OpenGraph behavior in BloodHound.
 
 An extension definition schema does more than validate names and kinds. It also controls how BloodHound groups data, renders nodes, and decides which relationships can participate in analysis.
 
-Use this page to understand the practical impact of key schema fields. Each example shows a small schema definition, the matching data requirements, and the corresponding BloodHound behavior.
+Use this page to understand the practical impact of key schema fields and how they influence BloodHound behavior. Follow the examples in order to build on the same simple domain model and see how to:
 
-## Define environments for selection and grouping
+- Define environments to establish scope
+- Set display kinds to control the visual appearance of nodes
+- Define principal kinds to enable finding and metric analysis
+- Make relationships traversable to define attack path behavior
+- Add relationship findings to provide context and remediation guidance in BloodHound Enterprise
+
+## Define environments
 
 <img
   noZoom
@@ -32,27 +38,34 @@ In the UI, this schema definition manifests as environment selection controls. I
   <Tab title="Example definition">
   ```json
   {
+    "schema": {
+      "name": "ExampleExtension",
+      "display_name": "Example Extension",
+      "version": "v1.0.0",
+      "namespace": "EX"
+    },
     "node_kinds": [
       {
-        "name": "Example_Domain",
+        "name": "EX_Domain",
         "display_name": "Example Domain",
         "is_display_kind": true,
         "icon": "building",
         "color": "#0057b8"
       },
       {
-        "name": "Example_User",
+        "name": "EX_User",
         "display_name": "Example User",
         "is_display_kind": true,
         "icon": "user",
         "color": "#d33115"
       }
     ],
+    "relationship_kinds": [],
     "environments": [
       {
-        "environment_kind": "Example_Domain",
-        "source_kind": "Example",
-        "principal_kinds": ["Example_User"]
+        "environment_kind": "EX_Domain",
+        "source_kind": "EX",
+        "principal_kinds": ["EX_User"]
       }
     ]
   }
@@ -61,23 +74,28 @@ In the UI, this schema definition manifests as environment selection controls. I
   <Tab title="Example payload">
   ```json
   {
+    "metadata": {
+      "source_kind": "EX"
+    },
     "graph": {
       "nodes": [
         {
-          "id": "domain-1",
-          "kinds": ["Example_Domain", "Example"],
+          "id": "example-domain-1",
+          "kinds": ["EX_Domain"],
           "properties": {
             "name": "corp.example.local",
-            "environmentid": "domain-1",
+            "displayname": "Corp Example Domain",
+            "environmentid": "example-domain-1",
             "collected": true
           }
         },
         {
-          "id": "user-1",
-          "kinds": ["Example_User", "Example"],
+          "id": "example-user-1",
+          "kinds": ["EX_User"],
           "properties": {
             "name": "alice",
-            "environmentid": "domain-1"
+            "displayname": "Alice User",
+            "environmentid": "example-domain-1"
           }
         }
       ]
@@ -86,7 +104,7 @@ In the UI, this schema definition manifests as environment selection controls. I
   ```
   </Tab>
   <Tab title="BloodHound behavior">
-  - BloodHound can organize extension data under the environment represented by `Example_Domain` and expose that environment through the relevant selector or picker controls in the UI.
+  - BloodHound can organize extension data under the environment represented by `EX_Domain` and expose that environment through the relevant selector or picker controls in the UI.
   - Nodes associated with that environment through `properties.environmentid` are evaluated within that scope.
   - In BloodHound Enterprise, the same environment definition also scopes findings and metrics when the other required analysis conditions are met.
   - If the environment node kind is missing from the schema, or if payload nodes do not point to the environment node through `properties.environmentid`, the environment does not appear or scope data as expected.
@@ -101,109 +119,76 @@ In the UI, this schema definition manifests as environment selection controls. I
   </Tab>
 </Tabs>
 
-## Set display kinds for node styling
+## Define node styling
 
 Use `is_display_kind` to decide which kind controls a node's visual identity in the graph.
 
 Set `is_display_kind: true` on the kind that should supply the node's icon and color. Use `false` for secondary kinds that help classify the node but should not define its appearance.
 
+This example builds on the environment definition from the previous section by adding an admin account display kind and a secondary high-value classification kind. The admin account node has two kinds, but only one kind controls how BloodHound renders the node.
+
 <Tabs>
   <Tab title="Example definition">
-  ```json
-  [
-    {
-      "name": "Example_AdminAccount",
-      "display_name": "Example Admin Account",
-      "description": "Privileged account used to demonstrate display kinds and attack path findings.",
-      "is_display_kind": true,
-      "icon": "user-shield",
-      "color": "#B42318"
+  ```jsonc
+  {
+    "schema": {
+      "name": "ExampleExtension",
+      "display_name": "Example Extension",
+      "version": "v1.0.0",
+      "namespace": "EX"
     },
-    {
-      "name": "Example_HighValue",
-      "display_name": "Example High Value",
-      "description": "Secondary classification kind that should not control node styling.",
-      "is_display_kind": false
-    }
-  ]
-  ```
-  </Tab>
-  <Tab title="Example payload">
-  ```json
-  {
-    "id": "example-admin-1",
-    "kinds": [
-      "Example_AdminAccount",
-      "Example_HighValue"
+    "node_kinds": [
+      {
+        "name": "EX_Domain",
+        "display_name": "Example Domain",
+        "is_display_kind": true,
+        "icon": "building",
+        "color": "#0057b8"
+      },
+      {
+        "name": "EX_User",
+        "display_name": "Example User",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#d33115"
+      },
+      { // [!code ++:8]
+        "name": "EX_AdminAccount",
+        "display_name": "Example Admin Account",
+        "description": "Privileged account used to demonstrate display kinds and attack path findings.",
+        "is_display_kind": true,
+        "icon": "user-shield",
+        "color": "#B42318"
+      },
+      { // [!code ++:6]
+        "name": "EX_HighValue",
+        "display_name": "Example High Value",
+        "description": "Secondary classification kind that should not control node styling.",
+        "is_display_kind": false
+      }
     ],
-    "properties": {
-      "name": "tier-zero-admin",
-      "displayname": "Tier Zero Admin",
-      "environmentid": "example-domain-1"
-    }
-  }
-  ```
-  </Tab>
-  <Tab title="BloodHound behavior">
-  - BloodHound uses `Example_AdminAccount` for the node's icon and color because it is a display kind.
-  - `Example_HighValue` still classifies the node, but it does not override the visual styling because `is_display_kind` is `false`.
-  - If a node has multiple display kinds, BloodHound uses the first display kind in the node's `kinds` array.
-
-    <Frame>
-      <img
-        src="/images/opengraph/extensions/develop/display-kind.png"
-        alt="An example of how a node with multiple kinds appears in the BloodHound graph when the first kind is a display kind."
-      />
-    </Frame>
-  </Tab>
-</Tabs>
-
-## Define principal kinds for findings and metrics
-
-<img
-  noZoom
-  src="/assets/enterprise-edition-pill-tag.svg"
-  alt="Applies to BloodHound Enterprise only"
-  style={{ "width":"20%" }}
-/>
-
-Use `principal_kinds` to identify which node kinds BloodHound Enterprise should treat as principals inside an environment.
-
-This setting affects analysis scope. If a node kind is not listed in `principal_kinds`, BloodHound Enterprise can still ingest and display those nodes, but BloodHound Enterprise does not treat them as principals for findings and metric calculations in that environment.
-
-<Note>
-  **Findings and metrics**
-
-  `principal_kinds` does not create findings by itself, and the payload does not include a separate finding object. BloodHound Enterprise derives the finding from the environment definition, the traversable relationship kind, the matching [relationship findings](/opengraph/developer/schema-behavior-examples#add-remediation-text-to-relationship-findings) definition, and the uploaded graph data.
-</Note>
-
-<Tabs>
-  <Tab title="Example definition">
-  ```json
-  {
+    "relationship_kinds": [],
     "environments": [
       {
-        "environment_kind": "Example_Domain",
-        "source_kind": "Example",
-        "principal_kinds": [
-          "Example_User"
-        ]
+        "environment_kind": "EX_Domain",
+        "source_kind": "EX",
+        "principal_kinds": ["EX_User"]
       }
     ]
   }
   ```
   </Tab>
   <Tab title="Example payload">
-  ```json
+  ```jsonc
   {
     "metadata": {
-      "source_kind": "Example"
+      "source_kind": "EX"
     },
     "graph": {
       "nodes": [
         {
           "id": "example-domain-1",
-          "kinds": ["Example_Domain"],
+          "kinds": ["EX_Domain"],
           "properties": {
             "name": "corp.example.local",
             "displayname": "Corp Example Domain",
@@ -213,16 +198,19 @@ This setting affects analysis scope. If a node kind is not listed in `principal_
         },
         {
           "id": "example-user-1",
-          "kinds": ["Example_User"],
+          "kinds": ["EX_User"],
           "properties": {
             "name": "alice",
             "displayname": "Alice User",
             "environmentid": "example-domain-1"
           }
         },
-        {
+        { // [!code ++:12]
           "id": "example-admin-1",
-          "kinds": ["Example_AdminAccount"],
+          "kinds": [
+            "EX_AdminAccount",
+            "EX_HighValue"
+          ],
           "properties": {
             "name": "tier-zero-admin",
             "displayname": "Tier Zero Admin",
@@ -235,9 +223,159 @@ This setting affects analysis scope. If a node kind is not listed in `principal_
   ```
   </Tab>
   <Tab title="BloodHound behavior">
-  - `Example_User` can participate in findings and metrics as a principal because it is listed in `principal_kinds`.
-  - `Example_AdminAccount` is still ingested and displayed in the graph, but BloodHound Enterprise does not evaluate it as a principal for findings and metrics because it is not listed in `principal_kinds`.
-  - If `Example_User` is omitted from `principal_kinds`, BloodHound still ingests and displays the user node, but it does not evaluate that user as a principal for findings and metrics.
+  - BloodHound uses `EX_AdminAccount` for the node's icon and color because it is a display kind.
+  - `EX_HighValue` still classifies the node, but it does not override the visual styling because `is_display_kind` is `false`.
+  - If a node has multiple display kinds, BloodHound uses the first display kind in the node's `kinds` array.
+
+    <Frame>
+      <img
+        src="/images/opengraph/extensions/develop/display-kind.png"
+        alt="An example of how a node with multiple kinds appears in the BloodHound graph when the first kind is a display kind."
+      />
+    </Frame>
+  </Tab>
+</Tabs>
+
+## Define principals
+
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ "width":"20%" }}
+/>
+
+Use `principal_kinds` to identify which node kinds BloodHound Enterprise should treat as principals inside an environment.
+
+This setting affects analysis scope. If a node kind is not listed in `principal_kinds`, BloodHound Enterprise can still ingest and display those nodes, but BloodHound Enterprise does not treat them as principals for findings and metric calculations in that environment.
+
+This example builds on the previous definition by adding a service account node kind and including it in `principal_kinds`. The admin account node kind remains defined, but it is not listed as a principal.
+
+<Note>
+  **Findings and metrics**
+
+  `principal_kinds` does not create findings by itself, and the payload does not include a separate finding object. BloodHound Enterprise derives the finding from the environment definition, the [traversable relationship kind](/opengraph/developer/schema-behavior-examples#make-relationships-traversable-for-analysis), the matching [relationship findings](/opengraph/developer/schema-behavior-examples#add-remediation-text-to-relationship-findings) definition, and the uploaded graph data.
+</Note>
+
+<Tabs>
+  <Tab title="Example definition">
+  ```jsonc
+  {
+    "schema": {
+      "name": "ExampleExtension",
+      "display_name": "Example Extension",
+      "version": "v1.0.0",
+      "namespace": "EX"
+    },
+    "node_kinds": [
+      {
+        "name": "EX_Domain",
+        "display_name": "Example Domain",
+        "is_display_kind": true,
+        "icon": "building",
+        "color": "#0057b8"
+      },
+      {
+        "name": "EX_User",
+        "display_name": "Example User",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#d33115"
+      },
+      { // [!code ++:8]
+        "name": "EX_ServiceAccount",
+        "display_name": "Example Service Account",
+        "description": "Service account that BloodHound should treat as a principal in the Example environment.",
+        "is_display_kind": true,
+        "icon": "key",
+        "color": "#0F766E"
+      },
+      {
+        "name": "EX_AdminAccount",
+        "display_name": "Example Admin Account",
+        "description": "Privileged account used to demonstrate display kinds and attack path findings.",
+        "is_display_kind": true,
+        "icon": "user-shield",
+        "color": "#B42318"
+      },
+      {
+        "name": "EX_HighValue",
+        "display_name": "Example High Value",
+        "description": "Secondary classification kind that should not control node styling.",
+        "is_display_kind": false
+      }
+    ],
+    "relationship_kinds": [],
+    "environments": [
+      {
+        "environment_kind": "EX_Domain",
+        "source_kind": "EX",
+        "principal_kinds": [
+          "EX_User",
+          "EX_ServiceAccount" // [!code ++]
+        ]
+      }
+    ]
+  }
+  ```
+  </Tab>
+  <Tab title="Example payload">
+  ```jsonc
+  {
+    "metadata": {
+      "source_kind": "EX"
+    },
+    "graph": {
+      "nodes": [
+        {
+          "id": "example-domain-1",
+          "kinds": ["EX_Domain"],
+          "properties": {
+            "name": "corp.example.local",
+            "displayname": "Corp Example Domain",
+            "environmentid": "example-domain-1",
+            "collected": true
+          }
+        },
+        {
+          "id": "example-user-1",
+          "kinds": ["EX_User"],
+          "properties": {
+            "name": "alice",
+            "displayname": "Alice User",
+            "environmentid": "example-domain-1"
+          }
+        },
+        {
+          "id": "example-admin-1",
+          "kinds": [
+            "EX_AdminAccount",
+            "EX_HighValue"
+          ],
+          "properties": {
+            "name": "tier-zero-admin",
+            "displayname": "Tier Zero Admin",
+            "environmentid": "example-domain-1"
+          }
+        },
+        { // [!code ++:9]
+          "id": "example-service-account-1",
+          "kinds": ["EX_ServiceAccount"],
+          "properties": {
+            "name": "svc-automation",
+            "displayname": "Automation Service Account",
+            "environmentid": "example-domain-1"
+          }
+        }
+      ]
+    }
+  }
+  ```
+  </Tab>
+  <Tab title="BloodHound behavior">
+  - `EX_User` and `EX_ServiceAccount` can participate in findings and metrics as principals because they are listed in `principal_kinds`.
+  - `EX_AdminAccount` is still ingested and displayed in the graph, but BloodHound Enterprise does not evaluate it as a principal for findings and metrics because it is not listed in `principal_kinds`.
+  - If a node kind is omitted from `principal_kinds`, BloodHound still ingests and displays nodes of that kind, but it does not evaluate those nodes as principals for findings and metrics.
 
     <Frame>
       <img
@@ -248,7 +386,154 @@ This setting affects analysis scope. If a node kind is not listed in `principal_
   </Tab>
 </Tabs>
 
-## Add remediation text to relationship findings
+## Define relationships
+
+Use `relationship_kinds.is_traversable` to define whether BloodHound can traverse a relationship during graph analysis.
+
+This example connects the `EX_User` principal from the previous section to the `EX_Domain` environment. The relationship can exist in the graph either way, but BloodHound only treats it as an analysis path when the relationship kind is traversable.
+
+<Tabs>
+  <Tab title="Example definition">
+  ```jsonc
+  {
+    "schema": {
+      "name": "ExampleExtension",
+      "display_name": "Example Extension",
+      "version": "v1.0.0",
+      "namespace": "EX"
+    },
+    "node_kinds": [
+      {
+        "name": "EX_Domain",
+        "display_name": "Example Domain",
+        "is_display_kind": true,
+        "icon": "building",
+        "color": "#0057b8"
+      },
+      {
+        "name": "EX_User",
+        "display_name": "Example User",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#d33115"
+      },
+      {
+        "name": "EX_ServiceAccount",
+        "display_name": "Example Service Account",
+        "description": "Service account that BloodHound should treat as a principal in the Example environment.",
+        "is_display_kind": true,
+        "icon": "key",
+        "color": "#0F766E"
+      },
+      {
+        "name": "EX_AdminAccount",
+        "display_name": "Example Admin Account",
+        "description": "Privileged account used to demonstrate display kinds and attack path findings.",
+        "is_display_kind": true,
+        "icon": "user-shield",
+        "color": "#B42318"
+      },
+      {
+        "name": "EX_HighValue",
+        "display_name": "Example High Value",
+        "description": "Secondary classification kind that should not control node styling.",
+        "is_display_kind": false
+      }
+    ],
+    "relationship_kinds": [ // [!code ++:7]
+      {
+        "name": "EX_AdministersDomain",
+        "description": "Ability to administer the example domain.",
+        "is_traversable": true
+      }
+    ],
+    "environments": [
+      {
+        "environment_kind": "EX_Domain",
+        "source_kind": "EX",
+        "principal_kinds": [
+          "EX_User",
+          "EX_ServiceAccount"
+        ]
+      }
+    ]
+  }
+  ```
+  </Tab>
+  <Tab title="Example payload">
+  ```jsonc
+  {
+    "metadata": {
+      "source_kind": "EX"
+    },
+    "graph": {
+      "nodes": [
+        {
+          "id": "example-domain-1",
+          "kinds": ["EX_Domain"],
+          "properties": {
+            "name": "corp.example.local",
+            "displayname": "Corp Example Domain",
+            "environmentid": "example-domain-1",
+            "collected": true
+          }
+        },
+        {
+          "id": "example-user-1",
+          "kinds": ["EX_User"],
+          "properties": {
+            "name": "alice",
+            "displayname": "Alice User",
+            "environmentid": "example-domain-1"
+          }
+        },
+        {
+          "id": "example-admin-1",
+          "kinds": [
+            "EX_AdminAccount",
+            "EX_HighValue"
+          ],
+          "properties": {
+            "name": "tier-zero-admin",
+            "displayname": "Tier Zero Admin",
+            "environmentid": "example-domain-1"
+          }
+        },
+        {
+          "id": "example-service-account-1",
+          "kinds": ["EX_ServiceAccount"],
+          "properties": {
+            "name": "svc-automation",
+            "displayname": "Automation Service Account",
+            "environmentid": "example-domain-1"
+          }
+        }
+      ],
+      "edges": [ // [!code ++:13]
+        {
+          "kind": "EX_AdministersDomain",
+          "start": {
+            "match_by": "id",
+            "value": "example-user-1"
+          },
+          "end": {
+            "match_by": "id",
+            "value": "example-domain-1"
+          }
+        }
+      ]
+    }
+  }
+  ```
+  </Tab>
+  <Tab title="BloodHound behavior">
+  - BloodHound can traverse `EX_AdministersDomain` during analysis because the relationship kind sets `is_traversable` to `true`.
+  - The relationship connects the user principal to the domain environment, so it can contribute to Attack Path analysis when the other required analysis conditions are met.
+  - If `is_traversable` is `false`, the relationship can still exist in the graph, but BloodHound does not use it as a traversable analysis edge.
+  </Tab>
+</Tabs>
+
+## Define relationship findings
 
 <img
   noZoom
@@ -259,30 +544,84 @@ This setting affects analysis scope. If a node kind is not listed in `principal_
 
 Use `relationship_findings` when you want BloodHound Enterprise to attach a finding definition and remediation guidance to a relationship kind that represents an Attack Path condition.
 
-This example assumes the target environment, principal kinds, and nodes are already defined. The relationship definition makes the edge traversable, and the `relationship_findings` entry adds the finding metadata and remediation text that BloodHound Enterprise can display when matching graph data satisfies the Attack Path conditions.
+This example builds on the traversable `EX_AdministersDomain` relationship from the previous section. The `relationship_findings` entry adds the finding metadata and remediation text that BloodHound Enterprise can display when matching graph data satisfies the Attack Path conditions.
 
 <Tabs>
   <Tab title="Example definition">
-  ```json
+  ```jsonc
   {
+    "schema": {
+      "name": "ExampleExtension",
+      "display_name": "Example Extension",
+      "version": "v1.0.0",
+      "namespace": "EX"
+    },
+    "node_kinds": [
+      {
+        "name": "EX_Domain",
+        "display_name": "Example Domain",
+        "is_display_kind": true,
+        "icon": "building",
+        "color": "#0057b8"
+      },
+      {
+        "name": "EX_User",
+        "display_name": "Example User",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#d33115"
+      },
+      {
+        "name": "EX_ServiceAccount",
+        "display_name": "Example Service Account",
+        "description": "Service account that BloodHound should treat as a principal in the Example environment.",
+        "is_display_kind": true,
+        "icon": "key",
+        "color": "#0F766E"
+      },
+      {
+        "name": "EX_AdminAccount",
+        "display_name": "Example Admin Account",
+        "description": "Privileged account used to demonstrate display kinds and attack path findings.",
+        "is_display_kind": true,
+        "icon": "user-shield",
+        "color": "#B42318"
+      },
+      {
+        "name": "EX_HighValue",
+        "display_name": "Example High Value",
+        "description": "Secondary classification kind that should not control node styling.",
+        "is_display_kind": false
+      }
+    ],
     "relationship_kinds": [
       {
-        "name": "Example_ResetPassword",
-        "description": "Ability to reset passwords across privilege boundaries.",
+        "name": "EX_AdministersDomain",
+        "description": "Ability to administer the example domain.",
         "is_traversable": true
       }
     ],
-    "relationship_findings": [
+    "environments": [
       {
-        "name": "Example_ResetPassword_Finding",
-        "display_name": "Password Reset Across Privilege Zones",
-        "environment_kind": "Example_Domain",
-        "relationship_kind": "Example_ResetPassword",
+        "environment_kind": "EX_Domain",
+        "source_kind": "EX",
+        "principal_kinds": [
+          "EX_User",
+          "EX_ServiceAccount"
+        ]
+      }
+    ],
+    "relationship_findings": [ // [!code ++:14]
+      {
+        "name": "EX_AdministersDomain_Finding",
+        "display_name": "Domain Administration Path",
+        "environment_kind": "EX_Domain",
+        "relationship_kind": "EX_AdministersDomain",
         "remediation": {
-          "short_description": "Review accounts that can reset passwords across privilege boundaries.",
-          "long_description": "This finding appears when a traversable password reset relationship crosses a Privilege Zone boundary in the target environment.",
-          "short_remediation": "Restrict password reset permissions to approved administrative roles.",
-          "long_remediation": "Review delegated password reset permissions, remove unnecessary assignments, and validate any help desk or automation workflows that still require this access."
+          "short_description": "Review principals that can administer the example domain.",
+          "long_description": "This finding appears when a traversable domain administration edge places a principal on an Attack Path in the target environment.",
+          "short_remediation": "Limit domain administration rights to approved privileged roles.",
+          "long_remediation": "Review delegated domain administration rights, remove unnecessary assignments, and validate the operational workflows that still require this access."
         }
       }
     ]
@@ -290,19 +629,7 @@ This example assumes the target environment, principal kinds, and nodes are alre
   ```
   </Tab>
   <Tab title="Example payload">
-  ```json
-  {
-    "kind": "Example_ResetPassword",
-    "start": {
-      "match_by": "id",
-      "value": "example-user-1"
-    },
-    "end": {
-      "match_by": "id",
-      "value": "example-admin-1"
-    }
-  }
-  ```
+  Use the same payload from the traversable relationship example. Relationship findings do not require a separate payload object.
   </Tab>
   <Tab title="BloodHound behavior">
   - When BloodHound Enterprise detects a qualifying instance of the defined relationship kind in the target environment, the finding can display the custom title and remediation content from the schema.
@@ -317,7 +644,15 @@ This example assumes the target environment, principal kinds, and nodes are alre
   </Tab>
 </Tabs>
 
-## Troubleshoot schema behavior
+## Next steps
+
+Use these examples as a checklist when you design an OpenGraph extension definition schema. Start with the environment model, then add the node kinds, relationship kinds, and finding definitions that BloodHound needs to display, scope, and analyze your data.
+
+- Review the full [extension definition schema reference](/opengraph/developer/graph-definition) before you define your schema fields.
+- Build a matching [graph data payload](/opengraph/developer/graph-data) that uses the node kinds, relationship kinds, environment IDs, and source kind from your schema.
+- Check the [node](/opengraph/developer/nodes) and [edge](/opengraph/developer/edges) requirements when you prepare data for ingestion.
+
+## Troubleshoot
 
 If BloodHound does not behave the way you expect, check these common causes first:
 
