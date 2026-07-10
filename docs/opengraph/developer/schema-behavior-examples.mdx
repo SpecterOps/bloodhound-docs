@@ -34,6 +34,10 @@ In a custom extension, this behavior comes from the environment node kind you de
 
 In the UI, this schema definition manifests as environment selection controls. In BloodHound Enterprise, an environment selector appears on the **Attack Paths**, **Posture**, and **Zone Builder** pages.
 
+<Warning>
+  Environment selection controls requires enabling the findings feature flag in your BloodHound Enterprise tenant. Contact your account team to enable the feature flag.
+</Warning>
+
 <Tabs>
   <Tab title="Example definition">
   ```json
@@ -74,9 +78,6 @@ In the UI, this schema definition manifests as environment selection controls. I
   <Tab title="Example payload">
   ```json
   {
-    "metadata": {
-      "source_kind": "EX"
-    },
     "graph": {
       "nodes": [
         {
@@ -104,7 +105,7 @@ In the UI, this schema definition manifests as environment selection controls. I
   ```
   </Tab>
   <Tab title="BloodHound behavior">
-  - BloodHound can organize extension data under the environment represented by `EX_Domain` and expose that environment through the relevant selector or picker controls in the UI.
+  - BloodHound can organize extension data under the environment represented by `EX_Domain` and expose that environment through the relevant environment selector and filters in the UI.
   - Nodes associated with that environment through `properties.environmentid` are evaluated within that scope.
   - In BloodHound Enterprise, the same environment definition also scopes findings and metrics when the other required analysis conditions are met.
   - If the environment node kind is missing from the schema, or if payload nodes do not point to the environment node through `properties.environmentid`, the environment does not appear or scope data as expected.
@@ -181,9 +182,6 @@ This example builds on the environment definition from the previous section by a
   <Tab title="Example payload">
   ```jsonc
   {
-    "metadata": {
-      "source_kind": "EX"
-    },
     "graph": {
       "nodes": [
         {
@@ -212,8 +210,8 @@ This example builds on the environment definition from the previous section by a
             "EX_HighValue"
           ],
           "properties": {
-            "name": "tier-zero-admin",
-            "displayname": "Tier Zero Admin",
+            "name": "domain-admin",
+            "displayname": "Domain Admin",
             "environmentid": "example-domain-1"
           }
         }
@@ -224,7 +222,7 @@ This example builds on the environment definition from the previous section by a
   </Tab>
   <Tab title="BloodHound behavior">
   - BloodHound uses `EX_AdminAccount` for the node's icon and color because it is a display kind.
-  - `EX_HighValue` still classifies the node, but it does not override the visual styling because `is_display_kind` is `false`.
+  - `EX_HighValue` still classifies the node, but it does not affect the visual styling because `is_display_kind` is `false`.
   - If a node has multiple display kinds, BloodHound uses the first display kind in the node's `kinds` array.
 
     <Frame>
@@ -249,7 +247,7 @@ Use [`principal_kinds`](/opengraph/developer/graph-definition#param-principal-ki
 
 This setting affects analysis scope. If a node kind is not listed in `principal_kinds`, BloodHound Enterprise can still ingest and display those nodes, but BloodHound Enterprise does not treat them as principals for findings and metric calculations in that environment.
 
-This example builds on the previous definition by adding a service account node kind and including it in `principal_kinds`. The admin account node kind remains defined, but it is not listed as a principal.
+This example builds on the previous definition by adding the existing admin account node kind to `principal_kinds`.
 
 <Note>
   **Findings and metrics**
@@ -282,14 +280,6 @@ This example builds on the previous definition by adding a service account node 
         "icon": "user",
         "color": "#d33115"
       },
-      { // [!code ++:8]
-        "name": "EX_ServiceAccount",
-        "display_name": "Example Service Account",
-        "description": "Service account that BloodHound should treat as a principal in the Example environment.",
-        "is_display_kind": true,
-        "icon": "key",
-        "color": "#0F766E"
-      },
       {
         "name": "EX_AdminAccount",
         "display_name": "Example Admin Account",
@@ -312,7 +302,7 @@ This example builds on the previous definition by adding a service account node 
         "source_kind": "EX",
         "principal_kinds": [
           "EX_User",
-          "EX_ServiceAccount" // [!code ++]
+          "EX_AdminAccount" // [!code ++]
         ]
       }
     ]
@@ -320,77 +310,23 @@ This example builds on the previous definition by adding a service account node 
   ```
   </Tab>
   <Tab title="Example payload">
-  ```jsonc
-  {
-    "metadata": {
-      "source_kind": "EX"
-    },
-    "graph": {
-      "nodes": [
-        {
-          "id": "example-domain-1",
-          "kinds": ["EX_Domain"],
-          "properties": {
-            "name": "corp.example.local",
-            "displayname": "Corp Example Domain",
-            "environmentid": "example-domain-1",
-            "collected": true
-          }
-        },
-        {
-          "id": "example-user-1",
-          "kinds": ["EX_User"],
-          "properties": {
-            "name": "alice",
-            "displayname": "Alice User",
-            "environmentid": "example-domain-1"
-          }
-        },
-        {
-          "id": "example-admin-1",
-          "kinds": [
-            "EX_AdminAccount",
-            "EX_HighValue"
-          ],
-          "properties": {
-            "name": "tier-zero-admin",
-            "displayname": "Tier Zero Admin",
-            "environmentid": "example-domain-1"
-          }
-        },
-        { // [!code ++:9]
-          "id": "example-service-account-1",
-          "kinds": ["EX_ServiceAccount"],
-          "properties": {
-            "name": "svc-automation",
-            "displayname": "Automation Service Account",
-            "environmentid": "example-domain-1"
-          }
-        }
-      ]
-    }
-  }
-  ```
+  Use the same payload from the display kind example. Principal kinds do not require a separate payload object.
   </Tab>
   <Tab title="BloodHound behavior">
-  - `EX_User` and `EX_ServiceAccount` can participate in findings and metrics as principals because they are listed in `principal_kinds`.
-  - `EX_AdminAccount` is still ingested and displayed in the graph, but BloodHound Enterprise does not evaluate it as a principal for findings and metrics because it is not listed in `principal_kinds`.
-  - If a node kind is omitted from `principal_kinds`, BloodHound still ingests and displays nodes of that kind, but it does not evaluate those nodes as principals for findings and metrics.
 
-    <Frame>
-      <img
-        src="/images/opengraph/extensions/develop/principal-kind.png"
-        alt="An example of how a node that is not a principal kind appears in the BloodHound graph."
-      />
-    </Frame>
+  At this point, you won't see any visual changes in BloodHound, but the extension definition now enables findings and metrics for both `EX_User` and `EX_AdminAccount` principals in the target environment.
+
+  The remaining examples in this guide build on this definition is now ready to support findings and metrics for both `EX_User` and `EX_AdminAccount` principals in the target environment.
   </Tab>
 </Tabs>
 
 ## Define relationships
 
-Use [`relationship_kinds.is_traversable`](/opengraph/developer/graph-definition#param-is-traversable) to define whether BloodHound can traverse a relationship during graph analysis.
+Use [`relationship_kinds.is_traversable`](/opengraph/developer/graph-definition#param-is-traversable) to control whether edges of a relationship kind are used for pathfinding and Attack Path detection.
 
-This example connects the `EX_User` principal from the previous section to the `EX_Domain` environment. The relationship can exist in the graph either way, but BloodHound only treats it as an analysis path when the relationship kind is traversable.
+When you set `is_traversable` to `true` on a relationship kind, every edge of that kind inherits the same traversability behavior. Use traversable relationships to represent conditions where the starting node can take control of the ending node to a degree that lets an attacker abuse the ending node's outgoing edges.
+
+This example connects Alice, an `EX_User` principal, to the domain admin account from the previous section. The `EX_ResetAdminPassword` relationship kind is traversable because it represents delegated password reset control from the starting node to the ending node.
 
 <Tabs>
   <Tab title="Example definition">
@@ -416,14 +352,6 @@ This example connects the `EX_User` principal from the previous section to the `
         "is_display_kind": true,
         "icon": "user",
         "color": "#d33115"
-      },
-      {
-        "name": "EX_ServiceAccount",
-        "display_name": "Example Service Account",
-        "description": "Service account that BloodHound should treat as a principal in the Example environment.",
-        "is_display_kind": true,
-        "icon": "key",
-        "color": "#0F766E"
       },
       {
         "name": "EX_AdminAccount",
@@ -442,8 +370,8 @@ This example connects the `EX_User` principal from the previous section to the `
     ],
     "relationship_kinds": [ // [!code ++:7]
       {
-        "name": "EX_AdministersDomain",
-        "description": "Ability to administer the example domain.",
+        "name": "EX_ResetAdminPassword",
+        "description": "Ability to reset the password for an example admin account.",
         "is_traversable": true
       }
     ],
@@ -453,7 +381,7 @@ This example connects the `EX_User` principal from the previous section to the `
         "source_kind": "EX",
         "principal_kinds": [
           "EX_User",
-          "EX_ServiceAccount"
+          "EX_AdminAccount"
         ]
       }
     ]
@@ -463,9 +391,6 @@ This example connects the `EX_User` principal from the previous section to the `
   <Tab title="Example payload">
   ```jsonc
   {
-    "metadata": {
-      "source_kind": "EX"
-    },
     "graph": {
       "nodes": [
         {
@@ -494,31 +419,22 @@ This example connects the `EX_User` principal from the previous section to the `
             "EX_HighValue"
           ],
           "properties": {
-            "name": "tier-zero-admin",
-            "displayname": "Tier Zero Admin",
-            "environmentid": "example-domain-1"
-          }
-        },
-        {
-          "id": "example-service-account-1",
-          "kinds": ["EX_ServiceAccount"],
-          "properties": {
-            "name": "svc-automation",
-            "displayname": "Automation Service Account",
+            "name": "domain-admin",
+            "displayname": "Domain Admin",
             "environmentid": "example-domain-1"
           }
         }
       ],
       "edges": [ // [!code ++:13]
         {
-          "kind": "EX_AdministersDomain",
+          "kind": "EX_ResetAdminPassword",
           "start": {
             "match_by": "id",
             "value": "example-user-1"
           },
           "end": {
             "match_by": "id",
-            "value": "example-domain-1"
+            "value": "example-admin-1"
           }
         }
       ]
@@ -527,9 +443,17 @@ This example connects the `EX_User` principal from the previous section to the `
   ```
   </Tab>
   <Tab title="BloodHound behavior">
-  - BloodHound can traverse `EX_AdministersDomain` during analysis because the relationship kind sets `is_traversable` to `true`.
-  - The relationship connects the user principal to the domain environment, so it can contribute to Attack Path analysis when the other required analysis conditions are met.
-  - If `is_traversable` is `false`, the relationship can still exist in the graph, but BloodHound does not use it as a traversable analysis edge.
+  - BloodHound includes every `EX_ResetAdminPassword` edge in pathfinding because the relationship kind sets `is_traversable` to `true`.
+  - The edge starts at Alice and ends at the domain admin account, which represents an abusable control relationship from the lower-privileged principal to the higher-privileged principal.
+  - Traversable edges can contribute to Attack Path detection, findings, and metrics when the other required analysis conditions are met.
+  - If `is_traversable` is `false`, the relationship can still exist in the graph, but BloodHound does not use edges of that kind for pathfinding, findings, or metrics.
+
+    <Frame>
+      <img
+        src="/images/opengraph/extensions/develop/define-relationships.png"
+        alt="An example of a traversable password reset relationship from Alice to a domain admin account in the BloodHound graph."
+      />
+    </Frame>
   </Tab>
 </Tabs>
 
@@ -542,9 +466,9 @@ This example connects the `EX_User` principal from the previous section to the `
   style={{ "width":"20%" }}
 />
 
-Use [`relationship_findings`](opengraph/developer/graph-definition#relationship_findings) when you want BloodHound Enterprise to attach a finding definition and remediation guidance to a relationship kind that represents an Attack Path condition.
+Use [`relationship_findings`](/opengraph/developer/graph-definition#relationship_findings) when you want BloodHound Enterprise to attach a finding definition and remediation guidance to a relationship kind that represents an Attack Path condition.
 
-This example builds on the traversable `EX_AdministersDomain` relationship from the previous section. The `relationship_findings` entry adds the finding metadata and remediation text that BloodHound Enterprise can display when matching graph data satisfies the Attack Path conditions.
+This example builds on the traversable `EX_ResetAdminPassword` relationship from the previous section. The `relationship_findings` entry adds the finding metadata and remediation text that BloodHound Enterprise can display in the UI when matching graph data satisfies the Attack Path conditions.
 
 <Tabs>
   <Tab title="Example definition">
@@ -572,14 +496,6 @@ This example builds on the traversable `EX_AdministersDomain` relationship from 
         "color": "#d33115"
       },
       {
-        "name": "EX_ServiceAccount",
-        "display_name": "Example Service Account",
-        "description": "Service account that BloodHound should treat as a principal in the Example environment.",
-        "is_display_kind": true,
-        "icon": "key",
-        "color": "#0F766E"
-      },
-      {
         "name": "EX_AdminAccount",
         "display_name": "Example Admin Account",
         "description": "Privileged account used to demonstrate display kinds and attack path findings.",
@@ -596,8 +512,8 @@ This example builds on the traversable `EX_AdministersDomain` relationship from 
     ],
     "relationship_kinds": [
       {
-        "name": "EX_AdministersDomain",
-        "description": "Ability to administer the example domain.",
+        "name": "EX_ResetAdminPassword",
+        "description": "Ability to reset the password for an example admin account.",
         "is_traversable": true
       }
     ],
@@ -607,21 +523,21 @@ This example builds on the traversable `EX_AdministersDomain` relationship from 
         "source_kind": "EX",
         "principal_kinds": [
           "EX_User",
-          "EX_ServiceAccount"
+          "EX_AdminAccount"
         ]
       }
     ],
     "relationship_findings": [ // [!code ++:14]
       {
-        "name": "EX_AdministersDomain_Finding",
-        "display_name": "Domain Administration Path",
+        "name": "EX_ResetAdminPassword_Finding",
+        "display_name": "Admin Password Reset Path",
         "environment_kind": "EX_Domain",
-        "relationship_kind": "EX_AdministersDomain",
+        "relationship_kind": "EX_ResetAdminPassword",
         "remediation": {
-          "short_description": "Review principals that can administer the example domain.",
-          "long_description": "This finding appears when a traversable domain administration edge places a principal on an Attack Path in the target environment.",
-          "short_remediation": "Limit domain administration rights to approved privileged roles.",
-          "long_remediation": "Review delegated domain administration rights, remove unnecessary assignments, and validate the operational workflows that still require this access."
+          "short_description": "Review principals that can reset passwords for admin accounts.",
+          "long_description": "This finding appears when a traversable password reset edge gives a principal control over an admin account in the target environment.",
+          "short_remediation": "Restrict admin password reset rights to approved privileged roles.",
+          "long_remediation": "Review delegated password reset rights, remove unnecessary assignments, and validate the operational workflows that still require this access."
         }
       }
     ]
