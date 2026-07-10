@@ -1,6 +1,6 @@
 ---
 title: Build a sample OpenGraph extension
-description: Create a sample OpenGraph extension schema and payload that show how BloodHound renders, scopes, traverses, and reports on custom graph data.
+description: Use this tutorial to learn how BloodHound renders, scopes, traverses, and reports on custom graph data.
 sidebarTitle: Example extension
 ---
 
@@ -10,18 +10,22 @@ sidebarTitle: Example extension
   alt="Applies to BloodHound Enterprise and Community Edition"
 />
 
-An OpenGraph extension definition schema tells BloodHound how to display, scope, and analyze custom graph data. In this tutorial, you build a small sample extension for a fictional environment and add the schema fields that turn a basic payload into a structured graph.
+An OpenGraph extension definition schema tells BloodHound how to display, scope, and analyze custom graph data. In this tutorial, you'll build a small sample extension for a fictional environment and add the schema fields that turn a basic payload into a structured graph.
 
-Follow the examples in order. Each section adds one capability to the same sample extension so you can see how the schema and payload work together in BloodHound. This tutorial focuses on schema and payload behavior; extension-specific Cypher queries are outside the current scope.
+Follow the examples in order. Each section adds one capability to the same sample extension so you can see how the schema and payload work together in BloodHound. 
 
-By the end of this tutorial, you have a sample extension definition schema and matching payload that show how to:
+<Note>
+  This tutorial focuses on schema and payload behavior; extension-specific Cypher queries are outside the current scope.
+</Note>
 
-- Define an environment to establish analysis scope
-- Style nodes with display kinds
-- Identify principal kinds for pathfinding and metrics
-- Make relationships traversable for attack path analysis
-- Add a Privilege Zone target for finding evaluation
-- Define relationship findings with context and remediation guidance in BloodHound Enterprise
+By the end of this tutorial, you have a sample extension definition schema and matching payload that:
+
+- Defines an environment to establish analysis scope
+- Styles nodes with display kinds
+- Identifies principal kinds for pathfinding and metrics
+- Makes relationships traversable for attack path analysis
+- Adds a Privilege Zone target for finding evaluation
+- Defines relationship findings with context and remediation guidance in BloodHound Enterprise
 
 ## Define environments
 
@@ -39,7 +43,7 @@ In a custom extension, this behavior comes from the environment node kind you de
 In the UI, this schema definition manifests as environment selection controls. In BloodHound Enterprise, an environment selector appears on the **Attack Paths**, **Posture**, and **Zone Builder** pages.
 
 <Warning>
-  Environment selection controls requires enabling the findings feature flag in your BloodHound Enterprise tenant. Contact your account team to enable the feature flag.
+  Environment selection controls require enabling the findings feature flag in your BloodHound Enterprise tenant. Contact your account team to enable the feature flag.
 </Warning>
 
 <Tabs>
@@ -82,6 +86,9 @@ In the UI, this schema definition manifests as environment selection controls. I
   <Tab title="Example payload">
   ```json
   {
+    "metadata": {
+      "source_kind": "EX"
+    },
     "graph": {
       "nodes": [
         {
@@ -109,6 +116,7 @@ In the UI, this schema definition manifests as environment selection controls. I
   ```
   </Tab>
   <Tab title="BloodHound behavior">
+  - The payload's `metadata.source_kind` value registers `EX` as a source kind and applies it to each node in the payload.
   - BloodHound can organize extension data under the environment represented by `EX_Domain` and expose that environment through the relevant environment selector and filters in the UI.
   - Nodes associated with that environment through `properties.environmentid` are evaluated within that scope.
   - In BloodHound Enterprise, the same environment definition also scopes findings and metrics when the other required analysis conditions are met.
@@ -130,7 +138,7 @@ Use [`is_display_kind`](/opengraph/developer/graph-definition#param-is-display-k
 
 Use `true` on the kind that should supply the node's icon and color. Use `false` for secondary kinds that help classify the node but should not define its appearance.
 
-This example builds on the environment definition from the previous section by adding an admin account display kind and a secondary high-value classification kind. The admin account node has two kinds, but only one kind controls how BloodHound renders the node.
+This example builds on the environment definition from the previous section by adding a service account display kind and a secondary high-value classification kind. The service account node has two kinds, but only one kind controls how BloodHound renders the node.
 
 <Tabs>
   <Tab title="Example definition">
@@ -158,11 +166,11 @@ This example builds on the environment definition from the previous section by a
         "color": "#d33115"
       },
       { // [!code ++:8]
-        "name": "EX_AdminAccount",
-        "display_name": "Example Admin Account",
+        "name": "EX_ServiceAccount",
+        "display_name": "Example Service Account",
         "description": "Privileged account used to demonstrate display kinds and attack path findings.",
         "is_display_kind": true,
-        "icon": "user-shield",
+        "icon": "server",
         "color": "#B42318"
       },
       { // [!code ++:6]
@@ -186,6 +194,9 @@ This example builds on the environment definition from the previous section by a
   <Tab title="Example payload">
   ```jsonc
   {
+    "metadata": {
+      "source_kind": "EX"
+    },
     "graph": {
       "nodes": [
         {
@@ -208,14 +219,14 @@ This example builds on the environment definition from the previous section by a
           }
         },
         { // [!code ++:12]
-          "id": "example-admin-1",
+          "id": "example-service-account-1",
           "kinds": [
-            "EX_AdminAccount",
+            "EX_ServiceAccount",
             "EX_HighValue"
           ],
           "properties": {
-            "name": "domain-admin",
-            "displayname": "Domain Admin",
+            "name": "sync-service",
+            "displayname": "Sync Service",
             "environmentid": "example-domain-1"
           }
         }
@@ -225,7 +236,7 @@ This example builds on the environment definition from the previous section by a
   ```
   </Tab>
   <Tab title="BloodHound behavior">
-  - BloodHound uses `EX_AdminAccount` for the node's icon and color because it is a display kind.
+  - BloodHound uses `EX_ServiceAccount` for the node's icon and color because it is a display kind.
   - `EX_HighValue` still classifies the node, but it does not affect the visual styling because `is_display_kind` is `false`.
   - If a node has multiple display kinds, BloodHound uses the first display kind in the node's `kinds` array.
 
@@ -251,7 +262,7 @@ Use [`principal_kinds`](/opengraph/developer/graph-definition#param-principal-ki
 
 This setting affects analysis scope. If a node kind is not listed in `principal_kinds`, BloodHound Enterprise can still ingest and display those nodes, but BloodHound Enterprise does not treat them as principals for findings and metric calculations in that environment.
 
-This example builds on the previous definition by adding the existing admin account node kind to `principal_kinds`.
+This example builds on the previous definition by adding the existing service account node kind to `principal_kinds`.
 
 <Note>
   **Findings and metrics**
@@ -285,11 +296,11 @@ This example builds on the previous definition by adding the existing admin acco
         "color": "#d33115"
       },
       {
-        "name": "EX_AdminAccount",
-        "display_name": "Example Admin Account",
+        "name": "EX_ServiceAccount",
+        "display_name": "Example Service Account",
         "description": "Privileged account used to demonstrate display kinds and attack path findings.",
         "is_display_kind": true,
-        "icon": "user-shield",
+        "icon": "server",
         "color": "#B42318"
       },
       {
@@ -306,7 +317,7 @@ This example builds on the previous definition by adding the existing admin acco
         "source_kind": "EX",
         "principal_kinds": [
           "EX_User",
-          "EX_AdminAccount" // [!code ++]
+          "EX_ServiceAccount" // [!code ++]
         ]
       }
     ]
@@ -318,7 +329,7 @@ This example builds on the previous definition by adding the existing admin acco
   </Tab>
   <Tab title="BloodHound behavior">
 
-  At this point, you won't see any visual changes in BloodHound, but the extension definition now enables findings and metrics for both `EX_User` and `EX_AdminAccount` principals in the target environment.
+  At this point, you won't see any visual changes in BloodHound, but the extension definition now enables findings and metrics for both `EX_User` and `EX_ServiceAccount` principals in the target environment.
 
   The remaining examples in this guide build on this definition to show the other conditions required for findings and metrics.
   </Tab>
@@ -330,9 +341,9 @@ Use [`relationship_kinds.is_traversable`](/opengraph/developer/graph-definition#
 
 When you set `is_traversable` to `true` on a relationship kind, every edge of that kind inherits the same traversability behavior. Use traversable relationships to represent conditions where the starting node can take control of the ending node to a degree that lets an attacker abuse the ending node's outgoing edges.
 
-This example connects Alice, an `EX_User` principal, to the domain admin account from the previous section. It also connects the domain admin account to the domain environment so the example data contains a complete path from Alice to the domain.
+This example connects Alice, an `EX_User` principal, to the service account from the previous section. It also connects the service account to the domain environment so the example data contains a complete path from Alice to the domain.
 
-The `EX_ResetAdminPassword` relationship kind is traversable because it represents delegated password reset control from the starting node to the ending node. The `EX_AdministersDomain` relationship kind is also traversable because control of the admin account gives control of the domain.
+The `EX_CanAssumeServiceAccount` relationship kind is traversable because it represents delegated access that lets the starting node assume the ending node's identity. The `EX_ManagesDomain` relationship kind is also traversable because control of the service account gives control of the domain.
 
 <Tabs>
   <Tab title="Example definition">
@@ -360,11 +371,11 @@ The `EX_ResetAdminPassword` relationship kind is traversable because it represen
         "color": "#d33115"
       },
       {
-        "name": "EX_AdminAccount",
-        "display_name": "Example Admin Account",
+        "name": "EX_ServiceAccount",
+        "display_name": "Example Service Account",
         "description": "Privileged account used to demonstrate display kinds and attack path findings.",
         "is_display_kind": true,
-        "icon": "user-shield",
+        "icon": "server",
         "color": "#B42318"
       },
       {
@@ -376,13 +387,13 @@ The `EX_ResetAdminPassword` relationship kind is traversable because it represen
     ],
     "relationship_kinds": [ // [!code ++:12]
       {
-        "name": "EX_ResetAdminPassword",
-        "description": "Ability to reset the password for an example admin account.",
+        "name": "EX_CanAssumeServiceAccount",
+        "description": "Ability to assume an example service account.",
         "is_traversable": true
       },
       {
-        "name": "EX_AdministersDomain",
-        "description": "Ability to administer the example domain.",
+        "name": "EX_ManagesDomain",
+        "description": "Ability to manage the example domain.",
         "is_traversable": true
       }
     ],
@@ -392,7 +403,7 @@ The `EX_ResetAdminPassword` relationship kind is traversable because it represen
         "source_kind": "EX",
         "principal_kinds": [
           "EX_User",
-          "EX_AdminAccount"
+          "EX_ServiceAccount"
         ]
       }
     ]
@@ -402,6 +413,9 @@ The `EX_ResetAdminPassword` relationship kind is traversable because it represen
   <Tab title="Example payload">
   ```jsonc
   {
+    "metadata": {
+      "source_kind": "EX"
+    },
     "graph": {
       "nodes": [
         {
@@ -424,35 +438,35 @@ The `EX_ResetAdminPassword` relationship kind is traversable because it represen
           }
         },
         {
-          "id": "example-admin-1",
+          "id": "example-service-account-1",
           "kinds": [
-            "EX_AdminAccount",
+            "EX_ServiceAccount",
             "EX_HighValue"
           ],
           "properties": {
-            "name": "domain-admin",
-            "displayname": "Domain Admin",
+            "name": "sync-service",
+            "displayname": "Sync Service",
             "environmentid": "example-domain-1"
           }
         }
       ],
       "edges": [ // [!code ++:24]
         {
-          "kind": "EX_ResetAdminPassword",
+          "kind": "EX_CanAssumeServiceAccount",
           "start": {
             "match_by": "id",
             "value": "example-user-1"
           },
           "end": {
             "match_by": "id",
-            "value": "example-admin-1"
+            "value": "example-service-account-1"
           }
         },
         {
-          "kind": "EX_AdministersDomain",
+          "kind": "EX_ManagesDomain",
           "start": {
             "match_by": "id",
-            "value": "example-admin-1"
+            "value": "example-service-account-1"
           },
           "end": {
             "match_by": "id",
@@ -465,17 +479,10 @@ The `EX_ResetAdminPassword` relationship kind is traversable because it represen
   ```
   </Tab>
   <Tab title="BloodHound behavior">
-  - BloodHound includes every `EX_ResetAdminPassword` and `EX_AdministersDomain` edge in pathfinding because both relationship kinds set `is_traversable` to `true`.
-  - The path starts at Alice, reaches the domain admin account, and then reaches the domain.
+  - BloodHound includes every `EX_CanAssumeServiceAccount` and `EX_ManagesDomain` edge in pathfinding because both relationship kinds set `is_traversable` to `true`.
+  - The path starts at Alice, reaches the service account, and then reaches the domain.
   - This path can contribute to Attack Path detection, findings, and metrics when the domain is in a higher Privilege Zone than Alice.
   - If `is_traversable` is `false`, the relationship can still exist in the graph, but BloodHound does not use edges of that kind for pathfinding, findings, or metrics.
-
-    <Frame>
-      <img
-        src="/images/opengraph/extensions/develop/define-relationships.png"
-        alt="An example of a traversable password reset relationship from Alice to a domain admin account in the BloodHound graph."
-      />
-    </Frame>
   </Tab>
 </Tabs>
 
@@ -510,10 +517,10 @@ This example builds on the relationship payload from the previous section. The s
 After analysis, the example data contains the required privilege boundary:
 
 - Alice is a lower-privileged `EX_User` principal.
-- The domain admin account is an `EX_AdminAccount` principal that administers the domain.
+- The service account is an `EX_ServiceAccount` principal that manages the domain.
 - The domain is a Tier Zero target.
 
-With that boundary in place, the traversable path `alice -> Domain Admin -> CORP.EXAMPLE.DOMAIN` can generate a finding when the schema includes a matching `relationship_findings` definition.
+With that boundary in place, the traversable path `alice -> Sync Service -> CORP.EXAMPLE.DOMAIN` can generate a finding when the schema includes a matching `relationship_findings` definition.
 
 ## Define relationship findings
 
@@ -526,7 +533,7 @@ With that boundary in place, the traversable path `alice -> Domain Admin -> CORP
 
 Use [`relationship_findings`](/opengraph/developer/graph-definition#relationship_findings) when you want BloodHound Enterprise to attach a finding definition and remediation guidance to a relationship kind that represents an Attack Path condition.
 
-This example builds on the traversable `EX_ResetAdminPassword` relationship and the Tier Zero domain target from the previous sections. The `relationship_findings` entry adds the finding metadata and remediation text that BloodHound Enterprise can display in the UI when matching graph data satisfies the Attack Path conditions.
+This example builds on the traversable `EX_CanAssumeServiceAccount` relationship and the Tier Zero domain target from the previous sections. The `relationship_findings` entry adds the finding metadata and remediation text that BloodHound Enterprise can display in the UI when matching graph data satisfies the Attack Path conditions.
 
 <Tabs>
   <Tab title="Example definition">
@@ -554,11 +561,11 @@ This example builds on the traversable `EX_ResetAdminPassword` relationship and 
         "color": "#d33115"
       },
       {
-        "name": "EX_AdminAccount",
-        "display_name": "Example Admin Account",
+        "name": "EX_ServiceAccount",
+        "display_name": "Example Service Account",
         "description": "Privileged account used to demonstrate display kinds and attack path findings.",
         "is_display_kind": true,
-        "icon": "user-shield",
+        "icon": "server",
         "color": "#B42318"
       },
       {
@@ -570,13 +577,13 @@ This example builds on the traversable `EX_ResetAdminPassword` relationship and 
     ],
     "relationship_kinds": [
       {
-        "name": "EX_ResetAdminPassword",
-        "description": "Ability to reset the password for an example admin account.",
+        "name": "EX_CanAssumeServiceAccount",
+        "description": "Ability to assume an example service account.",
         "is_traversable": true
       },
       {
-        "name": "EX_AdministersDomain",
-        "description": "Ability to administer the example domain.",
+        "name": "EX_ManagesDomain",
+        "description": "Ability to manage the example domain.",
         "is_traversable": true
       }
     ],
@@ -586,21 +593,21 @@ This example builds on the traversable `EX_ResetAdminPassword` relationship and 
         "source_kind": "EX",
         "principal_kinds": [
           "EX_User",
-          "EX_AdminAccount"
+          "EX_ServiceAccount"
         ]
       }
     ],
     "relationship_findings": [ // [!code ++:14]
       {
-        "name": "EX_ResetAdminPassword_Finding",
-        "display_name": "Admin Password Reset Path",
+        "name": "EX_CanAssumeServiceAccount_Finding",
+        "display_name": "Service Account Assumption Path",
         "environment_kind": "EX_Domain",
-        "relationship_kind": "EX_ResetAdminPassword",
+        "relationship_kind": "EX_CanAssumeServiceAccount",
         "remediation": {
-          "short_description": "Review principals that can reset passwords for admin accounts.",
-          "long_description": "This finding appears when a traversable password reset edge gives a principal control over an admin account in the target environment.",
-          "short_remediation": "Restrict admin password reset rights to approved privileged roles.",
-          "long_remediation": "Review delegated password reset rights, remove unnecessary assignments, and validate the operational workflows that still require this access."
+          "short_description": "Review principals that can assume privileged service accounts.",
+          "long_description": "This finding appears when a traversable service account assumption edge gives a principal control over a privileged service account in the target environment.",
+          "short_remediation": "Restrict service account assumption rights to approved privileged roles.",
+          "long_remediation": "Review delegated service account access, remove unnecessary assignments, and validate the operational workflows that still require this access."
         }
       }
     ]
@@ -611,17 +618,10 @@ This example builds on the traversable `EX_ResetAdminPassword` relationship and 
   Use the same payload from the traversable relationship example and the same Tier Zero zone configuration from the Privilege Zone example. Relationship findings do not require a separate payload object.
   </Tab>
   <Tab title="BloodHound behavior">
-  - When BloodHound Enterprise detects a qualifying `EX_ResetAdminPassword` edge on a path from Alice to the Tier Zero domain, the finding can display the custom title and remediation content from the schema.
-  - The finding is based on the privilege boundary violation: Alice is lower privileged, but she can take control of the domain admin account and reach Tier Zero.
+  - When BloodHound Enterprise detects a qualifying `EX_CanAssumeServiceAccount` edge on a path from Alice to the Tier Zero domain, the finding can display the custom title and remediation content from the schema.
+  - The finding is based on the privilege boundary violation: Alice is lower privileged, but she can take control of the service account and reach Tier Zero.
   - If you do not define a matching `relationship_findings` entry, the relationship can still exist in the graph, but BloodHound Enterprise does not have extension-provided finding and remediation text to display for that condition.
   - If the domain is not in a higher Privilege Zone, BloodHound Enterprise does not have the privilege boundary it needs to generate this Attack Path finding.
-
-    <Frame>
-      <img
-        src="/images/opengraph/extensions/develop/findings-and-remediation.png"
-        alt="An example of how a relationship finding appears in the BloodHound Enterprise UI."
-      />
-    </Frame>
   </Tab>
 </Tabs>
 
