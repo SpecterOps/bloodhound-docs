@@ -52,7 +52,7 @@ To deploy OpenHound and run a collector:
     Run an [On Demand](/collect-data/enterprise-collection/on-demand-scan) scan or create a data collection [schedule](/collect-data/enterprise-collection/collection-schedule) to start the collector and collect data from your environment.
   </Step>
   <Step title="Upload extension assets">
-    Upload [saved queries and Privilege Zone rules](/openhound/configure-extension-assets) for the extension when those assets are not already present or need to be updated.
+    Upload [saved queries and Privilege Zone rules](/openhound/upload-extension-assets) for the extension when those assets are not already present or need to be updated.
   </Step>
 </Steps>
 
@@ -60,14 +60,15 @@ To deploy OpenHound and run a collector:
 
 ### Minimum configuration parameters
 
-The following parameters must be set in the `[destination.bloodhoundenterprise]` section of the configuration file or via environment variables to run OpenHound and have it upload data to BloodHound Enterprise.
+{/* TODO: This needs work to disambiguate collector-specific settings. */}
 
+The following parameters must be set in the `[destination.bloodhoundenterprise]` section of the `~/.dlt/secrets.toml` file or via environment variables to run OpenHound and upload data to BloodHound Enterprise.
 
-| Runtime option     | Environment Variable      | Description |
-|--------------------|---------------------------|------------------------------|
-| `token_key`        | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_KEY | The API token key for authenticating with BloodHound Enterprise.|
-| `token_id`  | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_ID  | The API token ID for authenticating with BloodHound Enterprise. | 
-| `url`     | DESTINATION__BLOODHOUNDENTERPRISE__URL | The URL of the BloodHound Enterprise instance. | 
+| Runtime option | Environment Variable | Description |
+|---|---|---|
+| `token_key` | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_KEY | The API token key generated for the matching OpenHound collector client. |
+| `token_id` | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_ID | The API token ID generated for the matching OpenHound collector client. |
+| `url` | DESTINATION__BLOODHOUNDENTERPRISE__URL | The URL of the BloodHound Enterprise tenant. |
 
 ### Collector-specific configuration parameters
 
@@ -99,6 +100,10 @@ The configuration is split into two files:
 - `secrets.toml` for the sensitive credentials and secrets
 
 You can provide these configuration files through compose secrets, Kubernetes Secret and ConfigMap objects, or environment variables.
+
+<Note>
+  In Docker Compose deployments, the host secrets files are collector-specific, such as `~/.dlt/secrets_github.toml` or `~/.dlt/secrets_jamf.toml`. The Compose file mounts the matching host file into the container as `/app/.dlt/secrets.toml`.
+</Note>
 
 <Tabs>
   <Tab title="config.toml">

@@ -17,8 +17,10 @@ This guide uses a supported Windows with WSL and Docker Desktop workflow, and th
 
 ## Prerequisites
 
+Before you begin, ensure that you have the following:
+
 - A BloodHound Enterprise tenant with OpenHound enabled.
-- API credentials for an OpenHound collector [client](/collect-data/enterprise-collection/create-collector) created in BloodHound Enterprise.
+- API credentials for each OpenHound collector [client](/collect-data/enterprise-collection/create-collector) you plan to run. Use the `token_id` and `token_key` generated for the matching collector client.
 - The required credentials for the extension you want to collect:
   - [GitHub](/openhound/collectors/github/collect-data)
   - [Jamf](/openhound/collectors/jamf/collect-data)
@@ -60,6 +62,9 @@ Follow these steps to deploy OpenHound with Docker Compose and run a collector f
     ```bash
     git clone https://github.com/SpecterOps/OpenHound.git ~/openhound/OpenHound
     ```
+
+    You'll use the example Compose file in the next step.
+
   </Step>
 
   <Step title="Copy the Enterprise Compose file">
@@ -70,7 +75,7 @@ Follow these steps to deploy OpenHound with Docker Compose and run a collector f
     ```
   </Step>
 
-  <Step title="Create config.toml">
+  <Step title="Create the OpenHound configuration file">
     Create `~/.dlt/config.toml` for non-sensitive OpenHound runtime settings.
 
     ```toml title="~/.dlt/config.toml"
@@ -97,14 +102,35 @@ Follow these steps to deploy OpenHound with Docker Compose and run a collector f
     </Tip>
   </Step>
 
-  <Step title="Create the extension secrets file">
+  <Step title="Create the extension-specific secrets file">
     Create one secrets file for each extension you want to run.
     
-    The example Compose file maps the extension-specific secrets file into the container as `/app/.dlt/secrets.toml`.
+    The example Compose file uses [collector-specific](/openhound/enterprise#collector-specific-configuration-parameters) files on the host and maps the matching file into the container as `/app/.dlt/secrets.toml`.
 
-    <Tip>
-      See [collector-specific configuration parameters](/openhound/enterprise#collector-specific-configuration-parameters) for more information.
-    </Tip>
+    | Extension | Host secrets file | Container secrets file |
+    |---|---|---|
+    | GitHub | `~/.dlt/secrets_github.toml` | `/app/.dlt/secrets.toml` |
+    | Jamf | `~/.dlt/secrets_jamf.toml` | `/app/.dlt/secrets.toml` |
+    | Okta | `~/.dlt/secrets_okta.toml` | `/app/.dlt/secrets.toml` |
+
+    Each extension secrets file must include:
+
+    - `[destination.bloodhoundenterprise]` with the BloodHound Enterprise tenant URL and the `token_id` and `token_key` for the matching OpenHound collector client
+    - The collector-specific credentials section, such as `[sources.source.github.credentials]`, `[sources.source.jamf.credentials]`, or `[sources.source.okta.credentials]`
+
+    ```toml title="~/.dlt/secrets_github.toml"
+    [destination.bloodhoundenterprise]
+    url = "https://your-tenant.bloodhoundenterprise.io"
+    token_id = "client_token_id"
+    token_key = "client_token_key"
+
+    [sources.source.github.credentials]
+    # Add the GitHub collector credentials for your authentication method.
+    ```
+
+    <Note>
+      The scheduler uses `destination.bloodhoundenterprise` with collector client credentials. Do not use the JWT-based `destination.bloodhound` settings from [Upload Extension Assets](/openhound/upload-extension-assets) for scheduled collection.
+    </Note>
   </Step>
 
   <Step title="Add extension secret files">
