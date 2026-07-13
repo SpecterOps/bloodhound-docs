@@ -20,6 +20,24 @@ The syntax allows for nested sections, collector-specific configurations, and co
 
 Configuration precedence follows a global-to-specific order: a collector-specific override in `[sources.source.<collector>.extract]` takes priority over a global setting in `[extract]`, which in turn takes priority over the built-in default.
 
+### File layout
+
+OpenHound reads configuration from DLT configuration files, environment variables, or both. Use separate files for non-sensitive settings and secrets:
+
+| File | Purpose | Example contents |
+|---|---|---|
+| `config.toml` | Non-sensitive runtime and pipeline settings | Logging, retry behavior, worker counts |
+| `secrets.toml` | Sensitive values required by the running collector | BloodHound Enterprise collector client credentials and source credentials |
+| Extension-specific secrets files | Per-extension secrets mounted into a container as `secrets.toml` | `secrets_github.toml`, `secrets_jamf.toml`, `secrets_okta.toml` |
+
+For Docker Compose deployments, create the DLT files under `~/.dlt` on the host. The Enterprise example Compose file mounts the shared `config.toml` and maps the extension-specific secrets file into the container as `/app/.dlt/secrets.toml`.
+
+Some collectors require additional secret files, such as a GitHub App `.pem` private key or an Okta JSON key file. Store these files outside version control and configure the collector-specific path to match the path inside the container.
+
+<Note>
+  For production environments, use environment variables or your container platform's secret management features when local secret files do not meet your organization's credential handling requirements.
+</Note>
+
 The following sample configuration sets global values for runtime, normalize, and load, then overrides the extract worker count for the Okta and GitHub collectors.
 
 ```toml Example ~/.dlt/config.toml
@@ -270,4 +288,3 @@ The following parameters are configured under the `[load]` section in the config
 | `delete_completed_jobs`    | LOAD__DELETE_COMPLETED_JOBS    | Whether to delete completed jobs after a pipeline has completed.                                                | false          |
 | `truncate_staging_dataset` | LOAD__TRUNCATE_STAGING_DATASET | Whether to truncate the staging dataset after loading data into the destination.                                | false          |
 | `workers`                  | LOAD__WORKERS                  | The amount of concurrent workers used during the loading phase, is when uploading data to BloodHound Enterprise | 1             |
-

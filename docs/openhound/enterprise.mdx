@@ -1,6 +1,6 @@
 ---
 title: OpenHound for BloodHound Enterprise
-sidebarTitle: Enterprise
+sidebarTitle: Overview
 description: "Learn about the OpenHound framework for BloodHound Enterprise."
 ---
 
@@ -18,35 +18,48 @@ as:
 
 The OpenHound container image is available on [Docker Hub](https://hub.docker.com/r/specterops/openhound) and includes the collectors for Github, Jamf, and Okta by default.
 
+<Warning>
+  OpenHound currently runs one extension per container. Configure and start a separate OpenHound container for each extension you want to use.
+  {/* TODO: Confirm current-state behavior. */}
+</Warning>
+
 ## Deployment process
 
 To deploy OpenHound and run a collector:
 
 <Steps>
   <Step title="Provision the environment">
-    Provision a server with container (docker/podman) support, a Kubernetes cluster, or cloud-native container service to run OpenHound.
+    Provision a server with container (Docker/Podman) support, a Kubernetes cluster, or cloud-native container service to run OpenHound.
     
-    Ensure that the
-   environment meets the system requirements listed below.
+    <Note>
+      Ensure that the environment meets the [system requirements](/openhound/enterprise#server%2Fcontainer-requirements).
+    </Note>
   </Step>
   <Step title="Create an OpenHound collector client">
-    Register an OpenHound collector [client](/collect-data/enterprise-collection/create-collector) on your BloodHound Enterprise instance to obtain the necessary API credentials for OpenHound to upload data.
+    Create an OpenHound collector [client](/collect-data/enterprise-collection/create-collector) on your BloodHound Enterprise instance to obtain the necessary API credentials for OpenHound to upload data.
   </Step>
-  <Step title="Deploy OpenHound">
-    Deploy the OpenHound container and configure the required parameters using the configuration file or environment variables.
-    
-    For more details on the required parameters, visit the [configuration](/openhound/configuration) page as well as the collector-specific configuration pages in the [collectors](/openhound/enterprise#collector-specific-configuration-parameters) section.
+  <Step title="Configure the OpenHound container">
+    Configure the [OpenHound](/openhound/configuration#bloodhound-enterprise-configuration-parameters) and [collector-specific](/openhound/enterprise#collector-specific-configuration-parameters) container parameters.
+  </Step>
+  <Step title="Deploy the OpenHound container">
+    Use one of the supported methods to deploy the OpenHound container.
+
+    <Tip>
+      For example, see [Deploy with Docker Compose](/openhound/deploy-with-compose) for a Docker Desktop workflow.
+    </Tip>
   </Step>
   <Step title="Run the collector">
     Run an [On Demand](/collect-data/enterprise-collection/on-demand-scan) scan or create a data collection [schedule](/collect-data/enterprise-collection/collection-schedule) to start the collector and collect data from your environment.
   </Step>
+  <Step title="Upload extension assets">
+    Upload [saved queries and Privilege Zone rules](/openhound/configure-extension-assets) for the extension when those assets are not already present or need to be updated.
+  </Step>
 </Steps>
-
-
 
 ## Enterprise collector configuration
 
 ### Minimum configuration parameters
+
 The following parameters must be set in the `[destination.bloodhoundenterprise]` section of the configuration file or via environment variables to run OpenHound and have it upload data to BloodHound Enterprise.
 
 
@@ -57,6 +70,7 @@ The following parameters must be set in the `[destination.bloodhoundenterprise]`
 | `url`     | DESTINATION__BLOODHOUNDENTERPRISE__URL | The URL of the BloodHound Enterprise instance. | 
 
 ### Collector-specific configuration parameters
+
 Each collector requires additional configuration parameters that are unique to its data source. These settings can be defined in the configuration file or supplied via environment variables. For details on the available parameters, refer to the collector-specific configuration documentation using the links below.
 
 <CardGroup cols={3}>
@@ -134,105 +148,6 @@ You can provide these configuration files through compose secrets, Kubernetes Se
   </Tab>
 </Tabs>
 
-## Deployment examples
-
-### Kubernetes
-An example Helm chart is available in the [OpenHound GitHub repository](https://github.com/specterops/openhound) for deploying OpenHound in a Kubernetes cluster. The chart can be used as a reference implementation for how OpenHound can be run on Kubernetes. The repository also includes the full `README` with instructions for deploying OpenHound and configuring the collector parameters and secrets required to connect to BloodHound Enterprise.
-
-#### Prerequisites
-
-- Kubernetes cluster v1.33+
-- Helm v4.0+
-- The OpenHound repository cloned locally or access to the Helm chart files in the repository
-- A namespace created for OpenHound (e.g., `openhound`)
-
-
-#### ConfigMap / Secret
-
-The chart requires a Kubernetes `ConfigMap` and `Secret` to be pre-created and referenced in `config.existingConfigMap`
-and `config.existingSecret`. The `ConfigMap` should contain the OpenHound configuration file with the non-sensitive DLT configuration parameters while the `Secret` should contain the secrets for authenticating with the target services and BloodHound Enterprise.
-
-The contents of the ConfigMap and Secret are mounted as `/app/.dlt/config.toml` and `/app/.dlt/secrets.toml`. Create the necessary `config.toml` and `secrets.toml` files locally and deploy these resources using `kubectl`.
-
-```bash
-# Using jamf as an example collector, but the same pattern applies for any collector
-kubectl create -n openhound configmap openhound-jamf-config \
-  --from-file=config.toml=<path_to_local_config>.toml
-
-kubectl create -n openhound secret generic openhound-jamf-secrets \
-  --from-file=secrets.toml=<path_to_local_secrets>.toml
-```
-
-#### Optional: Additional secret files
-
-Collectors may require extra secret files such as a GitHub app PEM or an Okta JSON key file.
-Use `collector.extraSecretMounts` to mount files from pre-existing Kubernetes `Secret` objects.
-
-```yaml
-collector:
-  extraSecretMounts:
-    github-pem:
-      secretName: github-app-credentials
-      secretKey: github.pem
-      mountPath: /app/.dlt/github.pem
-    okta-json:
-      secretName: okta-client-secret
-      secretKey: okta.json
-      mountPath: /app/.dlt/okta.json
-```
-
-Each item references an existing `Secret`, the key containing the data/file and the target mount path. Similarly to the previously created secrets.toml you can deploy any additional secrets using `kubectl`.
-
-```bash
-kubectl create -n openhound secret generic github-app-credentials \
-  --from-file=github.pem=./github.pem
-
-kubectl create -n openhound secret generic okta-client-secret \
-  --from-file=okta.json=./okta.json
-```
-
-
-#### Installation
-Create a `values.yaml` file with your collector configuration using [values.example.yaml](https://raw.githubusercontent.com/SpecterOps/OpenHound/refs/heads/main/deployments/helm/values.example.yaml) as a reference and install the chart using:
-
-```bash
-helm install -f values.yaml -n openhound openhound-[name] [openhound_path]/deployments/helm/openhound
-```
-
-
-#### Verification
-Inspect the logs of the deployment to verify that the OpenHound collector is running correctly.
-```bash
-kubectl logs -n openhound -l app.kubernetes.io/name=openhound -f
-```
-
-
-### Compose
-The OpenHound container image can also be deployed using Docker Compose or Podman Compose on a Linux server. This is an alternative option for testing or environments where Kubernetes is not necessary.
-
-#### Prerequisites
-
-- A Linux server with Docker or Podman installed
-- The Compose plugin installed (e.g., `docker compose` or `podman compose`)
-- A Compose file, such as [`docker-compose.yml`](https://github.com/SpecterOps/OpenHound/blob/main/example-configurations/bloodhound-enterprise/docker-compose.yml)
-
-#### Installation
-
-To get started, create a `config.toml` and `secrets.toml` file with the necessary configuration parameters on the host machine. Use the `docker-compose.yml` file as a reference for how to structure the Compose file and mount the configuration files and secrets.
-
-Then run the following command to start the OpenHound container:
-
-```bash
-docker compose up -d
-```
-
-#### Verification
-Inspect the logs of the container(s) to verify that the OpenHound collector is running correctly.
-```bash
-docker compose logs -f
-```
-
-
 ## Server/container requirements
 
 ### Hardware
@@ -244,8 +159,7 @@ docker compose logs -f
 | *Storage  | 50 GB               | 80 GB or more          |
 
 <Note>
-The requirements vary depending on the size of the environment being collected/converted. Container storage
-persistence is not required. However, it is recommended to have a persistent storage for the logs for troubleshooting.
-The logs are stored in the `~/.local/share/openhound/logs` directory and can be configured to rotate based on time or
-file size.
+  The requirements vary depending on the size of the environment being collected/converted. Container storage persistence is not required. However, it is recommended to have a persistent storage for the logs for troubleshooting.
+  
+  The logs are stored in the `~/.local/share/openhound/logs` directory and can be configured to rotate based on time or file size.
 </Note>

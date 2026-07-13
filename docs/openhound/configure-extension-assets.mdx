@@ -1,0 +1,121 @@
+---
+title: Upload Extension Assets
+description: Upload saved queries and Privilege Zone rules for OpenHound extensions.
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise"/>
+
+OpenHound extensions include saved queries and Privilege Zone rules that help users analyze the data collected from GitHub, Jamf, Okta, or another OpenHound source. 
+
+Use the OpenHound CLI to upload these assets after the matching extension definition schema is installed or verified in BloodHound.
+
+<Note>
+  In BloodHound Enterprise v9.3.0 and later, the GitHub, Jamf, and Okta extension schemas are pre-installed. Saved queries and Privilege Zone rules are still managed separately.
+</Note>
+
+## Prerequisites
+
+Before you upload extension assets, ensure that you have done the following:
+
+- Installed the [OpenHound CLI](/openhound/community#install-the-openhound-cli).
+- Verified or installed the matching extension definition schema in [OpenGraph Extension Management](/opengraph/extensions/manage#verify-or-install-an-extension).
+- Downloaded or cloned the extension repository that contains the asset files.
+- Obtained the BloodHound Enterprise tenant URL and browser JWT used by the OpenHound CLI for extension asset uploads.
+- Confirmed that the target Privilege Zone exists before you upload Privilege Zone rules for that zone.
+
+<Note>
+  Use `--strategy overwrite` when you need to update saved queries or Privilege Zone rules that already exist in BloodHound. The default strategy is `skip`, which leaves existing assets unchanged.
+</Note>
+
+## Configure CLI authentication
+
+OpenHound uses DLT configuration management for CLI asset uploads. Add the BloodHound Enterprise tenant URL and browser JWT to your DLT secrets file.
+
+The asset upload commands use the `destination.bloodhound` section with a JWT bearer token. This is different from the `destination.bloodhoundenterprise` collector client configuration, which uses `token_id` and `token_key` for scheduled OpenHound collection.
+
+To get the browser JWT, follow the [BloodHound API JWT guidance](/integrations/bloodhound-api/working-with-api#use-a-jwt%2Fbearer-token). Copy only the token value and omit the `Bearer` prefix.
+
+```toml title="~/.dlt/secrets.toml"
+[destination.bloodhound]
+url = "https://your-tenant.bloodhoundenterprise.io"
+token = "your-browser-jwt"
+```
+
+<Warning>
+  Do not commit `secrets.toml` or token values to version control. Browser JWTs are short-lived and intended for user-authenticated API calls, not long-running integrations.
+</Warning>
+
+## Upload saved queries
+
+Saved queries are stored in the extension repository, usually in `extension/saved_searches`.
+
+<Steps>
+  <Step title="Open the extension repository">
+    Change to the repository for the extension assets you want to upload.
+
+    ```bash
+    cd ~/openhound-github
+    ```
+  </Step>
+
+  <Step title="Upload the saved queries">
+    Run the upload command against the saved queries directory.
+
+    <Note>
+      OpenHound makes uploaded saved queries public by default.
+    </Note>
+
+    For example, to create saved queries that do not exist and overwrite matching saved queries with the same name, use the `--strategy overwrite` option.
+
+    ```bash
+    openhound searches upload ./extension/saved_searches --strategy overwrite
+    ```
+
+    <Note>
+      Saved query uploads default to JSON files. To upload saved queries from YAML files, add `--file-format yaml`.
+    </Note>
+  </Step>
+</Steps>
+
+## Upload Privilege Zone rules
+
+Privilege Zone rules are stored in the extension repository, usually in `extension/privilege_zone_rules`.
+
+<Steps>
+  <Step title="Confirm the target zone exists">
+    In BloodHound Enterprise, confirm that the Privilege Zone referenced by the rule files exists.
+
+    If the target zone does not exist, create it before you upload the rules.
+  </Step>
+
+  <Step title="Upload the Privilege Zone rules">
+    Run the upload command against the Privilege Zone rules directory.
+
+    For example, to create rules that do not exist and overwrite matching rules with the same name, use the `--strategy overwrite` option.
+
+    ```bash
+    openhound rules upload ./extension/privilege_zone_rules --strategy overwrite
+    ```
+
+    <Note>
+      Upload Privilege Zone rules from JSON files. YAML support for Privilege Zone rule uploads requires Engineering confirmation.
+    </Note>
+  </Step>
+</Steps>
+
+## Verify the upload
+
+After the upload completes:
+
+- Open **Explore** to confirm the saved queries are available.
+- Open **Privilege Zones** to confirm the expected rules appear in the target zone.
+- Wait for analysis to successfully run to verify rules that affect zone membership or findings.
+
+## Troubleshoot asset uploads
+
+| Symptom | Cause | Resolution |
+|---|---|---|
+| Existing assets do not update | The command used the default `skip` strategy | Run the upload again with `--strategy overwrite`. |
+| Privilege Zone rules do not appear | The target zone does not exist | Create the zone in BloodHound, then upload the rules again. |
+| Upload fails with an authentication error | The BloodHound URL or JWT is invalid or expired | Update `~/.dlt/secrets.toml` with a valid browser JWT and rerun the command. |
+| No files are uploaded | The command points to the wrong directory or file format | Confirm that the path contains JSON files, or add `--file-format yaml` for saved query YAML files. |

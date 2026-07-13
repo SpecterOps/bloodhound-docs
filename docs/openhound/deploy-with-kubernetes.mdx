@@ -1,0 +1,73 @@
+---
+title: Deploy with Kubernetes
+sidebarTitle: Deploy with Kubernetes
+description: Deploy OpenHound for BloodHound Enterprise in a Kubernetes cluster.
+---
+
+An example Helm chart is available in the [OpenHound GitHub repository](https://github.com/specterops/openhound) for deploying OpenHound in a Kubernetes cluster. The chart can be used as a reference implementation for how OpenHound can be run on Kubernetes. The repository also includes the full `README` with instructions for deploying OpenHound and configuring the collector parameters and secrets required to connect to BloodHound Enterprise.
+
+## Prerequisites
+
+- Kubernetes cluster v1.33+
+- Helm v4.0+
+- The OpenHound repository cloned locally or access to the Helm chart files in the repository
+- A namespace created for OpenHound (e.g., `openhound`)
+
+## ConfigMap / Secret
+
+The chart requires a Kubernetes `ConfigMap` and `Secret` to be pre-created and referenced in `config.existingConfigMap`
+and `config.existingSecret`. The `ConfigMap` should contain the OpenHound configuration file with the non-sensitive DLT configuration parameters while the `Secret` should contain the secrets for authenticating with the target services and BloodHound Enterprise.
+
+The contents of the ConfigMap and Secret are mounted as `/app/.dlt/config.toml` and `/app/.dlt/secrets.toml`. Create the necessary `config.toml` and `secrets.toml` files locally and deploy these resources using `kubectl`.
+
+```bash
+# Using jamf as an example collector, but the same pattern applies for any collector
+kubectl create -n openhound configmap openhound-jamf-config \
+  --from-file=config.toml=<path_to_local_config>.toml
+
+kubectl create -n openhound secret generic openhound-jamf-secrets \
+  --from-file=secrets.toml=<path_to_local_secrets>.toml
+```
+
+## Optional: Additional secret files
+
+Collectors may require extra secret files such as a GitHub app PEM or an Okta JSON key file.
+Use `collector.extraSecretMounts` to mount files from pre-existing Kubernetes `Secret` objects.
+
+```yaml
+collector:
+  extraSecretMounts:
+    github-pem:
+      secretName: github-app-credentials
+      secretKey: github.pem
+      mountPath: /app/.dlt/github.pem
+    okta-json:
+      secretName: okta-client-secret
+      secretKey: okta.json
+      mountPath: /app/.dlt/okta.json
+```
+
+Each item references an existing `Secret`, the key containing the data/file and the target mount path. Similarly to the previously created secrets.toml you can deploy any additional secrets using `kubectl`.
+
+```bash
+kubectl create -n openhound secret generic github-app-credentials \
+  --from-file=github.pem=./github.pem
+
+kubectl create -n openhound secret generic okta-client-secret \
+  --from-file=okta.json=./okta.json
+```
+
+## Installation
+
+Create a `values.yaml` file with your collector configuration using [values.example.yaml](https://raw.githubusercontent.com/SpecterOps/OpenHound/refs/heads/main/deployments/helm/values.example.yaml) as a reference and install the chart using:
+
+```bash
+helm install -f values.yaml -n openhound openhound-[name] [openhound_path]/deployments/helm/openhound
+```
+
+## Verification
+
+Inspect the logs of the deployment to verify that the OpenHound collector is running correctly.
+```bash
+kubectl logs -n openhound -l app.kubernetes.io/name=openhound -f
+```
