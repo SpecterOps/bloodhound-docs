@@ -4,6 +4,8 @@ sidebarTitle: Overview
 description: "Learn about the OpenHound framework for BloodHound Enterprise."
 ---
 
+import CollectorSpecificConfig from '/snippets/hounds/collector-specific-config.mdx'
+
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise"/>
 
 <Note>This is a SpecterOps-managed feature. If it is not enabled in your environment, contact your account team for assistance.</Note>
@@ -20,7 +22,6 @@ The OpenHound container image is available on [Docker Hub](https://hub.docker.co
 
 <Warning>
   OpenHound currently runs one extension per container. Configure and start a separate OpenHound container for each extension you want to use.
-  {/* TODO: Confirm current-state behavior. */}
 </Warning>
 
 ## Deployment process
@@ -35,136 +36,58 @@ To deploy OpenHound and run a collector:
       Ensure that the environment meets the [system requirements](/openhound/enterprise#server%2Fcontainer-requirements).
     </Note>
   </Step>
+  <Step title="Upload extension assets">
+    Upload [saved queries and Privilege Zone rules](/openhound/upload-extension-assets) for each collector extension you want to run to your BloodHound Enterprise tenant.
+  </Step>
   <Step title="Create an OpenHound collector client">
-    Create an OpenHound collector [client](/collect-data/enterprise-collection/create-collector) on your BloodHound Enterprise instance to obtain the necessary API credentials for OpenHound to upload data.
+    Create an OpenHound [collector client](/collect-data/enterprise-collection/create-collector) on your BloodHound Enterprise tenant to obtain the necessary API credentials for OpenHound to upload data.
   </Step>
   <Step title="Configure the OpenHound container">
-    Configure the [OpenHound](/openhound/configuration#bloodhound-enterprise-configuration-parameters) and [collector-specific](/openhound/enterprise#collector-specific-configuration-parameters) container parameters.
+    Configure the OpenHound [runtime](/openhound/configuration#runtime-settings) and [collector-specific](/openhound/configuration#collector-specific-settings) configuration parameters.
   </Step>
   <Step title="Deploy the OpenHound container">
     Use one of the supported methods to deploy the OpenHound container.
 
-    <Tip>
-      For example, see [Deploy with Docker Compose](/openhound/deploy-with-compose) for a Docker Desktop workflow.
-    </Tip>
+    - [Deploy with Docker Compose](/openhound/deploy-with-compose)
+    - [Deploy with Kubernetes](/openhound/deploy-with-kubernetes)
   </Step>
   <Step title="Run the collector">
     Run an [On Demand](/collect-data/enterprise-collection/on-demand-scan) scan or create a data collection [schedule](/collect-data/enterprise-collection/collection-schedule) to start the collector and collect data from your environment.
   </Step>
-  <Step title="Upload extension assets">
-    Upload [saved queries and Privilege Zone rules](/openhound/upload-extension-assets) for the extension when those assets are not already present or need to be updated.
-  </Step>
 </Steps>
 
-## Enterprise collector configuration
+## Enterprise configuration
 
-### Minimum configuration parameters
+OpenHound configuration defines how each collector container connects to BloodHound Enterprise, authenticates to the source system, and controls the collection pipeline.
 
-{/* TODO: This needs work to disambiguate collector-specific settings. */}
+Each OpenHound container requires three groups of settings:
 
-The following parameters must be set in the `[destination.bloodhoundenterprise]` section of the `~/.dlt/secrets.toml` file or via environment variables to run OpenHound and upload data to BloodHound Enterprise.
+- **BloodHound Enterprise destination settings** identify the tenant and collector client that receive the collected data.
+- **Collector source settings** authenticate to the system being collected, such as Github, Jamf, or Okta.
+- **Runtime settings** control operational behavior such as logging, retry handling, worker counts, and file handling.
 
-| Runtime option | Environment Variable | Description |
-|---|---|---|
-| `token_key` | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_KEY | The API token key generated for the matching OpenHound collector client. |
-| `token_id` | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_ID | The API token ID generated for the matching OpenHound collector client. |
-| `url` | DESTINATION__BLOODHOUNDENTERPRISE__URL | The URL of the BloodHound Enterprise tenant. |
-
-### Collector-specific configuration parameters
-
-Each collector requires additional configuration parameters that are unique to its data source. These settings can be defined in the configuration file or supplied via environment variables. For details on the available parameters, refer to the collector-specific configuration documentation using the links below.
-
-<CardGroup cols={3}>
-
-  <Card title="Github" href="/openhound/collectors/github/collect-data#configure-openhound">
-    View the required configuration parameters for the Github collector.
-  </Card>
-
-  <Card title="Jamf" href="/openhound/collectors/jamf/collect-data#configure-openhound">
-    View the required configuration parameters for the Jamf collector.
-  </Card>
-
-  <Card title="Okta" href="/openhound/collectors/okta/collect-data#configure-openhound">
-      View the required configuration parameters for the Okta collector.
-  </Card>
-
-</CardGroup>
-
-### Full configuration example
-
-The following example shows the full configuration for OpenHound with the required parameters for BloodHound Enterprise as well as example parameters for the Jamf collector.
-
-The configuration is split into two files:
-
-- `config.toml` for the non-sensitive OpenHound/DLT configuration parameters
-- `secrets.toml` for the sensitive credentials and secrets
-
-You can provide these configuration files through compose secrets, Kubernetes Secret and ConfigMap objects, or environment variables.
+Define non-sensitive runtime settings in `config.toml` and store credentials or tokens in `secrets.toml`, environment variables, or your container platform's secret management system. This separation helps you reuse the same operational defaults across collectors while keeping each collector's credentials isolated.
 
 <Note>
-  In Docker Compose deployments, the host secrets files are collector-specific, such as `~/.dlt/secrets_github.toml` or `~/.dlt/secrets_jamf.toml`. The Compose file mounts the matching host file into the container as `/app/.dlt/secrets.toml`.
+  For the required BloodHound Enterprise destination parameters, file layout, environment variable names, and common runtime options, see [Configuration](/openhound/configuration).
 </Note>
 
-<Tabs>
-  <Tab title="config.toml">
-    <Note>
-      For a full description of these and other available runtime parameters, see [Configuration](/openhound/configuration).
-    </Note>
-    ```toml title="config.toml"
-    [runtime]
-    http_show_error_body = true
-    log_cli_level = "WARNING"
-    log_rotate_when = "midnight"
+## Collector-specific configuration
 
-    # HTTP retry/backoff for source requests; rides out API rate limits
-    # (e.g. GitHub during large collections) instead of failing the run.
-    request_max_attempts = 15
-    request_backoff_factor = 1.3
-    request_max_retry_delay = 900
-
-    # Default: logs are set to human readable text
-    # To switch to structured JSON instead, uncomment the line below (must be uppercase "JSON")
-    # log_format = "JSON"
-
-    [extract]
-    workers = 8
-
-    [normalize]
-    workers = 3
-
-    [load]
-    delete_completed_jobs = true
-    truncate_staging_dataset = true
-    ```
-  </Tab>
-  <Tab title="secrets.toml">
-
-    ```toml title="secrets.toml"
-    [sources.source.jamf]
-    username = "myusername"
-    host = "https://tenant.jamfcloud.com"
-    password = "mypassword"
-
-    [destination.bloodhoundenterprise]
-    token_key = "client_token_key"
-    token_id = "client_token_id"
-    url = "https://test.bloodhoundenterprise.io"
-    ```
-  </Tab>
-</Tabs>
+<CollectorSpecificConfig />
 
 ## Server/container requirements
 
-### Hardware
+Use these requirements to size the host, virtual machine, or container service that runs OpenHound. Actual resource usage depends on the collector, the size of the source environment, and the number of objects OpenHound processes during each collection run.
 
 | Component | Minimum Requirement | Recommended Requirement |
 |-----------|---------------------|-------------------------|
 | CPU       | 2 cores             | 6 cores or more         |
 | Memory    | 4 GB                | 8 GB or more            |
-| *Storage  | 50 GB               | 80 GB or more          |
+| Storage   | 50 GB               | 80 GB or more           |
 
 <Note>
   The requirements vary depending on the size of the environment being collected/converted. Container storage persistence is not required. However, it is recommended to have a persistent storage for the logs for troubleshooting.
   
-  The logs are stored in the `~/.local/share/openhound/logs` directory and can be configured to rotate based on time or file size.
+  OpenHound stores logs in the `~/.local/share/openhound/logs` directory. You can configure log rotation by time or file size in the `config.toml` file.
 </Note>
