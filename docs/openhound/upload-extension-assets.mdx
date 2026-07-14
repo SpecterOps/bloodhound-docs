@@ -5,7 +5,7 @@ description: Upload saved queries and Privilege Zone rules for OpenHound extensi
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise"/>
 
-OpenHound extensions include saved queries and Privilege Zone rules that help users analyze the data collected from GitHub, Jamf, Okta, or another OpenHound source. 
+OpenHound extensions include saved queries and Privilege Zone rules that help you analyze the data collected from the GitHub, Jamf, and Okta extensions. 
 
 Use the OpenHound CLI to upload these assets after the matching extension definition schema is installed or verified in BloodHound.
 
@@ -19,23 +19,15 @@ Before you upload extension assets, ensure that you have done the following:
 
 - Installed the [OpenHound CLI](/openhound/community#install-the-openhound-cli).
 - Verified or installed the matching extension definition schema in [OpenGraph Extension Management](/opengraph/extensions/manage#verify-or-install-an-extension).
-- Downloaded or cloned the extension repository that contains the asset files.
-  {/* TODO: Find a better way to present this. */}
-  - `https://github.com/SpecterOps/openhound-github`
-  - `https://github.com/SpecterOps/openhound-jamf`
-  - `https://github.com/SpecterOps/openhound-okta`
 - Obtained the BloodHound Enterprise tenant URL and browser JWT used by the OpenHound CLI for extension asset uploads.
-- Confirmed that the target Privilege Zone exists before you upload Privilege Zone rules for that zone.
-
-<Note>
-  Use `--strategy overwrite` when you need to update saved queries or Privilege Zone rules that already exist in BloodHound. The default strategy is `skip`, which leaves existing assets unchanged.
-</Note>
 
 ## Configure CLI authentication
 
-OpenHound uses DLT configuration management for CLI asset uploads. Add the BloodHound Enterprise tenant URL and browser JWT to `~/.dlt/secrets.toml`.
+OpenHound uses DLT configuration management for CLI asset uploads. Add the BloodHound Enterprise tenant URL and browser JWT to your local `~/.dlt/secrets.toml` file.
 
-The asset upload commands use the `destination.bloodhound` section with a JWT bearer token. This is different from the `destination.bloodhoundenterprise` collector client configuration, which uses `token_id` and `token_key` for scheduled OpenHound collection.
+The asset upload commands use the `destination.bloodhound` section with a JWT bearer token.
+
+This is different from the `destination.bloodhoundenterprise` collector client configuration, which uses `token_id` and `token_key` for scheduled OpenHound collection.
 
 <Note>
   Docker Compose scheduler examples use collector-specific host files, such as `~/.dlt/secrets_github.toml`, and mount the matching file into the container as `/app/.dlt/secrets.toml`.
@@ -55,69 +47,91 @@ token = "your-browser-jwt"
   Do not commit `secrets.toml` or token values to version control. Browser JWTs are short-lived and intended for user-authenticated API calls, not long-running integrations.
 </Warning>
 
-## Upload saved queries
+## Upload assets
 
-{/* TODO: Expand on command options. */}
+You must upload saved queries and Privilege Zone rules for each extension.
 
-Saved queries are stored in the extension repository, usually in `extension/saved_searches`.
+Saved queries and Privilege Zone rules are stored in each extension repository in the following directories:
+
+- `extension/saved_searches`
+- `extension/privilege_zone_rules`
+
+<Note>
+  OpenHound makes uploaded saved queries public by default.
+</Note>
 
 <Steps>
-  <Step title="Open the extension repository">
-    Change to the repository for the extension assets you want to upload.
+  <Step title="Clone the extension repositories">
+    Clone each extension repository to your local machine.
 
-    ```bash
-    cd ~/openhound-github
-    ```
+    <Tabs>
+      <Tab title="GitHub">
+        ```bash
+        git clone https://github.com/SpecterOps/openhound-github
+        ```
+      </Tab>
+      <Tab title="Jamf">
+        ```bash
+        git clone https://github.com/SpecterOps/openhound-jamf
+        ```
+      </Tab>
+      <Tab title="Okta">
+        ```bash
+        git clone https://github.com/SpecterOps/openhound-okta
+        ```
+      </Tab>
+    </Tabs>
   </Step>
-
   <Step title="Upload the saved queries">
-    Run the upload command against the saved queries directory.
+    For each extension, run the upload command against the saved queries directory.
 
-    <Note>
-      OpenHound makes uploaded saved queries public by default.
-    </Note>
+    <Tabs>
+      <Tab title="GitHub">
+        ```bash
+        openhound searches upload ~/openhound-github/extension/saved_searches
+        ```
+      </Tab>
+      <Tab title="Jamf">
+        ```bash
+        openhound searches upload ~/openhound-jamf/extension/saved_searches
+        ```
+      </Tab>
+      <Tab title="Okta">
+        ```bash
+        openhound searches upload ~/openhound-okta/extension/saved_searches
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+    <Step title="Upload the Privilege Zone rules">
+    For each extension, run the upload command against the Privilege Zone rules directory.
 
-    For example, to create saved queries that do not exist and overwrite matching saved queries with the same name, use the `--strategy overwrite` option.
+    <Tabs>
+      <Tab title="GitHub">
+        ```bash
+        openhound rules upload ~/openhound-github/extension/privilege_zone_rules
+        ```
+      </Tab>
+      <Tab title="Jamf">
+        ```bash
+        openhound rules upload ~/openhound-jamf/extension/privilege_zone_rules
+        ```
+      </Tab>
+      <Tab title="Okta">
+        ```bash
+        openhound rules upload ~/openhound-okta/extension/privilege_zone_rules
+        ```
+      </Tab>
+    </Tabs>
+      <Tip>
+        The default upload strategy is `skip`, which leaves existing assets unchanged.
 
-    ```bash
-    openhound searches upload ./extension/saved_searches --strategy overwrite
-    ```
-
-    <Note>
-      Saved query uploads default to JSON files. To upload saved queries from YAML files, add `--file-format yaml`.
-    </Note>
+        Use `--strategy overwrite` when you need to update previously uploaded saved queries or Privilege Zone rules. 
+      </Tip>
   </Step>
 </Steps>
 
-## Upload Privilege Zone rules
-
-{/* TODO: Expand on command options. */}
-
-Privilege Zone rules are stored in the extension repository, usually in `extension/privilege_zone_rules`.
-
-<Steps>
-  <Step title="Confirm the target zone exists">
-    In BloodHound Enterprise, confirm that the Privilege Zone referenced by the rule files exists.
-
-    If the target zone does not exist, create it before you upload the rules.
-  </Step>
-
-  <Step title="Upload the Privilege Zone rules">
-    Run the upload command against the Privilege Zone rules directory.
-
-    For example, to create rules that do not exist and overwrite matching rules with the same name, use the `--strategy overwrite` option.
-
-    ```bash
-    openhound rules upload ./extension/privilege_zone_rules --strategy overwrite
-    ```
-
-    <Note>
-      Upload Privilege Zone rules from JSON files. YAML support for Privilege Zone rule uploads requires Engineering confirmation.
-    </Note>
-  </Step>
-</Steps>
-
-## Verify the upload
+## Verify uploads
 
 After the upload completes:
 
@@ -125,11 +139,10 @@ After the upload completes:
 - Open **Privilege Zones** to confirm the expected rules appear in the target zone.
 - Wait for analysis to successfully run to verify rules that affect zone membership or findings.
 
-## Troubleshoot asset uploads
+## Troubleshoot
 
-| Symptom | Cause | Resolution |
+| Issue | Cause | Resolution |
 |---|---|---|
-| Existing assets do not update | The command used the default `skip` strategy | Run the upload again with `--strategy overwrite`. |
-| Privilege Zone rules do not appear | The target zone does not exist | Create the zone in BloodHound, then upload the rules again. |
-| Upload fails with an authentication error | The BloodHound URL or JWT is invalid or expired | Update `~/.dlt/secrets.toml` with a valid browser JWT and rerun the command. |
-| No files are uploaded | The command points to the wrong directory or file format | Confirm that the path contains JSON files, or add `--file-format yaml` for saved query YAML files. |
+| Existing assets do not update | The `upload` command uses the `skip` strategy by default. | Run the upload again with the `--strategy overwrite` option. |
+| Upload fails with an authentication error | The BloodHound Enterprise URL or JWT is invalid or expired. | Update the `~/.dlt/secrets.toml` file with a valid browser JWT and rerun the command. |
+| No files are uploaded | The command points to the wrong directory. | Confirm that the path contains the extension assets. |
