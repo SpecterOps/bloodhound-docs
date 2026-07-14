@@ -1,0 +1,190 @@
+---
+title: Deploy with Docker Compose
+sidebarTitle: Deploy with Docker
+description: Deploy OpenHound for BloodHound Enterprise with Docker Compose.
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise"/>
+
+Deploy OpenHound with Docker Compose when you want to run OpenHound as a containerized service without Kubernetes.
+
+<Warning>
+  OpenHound currently runs one extension per container. The example Compose file includes services for GitHub, Jamf, and Okta, but you should start only the service for the extension you want to run.
+</Warning>
+
+## Prerequisites
+
+Before you begin, ensure that you have the following:
+
+- A BloodHound Enterprise tenant with OpenHound enabled.
+- API credentials for each OpenHound [collector client](/collect-data/enterprise-collection/create-collector) you plan to run. Use the `token_id` and `token_key` generated for the matching collector client.
+- The required credentials for the extension you want to collect:
+  - [GitHub](/openhound/collectors/github/collect-data)
+  - [Jamf](/openhound/collectors/jamf/collect-data)
+  - [Okta](/openhound/collectors/okta/collect-data)
+- Uploaded [saved queries and Privilege Zone rules](/openhound/upload-extension-assets) for each extension you want to collect.
+- Docker Desktop with WSL integration enabled, or a Linux host with Docker or Podman installed.
+- The Compose plugin installed, such as `docker compose` or `podman compose`.
+
+<Note>
+  On Windows, enable Docker Desktop WSL integration before you run OpenHound from a WSL terminal. In Docker Desktop, open **Settings** > **Resources** > **WSL integration**, then enable integration for the WSL distribution you use.
+</Note>
+
+## Deploy OpenHound
+
+Follow these steps to deploy OpenHound with Docker Compose and run a collector for the extension you want to use.
+
+<Steps>
+  <Step title="Verify Docker Compose">
+    From your Linux or WSL terminal, run:
+
+    ```bash
+    docker compose version
+    ```
+
+    The command returns the installed Docker Compose version.
+
+    ```text
+    Docker Compose version v5.3.0
+    ```
+  </Step>
+
+  <Step title="Create the working directories">
+    Create a workspace for the Compose file and a DLT configuration directory:
+
+    ```bash
+    mkdir -p ~/openhound ~/.dlt
+    ```
+  </Step>
+
+  <Step title="Download the OpenHound examples">
+    Clone the OpenHound repository:
+
+    ```bash
+    git clone https://github.com/SpecterOps/OpenHound.git ~/openhound/OpenHound
+    ```
+
+    You'll use the example Compose file in the next step.
+
+  </Step>
+
+  <Step title="Copy the Enterprise Compose file">
+    Copy the Enterprise example Compose file into your OpenHound workspace:
+
+    ```bash
+    cp ~/openhound/OpenHound/example-configurations/bloodhound-enterprise/docker-compose.yml ~/openhound/docker-compose.yml
+    ```
+  </Step>
+
+  <Step title="Create the OpenHound configuration file">
+    Create `~/.dlt/config.toml` for non-sensitive OpenHound runtime settings.
+
+    ```toml title="~/.dlt/config.toml"
+    [runtime]
+    log_cli_level = "WARNING"
+    log_rotate_when = "midnight"
+    request_max_attempts = 15
+    request_backoff_factor = 1.3
+    request_max_retry_delay = 900
+
+    [extract]
+    workers = 8
+
+    [normalize]
+    workers = 3
+
+    [load]
+    delete_completed_jobs = true
+    truncate_staging_dataset = true
+    ```
+
+    <Tip>
+      See [Configuration](/openhound/configuration) for the full list of common runtime settings.
+    </Tip>
+  </Step>
+
+  <Step title="Create the extension-specific secrets file">
+    Create one secrets file for each extension you want to run.
+    
+    The example Compose file uses [collector-specific](/openhound/configuration#collector-specific-settings) files on the host and maps the matching file into the container as `/app/.dlt/secrets.toml`.
+
+    | Extension | Host secrets file | Container secrets file |
+    |---|---|---|
+    | GitHub | `~/.dlt/secrets_github.toml` | `/app/.dlt/secrets.toml` |
+    | Jamf | `~/.dlt/secrets_jamf.toml` | `/app/.dlt/secrets.toml` |
+    | Okta | `~/.dlt/secrets_okta.toml` | `/app/.dlt/secrets.toml` |
+
+    Each extension secrets file must include:
+
+    - `[destination.bloodhoundenterprise]` with the BloodHound Enterprise tenant URL and the `token_id` and `token_key` for the matching OpenHound collector client
+    - The collector-specific credentials section, such as `[sources.source.github.credentials]`, `[sources.source.jamf.credentials]`, or `[sources.source.okta.credentials]`
+
+      The following GitHub example uses an organization GitHub App. For other GitHub authentication methods, use the required fields from [Configure the Collector](/openhound/collectors/github/collect-data).
+
+      ```toml title="~/.dlt/secrets_github.toml"
+      [destination.bloodhoundenterprise]
+      url = "https://your-tenant.bloodhoundenterprise.io"
+      token_id = "client_token_id"
+      token_key = "client_token_key"
+
+      [sources.source.github.credentials]
+      org_name = "your-github-org"
+      key_path = "/app/.dlt/github.pem"
+      app_id = "123456"
+      client_id = "your-client-id"
+      install_id = "12345678"
+      ```
+
+    <Note>
+      The scheduler uses `destination.bloodhoundenterprise` with collector client credentials. Do not use the JWT-based `destination.bloodhound` settings from [Upload Extension Assets](/openhound/upload-extension-assets) for scheduled collection.
+    </Note>
+  </Step>
+
+  <Step title="Add extension secret files">
+    Some extensions require an additional secret file.
+    
+    For example, the GitHub App authentication method requires you to copy the GitHub App private key to the path referenced by the Compose file:
+
+    ```bash
+    cp /path/to/github.pem ~/.dlt/github.pem
+    ```
+  </Step>
+
+  <Step title="Start one OpenHound scheduler">
+    From the OpenHound workspace, start the scheduler for the extension you configured.
+
+    ```bash
+    cd ~/openhound
+    docker compose up -d scheduler-github
+    ```
+
+    To run another extension, configure its secrets file and start the matching service, such as `scheduler-jamf` or `scheduler-okta`.
+
+    <Warning>
+      Running `docker compose up -d` without a service name starts every service defined in the Compose file. Start only the service for the extension you configured.
+    </Warning>
+  </Step>
+
+  <Step title="Verify the scheduler logs">
+    Follow the logs for the service you started:
+
+    ```bash
+    docker compose logs -f scheduler-github
+    ```
+
+    The scheduler checks BloodHound Enterprise for available collection jobs. After you run an on-demand scan or a scheduled scan starts, the logs show the job status.
+  </Step>
+
+  <Step title="Run a collection">
+    In BloodHound Enterprise, run an [on-demand scan](/collect-data/enterprise-collection/on-demand-scan) or create a [collection schedule](/collect-data/enterprise-collection/collection-schedule) for the OpenHound collector client.
+
+    After the job completes, monitor ingest and analysis progress on the [collection activity pages](/collect-data/enterprise-collection/monitor).
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+- If Docker commands fail from WSL, confirm Docker Desktop WSL integration is enabled for your distribution.
+- If the scheduler starts but does not collect data, confirm that the OpenHound collector client credentials in the extension secrets file match the BloodHound Enterprise tenant.
+- If GitHub App authentication fails, confirm that the `.pem` file is mounted at the same path configured in `key_path`.
+- If a collection fails because of GitHub API rate limits, tune the [HTTP request parameters](/openhound/configuration#http-request-parameters).
