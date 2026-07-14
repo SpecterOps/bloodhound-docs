@@ -20,14 +20,14 @@ This guide uses a supported Windows with WSL and Docker Desktop workflow, and th
 Before you begin, ensure that you have the following:
 
 - A BloodHound Enterprise tenant with OpenHound enabled.
-- API credentials for each OpenHound collector [client](/collect-data/enterprise-collection/create-collector) you plan to run. Use the `token_id` and `token_key` generated for the matching collector client.
+- API credentials for each OpenHound [collector client](/collect-data/enterprise-collection/create-collector) you plan to run. Use the `token_id` and `token_key` generated for the matching collector client.
 - The required credentials for the extension you want to collect:
   - [GitHub](/openhound/collectors/github/collect-data)
   - [Jamf](/openhound/collectors/jamf/collect-data)
   - [Okta](/openhound/collectors/okta/collect-data)
+- Uploaded [saved queries and Privilege Zone rules](/openhound/upload-extension-assets) for each extension you want to collect.
 - Docker Desktop with WSL integration enabled, or a Linux host with Docker or Podman installed.
 - The Compose plugin installed, such as `docker compose` or `podman compose`.
-- Git installed on the host where you prepare the deployment files.
 
 <Note>
   On Windows, enable Docker Desktop WSL integration before you run OpenHound from a WSL terminal. In Docker Desktop, open **Settings** > **Resources** > **WSL integration**, then enable integration for the WSL distribution you use.
@@ -46,6 +46,10 @@ Follow these steps to deploy OpenHound with Docker Compose and run a collector f
     ```
 
     The command returns the installed Docker Compose version.
+
+    ```text
+    Docker Compose version v5.3.0
+    ```
   </Step>
 
   <Step title="Create the working directories">
@@ -118,15 +122,18 @@ Follow these steps to deploy OpenHound with Docker Compose and run a collector f
     - `[destination.bloodhoundenterprise]` with the BloodHound Enterprise tenant URL and the `token_id` and `token_key` for the matching OpenHound collector client
     - The collector-specific credentials section, such as `[sources.source.github.credentials]`, `[sources.source.jamf.credentials]`, or `[sources.source.okta.credentials]`
 
-    ```toml title="~/.dlt/secrets_github.toml"
-    [destination.bloodhoundenterprise]
-    url = "https://your-tenant.bloodhoundenterprise.io"
-    token_id = "client_token_id"
-    token_key = "client_token_key"
+      ```toml title="~/.dlt/secrets_github.toml"
+      [destination.bloodhoundenterprise]
+      url = "https://your-tenant.bloodhoundenterprise.io"
+      token_id = "client_token_id"
+      token_key = "client_token_key"
 
-    [sources.source.github.credentials]
-    # Add the GitHub collector credentials for your authentication method.
-    ```
+      [sources.source.github.credentials]
+      org_name = "your-github-org"
+      key_path = "/path/to/private/key.pem"
+      app_id = "123456"
+      client_id = "your-client-id"
+      ```
 
     <Note>
       The scheduler uses `destination.bloodhoundenterprise` with collector client credentials. Do not use the JWT-based `destination.bloodhound` settings from [Upload Extension Assets](/openhound/upload-extension-assets) for scheduled collection.
