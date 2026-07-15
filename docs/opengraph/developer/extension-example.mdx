@@ -16,19 +16,18 @@ An OpenGraph extension definition schema tells BloodHound how to display, scope,
 User A -> Group B -> User C -> Server D -> Domain Admin
 ```
 
-In this model, every identity or asset is a node. Every group membership, permission, and session is an edge that connects two nodes. Because BloodHound evaluates traversable edges transitively, a standard user can still control a critical identity through a chain of relationships. This is a structural failure of least privilege.
+In this model, every identity or asset is a node. Every group membership, permission, and session is an edge that connects two nodes. Because BloodHound evaluates traversable edges transitively, a standard user can still control a critical identity through a chain of relationships. This is a structural failure of the least privilege principle.
 
-Follow the examples in order. Each section adds one capability to the same sample extension so you can see how the schema and payload work together in BloodHound.
+Follow the examples in this tutorial in order. Each section adds incremental capabilities to the same sample extension so that you can:
 
-<Note>
-  This tutorial focuses on schema and payload behavior; extension-specific Cypher queries are outside the current scope.
-</Note>
+- See how the schema and payload work together
+- Understand how BloodHound uses the schema to render and analyze the payload
 
-By the end of this tutorial, you have a sample extension definition schema and matching payload that:
+By the end of this tutorial, you'll have a sample extension definition schema and matching payload that:
 
 - Defines an environment to establish analysis scope
 - Styles nodes with display kinds
-- Identifies principal kinds for pathfinding and metrics
+- Identifies principal kinds for pathfinding and <Tooltip tip="Exposure and impact">metrics calculation</Tooltip>
 - Makes relationships traversable for attack path analysis
 - Adds a Privilege Zone target for finding evaluation
 - Defines relationship findings with context and remediation guidance in BloodHound Enterprise
@@ -44,9 +43,11 @@ By the end of this tutorial, you have a sample extension definition schema and m
 
 Use [`environments.environment_kind`](/opengraph/developer/graph-definition#param-environment-kind) to tell BloodHound which node kind represents an environment for organization, filtering, and analysis.
 
-In a custom extension, this behavior comes from the environment node kind you define in the schema and then reference from the payload.
+In a custom extension, this behavior comes from the environment node kind you define in the schema and then reference from the payload. In the UI, this schema definition enables environment selection controls on the following pages:
 
-In the UI, this schema definition manifests as environment selection controls. In BloodHound Enterprise, an environment selector appears on the **Attack Paths**, **Posture**, and **Zone Builder** pages.
+- **Attack Paths**
+- **Posture**
+- **Zone Builder**
 
 <Warning>
   Environment selection controls require enabling the findings feature flag in your BloodHound Enterprise tenant. Contact your account team to enable the feature flag.
@@ -54,7 +55,11 @@ In the UI, this schema definition manifests as environment selection controls. I
 
 <Tabs>
   <Tab title="Example definition">
-  ```json
+  In this example, the `EX_Domain` node and environment kinds represent an environment (both are necessary to complete the definition).
+  
+  The `EX_User` node kind is a principal that can be evaluated within that environment.
+
+  ```json highlight={9-15, 25-31}
   {
     "schema": {
       "name": "ExampleExtension",
@@ -90,7 +95,11 @@ In the UI, this schema definition manifests as environment selection controls. I
   ```
   </Tab>
   <Tab title="Example payload">
-  ```json
+  It's important to include the [`metadata.source_kind`](/opengraph/developer/metadata#param-source-kind) value in the payload so that BloodHound can associate the payload with the schema definition. This helps facilitate organizing and managing graph data by [source](/opengraph/developer/graph-data#data-source).
+  
+  The [`properties.environmentid`](/opengraph/developer/nodes#param-properties-environmentid) and [`properties.collected`](/opengraph/developer/nodes#param-properties-collected) values on the environment node are required for BloodHound to recognize the environment and scope analysis correctly.
+
+  ```json highlight={3, 13-14, 23}
   {
     "metadata": {
       "source_kind": "EX"
@@ -122,6 +131,8 @@ In the UI, this schema definition manifests as environment selection controls. I
   ```
   </Tab>
   <Tab title="BloodHound behavior">
+  The example definition and payload work together to create an environment that scopes analysis for the `EX_User` principal kind.
+
   - The payload's `metadata.source_kind` value registers `EX` as a source kind and applies it to each node in the payload.
   - BloodHound can organize extension data under the environment represented by `EX_Domain` and expose that environment through the relevant environment selector and filters in the UI.
   - Nodes associated with that environment through `properties.environmentid` are evaluated within that scope.
@@ -140,14 +151,17 @@ In the UI, this schema definition manifests as environment selection controls. I
 
 ## Define node styling
 
-Use [`is_display_kind`](/opengraph/developer/graph-definition#param-is-display-kind) to decide which kind controls a node's visual identity in the graph.
+The [`is_display_kind`](/opengraph/developer/graph-definition#param-is-display-kind) field controls a node's visual appearance in the graph.
 
-Use `true` on the kind that should supply the node's icon and color. Use `false` for secondary kinds that help classify the node but should not define its appearance.
+- Use `true` on the kind that should supply the node's icon and color.
+- Use `false` for secondary kinds that help classify the node but should not define its appearance.
 
-This example builds on the environment definition from the previous section by adding group, computer, Domain Admin, and high-value classification kinds. The Domain Admin account has two kinds, but only the `EX_DomainAdmin` display kind controls how BloodHound renders the node.
-
+This example builds on the environment definition from the previous section by adding group, computer, domain admin, and high-value classification kinds.
 <Tabs>
   <Tab title="Example definition">
+  Let's add the `EX_DomainAdmin`, `EX_Group`, `EX_Computer`, and `EX_HighValue` node kinds to the schema to support the example scenario.
+
+  The first three node kinds are display kinds that control the node's icon and color. The last node kind is a secondary classification kind that does not control the node's appearance.
   ```jsonc
   {
     "schema": {
@@ -214,6 +228,8 @@ This example builds on the environment definition from the previous section by a
   ```
   </Tab>
   <Tab title="Example payload">
+  The `example-domain-admin` node has two kinds, but only the `EX_DomainAdmin` display kind controls how BloodHound renders the node.
+ 
   ```jsonc
   {
     "metadata": {
@@ -285,10 +301,19 @@ This example builds on the environment definition from the previous section by a
   ```
   </Tab>
   <Tab title="BloodHound behavior">
-  - BloodHound uses `EX_DomainAdmin` for the Domain Admin node's icon and color because it is the first display kind in the node's `kinds` array.
-  - `EX_HighValue` still classifies the node, but it does not affect the visual styling because `is_display_kind` is `false`.
+  The example definition and payload work together to create a graph that uses display kinds to control node styling.
+
+  - BloodHound uses `EX_DomainAdmin` for the domain admin node's icon and color because it is the first display kind in the node's `kinds` array. In the Entity panel, this is referred to as the node's **Primary Kind**.
+  - The `EX_HighValue` kind still classifies the node, but it does not affect the visual styling because `is_display_kind` is `false`.
   - `EX_User`, `EX_Group`, `EX_Computer`, and `EX_DomainAdmin` define distinct visual styles for User A, Group B, Server D, and Domain Admin.
-  - If a node has multiple display kinds, BloodHound uses the first display kind in the node's `kinds` array.
+
+  Use the following Cypher query to see how the node kinds appear in the graph:
+
+  ```cypher
+  MATCH (n)
+  WHERE n:EX
+  RETURN n
+  ```
 
     <Frame>
       <img
@@ -308,22 +333,24 @@ This example builds on the environment definition from the previous section by a
   style={{ "width":"20%" }}
 />
 
-Use [`principal_kinds`](/opengraph/developer/graph-definition#param-principal-kinds) to identify which node kinds BloodHound Enterprise should treat as principals inside an environment.
+The [`principal_kinds`](/opengraph/developer/graph-definition#param-principal-kinds) field identifies which node kinds BloodHound Enterprise should treat as <Tooltip tip="An entity that can authenticate, be assigned permissions, and serve as a basis for risk metric calculations">principals</Tooltip> inside an environment.
 
 This setting affects analysis scope. If a node kind is not listed in `principal_kinds`, BloodHound Enterprise can still ingest and display those nodes, but BloodHound Enterprise does not treat them as principals for findings and <Tooltip tip="(Exposure and impact)">metrics calculation</Tooltip> in that environment.
 
-This example builds on the previous definition by adding the computer and Domain Admin node kinds to `principal_kinds`. This matches the glossary definition of a principal as an entity that can authenticate, be assigned permissions, and serve as a basis for risk metric calculations.
-
-Do not include `EX_Group` in `principal_kinds` for this example. Group B is still an important node in the path because it receives permissions and passes control through the `EX_MemberOf` edge, but it does not authenticate as an identity. BloodHound can still traverse through Group B when the relationship kinds are traversable.
-
-<Note>
-  **Findings and metrics**
-
-  `principal_kinds` does not create findings by itself, and the payload does not include a separate finding object. BloodHound Enterprise derives the finding from the environment definition, the [traversable relationship kind](/opengraph/developer/extension-example#define-relationships), the [Privilege Zone target](/opengraph/developer/extension-example#create-a-privilege-zone-rule), the matching [relationship findings](/opengraph/developer/extension-example#define-relationship-findings) definition, and the uploaded graph data.
-</Note>
-
 <Tabs>
   <Tab title="Example definition">
+  This example builds on the previous definition by adding the computer and domain admin node kinds to `principal_kinds`.
+
+  Do not include `EX_Group` in `principal_kinds` for this example. Group B is still an important node in the path because it receives permissions and passes control through the `EX_MemberOf` edge, but it does not authenticate as an identity. BloodHound can still traverse through Group B when the relationship kinds are traversable.
+
+  <Note>
+    **Findings and metrics**
+
+    The `principal_kinds` definition does not create findings by itself, and the payload does not include a separate finding object.
+
+    BloodHound Enterprise derives the finding from the environment definition, the [traversable relationship kind](/opengraph/developer/extension-example#define-relationships), the [Privilege Zone target](/opengraph/developer/extension-example#create-a-privilege-zone-rule), the matching [relationship findings](/opengraph/developer/extension-example#define-relationship-findings) definition, and the uploaded graph data.
+  </Note>
+
   ```jsonc
   {
     "schema": {
@@ -395,9 +422,14 @@ Do not include `EX_Group` in `principal_kinds` for this example. Group B is stil
   </Tab>
   <Tab title="Example payload">
   Use the same payload from the display kind example. Principal kinds do not require a separate payload object.
+
+  <Tip>
+    How you define principal kinds in the schema affects how BloodHound Enterprise calculates exposure and impact on the [Attack Paths](/analyze-data/findings/attack-paths) and [Posture](/analyze-data/findings/posture) pages.
+
+    If you remove a node kind from `principal_kinds`, BloodHound Enterprise does not treat that node kind as a principal for findings and metrics, even if the node kind is present in the payload.
+  </Tip>
   </Tab>
   <Tab title="BloodHound behavior">
-
   At this point, you won't see any visual changes in BloodHound, but the extension definition now enables findings and metrics for `EX_User`, `EX_Computer`, and `EX_DomainAdmin` principals in the target environment.
 
   The remaining examples in this guide build on this definition to show the other conditions required for findings and metrics.
@@ -410,17 +442,10 @@ Use [`relationship_kinds.is_traversable`](/opengraph/developer/graph-definition#
 
 When you set `is_traversable` to `true` on a relationship kind, every edge of that kind inherits the same traversability behavior. Use traversable relationships to represent conditions where the starting node can take control of the ending node to a degree that lets an attacker abuse the ending node's outgoing edges.
 
-This example connects the five nodes from the previous sections:
-
-- User A is a member of Group B.
-- Group B has full control over User C.
-- User C is a local administrator on Server D.
-- Server D hosts a session for the Domain Admin identity.
-
-Each relationship is traversable because it represents a control transition. Auditing User A in isolation shows a standard user, but tracing the edges shows that User A can reach the Domain Admin identity.
-
 <Tabs>
   <Tab title="Example definition">
+  Each relationship is traversable because it represents a control transition. Auditing User A in isolation shows a standard user, but tracing the edges shows that User A can reach the Domain Admin identity.
+
   ```jsonc
   {
     "schema": {
@@ -512,6 +537,13 @@ Each relationship is traversable because it represents a control transition. Aud
   ```
   </Tab>
   <Tab title="Example payload">
+  This example connects the five nodes from the previous sections:
+
+  - User A is a member of Group B.
+  - Group B has full control over User C.
+  - User C is a local administrator on Server D.
+  - Server D hosts a session for the Domain Admin identity.
+
   ```jsonc
   {
     "metadata": {
@@ -629,6 +661,8 @@ Each relationship is traversable because it represents a control transition. Aud
   ```
   </Tab>
   <Tab title="BloodHound behavior">
+  The example definition and payload work together to create a graph that uses traversable relationships for pathfinding and Attack Path detection.
+
   - BloodHound includes every `EX_MemberOf`, `EX_FullControl`, `EX_AdminTo`, and `EX_HasSession` edge in pathfinding because all four relationship kinds set `is_traversable` to `true`.
   - The path starts at User A, reaches Group B, reaches User C, reaches Server D, and then reaches the Domain Admin identity.
   - This path can contribute to Attack Path detection, findings, and metrics when the Domain Admin identity is in a higher Privilege Zone than User A.
@@ -692,14 +726,12 @@ With that boundary in place, the traversable path `User A -> Group B -> User C -
 
 Use [`relationship_findings`](/opengraph/developer/graph-definition#relationship_findings) when you want BloodHound Enterprise to attach a finding definition and remediation guidance to a relationship kind that represents an Attack Path condition.
 
-This example builds on the traversable `EX_HasSession` relationship and the Tier Zero Domain Admin target from the previous sections. The `relationship_findings` entry adds the finding metadata and remediation text that BloodHound Enterprise can display in the UI when matching graph data satisfies the Attack Path conditions.
-
-<Note>
-  Define the finding on the relationship kind that crosses into the higher Privilege Zone. In this example, `EX_HasSession` targets the Tier Zero Domain Admin identity.
-</Note>
+This example builds on the traversable `EX_HasSession` relationship and the Tier Zero Domain Admin target from the previous sections. The `relationship_findings` entry adds the finding metadata and remediation text that BloodHound Enterprise can display on the [Attack Paths](/analyze-data/findings/attack-paths) page when matching graph data satisfies the Attack Path conditions.
 
 <Tabs>
   <Tab title="Example definition">
+  Define the finding on the relationship kind that crosses into the higher Privilege Zone. In this example, `EX_HasSession` targets the Tier Zero Domain Admin identity.
+
   ```jsonc
   {
     "schema": {
@@ -808,6 +840,8 @@ This example builds on the traversable `EX_HasSession` relationship and the Tier
   Use the same payload from the traversable relationship example and the same Tier Zero zone configuration from the Privilege Zone example. Relationship findings do not require a separate payload object.
   </Tab>
   <Tab title="BloodHound behavior">
+  The example definition and payload work together to create a finding that BloodHound Enterprise can display on the Attack Paths page.
+
   - When BloodHound Enterprise detects a qualifying `EX_HasSession` edge on a path from User A to the Tier Zero Domain Admin identity, the finding can display the custom title and remediation content from the schema.
   - The finding is based on the privilege boundary violation: User A is lower privileged, but User A can traverse group membership, identity control, local administrator rights, and session exposure to reach Tier Zero.
   - If you do not define a matching `relationship_findings` entry, the relationship can still exist in the graph, but BloodHound Enterprise does not have extension-provided finding and remediation text to display for that condition.
@@ -832,7 +866,7 @@ Use these examples as a checklist when you design an OpenGraph extension definit
 
 ## Troubleshoot
 
-If BloodHound does not behave the way you expect, check these common causes first:
+The following conditions may lead to unexpected behavior when you create an OpenGraph extension:
 
 - The node or relationship kind name does not exactly match the schema definition.
 - The environment node exists, but `properties.collected` is not set to `true`.
