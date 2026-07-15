@@ -10,9 +10,15 @@ sidebarTitle: Example extension
   alt="Applies to BloodHound Enterprise and Community Edition"
 />
 
-An OpenGraph extension definition schema tells BloodHound how to display, scope, and analyze custom graph data. In this tutorial, you'll build a small sample extension for a fictional environment and add the schema fields that turn a basic payload into a structured graph.
+An OpenGraph extension definition schema tells BloodHound how to display, scope, and analyze custom graph data. In this tutorial, you'll build a small sample extension that models an identity control path:
 
-Follow the examples in order. Each section adds one capability to the same sample extension so you can see how the schema and payload work together in BloodHound. 
+```text
+User A -> Group B -> User C -> Server D -> Domain Admin
+```
+
+In this model, every identity or asset is a node. Every group membership, permission, and session is an edge that connects two nodes. Because BloodHound evaluates traversable edges transitively, a standard user can still control a critical identity through a chain of relationships. This is a structural failure of least privilege.
+
+Follow the examples in order. Each section adds one capability to the same sample extension so you can see how the schema and payload work together in BloodHound.
 
 <Note>
   This tutorial focuses on schema and payload behavior; extension-specific Cypher queries are outside the current scope.
@@ -102,11 +108,11 @@ In the UI, this schema definition manifests as environment selection controls. I
           }
         },
         {
-          "id": "example-user-1",
+          "id": "example-user-a",
           "kinds": ["EX_User"],
           "properties": {
-            "name": "alice",
-            "displayname": "Alice User",
+            "name": "user-a",
+            "displayname": "User A",
             "environmentid": "example-domain-1"
           }
         }
@@ -138,7 +144,7 @@ Use [`is_display_kind`](/opengraph/developer/graph-definition#param-is-display-k
 
 Use `true` on the kind that should supply the node's icon and color. Use `false` for secondary kinds that help classify the node but should not define its appearance.
 
-This example builds on the environment definition from the previous section by adding a service account display kind and a secondary high-value classification kind. The service account node has two kinds, but only one kind controls how BloodHound renders the node.
+This example builds on the environment definition from the previous section by adding group, computer, Domain Admin, and high-value classification kinds. The Domain Admin account has two kinds, but only the `EX_DomainAdmin` display kind controls how BloodHound renders the node.
 
 <Tabs>
   <Tab title="Example definition">
@@ -166,12 +172,28 @@ This example builds on the environment definition from the previous section by a
         "color": "#d33115"
       },
       { // [!code ++:8]
-        "name": "EX_ServiceAccount",
-        "display_name": "Example Service Account",
-        "description": "Privileged account used to demonstrate display kinds and attack path findings.",
+        "name": "EX_DomainAdmin",
+        "display_name": "Example Domain Admin",
+        "description": "Privileged identity used to demonstrate paths from standard users to Tier Zero.",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#b42318"
+      },
+      { // [!code ++:8]
+        "name": "EX_Group",
+        "display_name": "Example Group",
+        "description": "Identity group used to demonstrate membership-based control paths.",
+        "is_display_kind": true,
+        "icon": "users",
+        "color": "#7c3aed"
+      },
+      { // [!code ++:8]
+        "name": "EX_Computer",
+        "display_name": "Example Computer",
+        "description": "Computer or server that can host sessions and grant local administrative control.",
         "is_display_kind": true,
         "icon": "server",
-        "color": "#B42318"
+        "color": "#0f766e"
       },
       { // [!code ++:6]
         "name": "EX_HighValue",
@@ -210,23 +232,50 @@ This example builds on the environment definition from the previous section by a
           }
         },
         {
-          "id": "example-user-1",
+          "id": "example-user-a",
           "kinds": ["EX_User"],
           "properties": {
-            "name": "alice",
-            "displayname": "Alice User",
+            "name": "user-a",
+            "displayname": "User A",
             "environmentid": "example-domain-1"
           }
         },
-        { // [!code ++:12]
-          "id": "example-service-account-1",
+        { // [!code ++:11]
+          "id": "example-group-b",
+          "kinds": ["EX_Group"],
+          "properties": {
+            "name": "group-b",
+            "displayname": "Group B",
+            "environmentid": "example-domain-1"
+          }
+        },
+        { // [!code ++:11]
+          "id": "example-user-c",
+          "kinds": ["EX_User"],
+          "properties": {
+            "name": "user-c",
+            "displayname": "User C",
+            "environmentid": "example-domain-1"
+          }
+        },
+        { // [!code ++:11]
+          "id": "example-server-d",
+          "kinds": ["EX_Computer"],
+          "properties": {
+            "name": "server-d",
+            "displayname": "Server D",
+            "environmentid": "example-domain-1"
+          }
+        },
+        { // [!code ++:14]
+          "id": "example-domain-admin",
           "kinds": [
-            "EX_ServiceAccount",
+            "EX_DomainAdmin",
             "EX_HighValue"
           ],
           "properties": {
-            "name": "sync-service",
-            "displayname": "Sync Service",
+            "name": "domain-admin",
+            "displayname": "Domain Admin",
             "environmentid": "example-domain-1"
           }
         }
@@ -236,8 +285,9 @@ This example builds on the environment definition from the previous section by a
   ```
   </Tab>
   <Tab title="BloodHound behavior">
-  - BloodHound uses `EX_ServiceAccount` for the node's icon and color because it is a display kind.
+  - BloodHound uses `EX_DomainAdmin` for the Domain Admin node's icon and color because it is the first display kind in the node's `kinds` array.
   - `EX_HighValue` still classifies the node, but it does not affect the visual styling because `is_display_kind` is `false`.
+  - `EX_User`, `EX_Group`, `EX_Computer`, and `EX_DomainAdmin` define distinct visual styles for User A, Group B, Server D, and Domain Admin.
   - If a node has multiple display kinds, BloodHound uses the first display kind in the node's `kinds` array.
 
     <Frame>
@@ -262,12 +312,14 @@ Use [`principal_kinds`](/opengraph/developer/graph-definition#param-principal-ki
 
 This setting affects analysis scope. If a node kind is not listed in `principal_kinds`, BloodHound Enterprise can still ingest and display those nodes, but BloodHound Enterprise does not treat them as principals for findings and metric calculations in that environment.
 
-This example builds on the previous definition by adding the existing service account node kind to `principal_kinds`.
+This example builds on the previous definition by adding the computer and Domain Admin node kinds to `principal_kinds`. This matches the glossary definition of a principal as an entity that can authenticate, be assigned permissions, and serve as a basis for risk metric calculations.
+
+Do not include `EX_Group` in `principal_kinds` for this example. Group B is still an important node in the path because it receives permissions and passes control through the `EX_MemberOf` edge, but it does not authenticate as an identity. BloodHound can still traverse through Group B when the relationship kinds are traversable.
 
 <Note>
   **Findings and metrics**
 
-  `principal_kinds` does not create findings by itself, and the payload does not include a separate finding object. BloodHound Enterprise derives the finding from the environment definition, the [traversable relationship kind](/opengraph/developer/extension-example#define-relationships), the [Privilege Zone target](/opengraph/developer/extension-example#add-a-privilege-zone-target), the matching [relationship findings](/opengraph/developer/extension-example#define-relationship-findings) definition, and the uploaded graph data.
+  `principal_kinds` does not create findings by itself, and the payload does not include a separate finding object. BloodHound Enterprise derives the finding from the environment definition, the [traversable relationship kind](/opengraph/developer/extension-example#define-relationships), the [Privilege Zone target](/opengraph/developer/extension-example#create-a-privilege-zone-rule), the matching [relationship findings](/opengraph/developer/extension-example#define-relationship-findings) definition, and the uploaded graph data.
 </Note>
 
 <Tabs>
@@ -296,12 +348,28 @@ This example builds on the previous definition by adding the existing service ac
         "color": "#d33115"
       },
       {
-        "name": "EX_ServiceAccount",
-        "display_name": "Example Service Account",
-        "description": "Privileged account used to demonstrate display kinds and attack path findings.",
+        "name": "EX_DomainAdmin",
+        "display_name": "Example Domain Admin",
+        "description": "Privileged identity used to demonstrate paths from standard users to Tier Zero.",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#b42318"
+      },
+      {
+        "name": "EX_Group",
+        "display_name": "Example Group",
+        "description": "Identity group used to demonstrate membership-based control paths.",
+        "is_display_kind": true,
+        "icon": "users",
+        "color": "#7c3aed"
+      },
+      {
+        "name": "EX_Computer",
+        "display_name": "Example Computer",
+        "description": "Computer or server that can host sessions and grant local administrative control.",
         "is_display_kind": true,
         "icon": "server",
-        "color": "#B42318"
+        "color": "#0f766e"
       },
       {
         "name": "EX_HighValue",
@@ -317,7 +385,8 @@ This example builds on the previous definition by adding the existing service ac
         "source_kind": "EX",
         "principal_kinds": [
           "EX_User",
-          "EX_ServiceAccount" // [!code ++]
+          "EX_Computer", // [!code ++]
+          "EX_DomainAdmin" // [!code ++]
         ]
       }
     ]
@@ -329,7 +398,7 @@ This example builds on the previous definition by adding the existing service ac
   </Tab>
   <Tab title="BloodHound behavior">
 
-  At this point, you won't see any visual changes in BloodHound, but the extension definition now enables findings and metrics for both `EX_User` and `EX_ServiceAccount` principals in the target environment.
+  At this point, you won't see any visual changes in BloodHound, but the extension definition now enables findings and metrics for `EX_User`, `EX_Computer`, and `EX_DomainAdmin` principals in the target environment.
 
   The remaining examples in this guide build on this definition to show the other conditions required for findings and metrics.
   </Tab>
@@ -341,9 +410,14 @@ Use [`relationship_kinds.is_traversable`](/opengraph/developer/graph-definition#
 
 When you set `is_traversable` to `true` on a relationship kind, every edge of that kind inherits the same traversability behavior. Use traversable relationships to represent conditions where the starting node can take control of the ending node to a degree that lets an attacker abuse the ending node's outgoing edges.
 
-This example connects Alice, an `EX_User` principal, to the service account from the previous section. It also connects the service account to the domain environment so the example data contains a complete path from Alice to the domain.
+This example connects the five nodes from the previous sections:
 
-The `EX_CanAssumeServiceAccount` relationship kind is traversable because it represents delegated access that lets the starting node assume the ending node's identity. The `EX_ManagesDomain` relationship kind is also traversable because control of the service account gives control of the domain.
+- User A is a member of Group B.
+- Group B has full control over User C.
+- User C is a local administrator on Server D.
+- Server D hosts a session for the Domain Admin identity.
+
+Each relationship is traversable because it represents a control transition. Auditing User A in isolation shows a standard user, but tracing the edges shows that User A can reach the Domain Admin identity.
 
 <Tabs>
   <Tab title="Example definition">
@@ -371,12 +445,28 @@ The `EX_CanAssumeServiceAccount` relationship kind is traversable because it rep
         "color": "#d33115"
       },
       {
-        "name": "EX_ServiceAccount",
-        "display_name": "Example Service Account",
-        "description": "Privileged account used to demonstrate display kinds and attack path findings.",
+        "name": "EX_DomainAdmin",
+        "display_name": "Example Domain Admin",
+        "description": "Privileged identity used to demonstrate paths from standard users to Tier Zero.",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#b42318"
+      },
+      {
+        "name": "EX_Group",
+        "display_name": "Example Group",
+        "description": "Identity group used to demonstrate membership-based control paths.",
+        "is_display_kind": true,
+        "icon": "users",
+        "color": "#7c3aed"
+      },
+      {
+        "name": "EX_Computer",
+        "display_name": "Example Computer",
+        "description": "Computer or server that can host sessions and grant local administrative control.",
         "is_display_kind": true,
         "icon": "server",
-        "color": "#B42318"
+        "color": "#0f766e"
       },
       {
         "name": "EX_HighValue",
@@ -385,15 +475,25 @@ The `EX_CanAssumeServiceAccount` relationship kind is traversable because it rep
         "is_display_kind": false
       }
     ],
-    "relationship_kinds": [ // [!code ++:12]
+    "relationship_kinds": [ // [!code ++:20]
       {
-        "name": "EX_CanAssumeServiceAccount",
-        "description": "Ability to assume an example service account.",
+        "name": "EX_MemberOf",
+        "description": "Membership that grants the source identity the permissions of the target group.",
         "is_traversable": true
       },
       {
-        "name": "EX_ManagesDomain",
-        "description": "Ability to manage the example domain.",
+        "name": "EX_FullControl",
+        "description": "Permission that lets the source identity control the target identity.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_AdminTo",
+        "description": "Local administrative control over a computer or server.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_HasSession",
+        "description": "Session exposure where control of the source computer can lead to control of the target identity.",
         "is_traversable": true
       }
     ],
@@ -403,7 +503,8 @@ The `EX_CanAssumeServiceAccount` relationship kind is traversable because it rep
         "source_kind": "EX",
         "principal_kinds": [
           "EX_User",
-          "EX_ServiceAccount"
+          "EX_Computer",
+          "EX_DomainAdmin"
         ]
       }
     ]
@@ -429,48 +530,97 @@ The `EX_CanAssumeServiceAccount` relationship kind is traversable because it rep
           }
         },
         {
-          "id": "example-user-1",
+          "id": "example-user-a",
           "kinds": ["EX_User"],
           "properties": {
-            "name": "alice",
-            "displayname": "Alice User",
+            "name": "user-a",
+            "displayname": "User A",
             "environmentid": "example-domain-1"
           }
         },
         {
-          "id": "example-service-account-1",
+          "id": "example-group-b",
+          "kinds": ["EX_Group"],
+          "properties": {
+            "name": "group-b",
+            "displayname": "Group B",
+            "environmentid": "example-domain-1"
+          }
+        },
+        {
+          "id": "example-user-c",
+          "kinds": ["EX_User"],
+          "properties": {
+            "name": "user-c",
+            "displayname": "User C",
+            "environmentid": "example-domain-1"
+          }
+        },
+        {
+          "id": "example-server-d",
+          "kinds": ["EX_Computer"],
+          "properties": {
+            "name": "server-d",
+            "displayname": "Server D",
+            "environmentid": "example-domain-1"
+          }
+        },
+        {
+          "id": "example-domain-admin",
           "kinds": [
-            "EX_ServiceAccount",
+            "EX_DomainAdmin",
             "EX_HighValue"
           ],
           "properties": {
-            "name": "sync-service",
-            "displayname": "Sync Service",
+            "name": "domain-admin",
+            "displayname": "Domain Admin",
             "environmentid": "example-domain-1"
           }
         }
       ],
-      "edges": [ // [!code ++:24]
+      "edges": [ // [!code ++:48]
         {
-          "kind": "EX_CanAssumeServiceAccount",
+          "kind": "EX_MemberOf",
           "start": {
             "match_by": "id",
-            "value": "example-user-1"
+            "value": "example-user-a"
           },
           "end": {
             "match_by": "id",
-            "value": "example-service-account-1"
+            "value": "example-group-b"
           }
         },
         {
-          "kind": "EX_ManagesDomain",
+          "kind": "EX_FullControl",
           "start": {
             "match_by": "id",
-            "value": "example-service-account-1"
+            "value": "example-group-b"
           },
           "end": {
             "match_by": "id",
-            "value": "example-domain-1"
+            "value": "example-user-c"
+          }
+        },
+        {
+          "kind": "EX_AdminTo",
+          "start": {
+            "match_by": "id",
+            "value": "example-user-c"
+          },
+          "end": {
+            "match_by": "id",
+            "value": "example-server-d"
+          }
+        },
+        {
+          "kind": "EX_HasSession",
+          "start": {
+            "match_by": "id",
+            "value": "example-server-d"
+          },
+          "end": {
+            "match_by": "id",
+            "value": "example-domain-admin"
           }
         }
       ]
@@ -479,10 +629,17 @@ The `EX_CanAssumeServiceAccount` relationship kind is traversable because it rep
   ```
   </Tab>
   <Tab title="BloodHound behavior">
-  - BloodHound includes every `EX_CanAssumeServiceAccount` and `EX_ManagesDomain` edge in pathfinding because both relationship kinds set `is_traversable` to `true`.
-  - The path starts at Alice, reaches the service account, and then reaches the domain.
-  - This path can contribute to Attack Path detection, findings, and metrics when the domain is in a higher Privilege Zone than Alice.
+  - BloodHound includes every `EX_MemberOf`, `EX_FullControl`, `EX_AdminTo`, and `EX_HasSession` edge in pathfinding because all four relationship kinds set `is_traversable` to `true`.
+  - The path starts at User A, reaches Group B, reaches User C, reaches Server D, and then reaches the Domain Admin identity.
+  - This path can contribute to Attack Path detection, findings, and metrics when the Domain Admin identity is in a higher Privilege Zone than User A.
   - If `is_traversable` is `false`, the relationship can still exist in the graph, but BloodHound does not use edges of that kind for pathfinding, findings, or metrics.
+
+    <Frame>
+      <img
+        src="/images/opengraph/extensions/develop/define-relationships.png"
+        alt="An example of how traversable relationships appear in the BloodHound graph for a custom extension."
+      />
+    </Frame>
   </Tab>
 </Tabs>
 
@@ -497,17 +654,17 @@ The `EX_CanAssumeServiceAccount` relationship kind is traversable because it rep
 
 Use [Privilege Zones](/analyze-data/privilege-zones/overview) to identify which graph objects represent higher-privilege targets. BloodHound Enterprise generates Attack Path findings when a lower-privileged principal can reach a higher-privileged zone through traversable relationships.
 
-This example builds on the relationship payload from the previous section. The schema and payload define the path from Alice to the domain, but the domain must be in a higher Privilege Zone before BloodHound Enterprise can treat the path as a finding.
+This example builds on the relationship payload from the previous section. The schema and payload define the path from User A to the Domain Admin identity, but the Domain Admin identity must be in a higher Privilege Zone before BloodHound Enterprise can treat the path as a finding.
 
 <Steps>
   <Step title="Open the pathfinding graph">
-    Use the [Pathfinding](/analyze-data/explore/search#pathfinding) tab on the **Explore** page to display the path from `Alice` to `CORP.EXAMPLE.DOMAIN` from the previous example.
+    Use the [Pathfinding](/analyze-data/explore/search#pathfinding) tab on the **Explore** page to display the path from `User A` to `Domain Admin` from the previous example.
   </Step>
-  <Step title="Open the domain context menu">
-    Right-click the `CORP.EXAMPLE.DOMAIN` node in the graph to open the [context menu](/analyze-data/explore/search#context-menu).
+  <Step title="Open the Domain Admin context menu">
+    Right-click the `Domain Admin` node in the graph to open the [context menu](/analyze-data/explore/search#context-menu).
   </Step>
-  <Step title="Add the domain to Tier Zero">
-    Select **Add to Tier Zero**. BloodHound Enterprise adds the domain to the Tier Zero Privilege Zone and starts analysis.
+  <Step title="Add Domain Admin to Tier Zero">
+    Select **Add to Tier Zero**. BloodHound Enterprise adds the Domain Admin identity to the Tier Zero Privilege Zone and starts analysis.
   </Step>
   <Step title="Wait for analysis">
     Wait for analysis to finish before proceeding to the next step.
@@ -516,11 +673,13 @@ This example builds on the relationship payload from the previous section. The s
 
 After analysis, the example data contains the required privilege boundary:
 
-- Alice is a lower-privileged `EX_User` principal.
-- The service account is an `EX_ServiceAccount` principal that manages the domain.
-- The domain is a Tier Zero target.
+- User A is a lower-privileged `EX_User` principal.
+- Group B has full control over User C through a traversable permission edge.
+- User C is a local administrator on Server D.
+- Server D hosts a session for the Domain Admin identity.
+- The Domain Admin identity is a Tier Zero target.
 
-With that boundary in place, the traversable path `alice -> Sync Service -> CORP.EXAMPLE.DOMAIN` can generate a finding when the schema includes a matching `relationship_findings` definition.
+With that boundary in place, the traversable path `User A -> Group B -> User C -> Server D -> Domain Admin` can generate a finding when the schema includes a matching `relationship_findings` definition.
 
 ## Define relationship findings
 
@@ -533,7 +692,11 @@ With that boundary in place, the traversable path `alice -> Sync Service -> CORP
 
 Use [`relationship_findings`](/opengraph/developer/graph-definition#relationship_findings) when you want BloodHound Enterprise to attach a finding definition and remediation guidance to a relationship kind that represents an Attack Path condition.
 
-This example builds on the traversable `EX_CanAssumeServiceAccount` relationship and the Tier Zero domain target from the previous sections. The `relationship_findings` entry adds the finding metadata and remediation text that BloodHound Enterprise can display in the UI when matching graph data satisfies the Attack Path conditions.
+This example builds on the traversable `EX_HasSession` relationship and the Tier Zero Domain Admin target from the previous sections. The `relationship_findings` entry adds the finding metadata and remediation text that BloodHound Enterprise can display in the UI when matching graph data satisfies the Attack Path conditions.
+
+<Note>
+  Define the finding on the relationship kind that crosses into the higher Privilege Zone. In this example, `EX_HasSession` targets the Tier Zero Domain Admin identity.
+</Note>
 
 <Tabs>
   <Tab title="Example definition">
@@ -561,12 +724,28 @@ This example builds on the traversable `EX_CanAssumeServiceAccount` relationship
         "color": "#d33115"
       },
       {
-        "name": "EX_ServiceAccount",
-        "display_name": "Example Service Account",
-        "description": "Privileged account used to demonstrate display kinds and attack path findings.",
+        "name": "EX_DomainAdmin",
+        "display_name": "Example Domain Admin",
+        "description": "Privileged identity used to demonstrate paths from standard users to Tier Zero.",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#b42318"
+      },
+      {
+        "name": "EX_Group",
+        "display_name": "Example Group",
+        "description": "Identity group used to demonstrate membership-based control paths.",
+        "is_display_kind": true,
+        "icon": "users",
+        "color": "#7c3aed"
+      },
+      {
+        "name": "EX_Computer",
+        "display_name": "Example Computer",
+        "description": "Computer or server that can host sessions and grant local administrative control.",
         "is_display_kind": true,
         "icon": "server",
-        "color": "#B42318"
+        "color": "#0f766e"
       },
       {
         "name": "EX_HighValue",
@@ -577,13 +756,23 @@ This example builds on the traversable `EX_CanAssumeServiceAccount` relationship
     ],
     "relationship_kinds": [
       {
-        "name": "EX_CanAssumeServiceAccount",
-        "description": "Ability to assume an example service account.",
+        "name": "EX_MemberOf",
+        "description": "Membership that grants the source identity the permissions of the target group.",
         "is_traversable": true
       },
       {
-        "name": "EX_ManagesDomain",
-        "description": "Ability to manage the example domain.",
+        "name": "EX_FullControl",
+        "description": "Permission that lets the source identity control the target identity.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_AdminTo",
+        "description": "Local administrative control over a computer or server.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_HasSession",
+        "description": "Session exposure where control of the source computer can lead to control of the target identity.",
         "is_traversable": true
       }
     ],
@@ -593,21 +782,22 @@ This example builds on the traversable `EX_CanAssumeServiceAccount` relationship
         "source_kind": "EX",
         "principal_kinds": [
           "EX_User",
-          "EX_ServiceAccount"
+          "EX_Computer",
+          "EX_DomainAdmin"
         ]
       }
     ],
     "relationship_findings": [ // [!code ++:14]
       {
-        "name": "EX_CanAssumeServiceAccount_Finding",
-        "display_name": "Service Account Assumption Path",
+        "name": "EX_HasSession_TierZeroPath_Finding",
+        "display_name": "Tier Zero Session Exposure Path",
         "environment_kind": "EX_Domain",
-        "relationship_kind": "EX_CanAssumeServiceAccount",
+        "relationship_kind": "EX_HasSession",
         "remediation": {
-          "short_description": "Review principals that can assume privileged service accounts.",
-          "long_description": "This finding appears when a traversable service account assumption edge gives a principal control over a privileged service account in the target environment.",
-          "short_remediation": "Restrict service account assumption rights to approved privileged roles.",
-          "long_remediation": "Review delegated service account access, remove unnecessary assignments, and validate the operational workflows that still require this access."
+          "short_description": "Review computers that expose sessions for Tier Zero identities.",
+          "long_description": "This finding appears when a traversable session edge lets a lower-privileged principal reach a Tier Zero identity through transitive relationships.",
+          "short_remediation": "Remove unnecessary Tier Zero sessions from lower-trust computers.",
+          "long_remediation": "Review the source computer, the Tier Zero identity session, and the upstream path. Remove unnecessary sessions, restrict where privileged identities sign in, remove excessive group and full-control permissions, and validate that local administrator rights are limited to approved operators."
         }
       }
     ]
@@ -618,10 +808,17 @@ This example builds on the traversable `EX_CanAssumeServiceAccount` relationship
   Use the same payload from the traversable relationship example and the same Tier Zero zone configuration from the Privilege Zone example. Relationship findings do not require a separate payload object.
   </Tab>
   <Tab title="BloodHound behavior">
-  - When BloodHound Enterprise detects a qualifying `EX_CanAssumeServiceAccount` edge on a path from Alice to the Tier Zero domain, the finding can display the custom title and remediation content from the schema.
-  - The finding is based on the privilege boundary violation: Alice is lower privileged, but she can take control of the service account and reach Tier Zero.
+  - When BloodHound Enterprise detects a qualifying `EX_HasSession` edge on a path from User A to the Tier Zero Domain Admin identity, the finding can display the custom title and remediation content from the schema.
+  - The finding is based on the privilege boundary violation: User A is lower privileged, but User A can traverse group membership, identity control, local administrator rights, and session exposure to reach Tier Zero.
   - If you do not define a matching `relationship_findings` entry, the relationship can still exist in the graph, but BloodHound Enterprise does not have extension-provided finding and remediation text to display for that condition.
-  - If the domain is not in a higher Privilege Zone, BloodHound Enterprise does not have the privilege boundary it needs to generate this Attack Path finding.
+  - If the Domain Admin identity is not in a higher Privilege Zone, BloodHound Enterprise does not have the privilege boundary it needs to generate this Attack Path finding.
+
+    <Frame>
+      <img
+        src="/images/opengraph/extensions/develop/findings-and-remediation.png"
+        alt="An example of how a finding appears in the BloodHound Enterprise UI for a custom extension."
+      />
+    </Frame>
   </Tab>
 </Tabs>
 
