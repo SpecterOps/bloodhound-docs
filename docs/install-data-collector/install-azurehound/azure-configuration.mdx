@@ -8,24 +8,26 @@ import EntraIdPermissions from '/snippets/hounds/azurehound-entra-id-permissions
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-Creating a Microsoft Entra ID application registration is a prerequisite for AzureHound Enterprise data collection and involves the following steps:
+For Certificate, Client Secret, and Username and Password authentication methods, creating a Microsoft Entra ID application registration is a prerequisite for AzureHound Enterprise data collection. If you are using **Azure Managed Identity** authentication, an app registration is not required — skip directly to [Configure authentication](#configure-authentication).
+
+For app registration-based authentication, the setup involves the following steps:
 
 ```mermaid
 graph LR
     A[Create a
-    new app 
-    registration] --> B[Add 
+    new app
+    registration] --> B[Add
     required API
     permissions]
-    B --> C[Configure 
-    authentication 
+    B --> C[Configure
+    authentication
     methods]
     C --> D[Create and
-    assign required 
+    assign required
     access roles]
 ```
 
-Some steps are required before you can complete the [AzureHound configuration](/install-data-collector/install-azurehound/create-configuration). At minimum, you must create the application registration because AzureHound requires an Entra ID **Directory (tenant) ID** and **Application (client) ID**.
+For Certificate, Client Secret, and Username and Password authentication, some steps are required before you can complete the [AzureHound configuration](/install-data-collector/install-azurehound/create-configuration). At minimum, you must create the application registration because AzureHound requires an Entra ID **Directory (tenant) ID** and **Application (client) ID**. For **Azure Managed Identity** authentication, these steps are not required — see [Managed identity](#managed-identity-recommended) instead.
 
 ## Create a new app registration
 
@@ -46,11 +48,11 @@ This section guides you through the minimum steps to create a new application re
       [Privileged Role Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#privileged-role-administrator
       [Cloud Application Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#cloud-application-administrator
       [Application Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#application-administrator
- 
+
   </Step>
 
   <Step title="Create a new app registration">
-    
+
     1. In the left menu, click **Entra ID** > **App registrations** > **New registration**.
 
     1. In the **Name** field, enter a name for the application to identify it in your organization.
@@ -58,7 +60,7 @@ This section guides you through the minimum steps to create a new application re
         Make sure the supported account type is set to the **Accounts in this organizational directory only (Single tenant)** option. A URI is not required.
 
         <Frame>
-          <img 
+          <img
             src="/images/data_collectors/azurehound/register-app.png"
             alt="A view of the Azure portal showing the New registration page with fields to enter the application name and supported account types."
           />
@@ -90,6 +92,10 @@ This section guides you through the minimum steps to create a new application re
 This section describes how to configure the required Microsoft Graph API permissions for the AzureHound Enterprise application registration.
 
 <Note>See the [Microsoft documentation](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-configure-app-access-web-apis#add-permissions-to-access-microsoft-graph) for more information.</Note>
+
+<Note>
+  This section applies to Certificate, Client Secret, and Username and Password authentication methods. For **Azure Managed Identity** authentication, Microsoft Graph permissions must be granted directly to the managed identity's service principal — see [Managed identity](#managed-identity-recommended) for details.
+</Note>
 
 <Steps>
   <Step title="Navigate to API permissions">
@@ -162,7 +168,7 @@ This section describes how to configure the required Microsoft Graph API permiss
 
 ## Configure authentication
 
-This section describes how to configure authentication methods for the AzureHound Enterprise application registration. AzureHound Enterprise supports the following authentication methods:
+This section describes how to configure authentication methods for AzureHound Enterprise. AzureHound Enterprise supports the following authentication methods:
 
 - Azure Managed Identity (<Badge color="green">recommended</Badge>)
 - Certificate
@@ -177,7 +183,7 @@ Managed identities provide the most secure authentication method because they re
 
 <ManagedIdentityRecommendation />
 
-For this setup, create a user-assigned managed identity in Azure, assign it to the Azure resource where you plan to run AzureHound Enterprise, and configure the app registration to trust that identity.
+For this setup, create a user-assigned managed identity in Azure and assign it to the Azure resource where you plan to run AzureHound Enterprise.
 
 <Note>To complete [AzureHound configuration](/install-data-collector/install-azurehound/create-configuration), you will need the user-assigned managed identity **Client ID**. AzureHound Enterprise must run on the Azure resource where that identity is assigned.</Note>
 
@@ -201,21 +207,106 @@ For this setup, create a user-assigned managed identity in Azure, assign it to t
     <Note>Azure Managed Identity authentication only works when AzureHound Enterprise runs on an Azure resource that has access to the managed identity. See the Microsoft [documentation](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/managed-identities-status) for more information.</Note>
 
   </Step>
-  <Step title="Configure the app registration to trust the managed identity">
+  <Step title="Grant required permissions to the managed identity">
 
-    1. Sign in to the [Microsoft Entra admin center](https://entra.microsoft.com/) and navigate to the previously created AzureHound Enterprise application registration.
+    AzureHound authenticates directly as the managed identity — no app registration is involved. You must grant both types of required permissions directly to the managed identity's service principal:
 
-    1. In the left menu, click **Certificates & secrets** > **Federated credentials** > **Add credential**.
+    - **Microsoft Graph API permissions** — The Azure portal provides no user interface for granting Microsoft Graph **application** permissions to a managed identity's service principal. You must use PowerShell (or Azure Cloud Shell) to assign these permissions directly. See [AzureHound Data and Permissions: Entra ID](/collect-data/azurehound-data-permissions#entra-id) for details on the least-privilege approach.
+    - **AzureHound Reader role** — Assign the AzureHound Reader custom role to the managed identity's service principal at the Tenant Root Group scope. See [Create and assign required access roles](#create-and-assign-required-access-roles) below.
 
-    1. From the **Federated credential scenario** dropdown menu, select **Managed Identity**.
+    The following PowerShell script (Microsoft Graph SDK) assigns all required Microsoft Graph application permissions to your managed identity's service principal. Replace the `$managedIdentityClientId` placeholder with the **Client ID** found in the Azure portal under **Managed Identities** &gt; your identity &gt; **Overview**.
 
-    1. Select the user-assigned managed identity that you created for AzureHound Enterprise.
+    ```powershell
+    <#
+    .SYNOPSIS
+    Grants Microsoft Graph application permissions to an Azure managed identity's
+    service principal for AzureHound Enterprise data collection.
 
-    1. Review the default values and complete any remaining required fields.
+    .DESCRIPTION
+    The Azure portal provides no user interface for granting Microsoft Graph application
+    permissions to a managed identity's service principal. This script uses the
+    Microsoft Graph PowerShell SDK to assign the required least-privilege permissions
+    directly to the managed identity's existing service principal.
 
-        <Note>See the Microsoft [documentation](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-config-app-trust-managed-identity) for more information.</Note>
-    
-    1. Click **Add**.
+    The required PowerShell module can be installed from the PowerShell Gallery:
+
+    Install-Module -Scope AllUsers -Repository PSGallery -Force -Name @(
+        Microsoft.Graph.Applications,
+        Microsoft.Graph.Authentication
+    )
+
+    .NOTES
+    Version: 1.0
+    #>
+
+    #Requires -Version 5
+    #Requires -Modules Microsoft.Graph.Applications,Microsoft.Graph.Authentication
+
+    # ---------------------------------------------------------------------------
+    # TODO: Replace with your managed identity's Client ID.
+    # Found in the Azure portal: Managed Identities > your identity > Overview.
+    # ---------------------------------------------------------------------------
+    [string] $managedIdentityClientId = '<YOUR-MANAGED-IDENTITY-CLIENT-ID>'
+
+    # Connect to Microsoft Graph with the scopes required to read service principals
+    # and grant app role assignments.
+    # Note: The -TenantId parameter is also required when using an External ID.
+    Connect-MgGraph -NoWelcome -ContextScope Process -Scopes @(
+        'Application.Read.All',
+        'AppRoleAssignment.ReadWrite.All'
+    )
+
+    # Resolve the managed identity's service principal by its Client ID (AppId).
+    [Microsoft.Graph.PowerShell.Models.IMicrosoftGraphServicePrincipal] $miServicePrincipal =
+        Get-MgServicePrincipal -Filter "AppId eq '$managedIdentityClientId'"
+
+    if (-not $miServicePrincipal) {
+        throw "No service principal found for managed identity Client ID '$managedIdentityClientId'."
+    }
+
+    # Fetch the Microsoft Graph service principal, resolved by its well-known,
+    # tenant-invariant AppId rather than DisplayName for robustness.
+    [Microsoft.Graph.PowerShell.Models.IMicrosoftGraphServicePrincipal] $microsoftGraph =
+        Get-MgServicePrincipal -Filter "AppId eq '00000003-0000-0000-c000-000000000000'"
+
+    # Define the least-privilege Microsoft Graph application permissions
+    # See: /collect-data/azurehound-data-permissions#entra-id
+    [string[]] $requiredPermissions = @(
+        'User.Read.All'
+        'GroupMember.Read.All'
+        'Application.Read.All'
+        'Device.Read.All'
+        'Organization.Read.All'
+        'RoleManagement.Read.Directory'
+        'AdministrativeUnit.Read.All'
+        'AuditLog.Read.All'  # Optional: for signInActivity on user objects
+    )
+
+    # Assign each permission to the managed identity's service
+    # principal using New-MgServicePrincipalAppRoleAssignment.
+    foreach ($permission in $requiredPermissions) {
+        [Microsoft.Graph.PowerShell.Models.IMicrosoftGraphAppRole] $appRole =
+            $microsoftGraph.AppRoles | Where-Object Value -eq $permission
+
+        if (-not $appRole) {
+            throw "Permission '$permission' not found in Microsoft Graph app roles."
+        }
+
+        New-MgServicePrincipalAppRoleAssignment `
+            -ServicePrincipalId $miServicePrincipal.Id `
+            -PrincipalId $miServicePrincipal.Id `
+            -ResourceId $microsoftGraph.Id `
+            -AppRoleId $appRole.Id
+    }
+
+    Write-Host ''
+    Write-Host 'Microsoft Graph permissions granted to managed identity:' -ForegroundColor Green
+    $requiredPermissions | ForEach-Object { Write-Host "  - $_" }
+    Write-Host ''
+
+    # Sign out from Microsoft Graph
+    Disconnect-MgGraph | Out-Null
+    ```
 
   </Step>
 </Steps>
@@ -251,7 +342,7 @@ For this setup, you must also upload the certificate to the app registration if 
        <Frame>
         <img src="/assets/image-140.png" alt="The Certificates page showing the Upload certificate button."/>
        </Frame>
-  
+
   1. Locate the `cert.pem` file that you created during [AzureHound configuration](/install-data-collector/install-azurehound/create-configuration).
 
   1. Click the folder icon, select the `cert.pem` file, and add a description (optional).
@@ -265,6 +356,8 @@ For this setup, you must also upload the certificate to the app registration if 
 </Steps>
 
 ## Configure application branding
+
+<Note>This section applies only if you created an app registration (Certificate, Client Secret, or Username and Password authentication). It does not apply to Azure Managed Identity authentication, since no app registration exists to brand.</Note>
 
 Optionally, add branding to help users identify the AzureHound Enterprise application in the Entra ID admin center. These steps do not affect collector functionality.
 
@@ -312,7 +405,7 @@ Optionally, add branding to help users identify the AzureHound Enterprise applic
 
 ## Create and assign required access roles
 
-This section describes how to assign the required access roles to the AzureHound Enterprise application registration for data collection.
+This section describes how to assign the required access roles for AzureHound Enterprise data collection. For Certificate, Client Secret, and Username and Password authentication methods, assign the role to the app registration's service principal. For **Azure Managed Identity** authentication, assign the role to the managed identity's service principal instead.
 
 The AzureHound Reader role is a least-privilege custom role that grants AzureHound the minimum permissions required to collect data from Azure Resource Manager. Assigning this role at the Tenant Root Group scope ensures AzureHound can collect data across all current and future subscriptions in the tenant.
 
@@ -401,7 +494,11 @@ The AzureHound Reader role is a least-privilege custom role that grants AzureHou
           <img src="/assets/image-131.png" alt="The Members step with the Select members button highlighted."/>
         </Frame>
 
-    1. Search for and click on your previously created service principal.
+    1. For **Azure Managed Identity** authentication, under **Assign access to**, select **Managed identity**. For Certificate, Client Secret, and Username and Password authentication, leave the default **User, group, or service principal** selected.
+
+        <Note>Managed identities do not appear in the default member picker. You must switch **Assign access to** to **Managed identity** first, or your search in the next step will return no results.</Note>
+
+    1. Search for and click on the service principal to assign the role to. For Certificate, Client Secret, and Username/Password authentication, select the AzureHound Enterprise app registration's service principal. For **Azure Managed Identity** authentication, select the managed identity's service principal.
 
         <Frame>
           <img src="/assets/image-132.png" alt="The member picker dialog with the AzureHound service principal selected."/>
@@ -436,6 +533,10 @@ The AzureHound Reader role is a least-privilege custom role that grants AzureHou
 ## Scripted configuration
 
 As an alternative to the manual steps described in this document, you can use **PowerShell** to automate the entire configuration process.
+
+<Note>
+  This script applies to **Certificate, Client Secret, and Username and Password** authentication methods only — it is not applicable for Managed Identity authentication.
+</Note>
 
 The script below registers AzureHound in Entra ID, creates the least-privilege Azure Reader role, and assigns it to the service principal.
 The script is **idempotent**—it safely handles re-runs by detecting existing resources and updating them as needed, preventing duplicate role definitions or assignments.

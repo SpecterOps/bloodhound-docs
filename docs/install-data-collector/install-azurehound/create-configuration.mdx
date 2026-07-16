@@ -13,12 +13,12 @@ To complete the configuration process, you must have the following information:
 
 | Item | Description |
 | --- | --- |
-| **Directory (tenant) ID** | Identifies the Microsoft Entra ID instance where you must [register](/install-data-collector/install-azurehound/azure-configuration) the AzureHound Enterprise application. |
-| **Application (client) ID** | Identifies the AzureHound Enterprise [app registration](/install-data-collector/install-azurehound/azure-configuration) that you must create in the Microsoft Entra admin center. |
+| **Directory (tenant) ID** | Identifies the Microsoft Entra ID instance for your Azure environment. For Certificate, Client Secret, and Username and Password authentication, this is also the tenant where you must [register](/install-data-collector/install-azurehound/azure-configuration) the AzureHound Enterprise application. |
+| **Application (client) ID** | Identifies the AzureHound Enterprise [app registration](/install-data-collector/install-azurehound/azure-configuration) that you must create in the Microsoft Entra admin center. For **Azure Managed Identity** authentication, use the managed identity's Client ID. |
 | **AzureHound token ID** | Identifies the AzureHound Enterprise [collector client](/collect-data/enterprise-collection/create-collector) that you must create in BloodHound Enterprise. |
 | **AzureHound token** | Provides the authentication key for the AzureHound Enterprise [collector client](/collect-data/enterprise-collection/create-collector) that you must create in BloodHound Enterprise. |
 | **BloodHound Enterprise URL** | The URL of your BloodHound Enterprise tenant (for example, `https://<your-tenant>.bloodhoundenterprise.io/`). |
-| **Managed Identity Client ID** | If using [Azure Managed Identity](/install-data-collector/install-azurehound/azure-configuration#managed-identity-recommended) authentication, identifies the managed identity that the AzureHound Enterprise app registration trusts and that is assigned to the Azure resource where you run AzureHound Enterprise. |
+| **Managed Identity Client ID** | If using [Azure Managed Identity](/install-data-collector/install-azurehound/azure-configuration#managed-identity-recommended) authentication, identifies the managed identity assigned to the Azure resource where you run AzureHound Enterprise. |
 | **Certificate and private key** | If using [Certificate](/install-data-collector/install-azurehound/azure-configuration#certificate) authentication, the certificate and private key used to authenticate the AzureHound Enterprise application. The AzureHound Enterprise CLI tool can generate this for you during the configuration process if needed. |
 
 Configuring AzureHound Enterprise involves the following steps:
@@ -96,6 +96,8 @@ Follow the steps below to create your AzureHound Enterprise configuration file u
       ```text
       Application (client) ID: 18a7b927-9905-484e-8b17-c09630ce8ff2
       ```
+
+      <Note>If you are using **Azure Managed Identity** authentication, enter the managed identity's **Client ID** here.</Note>
   </Step>
 
   <Step title="Configure AzureHound authentication">
@@ -106,7 +108,7 @@ Follow the steps below to create your AzureHound Enterprise configuration file u
 
       <ManagedIdentityRecommendation />
 
-      Before configuring Azure Managed Identity authentication, you must first create a [user-assigned managed identity](/install-data-collector/install-azurehound/azure-configuration#managed-identity-recommended), assign it to the Azure resource where you plan to run AzureHound Enterprise, and configure the AzureHound Enterprise app registration to trust that identity.
+      Before configuring Azure Managed Identity authentication, you must first create a [user-assigned managed identity](/install-data-collector/install-azurehound/azure-configuration#managed-identity-recommended), assign it to the Azure resource where you plan to run AzureHound Enterprise, and grant the required permissions and AzureHound Reader role directly to the managed identity.
 
       1. Select **Azure Managed Identity** as the authentication method.
 
@@ -127,7 +129,7 @@ Follow the steps below to create your AzureHound Enterprise configuration file u
               System-Assigned
             > User-Assigned
           ```
-        
+
       1. Enter the **Client ID** of the User-Assigned Managed Identity.
 
           ```text
@@ -177,7 +179,7 @@ Follow the steps below to create your AzureHound Enterprise configuration file u
           </Note>
 
       1. Enter an optional passphrase for the private key.
-  
+
           ```text
           Authentication Method: Certificate
           v Private Key Passphrase (optional):
@@ -209,7 +211,7 @@ Follow the steps below to create your AzureHound Enterprise configuration file u
       ```text
       v BloodHound Enterprise Token ID: bb7b957f-2508-400b-971e-6a1857cc0101
       ```
-  
+
   1. Enter the collector client's **Token**.
 
       ```text
@@ -238,7 +240,7 @@ Follow the steps below to create your AzureHound Enterprise configuration file u
       ```text
       Use the arrow keys to navigate: ↓ ↑ ← →
       ? Verbosity:
-          Disabled      
+          Disabled
         > Default
           Debug
           Trace
