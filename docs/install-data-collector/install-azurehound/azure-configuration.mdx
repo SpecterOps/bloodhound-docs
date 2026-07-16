@@ -1,160 +1,413 @@
 ---
 title: AzureHound Enterprise Azure Configuration
-description: "This section details creating and configuring an Enterprise Application for AzureHound within Microsoft Entra ID, including API permissions, roles, and authentication certificate."
+description: Follow this guide to configure Microsoft Entra ID for AzureHound Enterprise data collection.
 ---
 
+import ManagedIdentityRecommendation from '/snippets/hounds/managed-id-recommendation.mdx';
 import EntraIdPermissions from '/snippets/hounds/azurehound-entra-id-permissions.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-<Info>You can complete the steps on this page manually following the instructions below, or use the PowerShell script in the [Scripted Configuration](#scripted-configuration) section to automate the entire process (except certificate upload).</Info>
+For Certificate, Client Secret, and Username and Password authentication methods, creating a Microsoft Entra ID application registration is a prerequisite for AzureHound Enterprise data collection. If you are using **Azure Managed Identity** authentication, an app registration is not required — skip directly to [Configure authentication](#configure-authentication).
 
-## Create the AzureHound Enterprise app
-1.  Log into the [Microsoft Entra admin center](https://entra.microsoft.com/) as a user with the [Global Administrator] role,
-    or the following less privileged roles:
+For app registration-based authentication, the setup involves the following steps:
 
-    * [Privileged Role Administrator] AND
-    * [Application Administrator] OR [Cloud Application Administrator]
+```mermaid
+graph LR
+    A[Create a
+    new app
+    registration] --> B[Add
+    required API
+    permissions]
+    B --> C[Configure
+    authentication
+    methods]
+    C --> D[Create and
+    assign required
+    access roles]
+```
 
-[Global Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#global-administrator
-[Privileged Role Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#privileged-role-administrator
-[Cloud Application Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#cloud-application-administrator
-[Application Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#application-administrator
+For Certificate, Client Secret, and Username and Password authentication, some steps are required before you can complete the [AzureHound configuration](/install-data-collector/install-azurehound/create-configuration). At minimum, you must create the application registration because AzureHound requires an Entra ID **Directory (tenant) ID** and **Application (client) ID**. For **Azure Managed Identity** authentication, these steps are not required — see [Managed identity](#managed-identity-recommended) instead.
 
-2.  In the left menu, select **App registrations**.
+## Create a new app registration
+
+This section guides you through the minimum steps to create a new application registration in Microsoft Entra ID for AzureHound Enterprise data collection.
+
+<Note>See the Microsoft [documentation](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app) for more information.</Note>
+
+<Steps>
+  <Step title="Navigate to Entra ID">
+
+    Log into the [Microsoft Entra admin center](https://entra.microsoft.com/) as a user with the [Global Administrator] role, or the following less privileged roles:
+
+    - [Privileged Role Administrator] AND
+    - [Application Administrator] OR [Cloud Application Administrator]
+
+      {/* Link definitions */}
+      [Global Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#global-administrator
+      [Privileged Role Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#privileged-role-administrator
+      [Cloud Application Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#cloud-application-administrator
+      [Application Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#application-administrator
+
+  </Step>
+
+  <Step title="Create a new app registration">
+
+    1. In the left menu, click **Entra ID** > **App registrations** > **New registration**.
+
+    1. In the **Name** field, enter a name for the application to identify it in your organization.
+
+        Make sure the supported account type is set to the **Accounts in this organizational directory only (Single tenant)** option. A URI is not required.
+
+        <Frame>
+          <img
+            src="/images/data_collectors/azurehound/register-app.png"
+            alt="A view of the Azure portal showing the New registration page with fields to enter the application name and supported account types."
+          />
+        </Frame>
+
+    1. Click **Register** to create the application registration.
+
+  </Step>
+
+  <Step title="Retrieve details for AzureHound configuration">
+
+    In the **Overview** menu, copy the **Application (client) ID** and **Directory (tenant) ID**.
+
+    <Note>You will need this information later to configure [AzureHound Enterprise](/install-data-collector/install-azurehound/create-configuration).</Note>
+
+      <Frame>
+        <img
+          src="/images/data_collectors/azurehound/app-registration-details.png"
+          alt="A view of the Azure portal showing the application registration details page with the Application (client) ID and Directory (tenant) ID fields highlighted."
+        />
+      </Frame>
+
+  </Step>
+
+</Steps>
+
+## Add required API permissions
+
+This section describes how to configure the required Microsoft Graph API permissions for the AzureHound Enterprise application registration.
+
+<Note>See the [Microsoft documentation](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-configure-app-access-web-apis#add-permissions-to-access-microsoft-graph) for more information.</Note>
+
+<Note>
+  This section applies to Certificate, Client Secret, and Username and Password authentication methods. For **Azure Managed Identity** authentication, Microsoft Graph permissions must be granted directly to the managed identity's service principal — see [Managed identity](#managed-identity-recommended) for details.
+</Note>
+
+<Steps>
+  <Step title="Navigate to API permissions">
+
+    On the **Overview** page of the app registration, click **API Permissions**.
+
+  </Step>
+
+  <Step title="Remove default permission">
+
+    Remove the default **User.Read** delegated permission. It is not required for AzureHound Enterprise data collection.
+
+      <Frame>
+        <img
+          src="/images/data_collectors/azurehound/remove-default-permission.png"
+          alt="A view of the Azure portal showing the API permissions page with the User.Read permission highlighted for removal."
+        />
+      </Frame>
+
+  </Step>
+
+  <Step title="Add Microsoft Graph API permissions">
+
+    1. Click **Add a permission** > **Microsoft Graph**.
+
+    1. Select **Application permissions**.
+
+        <Frame>
+          <img
+            src="/images/data_collectors/azurehound/ms-graph-api-permission-type.png"
+            alt="A view of the Microsoft Graph API permission selection page with the Application permissions option highlighted."
+          />
+        </Frame>
+
+    1. Search for and check the box next to each of the following Microsoft Graph **application** permissions. See [AzureHound Data and Permissions: Entra ID](/collect-data/azurehound-data-permissions#entra-id) for details on the least-privilege approach:
+
+        <EntraIdPermissions />
+
+    1. Click **Add permissions**.
+
+  </Step>
+
+  <Step title="Grant admin consent">
+
+    After adding the required permissions, you must grant admin consent for the application to use them.
+
+    1. Click **Grant admin consent for &lt;your\_tenant\_name&gt;**.
+
+        <Frame>
+          <img
+            src="/images/data_collectors/azurehound/grant-admin-consent.png"
+            alt="A view of the Azure portal showing the API permissions page with the Grant admin consent button highlighted."
+          />
+        </Frame>
+
+    1. Click **Yes** in the confirmation dialog.
+
+    1. After being redirected to API Permissions again, you should see both permissions as **Granted**.
+
+         <Frame>
+          <img
+            src="/images/data_collectors/azurehound/admin-consent-granted.png"
+            alt="A view of the Azure portal showing the API permissions page with the Directory.Read.All and RoleManagement.Read.All permissions marked as Granted."
+          />
+        </Frame>
+
+  </Step>
+
+</Steps>
+
+## Configure authentication
+
+This section describes how to configure authentication methods for AzureHound Enterprise. AzureHound Enterprise supports the following authentication methods:
+
+- Azure Managed Identity (<Badge color="green">recommended</Badge>)
+- Certificate
+- Client Secret
+- Username and Password
+
+<Note>This section provides instructions for configuring the **Azure Managed Identity** and **Certificate** authentication methods. For information on other methods, see the Microsoft [documentation](https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-credentials).</Note>
+
+### Managed identity (<Badge color="green">recommended</Badge>)
+
+Managed identities provide the most secure authentication method because they remove the need to manage credentials directly.
+
+<ManagedIdentityRecommendation />
+
+For this setup, create a user-assigned managed identity in Azure and assign it to the Azure resource where you plan to run AzureHound Enterprise.
+
+<Note>To complete [AzureHound configuration](/install-data-collector/install-azurehound/create-configuration), you will need the user-assigned managed identity **Client ID**. AzureHound Enterprise must run on the Azure resource where that identity is assigned.</Note>
+
+<Steps>
+  <Step title="Navigate to Azure Managed Identities">
+
+    Sign in to the [Azure portal](https://portal.azure.com/) and search for **Managed Identities** in the top search bar.
+
+  </Step>
+  <Step title="Create a user-assigned managed identity">
+
+    Click **Create** and enter the required information to create a new user-assigned managed identity.
+
+    <Note>See the Microsoft [documentation](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/manage-user-assigned-managed-identities-azure-portal) for more information.</Note>
+
+  </Step>
+  <Step title="Assign the managed identity to the AzureHound Enterprise host">
+
+    Assign the user-assigned managed identity to the Azure resource where you plan to run AzureHound Enterprise, such as a virtual machine or app service.
+
+    <Note>Azure Managed Identity authentication only works when AzureHound Enterprise runs on an Azure resource that has access to the managed identity. See the Microsoft [documentation](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/managed-identities-status) for more information.</Note>
+
+  </Step>
+  <Step title="Grant required permissions to the managed identity">
+
+    AzureHound authenticates directly as the managed identity — no app registration is involved. You must grant both types of required permissions directly to the managed identity's service principal:
+
+    - **Microsoft Graph API permissions** — The Azure portal provides no user interface for granting Microsoft Graph **application** permissions to a managed identity's service principal. You must use PowerShell (or Azure Cloud Shell) to assign these permissions directly. See [AzureHound Data and Permissions: Entra ID](/collect-data/azurehound-data-permissions#entra-id) for details on the least-privilege approach.
+    - **AzureHound Reader role** — Assign the AzureHound Reader custom role to the managed identity's service principal at the Tenant Root Group scope. See [Create and assign required access roles](#create-and-assign-required-access-roles) below.
+
+    The following PowerShell script (Microsoft Graph SDK) assigns all required Microsoft Graph application permissions to your managed identity's service principal. Replace the `$managedIdentityClientId` placeholder with the **Client ID** found in the Azure portal under **Managed Identities** &gt; your identity &gt; **Overview**.
+
+    ```powershell
+    <#
+    .SYNOPSIS
+    Grants Microsoft Graph application permissions to an Azure managed identity's
+    service principal for AzureHound Enterprise data collection.
+
+    .DESCRIPTION
+    The Azure portal provides no user interface for granting Microsoft Graph application
+    permissions to a managed identity's service principal. This script uses the
+    Microsoft Graph PowerShell SDK to assign the required least-privilege permissions
+    directly to the managed identity's existing service principal.
+
+    The required PowerShell module can be installed from the PowerShell Gallery:
+
+    Install-Module -Scope AllUsers -Repository PSGallery -Force -Name @(
+        Microsoft.Graph.Applications,
+        Microsoft.Graph.Authentication
+    )
+
+    .NOTES
+    Version: 1.0
+    #>
+
+    #Requires -Version 5
+    #Requires -Modules Microsoft.Graph.Applications,Microsoft.Graph.Authentication
+
+    # ---------------------------------------------------------------------------
+    # TODO: Replace with your managed identity's Client ID.
+    # Found in the Azure portal: Managed Identities > your identity > Overview.
+    # ---------------------------------------------------------------------------
+    [string] $managedIdentityClientId = '<YOUR-MANAGED-IDENTITY-CLIENT-ID>'
+
+    # Connect to Microsoft Graph with the scopes required to read service principals
+    # and grant app role assignments.
+    # Note: The -TenantId parameter is also required when using an External ID.
+    Connect-MgGraph -NoWelcome -ContextScope Process -Scopes @(
+        'Application.Read.All',
+        'AppRoleAssignment.ReadWrite.All'
+    )
+
+    # Resolve the managed identity's service principal by its Client ID (AppId).
+    [Microsoft.Graph.PowerShell.Models.IMicrosoftGraphServicePrincipal] $miServicePrincipal =
+        Get-MgServicePrincipal -Filter "AppId eq '$managedIdentityClientId'"
+
+    if (-not $miServicePrincipal) {
+        throw "No service principal found for managed identity Client ID '$managedIdentityClientId'."
+    }
+
+    # Fetch the Microsoft Graph service principal, resolved by its well-known,
+    # tenant-invariant AppId rather than DisplayName for robustness.
+    [Microsoft.Graph.PowerShell.Models.IMicrosoftGraphServicePrincipal] $microsoftGraph =
+        Get-MgServicePrincipal -Filter "AppId eq '00000003-0000-0000-c000-000000000000'"
+
+    # Define the least-privilege Microsoft Graph application permissions
+    # See: /collect-data/azurehound-data-permissions#entra-id
+    [string[]] $requiredPermissions = @(
+        'User.Read.All'
+        'GroupMember.Read.All'
+        'Application.Read.All'
+        'Device.Read.All'
+        'Organization.Read.All'
+        'RoleManagement.Read.Directory'
+        'AdministrativeUnit.Read.All'
+        'AuditLog.Read.All'  # Optional: for signInActivity on user objects
+    )
+
+    # Assign each permission to the managed identity's service
+    # principal using New-MgServicePrincipalAppRoleAssignment.
+    foreach ($permission in $requiredPermissions) {
+        [Microsoft.Graph.PowerShell.Models.IMicrosoftGraphAppRole] $appRole =
+            $microsoftGraph.AppRoles | Where-Object Value -eq $permission
+
+        if (-not $appRole) {
+            throw "Permission '$permission' not found in Microsoft Graph app roles."
+        }
+
+        New-MgServicePrincipalAppRoleAssignment `
+            -ServicePrincipalId $miServicePrincipal.Id `
+            -PrincipalId $miServicePrincipal.Id `
+            -ResourceId $microsoftGraph.Id `
+            -AppRoleId $appRole.Id
+    }
+
+    Write-Host ''
+    Write-Host 'Microsoft Graph permissions granted to managed identity:' -ForegroundColor Green
+    $requiredPermissions | ForEach-Object { Write-Host "  - $_" }
+    Write-Host ''
+
+    # Sign out from Microsoft Graph
+    Disconnect-MgGraph | Out-Null
+    ```
+
+  </Step>
+</Steps>
+
+### Certificate
+
+Certificates provide stronger authentication than client secrets or username and password combinations, but you must manage and rotate them properly.
+
+For this setup, you must also upload the certificate to the app registration if you're using the AzureHound Enterprise CLI tool to create the certificate.
+
+<Note>If you have not already created a certificate, see [Create an AzureHound Configuration](/install-data-collector/install-azurehound/create-configuration) before proceeding.</Note>
+
+<Steps>
+  <Step title="Navigate to Entra ID Certificates & secrets">
+
+  1. On the **Overview** page of the app registration, click **Certificates & secrets**.
+
+      <Frame>
+        <img src="/assets/image-138.png" alt="The AzureHound app registration Overview page with the Certificates & secrets menu item highlighted."/>
+      </Frame>
+
+  1. Click **Certificates**.
+
+      <Frame>
+        <img src="/assets/image-139.png" alt="The Certificates & secrets page with the Certificates tab highlighted."/>
+      </Frame>
+
+  </Step>
+  <Step title="Upload certificate">
+
+  1.  Click **Upload certificate**.
+
+       <Frame>
+        <img src="/assets/image-140.png" alt="The Certificates page showing the Upload certificate button."/>
+       </Frame>
+
+  1. Locate the `cert.pem` file that you created during [AzureHound configuration](/install-data-collector/install-azurehound/create-configuration).
+
+  1. Click the folder icon, select the `cert.pem` file, and add a description (optional).
+
+      <Frame>
+        <img src="/assets/image-141.png" alt="The upload dialog with a selected certificate file and optional description field."/>
+      </Frame>
+
+  1. Click **Add**.
+  </Step>
+</Steps>
+
+## Configure application branding
+
+<Note>This section applies only if you created an app registration (Certificate, Client Secret, or Username and Password authentication). It does not apply to Azure Managed Identity authentication, since no app registration exists to brand.</Note>
+
+Optionally, add branding to help users identify the AzureHound Enterprise application in the Entra ID admin center. These steps do not affect collector functionality.
+
+<Steps>
+  <Step title="Download application logo">
+
+    You can download the [AzureHound Enterprise icon](/assets/icons/entra-bhe-app-icon.png) from this site to use for the application logo in the Entra ID admin center.
+
+  </Step>
+  <Step title="Open the Branding & properties section">
+
+    In the Entra ID admin center, navigate to the AzureHound Enterprise application and open the **Branding & properties** section.
+
     <Frame>
-      <img src="/assets/azurehound-install-app-registrations.png" alt=""/>
+      <img src="/images/data_collectors/azurehound/azurehound-install-branding.png" alt="Screenshot of the Branding & properties section of the AzureHound Enterprise application in the Entra ID admin center."/>
     </Frame>
 
-3.  Click **New registration**.
+  </Step>
+  <Step title="Upload the application logo">
+
+    Click **Select a file** and browse to the icon file you downloaded.
+
     <Frame>
-      <img src="/assets/image-103.png" alt=""/>
+      <img src="/images/data_collectors/azurehound/azurehound-install-upload-logo.png" alt="Screenshot of the file upload dialog for the application logo in the Branding & properties section."/>
     </Frame>
 
-4.  In the **Name** field, give the application an identifying name in your organization. Make sure the supported account type is set to the "Accounts in this organizational directory only (Single tenant)" option. A URI is not required. Then click **Register**.
+  </Step>
+  <Step title="Set the application name and home page URL">
+
+    1. In the **Name** field, enter a human-readable name for the application, for example, **BloodHound Enterprise Collector (AzureHound)**.
+
+    1. In the **Home page URL** field, enter your BloodHound Enterprise tenant URL. This is for record keeping only.
+
+  </Step>
+  <Step title="Save the branding settings">
+
+    Click **Save** and review the results.
+
     <Frame>
-      <img src="/assets/image-104.png" alt=""/>
+      <img src="/images/data_collectors/azurehound/azurehound-install-branding-result.png" alt="The Branding & properties section showing the saved AzureHound Enterprise application logo and name."/>
     </Frame>
 
-5.  In the **Overview** menu, copy the **Application (client) ID** and **Directory (tenant) ID** to be used later in [AzureHound Enterprise Local Configuration](/install-data-collector/install-azurehound/create-configuration).
-    <Frame>
-      <img src="/assets/image-105.png" alt=""/>
-    </Frame>
+  </Step>
+</Steps>
 
-6.  Continue to the next section: "Grant Microsoft Graph Permissions".
+## Create and assign required access roles
 
-## Grant Microsoft Graph Permissions
-1.  In the AzureHound application, select **API Permissions**.
-    <Frame>
-      <img src="/assets/image-106.png" alt=""/>
-    </Frame>
+This section describes how to assign the required access roles for AzureHound Enterprise data collection. For Certificate, Client Secret, and Username and Password authentication methods, assign the role to the app registration's service principal. For **Azure Managed Identity** authentication, assign the role to the managed identity's service principal instead.
 
-2.  Remove the default **User.Read** delegated permission from the application, as it is not needed for data collection. Confirm the operation in the dialog window that appears after selecting the **Remove permission** option from the context menu.
-    <Frame>
-      <img src="/assets/azurehound-install-remove-user-read-permission.png" alt=""/>
-    </Frame>
-
-3.  Select **Add a permission**.
-    <Frame>
-      <img src="/assets/image-107.png" alt=""/>
-    </Frame>
-
-4.  Click on **Microsoft Graph**.
-    <Frame>
-      <img src="/assets/image-108.png" alt=""/>
-    </Frame>
-
-5.  Select **Application permissions**.
-    <Frame>
-      <img src="/assets/image-109.png" alt=""/>
-    </Frame>
-
-6.  Search for and check the box next to each of the following Microsoft Graph **application** permissions. See [AzureHound Data and Permissions: Entra ID](/collect-data/azurehound-data-permissions#entra-id) for details on the least-privilege approach:
-
-    <EntraIdPermissions />
-
-7.  In the bottom of the window, select **Add permissions**.
-    <Frame>
-      <img src="/assets/image-111.png" alt=""/>
-    </Frame>
-
-8.  Click on **Grant admin consent for &lt;your\_tenant\_name&gt;**.
-    <Frame>
-      <img src="/images/data_collectors/grant_admin_consent.png"/>
-    </Frame>
-
-9.  Click **Yes** on the confirmation dialog.
-    <Frame>
-      <img src="/assets/image-113.png" alt=""/>
-    </Frame>
-
-10.  After being redirected to API Permissions again, you should see the **Status** column listing all permissions as **Granted**.
-     <Frame>
-       <img src="/assets/azurehound-install-consent-granted.png" alt=""/>
-     </Frame>
-
-11. Continue to the next section: "Add application authentication certificate".
-
-## Add application authentication certificate
-
-This section requires you have authentication material.
-
-We highly recommend using certificate-based authentication. If you do not already have a certificate created, follow the article [AzureHound Enterprise Local Configuration](/install-data-collector/install-azurehound/create-configuration) and then return back here.
-
-1.  Select the **Certificates & secrets** section on the left.
-    <Frame>
-      <img src="/assets/image-138.png" alt=""/>
-    </Frame>
-
-2.  Click on **Certificates**.
-    <Frame>
-      <img src="/assets/image-139.png" alt=""/>
-    </Frame>
-
-3.  Click **Upload certificate**.
-    <Frame>
-      <img src="/assets/image-140.png" alt=""/>
-    </Frame>
-
-4.  Locate the **cert.pem** file created during AzureHound setup (either on your own, or utilizing the instructions at [AzureHound Enterprise Local Configuration](/install-data-collector/install-azurehound/create-configuration)).
-
-5.  Click the folder icon and locate the "cert.pem" file. Add a description if desired.
-    <Frame>
-      <img src="/assets/image-141.png" alt=""/>
-    </Frame>
-
-6. In the bottom of the window, select **Add**.
-
-7. Continue to the next section to optionally configure application branding.
-
-## Configure application branding (optional)
-
-_Note: All steps in this section are optional and do not affect the functionality of the collector._
-
-1. Download the [AzureHound Enterprise icon](/assets/icons/entra-bhe-app-icon.png) to your computer.
-
-2. Still on the AzureHound application in the Entra ID admin center, open the **Branding & properties** section.
-    <Frame>
-      <img src="/assets/azurehound-install-branding.png" alt=""/>
-    </Frame>
-
-3. Click the **Select a file** button and browse to the file you previously downloaded.
-    <Frame>
-      <img src="/assets/azurehound-install-upload-logo.png" alt=""/>
-    </Frame>
-
-4. Provide a human-readable **Name** for the application, e.g., **BloodHound Enterprise Collector (AzureHound)**.
-
-5. Type your BloodHound Enterprise tenant URL into the **Home page URL** field. This is for record keeping only.
-
-6. Click the **Save** button and review the results.
-    <Frame>
-      <img src="/assets/azurehound-install-branding-result.png" alt=""/>
-    </Frame>
-
-7. Continue to the next section to create and assign a custom role in Azure Resource Manager
-
-## Create and assign custom AzureHound Reader role in Azure Resource Manager
+The AzureHound Reader role is a least-privilege custom role that grants AzureHound the minimum permissions required to collect data from Azure Resource Manager. Assigning this role at the Tenant Root Group scope ensures AzureHound can collect data across all current and future subscriptions in the tenant.
 
 <Note>
   If you don't have any management groups, you can skip this section. However, AzureHound will log a warning during each collection indicating it cannot collect management group data.
@@ -162,98 +415,134 @@ _Note: All steps in this section are optional and do not affect the functionalit
   Alternatively, you can create your Tenant Root Group by following the prompts in the Azure portal. This ensures visibility if another administrator begins using subscriptions in the future.
 </Note>
 
-1.  Log into the [Azure portal](https://portal.azure.com/) as a user with the [User Access Administrator](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/privileged#user-access-administrator) role.
+<Steps>
+  <Step title="Navigate to the Tenant Root Group">
 
-2.  Search for and select the **Management groups** item in the top search bar.
-    <Frame>
-      <img src="/assets/arm-search-management-groups.png" alt=""/>
-    </Frame>
+    1. Log into the [Azure portal](https://portal.azure.com/) as a user with the [User Access Administrator](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/privileged#user-access-administrator) role.
 
-3.  Select **Tenant Root Group**.
-    <Frame>
-      <img src="/assets/arm-select-tenant-root-group.png" alt=""/>
-    </Frame>
+    1. Search for and select the **Management groups** item in the top search bar.
 
-4.  Select **Access control (IAM)**.
-    <Frame>
-      <img src="/assets/arm-select-access-control-iam.png" alt=""/>
-    </Frame>
+        <Frame>
+          <img src="/assets/arm-search-management-groups.png" alt="The Azure portal search bar with Management groups selected from results."/>
+        </Frame>
 
-5.  Click **Add**, then **Add custom role**.
-    <Frame>
-      <img src="/assets/arm-add-custom-role.png" alt=""/>
-    </Frame>
+    1. Select **Tenant Root Group**.
 
-6.  Download  <a href="/assets/azurehound-reader-role.json" download>azurehound-reader-role.json</a>, open it in a text editor, and replace `<tenantRootGroupId>` with your [Tenant Root Management Group ID](https://learn.microsoft.com/en-us/azure/governance/management-groups/overview#root-management-group-for-each-directory) (this is your Entra ID tenant ID).
-    <Frame>
-      <img src="/assets/arm-json-tenantid.png" alt=""/>
-    </Frame>
+        <Frame>
+          <img src="/assets/arm-select-tenant-root-group.png" alt="The Management groups page showing Tenant Root Group selected."/>
+        </Frame>
 
-7. In **Basics** > **File**, upload the edited file and click **Review + create**.
-    <Frame>
-      <img src="/assets/arm-upload-azurehound-reader.png" alt=""/>
-    </Frame>
+  </Step>
+  <Step title="Create the AzureHound Reader custom role">
 
-    <Info>See [AzureHound Data Collection and Permissions: Azure Resource Manager](/collect-data/azurehound-data-permissions#azure-resource-manager) for details on each least-privilege permission in the AzureHound Reader role.</Info>
+    1. Select **Access control (IAM)**.
 
-8. Review the role and click **Create** at the bottom of the page.
-    <Frame>
-      <img src="/assets/arm-create.png" alt=""/>
-    </Frame>
+        <Frame>
+          <img src="/assets/arm-select-access-control-iam.png" alt="The Tenant Root Group page with Access control (IAM) selected."/>
+        </Frame>
 
-9. Back in **Access control (IAM)**, click **Add**, then **Add role assignment**.
-    <Frame>
-      <img src="/assets/arm-add-role-assignment.png" alt=""/>
-    </Frame>
+    1. Click **Add**, then **Add custom role**.
 
-10.  Search for the **AzureHound Reader** role and select it.
-     <Frame>
-       <img src="/assets/arm-select-azurehound-reader-role.png" alt=""/>
-     </Frame>
+        <Frame>
+          <img src="/assets/arm-add-custom-role.png" alt="The Access control (IAM) page with Add and Add custom role options highlighted."/>
+        </Frame>
 
-11.  Click **Members**.
-     <Frame>
-       <img src="/assets/image-130.png" alt=""/>
-     </Frame>
+    1. Download <a href="/assets/azurehound-reader-role.json" download>azurehound-reader-role.json</a>, open it in a text editor, and replace `<tenantRootGroupId>` with your [Tenant Root Management Group ID](https://learn.microsoft.com/en-us/azure/governance/management-groups/overview#root-management-group-for-each-directory) (this is your Entra ID tenant ID).
 
-12.  Click **Select members**.
-     <Frame>
-       <img src="/assets/image-131.png" alt=""/>
-     </Frame>
+        <Frame>
+          <img src="/assets/arm-json-tenantid.png" alt="The azurehound-reader-role.json file showing where to replace the tenantRootGroupId placeholder."/>
+        </Frame>
 
-13.  Search for and click on your previously created service principal.
-     <Frame>
-       <img src="/assets/image-132.png" alt=""/>
-     </Frame>
+    1. In **Basics** > **File**, upload the edited file and click **Review + create**.
 
-14. Validate the principal selected, then click **Select**.
-     <Frame>
-       <img src="/assets/image-133.png" alt=""/>
-     </Frame>
+        <Frame>
+          <img src="/assets/arm-upload-azurehound-reader.png" alt="The Add custom role Basics page with the edited role file uploaded and ready for review."/>
+        </Frame>
 
-15. Click the tab **Review + Assign**.
-     <Frame>
-       <img src="/assets/image-134.png" alt=""/>
-     </Frame>
+        <Info>See [AzureHound Data Collection and Permissions: Azure Resource Manager](/collect-data/azurehound-data-permissions#azure-resource-manager) for details on each least-privilege permission in the AzureHound Reader role.</Info>
 
-16. Click **Review + Assign** at the bottom of the page.
-     <Frame>
-       <img src="/assets/image-135.png" alt=""/>
-     </Frame>
+    1. Review the role and click **Create** at the bottom of the page.
 
-17. Confirm the role is present by refreshing this view. You may need to alter the filter to see this role.
+        <Frame>
+          <img src="/assets/arm-create.png" alt="The custom role review page with the Create button available at the bottom."/>
+        </Frame>
 
-18. Continue to [Run and Upgrade AzureHound (Windows, Docker, or Kubernetes)](/install-data-collector/install-azurehound/installation-options)
+  </Step>
+  <Step title="Assign the AzureHound Reader role">
+
+    1. Back in **Access control (IAM)**, click **Add**, then **Add role assignment**.
+
+        <Frame>
+          <img src="/assets/arm-add-role-assignment.png" alt="The Access control (IAM) page with Add role assignment selected from the Add menu."/>
+        </Frame>
+
+    1. Search for the **AzureHound Reader** role and select it.
+
+        <Frame>
+          <img src="/assets/arm-select-azurehound-reader-role.png" alt="The role assignment screen with the AzureHound Reader role selected."/>
+        </Frame>
+
+    1. Click **Members**.
+
+        <Frame>
+          <img src="/assets/image-130.png" alt="The role assignment workflow showing the Members step."/>
+        </Frame>
+
+    1. Click **Select members**.
+
+        <Frame>
+          <img src="/assets/image-131.png" alt="The Members step with the Select members button highlighted."/>
+        </Frame>
+
+    1. For **Azure Managed Identity** authentication, under **Assign access to**, select **Managed identity**. For Certificate, Client Secret, and Username and Password authentication, leave the default **User, group, or service principal** selected.
+
+        <Note>Managed identities do not appear in the default member picker. You must switch **Assign access to** to **Managed identity** first, or your search in the next step will return no results.</Note>
+
+    1. Search for and click on the service principal to assign the role to. For Certificate, Client Secret, and Username/Password authentication, select the AzureHound Enterprise app registration's service principal. For **Azure Managed Identity** authentication, select the managed identity's service principal.
+
+        <Frame>
+          <img src="/assets/image-132.png" alt="The member picker dialog with the AzureHound service principal selected."/>
+        </Frame>
+
+    1. Validate the principal selected, then click **Select**.
+
+        <Frame>
+          <img src="/assets/image-133.png" alt="The member selection confirmation showing the selected service principal before applying."/>
+        </Frame>
+
+  </Step>
+  <Step title="Review the role assignment">
+
+    1. Click the tab **Review + Assign**.
+
+        <Frame>
+          <img src="/assets/image-134.png" alt="The role assignment workflow with the Review + Assign tab selected."/>
+        </Frame>
+
+    1. Click **Review + Assign** at the bottom of the page.
+
+        <Frame>
+          <img src="/assets/image-135.png" alt="The Review + Assign page with the final Review + Assign button ready to submit."/>
+        </Frame>
+
+    1. Confirm the role is present by refreshing this view. You may need to alter the filter to see this role.
+
+  </Step>
+</Steps>
 
 ## Scripted configuration
 
 As an alternative to the manual steps described in this document, you can use **PowerShell** to automate the entire configuration process.
 
+<Note>
+  This script applies to **Certificate, Client Secret, and Username and Password** authentication methods only — it is not applicable for Managed Identity authentication.
+</Note>
+
 The script below registers AzureHound in Entra ID, creates the least-privilege Azure Reader role, and assigns it to the service principal.
 The script is **idempotent**—it safely handles re-runs by detecting existing resources and updating them as needed, preventing duplicate role definitions or assignments.
 
 <Note>
-  After running this script, follow the [Add application authentication certificate](#add-application-authentication-certificate) section to complete the setup.
+  After running this script, follow the steps to [configure an authentication certificate](/install-data-collector/install-azurehound/azure-configuration#certificate) to complete the setup.
 </Note>
 
 ```powershell
@@ -507,7 +796,7 @@ $flatRole | ConvertTo-Json -Depth 10 | Set-Content -Path $flatRolePath
 # Create the custom AzureHound Reader role
 try {
     $existingRole = Get-AzRoleDefinition -Name 'AzureHound Reader' -ErrorAction SilentlyContinue
-    
+
     if ($existingRole) {
         $existingRole.Actions = $flatRole.Actions
         $existingRole.NotActions = $flatRole.NotActions
@@ -572,7 +861,7 @@ Write-Host ''
 
 Write-Host 'Remaining manual step:' -ForegroundColor Yellow
 Write-Host '  Upload an authentication certificate to the app registration.'
-Write-Host '  See: https://bloodhound.specterops.io/install-data-collector/install-azurehound/azure-configuration#add-application-authentication-certificate'
+Write-Host '  See: https://bloodhound.specterops.io/install-data-collector/install-azurehound/azure-configuration#certificate'
 Write-Host ''
 
 #endregion Summary
