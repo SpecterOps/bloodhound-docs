@@ -4,9 +4,18 @@ title: SharpHound Enterprise Local Configuration
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-The local configuration of SharpHound Enterprise occurs within two files: [settings.json](#settings-json) and [auth.json](#auth-json). Their file paths can be found in the table below. Note that `%AppData%` is the directory of the service account: `C:\\Users\\SERVICE_ACCOUNT$\\AppData\\Roaming`.
+SharpHound Enterprise stores its local configuration in two files:
 
-<Note>When using Integrated Windows Authentication (IWA), the `auth.json` file is not used; all authentication information is provided in `settings.json` instead.</Note>
+| **File** | **Purpose** |
+| --- | --- |
+| `settings.json` | Defines how the service behaves, including settings for connecting to the BloodHound Enterprise tenant, Active Directory, and logs. |
+| `auth.json` | Defines the credentials the service uses to authenticate to the BloodHound Enterprise API. |
+
+<Note>
+  When using Integrated Windows Authentication (IWA), the `auth.json` file is not used; all authentication information is provided in `settings.json` instead.
+</Note>
+
+You can find the file paths for each configuration file and logs in the table below. `%AppData%` is the directory of the service account: `C:\\Users\\SERVICE_ACCOUNT$\\AppData\\Roaming`.
 
 | **SharpHound File** | **Default Path (v2.5.8+)  <br/>** | **Default Path (\<= v2.5.8)  <br/>** |
 | --- | --- | --- |
@@ -15,23 +24,24 @@ The local configuration of SharpHound Enterprise occurs within two files: [setti
 | Active Logs | `%AppData%\\BloodHoundEnterprise\\*.log` | `%AppData%\\BloodHoundEnterprise\\*.log` |
 | Archived Logs | `%AppData%\\BloodHoundEnterprise\\log_archive\\*.zip` | `%AppData%\\BloodHoundEnterprise\\log_archive\\*.zip` |
 
-## Modifying SharpHound Settings
+## Configure SharpHound Settings
 
-To modify any settings below on your SharpHound configuration, you must stop the SharpHound service. The process to modify SharpHound's settings files is as follows:
+To modify any settings in your SharpHound configuration, you must stop the SharpHound service. The process to modify SharpHound's configuration files is as follows:
 
 1.  Stop the SharpHound Enterprise service: "SharpHound Delegator"
-2.  Edit and save the desired settings file. You may need to open the file as a local Administrator to save it.
-3.  Start the SharpHound Enterprise service: "SharpHound Delegator"
 
-## Settings Files
+1.  Edit and save one of the configuration files as an Administrator:
 
-### settings.json
+    - `settings.json`
+    - `auth.json`
 
-Plaintext JSON file that defines information about how the service behaves, such as settings for connecting to the BloodHound Enterprise tenant, connecting to Active Directory, and writing logs.
+1.  Start the SharpHound Enterprise service: "SharpHound Delegator"
 
-An example of the file:
+## settings.json
 
-```json
+The `settings.json` file is a plaintext JSON file that defines information about how the service behaves, such as settings for connecting to the BloodHound Enterprise tenant, connecting to Active Directory, and writing logs.
+
+```json title="settings.json" icon="file-brackets-curly"
 {
   "RestEndpoint": "CODENAME.bloodhoundenterprise.io",
   "RestPort": 443,
@@ -53,11 +63,11 @@ An example of the file:
 }
 ```
 
-#### Integrated Windows Authentication (IWA)
+### Integrated Windows Authentication (IWA)
 
 If using IWA instead of API tokens, you must include IWA-specific configuration fields in your `settings.json` file. These fields are required to enable SharpHound to authenticate using the service account's Windows credentials via Active Directory Federation Services (ADFS).
 
-```json
+```json title="settings.json" icon="file-brackets-curly"
 {
 ... (other settings) ...
   "ProviderWellKnown": "https://adfs.example.com/.well-known/openid-configuration",
@@ -67,51 +77,238 @@ If using IWA instead of API tokens, you must include IWA-specific configuration 
 }
 ```
 
-<Tip>When using this configuration, do not include an `auth.json` file. The authentication credentials will be handled through ADFS using the service account's Windows identity.</Tip>
+<Tip>
+  When using this configuration, do not include an `auth.json` file. The authentication credentials will be handled through ADFS using the service account's Windows identity.
+</Tip>
 
-The following table outlines supported fields and their default values:
+See the following reference to learn more about the supported fields in the `settings.json` file:
 
-| **Field** | **Type** | **Description** | **Default value** | **Example value** |
-| --- | --- | --- | --- | --- |
-| RestEndpoint | String | Your tenant domain, as provided by your account team<br/><br/>This field should contain a domain only; do not include URI information such as `https://` | `CODENAME.bloodhoundenterprise.io` | `demo.bloodhoundenterprise.io` |
-| RestPort | Integer | TCP port which BloodHound Enterprise API runs on. | `443` | `443` |
-| SSL | Boolean | Is the API SSL enabled | `True` | `True` |
-| CurrentJob | Array | SharpHound utilizes this field to track the currently running task. It will be null when no task is running. | Do not modify this value. | Do not modify this value. |
-| LogLevel | String | Logging verbosity level for the service itself. These logs appear in service.log within the configured TempDirectory location.<br/><br/>The following levels are supported from most to least verbose:<br/><br/>* Trace<br/>* Debug<br/>* Information<br/>* Warning<br/>* Error<br/>* Critical<br/>* None | `Information` | `Trace` |
-| EnumerationLogLevel | String | Logging verbosity level used during collection jobs.<br/><br/>The following levels are supported from most to least verbose:<br/><br/>* Trace<br/>* Debug<br/>* Information<br/>* Warning<br/>* Error<br/>* Critical<br/>* None | `Information` | `Trace` |
-| TempDirectory | String | Directory in which logs and temporary files are stored. Upon service start, if this value is null, the service will default to the `%APPDATA%\\BloodHoundEnterprise\\` directory belonging to the service user.<br/><br/>Logs are retained for 14 days.<br/><br/>Backslashes (\\) must be escaped for proper JSON formatting, i.e. double backslashes are required. | null | `C:\\Users\\**SERVICE_USER$**\\AppData\\Roaming\\BloodHoundEnterprise\\` |
-| Proxy | String | HTTP Proxy URL if needed. | null | `proxy.acme.com:8080` |
-| ComputerPasswordResetWindow | Integer | When performing local collections, any computer objects that have not rotated their password with the domain in this many days will be excluded. By default, computers in Active Directory rotated their passwords every 30 days.<br/><br/>_Minimum value: 7_  <br/>  <br/>This Windows setting specifies how often the computer will [rotate its password](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/domain-member-maximum-machine-account-password-age):<br/><br/>It is possible to [prevent](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/domain-member-disable-machine-account-password-changes) a Windows computer from rotating its password completely with this setting: | `60`  | `365` |
-| ForceLDAPKerberosAuth | Boolean | Enforce the use of Kerberos authentication when querying LDAP servers. Disabling this may be required to collect across an External trust type (see [Cross-Trust Collection here](/collect-data/enterprise-collection/cross-trust)).<br/><br/>Setting this value to False means that SharpHound will auto-negotiate authentication to domain controllers, preferring Kerberos if available. | `False` | `True` |
-| PortCheckTimeout | Integer | In milliseconds, SharpHound will wait for a response on port 445/TCP before considering the system unavailable.<br/><br/>_Minimum value: 200_<br/><br/>_Requires SharpHound Enterprise v2.2.1+_ | `10000` | `15000` |
-| LDAPSSLPort | Integer | TCP port utilized for collection on LDAP over SSL.<br/><br/>_Requires SharpHound Enterprise v2.2.1+_ | `636` | `636` |
-| LDAPPort | Integer | TCP port utilized for collection on LDAP. | `389` | `389` |
-| ForceLDAPSSL | Boolean | Force the use of LDAP over SSL.<br/><br/>Setting this value to False means that SharpHound will attempt LDAP over SSL first, before falling back to signed and sealed LDAP.<br/><br/>_Note: this control forces SharpHound to collect using LDAP over SSL where possible. LDAP negotiation may occur for some functionality. Additionally, some AD Structure collection may occur from existing .Net APIs that are used for resolution._<br /> _Requires SharpHound Enterprise v2.2.1+_ | `False` | `False` |
-| NumWorkers | Integer | The number of concurrent threads performing privileged collection.<br/><br/>_Minimum value: 10_<br/><br/>_Maximum value: 100_<br/><br/>_Requires SharpHound Enterprise v2.2.1+_ | `50`  | `50`  |
-| PartitionLDAPQueries | Boolean | Whether SharpHound should split LDAP queries into multiple parts, used when querying very large domains. | `True` | `True` |
-| Version | String | The current version of SharpHound Enterprise. | Do not modify this value. | Do not modify this value. |
-| ProviderWellKnown | String | \[IWA Only\] The ADFS well-known endpoint URL for Integrated Windows Authentication. This is typically the ADFS server address with "/.well-known/openid-configuration" appended. Required when `UseIntegratedWindowsAuthForADFS` is enabled. | null | `https://adfs.example.com/.well-known/openid-configuration` |
-| ClientId | String | \[IWA Only\] The Client ID generated by BloodHound during collector client creation. Used to identify SharpHound to the ADFS server. Required when `UseIntegratedWindowsAuthForADFS` is enabled. | null | `12345678-1234-1234-1234-123456789012` |
-| Resource | String | \[IWA Only\] The BloodHound Enterprise tenant URL used as the resource identifier for the ADFS application. Required when `UseIntegratedWindowsAuthForADFS` is enabled. | null | `https://your-tenant.bloodhoundenterprise.io` |
-| UseIntegratedWindowsAuthForADFS | Boolean | \[IWA Only\] Enable Integrated Windows Authentication via ADFS. When set to `true`, SharpHound authenticates using the service account's Windows credentials against the configured ADFS server. The `auth.json` file is not used when this is enabled. Requires `ProviderWellKnown`, `ClientId`, and `Resource` to be configured. | `False` | `True` |
+<ResponseField name="RestEndpoint" type="string">
+  Your tenant domain, as provided by your account team. Enter the domain only and do not include URI information such as `https://`.
 
-### auth.json
+  **Default value:** `CODENAME.bloodhoundenterprise.io`
 
-Plaintext JSON file that defines the credentials the service uses to authenticate to the BloodHound Enterprise API. Creating a new client or rotating the credentials of an existing one will provide you with the complete JSON structure used for a SharpHound Enterprise client.
+  **Example value:** `demo.bloodhoundenterprise.io`
+</ResponseField>
+<ResponseField name="RestPort" type="integer">
+  TCP port on which the BloodHound Enterprise API runs.
 
-An example of the file:
+  **Default value:** `443`
 
-```json
+  **Example value:** `443`
+</ResponseField>
+<ResponseField name="SSL" type="boolean">
+  Specifies whether SSL is enabled for the API connection.
+
+  **Default value:** `True`
+
+  **Example value:** `True`
+</ResponseField>
+<ResponseField name="Proxy" type="string | null">
+  HTTP proxy URL, if your environment requires one.
+
+  **Default value:** `null`
+
+  **Example value:** `proxy.acme.com:8080`
+</ResponseField>
+
+<ResponseField name="CurrentJob" type="array | null">
+  SharpHound uses this field to track the currently running task. When no task is running, the value is `null`.
+
+  **Default value:** Do not modify this value.
+
+  **Example value:** Do not modify this value.
+</ResponseField>
+<ResponseField name="LogLevel" type="string">
+  Logging verbosity level for the service itself. These logs appear in `service.log` within the configured `TempDirectory` location.
+
+  Supported values, from most to least verbose:
+
+  - `Trace`
+  - `Debug`
+  - `Information`
+  - `Warning`
+  - `Error`
+  - `Critical`
+  - `None`
+
+  **Default value:** `Information`
+
+  **Example value:** `Trace`
+</ResponseField>
+<ResponseField name="EnumerationLogLevel" type="string">
+  Logging verbosity level used during collection jobs.
+
+  Supported values, from most to least verbose:
+
+  - `Trace`
+  - `Debug`
+  - `Information`
+  - `Warning`
+  - `Error`
+  - `Critical`
+  - `None`
+
+  **Default value:** `Information`
+
+  **Example value:** `Trace`
+</ResponseField>
+<ResponseField name="TempDirectory" type="string | null">
+  Directory in which SharpHound stores logs and temporary files. If this value is `null` when the service starts, SharpHound uses the `%APPDATA%\\BloodHoundEnterprise\\` directory for the service user.
+
+  Logs are retained for 14 days. Escape backslashes for valid JSON formatting by using double backslashes.
+
+  **Default value:** `null`
+
+  **Example value:** `C:\\Users\\SERVICE_USER$\\AppData\\Roaming\\BloodHoundEnterprise\\`
+</ResponseField>
+<ResponseField name="Version" type="string">
+  Current SharpHound Enterprise version.
+
+  **Default value:** Do not modify this value.
+
+  **Example value:** Do not modify this value.
+</ResponseField>
+
+<ResponseField name="ComputerPasswordResetWindow" type="integer">
+  Excludes computer objects from local collections if they have not rotated their password with the domain within this many days. By default, Active Directory computers rotate their passwords every 30 days.
+
+  Minimum value: `7`
+
+  This Windows setting controls how often the computer [rotates its password](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/domain-member-maximum-machine-account-password-age). You can also [prevent password rotation](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/domain-member-disable-machine-account-password-changes) entirely through Windows policy.
+
+  **Default value:** `60`
+
+  **Example value:** `365`
+</ResponseField>
+<ResponseField name="PortCheckTimeout" type="integer">
+  Time, in milliseconds, that SharpHound waits for a response on TCP port `445` before considering the system unavailable.
+
+  Minimum value: `200`
+
+  Requires SharpHound Enterprise `v2.2.1+`.
+
+  **Default value:** `10000`
+
+  **Example value:** `15000`
+</ResponseField>
+<ResponseField name="NumWorkers" type="integer">
+  Number of concurrent threads that perform privileged collection.
+
+  Minimum value: `10`
+
+  Maximum value: `100`
+
+  Requires SharpHound Enterprise `v2.2.1+`.
+
+  **Default value:** `50`
+
+  **Example value:** `50`
+</ResponseField>
+<ResponseField name="PartitionLDAPQueries" type="boolean">
+  Specifies whether SharpHound splits LDAP queries into multiple parts. Use this setting when you query very large domains.
+
+  **Default value:** `True`
+
+  **Example value:** `True`
+</ResponseField>
+
+<ResponseField name="ForceLDAPKerberosAuth" type="boolean">
+  Enforces Kerberos authentication when SharpHound queries LDAP servers. Disabling this setting may be required to collect across an External trust type. For more information, see [Cross-Trust Collection](/collect-data/enterprise-collection/cross-trust).
+
+  When set to `False`, SharpHound auto-negotiates authentication to domain controllers and prefers Kerberos when it is available.
+
+  **Default value:** `False`
+
+  **Example value:** `True`
+</ResponseField>
+<ResponseField name="LDAPSSLPort" type="integer">
+  TCP port used for LDAP over SSL collection.
+
+  Requires SharpHound Enterprise `v2.2.1+`.
+
+  **Default value:** `636`
+
+  **Example value:** `636`
+</ResponseField>
+<ResponseField name="LDAPPort" type="integer">
+  TCP port used for LDAP collection.
+
+  **Default value:** `389`
+
+  **Example value:** `389`
+</ResponseField>
+<ResponseField name="ForceLDAPSSL" type="boolean">
+  Controls SharpHound's primary LDAP connection behavior.
+
+  When set to `False`, SharpHound attempts LDAP over SSL first and can fall back to signed and sealed LDAP.
+
+  When set to `True`, SharpHound is configured to use LDAPS for its base LDAP configuration where possible, but some ancillary directory-related operations may still use other negotiation or resolution paths.
+
+  Do not use this setting as a guarantee that no TCP `389` traffic will occur in all scenarios.
+
+  **Default value:** `False`
+
+  **Example value:** `False`
+</ResponseField>
+
+<ResponseField name="ProviderWellKnown" type="string | null" pre={["IWA only"]}>
+  ADFS well-known endpoint URL for Integrated Windows Authentication. This is typically the ADFS server address with `/.well-known/openid-configuration` appended. Required when `UseIntegratedWindowsAuthForADFS` is enabled.
+
+  **Default value:** `null`
+
+  **Example value:** `https://adfs.example.com/.well-known/openid-configuration`
+</ResponseField>
+<ResponseField name="ClientId" type="string | null" pre={["IWA only"]}>
+  Client ID generated by BloodHound during collector client creation. SharpHound uses this value to identify itself to the ADFS server. Required when `UseIntegratedWindowsAuthForADFS` is enabled.
+
+  **Default value:** `null`
+
+  **Example value:** `12345678-1234-1234-1234-123456789012`
+</ResponseField>
+<ResponseField name="Resource" type="string | null" pre={["IWA only"]}>
+  BloodHound Enterprise tenant URL used as the resource identifier for the ADFS application. Required when `UseIntegratedWindowsAuthForADFS` is enabled.
+
+  **Default value:** `null`
+
+  **Example value:** `https://your-tenant.bloodhoundenterprise.io`
+</ResponseField>
+<ResponseField name="UseIntegratedWindowsAuthForADFS" type="boolean" pre={["IWA only"]}>
+  Enables Integrated Windows Authentication through ADFS. When set to `true`, SharpHound authenticates with the service account's Windows credentials against the configured ADFS server.
+
+  When this setting is enabled, SharpHound does not use `auth.json`. You must also configure `ProviderWellKnown`, `ClientId`, and `Resource`.
+
+  **Default value:** `False`
+
+  **Example value:** `True`
+</ResponseField>
+
+## auth.json
+
+The `auth.json` file is a plaintext JSON file that defines the credentials the service uses to authenticate to the BloodHound Enterprise API.
+
+Creating a new client or rotating the credentials of an existing one will provide you with the complete JSON structure used for a SharpHound Enterprise client.
+
+```json title="auth.json" icon="file-brackets-curly"
 {
 "Token": "w4Tc+heVmaMTWgodlw0YlztaEGG53J/mwogiEZLvKE6WtylfYuoVEA==",
 "TokenID": "0c6120ee-2fbe-478f-a864-2e264f9c16d2"
 }
 ```
 
-The following table outlines supported fields and their default values:
+See the following reference to learn more about the supported fields in the `auth.json` file:
 
-| **Field** | **Type** | **Description** | **Default value** | **Example value** |
-| --- | --- | --- | --- | --- |
-| Token | String | Used by SharpHound Enterprise to authenticate with the BloodHound Enterprise tenant. | null | `w4Tc+heVmaMTWgodlw0YlztaEGG53J/mwogiEZLvKE6WtylfYuoVEA==` |
-| TokenID | String | Unique identifier for the token. | null | `0c6120ee-2fbe-478f-a864-2e264f9c16d2` |
+<ResponseField name="Token" type="string | null">
+  Token SharpHound Enterprise uses to authenticate with the BloodHound Enterprise tenant.
 
+  **Default value:** `null`
+
+  **Example value:** `w4Tc+heVmaMTWgodlw0YlztaEGG53J/mwogiEZLvKE6WtylfYuoVEA==`
+</ResponseField>
+<ResponseField name="TokenID" type="string | null">
+  Unique identifier for the token.
+
+  **Default value:** `null`
+
+  **Example value:** `0c6120ee-2fbe-478f-a864-2e264f9c16d2`
+</ResponseField>
