@@ -4,22 +4,31 @@ description: Learn about new features, enhancements, and fixed issues in BloodHo
 sidebarTitle: "2026-07-28"
 ---
 
+import CollectorDeprecationNotice from '/snippets/resources/collector-deprecation-notice.mdx';
+
 |     |     |     |     |     |
 | --- | --- | --- | --- | --- |
 | **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
 | 2026-07-28 | v9.5.0 | v0.2.12 | v2.14.0 | v3.0.0 |
 
+<CollectorDeprecationNotice />
+
 <Tip>
   Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
 </Tip>
 
-<Update label="SharpHound" description="New Feature" tags={["Data Collection"]}>
+<Update label="BloodHound" description="New Feature" tags={["Data Collection"]}>
   {/*BED-6155*/}
-  ## ADCS ESC14 Scenario A Coverage
+  ## Analyze ADCS ESC14 Scenario A attack paths
 
-  Identify certificate-mapping takeover paths where a principal can write to the `altSecurityIdentities` attribute on a user or computer.
+  BloodHound now models ADCS ESC14 Scenario A attack paths, helping you identify explicit certificate-mapping abuse paths that rely on `altSecurityIdentities`.
 
-  BloodHound and SharpHound now support the `WriteAltSecurityIdentities` and `WritePublicInformation` edges used to model ADCS ESC14 Scenario A abuse paths. See [WriteAltSecurityIdentities](/resources/edges/write-alt-security-identities) and [WritePublicInformation](/resources/edges/write-public-information) for abuse details, opsec considerations, and edge schemas.
+  In ESC14 Scenario A, an attacker who can modify a target principal's `altSecurityIdentities` attribute, or who has equivalent control through the `Public-Information` property set, can add an explicit certificate mapping that points to a certificate they control and authenticate as the target.
+
+  This release adds graph coverage for the following edges:
+
+  - [`WriteAltSecurityIdentities`](/resources/edges/write-alt-security-identities)
+  - [`WritePublicInformation`](/resources/edges/write-public-information)
 </Update>
 
 <Update label="BloodHound" description="New Feature" tags={["OpenGraph"]}>
@@ -52,6 +61,42 @@ sidebarTitle: "2026-07-28"
   - [`GET /api/v2/available-domains`](/reference/search/get-available-domains)
 </Update>
 
+<Update label="BloodHound, SharpHound, AzureHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-8939, BED-8943, BED-8968, BED-8944, BED-9020*/}
+  ## Case-Sensitive OpenGraph Object IDs
+
+  Preserve distinct OpenGraph objects whose `objectid` values differ only by case while keeping Active Directory and Microsoft Entra ID ingest behavior case-insensitive.
+
+  BloodHound now stores OpenGraph object IDs exactly as supplied by an extension. SharpHound and AzureHound now send all Active Directory and Microsoft Entra ID object IDs as fully uppercased values, which ensures consistent data as BloodHound removes server-side object ID normalization. BloodHound can also reject data from older AzureHound versions that do not uppercase object IDs when the protection flag is enabled.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Accessibility"]}>
+  {/*BED-7221, BED-8275, BED-7787, BED-8950*/}
+  ## Accessibility and Contrast Improvements
+
+  Navigate BloodHound with improved contrast, clearer focus states, and visual indicators that do not rely on color alone.
+
+  This release improves color and non-text contrast across key UI surfaces, updates the Data Quality chart palette, and makes Attack Path timeline graphs easier to interpret for users with low vision or color vision deficiencies.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Administration"]}>
+  {/*BED-8838*/}
+  ## Separate OpenHound Configuration and Secrets
+
+  Keep OpenHound runtime settings separate from sensitive credentials.
+
+  OpenHound now separates configuration values from secret values so destination details, scheduling intervals, and API credentials can be managed with clearer ownership and safer deployment practices.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Database"]}>
+  {/*BED-8796*/}
+  ## Faster PostgreSQL Cascading Deletes
+
+  Delete graph nodes and their related edges more efficiently in PostgreSQL-backed deployments.
+
+  BloodHound now uses a statement-level trigger for cascaded edge deletions, reducing repeated database procedure calls during heavy batch write paths.
+</Update>
+
 <Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
   {/*BED-7937*/}
   ## Upload-Only Role Access Enforcement
@@ -61,17 +106,6 @@ sidebarTitle: "2026-07-28"
   Prevent upload-only users from accessing analysis pages that are outside their role permissions.
 
   BloodHound Enterprise now blocks upload-only users from the **Posture** and **Attack Path Management** pages and shows a consistent access message when the account does not have permission to view the page.
-</Update>
-
-<Update label="BloodHound" description="Enhancement" tags={["API"]}>
-  {/*BED-8728*/}
-  ## Attack Path Findings API Availability
-
-  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
-
-  Build against the unified Attack Path Findings API without enabling an early-access feature flag.
-
-  BloodHound Enterprise now exposes [`GET /api/v2/attack-paths/findings`](/reference/attack-paths/list-attack-path-findings) by default so API clients can retrieve a unified, paginated list of Attack Path findings before the corresponding UI workflow is available.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
@@ -85,13 +119,26 @@ sidebarTitle: "2026-07-28"
   Users with read-provider permissions can now view the **SSO Configuration** page in a read-only state while create and management actions remain restricted to users with provider management permissions.
 </Update>
 
-<Update label="BloodHound, SharpHound, AzureHound" description="Enhancement" tags={["Data Collection"]}>
-  {/*BED-8939, BED-8943, BED-8968, BED-8944, BED-9020*/}
-  ## Case-Sensitive OpenGraph Object IDs
+<Update label="BloodHound" description="Enhancement" tags={["API"]}>
+  {/*BED-8728*/}
+  ## Attack Path Findings API Availability
 
-  Preserve distinct OpenGraph objects whose `objectid` values differ only by case while keeping Active Directory and Microsoft Entra ID ingest behavior case-insensitive.
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
 
-  BloodHound now stores OpenGraph object IDs exactly as supplied by an extension. SharpHound and AzureHound normalize AD and Entra ID object IDs to uppercase before ingest, and BloodHound can reject older AzureHound data that does not follow this normalization when the protection flag is enabled.
+  Build against the unified Attack Path Findings API without enabling an early-access feature flag.
+
+  BloodHound Enterprise now exposes [`GET /api/v2/attack-paths/findings`](/reference/attack-paths/list-attack-path-findings) by default so API clients can retrieve a unified, paginated list of Attack Path findings before the corresponding UI workflow is available.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Zone Builder"]}>
+  {/*BED-8830, BED-8828, BED-8773, BED-8772, BED-8259, BED-7760*/}
+  ## Privilege Zone Review Improvements
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Review Privilege Zone certifications and rules with clearer table behavior, more usable layouts, and better validation feedback.
+
+  BloodHound now lets you fully close the certification entity panel area, improves certification table sizing and result-count terminology, makes kind-count summaries easier to read, and shows a clear error when an Object ID rule contains an invalid object ID.
 </Update>
 
 <Update label="SharpHound" description="Enhancement" tags={["Administration"]}>
@@ -103,42 +150,6 @@ sidebarTitle: "2026-07-28"
   Gather SharpHound logs into a single support bundle when BloodHound Enterprise requests collector diagnostics.
 
   SharpHound now uses clearer job coordination for Enterprise collector operations and can package relevant service and job logs for upload. BloodHound Enterprise includes the management-operation data layer needed to track these collector support requests.
-</Update>
-
-<Update label="OpenHound" description="Enhancement" tags={["Administration"]}>
-  {/*BED-8838*/}
-  ## Separate OpenHound Configuration and Secrets
-
-  Keep OpenHound runtime settings separate from sensitive credentials.
-
-  OpenHound now separates configuration values from secret values so destination details, scheduling intervals, and API credentials can be managed with clearer ownership and safer deployment practices.
-</Update>
-
-<Update label="BloodHound" description="Enhancement" tags={["Zone Builder"]}>
-  {/*BED-8830, BED-8828, BED-8773, BED-8772, BED-8259, BED-7760*/}
-  ## Privilege Zone Review Improvements
-
-  Review Privilege Zone certifications and rules with clearer table behavior, more usable layouts, and better validation feedback.
-
-  BloodHound now lets you fully close the certification entity panel area, improves certification table sizing and result-count terminology, makes kind-count summaries easier to read, and shows a clear error when an Object ID rule contains an invalid object ID.
-</Update>
-
-<Update label="BloodHound" description="Enhancement" tags={["Accessibility"]}>
-  {/*BED-7221, BED-8275, BED-7787, BED-8950*/}
-  ## Accessibility and Contrast Improvements
-
-  Navigate BloodHound with improved contrast, clearer focus states, and visual indicators that do not rely on color alone.
-
-  This release improves color and non-text contrast across key UI surfaces, updates the Data Quality chart palette, and makes Attack Path timeline graphs easier to interpret for users with low vision or color vision deficiencies.
-</Update>
-
-<Update label="BloodHound" description="Enhancement" tags={["Database"]}>
-  {/*BED-8796*/}
-  ## Faster PostgreSQL Cascading Deletes
-
-  Delete graph nodes and their related edges more efficiently in PostgreSQL-backed deployments.
-
-  BloodHound now uses a statement-level trigger for cascaded edge deletions, reducing repeated database procedure calls during heavy batch write paths.
 </Update>
 
 <Update label="BloodHound" tags={["Fixed Issues"]}>
