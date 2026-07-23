@@ -10,28 +10,79 @@ AzureHound Community Edition has several optional flags that let you control sca
 
 The `list` command collects all supported Entra ID and Azure Resource Manager data. Add a collection option directly after `list` to limit the scope.
 
-For example, use `azurehound list az-ad` to collect all supported Entra ID data and `azurehound list apps` to collect only application registrations within Entra ID.
+For example, use `azurehound list az-ad` to collect all supported Entra ID data and `azurehound list apps` to collect only application registrations within Entra ID. Run `azurehound list -h` to see all available collection commands.
 
-The following tree groups common collection options under the broad collection that includes them:
+The following tree logically groups every collection option by resource and abuse type. This grouping does not mean an aggregate command emits every option shown beneath it. All options are direct children of `list`; for example, run `azurehound list apps`, not `azurehound list az-ad apps`.
 
-* `list` — Collects both Entra ID and Azure Resource Manager data.
-    * `az-ad` — Collects all supported Entra ID data.
-        * `apps` — Collects application registrations.
-        * `devices` — Collects devices regardless of join type.
-        * `groups` — Collects security-enabled groups, including role-eligible and non-role-eligible groups.
-        * `roles` — Collects admin roles.
-        * `service-principals` — Collects service principals.
-        * `tenants` — Collects tenants.
-        * `users` — Collects users, including guest users in the target tenant.
-        * `app-owners` — Collects explicitly assigned owners of application registrations.
-    * `az-rm` — Collects all supported Azure Resource Manager data.
-        * `key-vaults` — Collects key vaults.
-        * `management-groups` — Collects management groups.
-        * `resource-groups` — Collects resource groups.
-        * `subscriptions` — Collects subscriptions.
-        * `virtual-machines` — Collects virtual machines.
-        * `management-group-user-access-admins` — Collects principals with the User Access Administrator role on management groups.
-        * `virtual-machine-avere-contributors` — Collects principals with the Avere Contributor role on virtual machines.
+```text expandable
+list # Collects both Entra ID and Azure Resource Manager data
+├── az-ad # Collects all supported Entra ID data
+│   ├── apps # Collects application registrations
+│   │   ├── app-owners # Collects explicitly assigned owners of application registrations
+│   │   └── appfics # Collects federated identity credentials for application registrations
+│   ├── devices # Collects devices
+│   ├── groups # Collects security-enabled groups
+│   │   ├── group-members # Collects group memberships
+│   │   └── group-owners # Collects explicitly assigned owners of groups
+│   ├── roles # Collects Entra ID directory role definitions
+│   │   └── role-assignments # Collects Entra ID directory role assignments
+│   ├── service-principals # Collects service principals
+│   │   ├── app-role-assignments # Collects principals assigned application roles exposed by service principals
+│   │   └── service-principal-owners # Collects explicitly assigned owners of service principals
+│   ├── tenants # Collects the target tenant and other accessible tenants
+│   ├── unified-role-assignment-policies # Collects tenant-wide Entra PIM directory role policy assignments and activation requirements
+│   ├── unified-role-eligibility-schedule-instances # Collects Entra PIM directory role eligibility instances
+│   └── users # Collects users, including guest users in the target tenant
+└── az-rm # Runs the aggregate Azure Resource Manager collection
+    ├── management-groups # Collects management groups
+    │   ├── management-group-descendants # Collects descendant management groups and subscriptions
+    │   └── management-group-role-assignments # Collects role assignments at management group scope
+    │       ├── management-group-contributors # Collects principals with the Contributor role on management groups
+    │       ├── management-group-owners # Collects principals with the Owner role on management groups
+    │       └── management-group-user-access-admins # Collects principals with the User Access Administrator role on management groups
+    └── subscriptions # Collects subscriptions
+        ├── subscription-role-assignments # Collects role assignments at subscription scope
+        │   ├── subscription-contributors # Collects principals with the Contributor role on subscriptions
+        │   ├── subscription-owners # Collects principals with the Owner role on subscriptions
+        │   └── subscription-user-access-admins # Collects principals with the User Access Administrator role on subscriptions
+        ├── resource-groups # Collects resource groups
+        │   └── resource-group-role-assignments # Collects role assignments that apply to resource groups
+        │       ├── resource-group-contributors # Collects principals with the Contributor role on resource groups
+        │       ├── resource-group-owners # Collects principals with the Owner role on resource groups
+        │       └── resource-group-user-access-admins # Collects principals with the User Access Administrator role on resource groups
+        ├── automation-accounts # Collects Automation accounts
+        │   └── automation-account-role-assignments # Collects role assignments that apply to Automation accounts
+        ├── container-registries # Collects container registries
+        │   └── container-registry-role-assignments # Collects role assignments that apply to container registries
+        ├── function-apps # Collects function apps
+        │   └── function-app-role-assignments # Collects role assignments that apply to function apps
+        ├── key-vaults # Collects key vaults
+        │   ├── key-vault-access-policies # Collects legacy access policies for key vaults
+        │   └── key-vault-role-assignments # Collects role assignments that apply to key vaults
+        │       ├── key-vault-contributors # Collects principals with the Contributor role on key vaults
+        │       ├── key-vault-kvcontributors # Collects principals with the Key Vault Contributor role on key vaults
+        │       ├── key-vault-owners # Collects principals with the Owner role on key vaults
+        │       └── key-vault-user-access-admins # Collects principals with the User Access Administrator role on key vaults
+        ├── logic-apps # Collects logic apps
+        │   └── logic-app-role-assignments # Collects role assignments that apply to logic apps
+        ├── managed-clusters # Collects Azure Kubernetes Service managed clusters
+        │   └── managed-cluster-role-assignments # Collects role assignments that apply to managed clusters
+        ├── storage-accounts # Collects storage accounts
+        │   ├── storage-account-role-assignments # Collects role assignments that apply to storage accounts
+        │   └── storage-containers # Collects blob containers in storage accounts
+        ├── virtual-machines # Collects virtual machines
+        │   └── virtual-machine-role-assignments # Collects role assignments that apply to virtual machines
+        │       ├── virtual-machine-admin-logins # Collects principals with the Virtual Machine Administrator Login role
+        │       ├── virtual-machine-avere-contributors # Collects principals with the Avere Contributor role on virtual machines
+        │       ├── virtual-machine-contributors # Collects principals with the Contributor role on virtual machines
+        │       ├── virtual-machine-owners # Collects principals with the Owner role on virtual machines
+        │       ├── virtual-machine-user-access-admins # Collects principals with the User Access Administrator role on virtual machines
+        │       └── virtual-machine-vmcontributors # Collects principals with the Virtual Machine Contributor role
+        ├── vm-scale-sets # Collects virtual machine scale sets
+        │   └── vm-scale-set-role-assignments # Collects role assignments that apply to virtual machine scale sets
+        └── web-apps # Collects web apps
+            └── web-app-role-assignments # Collects role assignments that apply to web apps
+```
 
 ## Authentication Flags
 
