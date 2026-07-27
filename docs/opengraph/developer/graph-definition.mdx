@@ -40,10 +40,10 @@ This page describes the components of an extension definition schema. For a full
   Extension metadata identifying the extension, including version and namespace.
 </ResponseField>
 <ResponseField name="node_kinds" type="array" required>
-  Defines custom node types and their visual representations for an extension.
+  Defines custom node types, visual representations, and Entity Panel content for an extension.
 </ResponseField>
 <ResponseField name="relationship_kinds" type="array" required>
-  Defines custom edge types and their traversability behavior for an extension.
+  Defines custom edge types, traversability behavior, and Entity Panel content for an extension.
 </ResponseField>
 <ResponseField name="environments" type="array">
   Defines the environments for a platform and identifies which node kinds an extension treats as principals within each environment.
@@ -70,6 +70,37 @@ Although the `schema.name` field does not use a namespace prefix, it must still 
   - If names are not unique or properly namespaced, schema uploads fail validation.
   - The `tag` namespace prefix is reserved in any letter case, including `tag`, `Tag`, and `TAG`. Do not use this prefix in an extension definition schema. If you do, BloodHound rejects the upload.
 </Warning>
+
+## Custom Entity Panel content
+
+Use the `info` object to define custom Entity Panel sections for node kinds and relationship kinds. When a user selects a node or relationship in Explore, BloodHound renders an Entity Panel with the specified accordion sections as defined by the `info` entries.
+
+Each `info` object is a map of section identifiers to rendered sections. Use stable identifiers for the keys so future schema updates can modify the same section without changing its identity.
+
+```json
+"info": {
+  "overview": {
+    "title": "Overview",
+    "position": 1,
+    "markdown": {
+      "content": "This content appears in the Entity Panel."
+    }
+  }
+}
+```
+
+| Field | Requirement | Description |
+| --- | --- | --- |
+| `info` key | Required | Stable section identifier. Must match `^[a-z0-9_-]{1,128}$`, which allows lowercase letters, numbers, hyphens, and underscores. |
+| `title` | Required | Section title displayed in the Entity Panel accordion header. |
+| `position` | Required | Integer that controls the order of extension-defined sections. Lower values render first. Use `1` or greater. |
+| `markdown.content` | Required | Markdown content rendered in the section body. |
+
+Every Entity Panel starts with **Object Information** at position `0`. This section lists all properties for the selected node or relationship.
+
+BloodHound renders additional `info` entries for the selected node's primary kind or the selected relationship's kind after **Object Information**. BloodHound orders those extension-defined sections by `position`, then `title`.
+
+If no `info` entries are defined for the selected kind, BloodHound still renders **Object Information**, but does not render additional extension-defined Entity Panel sections.
 
 ## Findings and metrics
 
@@ -122,7 +153,16 @@ Defines all node types in your extension. Each node kind represents an entity ty
     "description": "An Okta user account",
     "is_display_kind": true,
     "icon": "user",
-    "color": "#d33115"
+    "color": "#d33115",
+    "info": {
+      "overview": {
+        "title": "Overview",
+        "position": 1,
+        "markdown": {
+          "content": "Okta user accounts represent identities that can authenticate to Okta."
+        }
+      }
+    }
   }
 ]
 ```
@@ -147,6 +187,9 @@ Defines all node types in your extension. Each node kind represents an entity ty
 <ResponseField name="color" type="string">
   Optional Hex color code (in `#RGB` or `#RRGGBB` format, the `#` is required) to apply to nodes of this kind in the graph.
 </ResponseField>
+<ResponseField name="info" type="object">
+  Optional [custom Entity Panel content](/opengraph/developer/graph-definition#custom-entity-panel-content) for nodes of this kind.
+</ResponseField>
 
 ## `relationship_kinds`
 
@@ -157,7 +200,16 @@ Defines what kind of connections exist. Each relationship kind represents a spec
   {
     "name": "Okta_ResetPassword",
     "description": "Ability to reset passwords or temporary credentials for scoped Okta users",
-    "is_traversable": true
+    "is_traversable": true,
+    "info": {
+      "abuse": {
+        "title": "Abuse",
+        "position": 1,
+        "markdown": {
+          "content": "An attacker can use this relationship to reset a user's password and access the account."
+        }
+      }
+    }
   }
 ]
 ```
@@ -172,6 +224,9 @@ Defines what kind of connections exist. Each relationship kind represents a spec
   Controls whether edges of this relationship kind are used for pathfinding and Attack Path detection.
 
   When `is_traversable` is set to `true` on a relationship kind, all edges of that kind inherit the same traversability behavior. Only <Tooltip tip="Represents a relationship where the starting node can take control of the ending node to a degree that lets an attacker abuse the ending node's outgoing edges" cta="Learn more" href="/resources/edges/traversable-edges">traversable edges</Tooltip> are included in pathfinding and considered for findings and metrics.
+</ResponseField>
+<ResponseField name="info" type="object">
+  Optional [custom Entity Panel content](/opengraph/developer/graph-definition#custom-entity-panel-content) for relationships of this kind.
 </ResponseField>
 
 ## `environments`
@@ -301,14 +356,32 @@ The following example schema is based on Okta to illustrate how the different co
       "description": "An Okta user account",
       "is_display_kind": true,
       "icon": "user",
-      "color": "#d33115"
+      "color": "#d33115",
+      "info": {
+        "overview": {
+          "title": "Overview",
+          "position": 1,
+          "markdown": {
+            "content": "Okta user accounts represent identities that can authenticate to Okta."
+          }
+        }
+      }
     }
   ],
   "relationship_kinds": [
     {
       "name": "Okta_ResetPassword",
       "description": "Ability to reset passwords or temporary credentials for scoped Okta users",
-      "is_traversable": true
+      "is_traversable": true,
+      "info": {
+        "abuse": {
+          "title": "Abuse",
+          "position": 1,
+          "markdown": {
+            "content": "An attacker can use this relationship to reset a user's password and access the account."
+          }
+        }
+      }
     }
   ],
   "environments": [
