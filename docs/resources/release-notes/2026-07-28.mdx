@@ -1,0 +1,184 @@
+---
+title: 2026-07-28 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-07-28"
+---
+
+import FeatureFlagNote from '/snippets/feature-flag.mdx';
+
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-07-28 | v9.5.0 | v0.2.12 | v2.14.0 | v3.0.0 |
+
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+<Update label="BloodHound" description="New Feature" tags={["Data Collection"]}>
+  {/*BED-6155*/}
+  ## Analyze ADCS ESC14 Scenario A attack paths
+
+  BloodHound now models ADCS ESC14 Scenario A attack paths, helping you identify explicit certificate-mapping abuse paths that rely on `altSecurityIdentities`.
+
+  In ESC14 Scenario A, an attacker who can modify a target principal's `altSecurityIdentities` attribute, or who has equivalent control through the `Public-Information` property set, can add an explicit certificate mapping that points to a certificate they control and authenticate as the target.
+
+  This release adds graph coverage for the following edges:
+
+  - [`WriteAltSecurityIdentities`](/resources/edges/write-alt-security-identities)
+  - [`WritePublicInformation`](/resources/edges/write-public-information)
+
+  <Note>
+    This requires upgrading to SharpHound v2.14.0 to collect the new edges.
+  </Note>
+</Update>
+
+<Update label="BloodHound" description="New Feature" tags={["OpenGraph"]}>
+  {/*BED-8858, BED-8764, BED-8763, BED-8762, BED-8613, BED-8961*/}
+  ## OpenGraph Entity Info
+
+  Provide richer OpenGraph entity details by defining markdown-based information for node and relationship kinds.
+
+  OpenGraph extensions can now define [custom entity panel content](/opengraph/developer/graph-definition#custom-entity-panel-content) for node and relationship kinds, including: 
+
+  - Accordion sections
+  - Section titles
+  - Markdown content
+  - Display order
+
+  These schema-level definitions let extension authors publish reusable context once and apply it across matching nodes or relationships without storing duplicate information on each entity.
+
+  BloodHound can return extension-authored entity information from the OpenGraph entity lookup APIs when `include-info=true`, allowing the UI and integrations to render curated context instead of relying only on raw property lists. This release establishes the framework for custom entity panel accordion content and supports deep links to sections within OpenGraph-defined entity panels.
+
+  Related API reference:
+
+  - [`PUT /api/v2/extensions`](/reference/opengraph-experimental/upserts-the-opengraph-extension)
+  - [`GET /api/v2/nodes/{node_id}`](/reference/opengraph-experimental/get-node-by-graph-node-id)
+  - [`GET /api/v2/relationships/{relationship_id}`](/reference/opengraph-experimental/get-relationship-by-graph-relationship-id)
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  {/*BED-8616, BED-8614, BED-8611, BED-8610, BED-8607, BED-8685, BED-9031*/}
+  ## OpenGraph Data Quality Statistics
+
+  Validate uploaded OpenGraph data without writing custom Cypher queries by reviewing node-count statistics on the **Data Quality** page.
+
+  BloodHound now expands data quality statistics beyond the existing Active Directory and Azure/Entra ID views to include OpenGraph environments. You can review object-type breakdowns for data from SpecterOps-supported extensions (such as GitHub, Jamf, and Okta), as well as community and custom extensions.
+
+  BloodHound also stores OpenGraph data quality statistics after analysis, exposes environment and aggregate statistics through API endpoints, and returns OpenGraph environment kind metadata from the environment selector API so Data Quality workflows can distinguish environments more clearly.
+
+  <FeatureFlagNote />
+
+  Related API reference:
+
+  - [`GET /api/v2/data-quality-stats`](/reference/data-quality/get-environment-specific-data-quality-stats)
+  - [`GET /api/v2/data-quality-stats-aggregations`](/reference/data-quality/get-data-quality-aggregations-by-environment-kind)
+  - [`GET /api/v2/available-domains`](/reference/search/get-available-domains)
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-8939, BED-8943, BED-8968, BED-8944, BED-9020*/}
+  ## Case-Sensitive OpenGraph Object IDs
+
+  Preserve distinct OpenGraph objects whose `objectid` values differ only by case while keeping Active Directory and Microsoft Entra ID ingest behavior case-insensitive.
+
+  <FeatureFlagNote />
+
+  BloodHound can now store OpenGraph object IDs exactly as supplied by an extension. The latest versions of SharpHound and AzureHound now send all Active Directory and Microsoft Entra ID object IDs as fully uppercased values, which ensures consistent data as BloodHound removes server-side object ID normalization.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Accessibility"]}>
+  {/*BED-7221, BED-8275, BED-7787, BED-8950*/}
+  ## Accessibility and Contrast Improvements
+
+  Navigate BloodHound with improved contrast, clearer focus states, and visual indicators that do not rely on color alone.
+
+  This release improves color and non-text contrast across key UI surfaces, updates the Data Quality chart palette, and makes Attack Path timeline graphs easier to interpret for users with low vision or color vision deficiencies.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Administration"]}>
+  {/*BED-8838*/}
+  ## Separate OpenHound Configuration and Secrets
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Store the BloodHound Enterprise destination URL as [configuration](/openhound/configuration) instead of a secret when you set up scheduled OpenHound collectors.
+
+  OpenHound now reads `destination.bloodhoundenterprise.url` through DLT configuration, so you can define the tenant URL in `config.toml`, an environment variable, or Helm values while keeping `token_id` and `token_key` in `secrets.toml`.
+
+  The sample Docker Compose, Helm, and collector configuration files now follow this split and remove the stale Helm `interval` example.
+
+  <Note>
+    This is a non-breaking change. Existing collector secrets files that still define `destination.bloodhoundenterprise.url` continue to work because DLT configuration lookup can read the value from `secrets.toml`.
+  </Note>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
+  {/*BED-7937*/}
+  ## Upload-Only Role Access Enforcement
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Prevent users with the **Upload-only** role from accessing analysis pages that are outside their role permissions.
+
+  BloodHound Enterprise now blocks upload-only users from the **Posture** and **Attack Paths** pages.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
+  {/*BED-8587*/}
+  ## Auditor SSO Configuration Access
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Allow users with the **Auditor** role to review SSO provider configuration without granting provider management permissions.
+
+  Auditors can now view the **SSO Configuration** page in a read-only state while create and management actions remain restricted to users with the **Admin** role.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["API"]}>
+  {/*BED-8728*/}
+  ## Attack Path Findings API Availability
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  BloodHound Enterprise now exposes the [`GET /api/v2/attack-paths/findings`](/reference/attack-paths/list-attack-path-findings) endpoint so API clients can retrieve a unified, paginated list of Attack Path findings.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Zone Builder"]}>
+  {/*BED-8830, BED-8828, BED-8773, BED-8772, BED-8259, BED-7760*/}
+  ## Privilege Zone Review Improvements
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Review Privilege Zone certifications and rules with clearer table behavior, more usable layouts, and better validation feedback.
+
+  BloodHound now lets you fully close the certification entity panel area, improves certification table sizing and result-count terminology, makes kind-count summaries easier to read, and shows a clear error when an object ID-based rule contains an invalid object ID.
+</Update>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## API and Access Control
+
+  - {/*BED-8970*/} Added missing authorization checks to the `/api/v2/custom-nodes` API endpoint.
+  - {/*BED-8945*/} Added Environment Targeted Access Control checks to the OpenGraph node and relationship lookup APIs so restricted users cannot access graph entity data outside their allowed environments.
+  - {/*BED-8998*/} Resolved an issue where parameter input fields in the API Explorer could render too small or hide typed values.
+
+  ## Explore
+
+  - {/*BED-8026*/} Resolved an issue where selecting a node with an `id` property from the table layout on the **Explore** page failed to load object information in the entity panel.
+  - {/*BED-8138*/} Removed extra whitespace from graph node labels so selected nodes are centered more consistently.
+
+  ## Development
+
+  {/*BED-8971*/} Resolved an issue where UI source code changes in Docker Compose development stacks were not reflected in the browser without restarting containers.
+
+  ## Zone Builder
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  - {/*BED-8771*/} Resolved an issue on the **Certifications** page where select input borders could appear clipped in the **Additional Filters** modal.
+  - {/*BED-8766*/} Fixed an issue where the **Summary** view displayed object counts for a previously selected environment because the object count request retained the `environmentId` parameter from the **Details** view.
+</Update>
+
+<Update label="OpenHound" tags={["Fixed Issues"]}>
+  {/*BED-8837*/} Resolved an issue where running `scheduler.py` from the command line could produce a logging error on Windows operating systems.
+</Update>
