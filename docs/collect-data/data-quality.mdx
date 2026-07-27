@@ -1,0 +1,128 @@
+---
+title: Review Data Quality
+description: Use the Data Quality page to validate collected object counts, trends, and coverage after ingest.
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+The **Data Quality** page helps you validate what data exists in your BloodHound database after collection and ingest. Use it to confirm that expected data sources appear, object counts change as expected, and collection coverage supports the analysis workflows you plan to use.
+
+Data Quality is an operational validation page. It helps answer questions about the current shape and recent history of your database before you investigate findings, explore the graph, or troubleshoot collector output.
+
+## What the Data Quality page is for
+
+Use the Data Quality page after you upload or refresh data to:
+
+- Confirm that BloodHound ingested new or updated data.
+- Review object counts across supported data sources.
+- Compare current counts with historical collection trends.
+- Verify that expected object types appear for a directory, platform, or extension.
+- Check privileged Active Directory collection coverage for local groups and sessions.
+
+Data Quality does not replace collector logs or Cypher queries. If the page shows unexpected counts or coverage gaps, use it to identify where to investigate next.
+
+## Before you begin
+
+Before you review Data Quality, complete the collection or upload workflow for the data source you want to validate:
+
+- For Active Directory, collect and ingest SharpHound data.
+- For Azure and Entra ID, collect and ingest AzureHound data.
+- For structured OpenGraph data, verify or install the matching [OpenGraph extension definition schema](/opengraph/extensions/manage#verify-or-install-an-extension), then upload a conforming [data payload](/opengraph/developer/graph-data).
+
+Wait for ingest and analysis processing to complete before you compare counts or trends.
+
+## Review data quality
+
+<Steps>
+  <Step title="Open the Data Quality page">
+    In BloodHound, go to **Administration** > **Data Quality**.
+
+    The page opens with an aggregate view of included object data.
+  </Step>
+  <Step title="Review the total object count">
+    Use the total object count at the top of the page to confirm the current amount of included object data in the database.
+
+    The total helps you verify that a recent upload or collection run changed the database in the expected direction.
+  </Step>
+  <Step title="Review historical trends">
+    Review the historical graph to understand how object counts changed over time.
+
+    Use this trend to spot unexpected drops after a collector configuration change or large increases after onboarding a new data source.
+  </Step>
+  <Step title="Review source-specific details">
+    Use the available selectors and breakdowns to focus on a specific data source, environment, or extension.
+
+    Compare the displayed object types and counts with the data you expected the collector or payload to produce.
+  </Step>
+  <Step title="Review privileged collection coverage">
+    For Active Directory privileged collection, review **Local Group Completeness Over Time** and **Session Completeness Over Time**.
+
+    Use these charts to understand how much visibility BloodHound has into local group membership and session data across active computers.
+  </Step>
+</Steps>
+
+## Understand the page views
+
+The available views depend on the data in your BloodHound database. The page can include aggregate object counts, source-specific breakdowns, environment-specific views, and completeness charts.
+
+| View or metric | What it tells you | Use it to |
+|---|---|---|
+| **Total object count** | Current count of included object data in the database. | Confirm that ingest added, removed, or retained the expected amount of data. |
+| **Historical object count graph** | Object-count changes over time. | Identify unexpected drops, spikes, or missing collection activity. |
+| **Source or extension breakdown** | Current usage by built-in source or OpenGraph extension. | Confirm which data sources contribute objects to the database. |
+| **Object-type breakdown** | Counts by object type for a selected source, environment, or extension. | Verify that expected principal and resource types are present. |
+| **Completeness charts** | Active Directory privileged collection coverage over time. | Evaluate local group and session visibility across active computers. |
+
+## Understand count behavior
+
+Data Quality counts are designed to represent included object data, not every internal label stored in the graph. BloodHound excludes internal or metadata objects when those objects support platform features but are not useful as user-facing object types.
+
+For example, internal labels such as `Base` and `AZBase` can support calculations for Active Directory and Azure totals. They do not appear as separate object types in the breakdown because showing them separately can double count the same objects.
+
+Use Data Quality counts as validation indicators. If the counts do not match your expected collection or ingest results, review collector output, upload history, collection permissions, and extension compatibility before troubleshooting with Cypher.
+
+## Understand completeness charts
+
+Completeness charts apply to Active Directory data collected with SharpHound privileged collection. They help you understand collection coverage for data types that depend on host availability and permissions.
+
+| Chart | What it measures |
+|---|---|
+| **Local Group Completeness Over Time** | Visibility into local group membership collection across active computers. |
+| **Session Completeness Over Time** | Visibility into session collection across active computers. |
+
+Completeness below 100% is common. Workstations and servers can be offline, unavailable, or inaccessible during a collection run. If completeness is lower than expected, review collector permissions, collector logs, and collection scheduling.
+
+## Review structured OpenGraph data
+
+In BloodHound v9.5.0 and later, the Data Quality page includes structured OpenGraph object counts and historical trends. This enhancement helps you validate OpenGraph ingest without writing custom Cypher queries.
+
+<Note>
+  Structured OpenGraph Data Quality coverage is count-based. It does not add OpenGraph-specific coverage for sessions, data completeness, local group completeness, session completeness, or Environment Targeted Access Control (ETAC).
+</Note>
+
+For structured OpenGraph data, BloodHound organizes counts by extension. Extensions include SpecterOps-supported OpenGraph extensions, community extensions, and custom extensions.
+
+| OpenGraph extension type | Examples | How it appears |
+|---|---|---|
+| SpecterOps-supported | GitHub, Jamf, Okta | Appears as an extension that contributes object counts after ingest. |
+| Community | Public OpenGraph extensions | Appears after you install the extension schema and ingest matching data. |
+| Custom | Organization-specific extensions | Appears after you install the extension schema and ingest matching data. |
+
+Use **All Objects** to review total usage across included data. Select a specific extension to review that extension's total count, object-type breakdown, and historical object count trend.
+
+For example, an Okta extension view can show a total count for Okta objects and object-type counts such as `Okta_User`, `Okta_Group`, and `Okta_Device`.
+
+## Environments and extensions
+
+BloodHound uses environments to group data for platform-specific analysis and access workflows. Active Directory data uses domains, Azure and Entra ID data uses tenants, and structured OpenGraph extensions can define their own environment kinds.
+
+Not every OpenGraph extension defines environments. If an extension does not define environments, use aggregate and extension-specific views to validate the ingested data.
+
+## Next steps
+
+After you validate Data Quality:
+
+- Use [Search and pathfinding](/analyze-data/explore/search) to inspect specific objects.
+- Use [Search with Cypher](/analyze-data/explore/cypher-search) for deeper validation or troubleshooting.
+- Review [Manage Extensions](/opengraph/extensions/manage) if expected structured OpenGraph data does not appear.
+- Review [SharpHound Enterprise troubleshooting](/install-data-collector/install-sharphound/troubleshooting) if Active Directory coverage is lower than expected.
