@@ -101,13 +101,17 @@ import FeatureFlagNote from '/snippets/feature-flag.mdx';
   {/*BED-8838*/}
   ## Separate OpenHound Configuration and Secrets
 
-  Keep OpenHound runtime settings separate from sensitive credentials.
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
 
-  OpenHound now separates configuration values from secret values so destination details, scheduling intervals, and API credentials can be managed with clearer ownership and safer deployment practices.
+  Store the BloodHound Enterprise destination URL as configuration instead of a secret when you set up scheduled OpenHound collectors.
+
+  OpenHound now reads `destination.bloodhoundenterprise.url` through DLT configuration, so you can define the tenant URL in `config.toml`, an environment variable, or Helm values while keeping `token_id` and `token_key` in `secrets.toml`.
+
+  The sample Docker Compose, Helm, and collector configuration files now follow this split and remove the stale Helm `interval` example.
 
   <Note>
-    This is a non-breaking change. Existing OpenHound secrets files that use the legacy `destination.bloodhound` section with collector client credentials continue to work. For new scheduled collection configurations, use `destination.bloodhoundenterprise` to distinguish collector client credentials from JWT-based asset uploads. For related OpenHound documentation, see [OpenHound Overview](/openhound/overview).
-</Note>
+    This is a non-breaking change. Existing collector secrets files that still define `destination.bloodhoundenterprise.url` continue to work because DLT configuration lookup can read the value from `secrets.toml`.
+  </Note>
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
@@ -118,7 +122,7 @@ import FeatureFlagNote from '/snippets/feature-flag.mdx';
 
   Prevent users with the **Upload-only** role from accessing analysis pages that are outside their role permissions.
 
-  BloodHound Enterprise now blocks upload-only users from the **Posture** and **Attack Paths** pages and shows a consistent access message when the account does not have permission to view the page.
+  BloodHound Enterprise now blocks upload-only users from the **Posture** and **Attack Paths** pages.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
@@ -149,7 +153,7 @@ import FeatureFlagNote from '/snippets/feature-flag.mdx';
 
   Review Privilege Zone certifications and rules with clearer table behavior, more usable layouts, and better validation feedback.
 
-  BloodHound now lets you fully close the certification entity panel area, improves certification table sizing and result-count terminology, makes kind-count summaries easier to read, and shows a clear error when an Object ID rule contains an invalid object ID.
+  BloodHound now lets you fully close the certification entity panel area, improves certification table sizing and result-count terminology, makes kind-count summaries easier to read, and shows a clear error when an object ID-based rule contains an invalid object ID.
 </Update>
 
 <Update label="BloodHound" tags={["Fixed Issues"]}>
