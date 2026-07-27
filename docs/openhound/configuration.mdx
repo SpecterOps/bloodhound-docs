@@ -28,17 +28,23 @@ OpenHound reads configuration from DLT configuration files, environment variable
 
 | File | Purpose | Example contents |
 |---|---|---|
-| `config.toml` | Non-sensitive runtime and pipeline settings | Logging, retry behavior, worker counts |
-| `secrets.toml` | Sensitive values required by the running collector | BloodHound Enterprise collector client credentials and source credentials |
+| `config.toml` | Non-sensitive runtime, pipeline, and destination settings | BloodHound Enterprise tenant URL, logging, retry behavior, worker counts |
+| `secrets.toml` | Sensitive values required by the running collector | BloodHound Enterprise API credentials |
 | Extension-specific secrets files | Per-extension host files used by Docker Compose and mounted into the container as `secrets.toml` | `secrets_github.toml`, `secrets_jamf.toml`, `secrets_okta.toml` |
 
 For Docker Compose deployments, create the DLT files under `~/.dlt` on the host. The Enterprise example Compose file mounts the shared `config.toml` and maps the extension-specific secrets file into the container as `/app/.dlt/secrets.toml`.
 
-Each extension-specific secrets file must include the `destination.bloodhoundenterprise` section with the BloodHound Enterprise tenant URL and the `token_id` and `token_key` generated for the matching collector client. It must also include the credentials section required by that collector.
+Add the BloodHound Enterprise tenant URL to the shared `config.toml` file:
+
+```toml title="~/.dlt/config.toml"
+[destination.bloodhoundenterprise]
+url = "https://your-tenant.bloodhoundenterprise.io"
+```
+
+Each extension-specific secrets file must include the `destination.bloodhoundenterprise` section with the `token_id` and `token_key` generated for the matching collector client. It must also include the credentials section required by that collector.
 
 ```toml title="~/.dlt/secrets_github.toml"
 [destination.bloodhoundenterprise]
-url = "https://your-tenant.bloodhoundenterprise.io"
 token_id = "client_token_id"
 token_key = "client_token_key"
 
@@ -48,6 +54,8 @@ token_key = "client_token_key"
 
 <Note>
   The `destination.bloodhoundenterprise` settings are for scheduled OpenHound collection. Extension asset upload commands use a separate `destination.bloodhound` section with a browser JWT in `~/.dlt/secrets.toml`.
+
+  Existing collector secrets files that still define `destination.bloodhoundenterprise.url` continue to work, but new configurations should store the URL in `config.toml`.
 </Note>
 
 Some collectors require additional secret files, such as a GitHub App `.pem` private key or an Okta JSON key file. Store these files outside version control and configure the collector-specific path to match the path inside the container.
@@ -74,6 +82,9 @@ request_max_retry_delay = 900
 # To switch to structured JSON instead, uncomment the line below (must be uppercase "JSON")
 # log_format = "JSON"
 
+[destination.bloodhoundenterprise]
+url = "https://your-tenant.bloodhoundenterprise.io"
+
 [extract]
 workers = 4
 
@@ -94,15 +105,15 @@ workers=2
 
 ## BloodHound Enterprise settings
 
-Each extension-specific OpenHound collector needs a minimum BloodHound Enterprise destination configuration. Add the following parameters to the `[destination.bloodhoundenterprise]` section of that collector's secrets file, or set the matching environment variables.
+Each extension-specific OpenHound collector needs a minimum BloodHound Enterprise destination configuration. Add `url` to the `[destination.bloodhoundenterprise]` section of `config.toml` and add `token_id` and `token_key` to the `[destination.bloodhoundenterprise]` section of that collector's secrets file, or set the matching environment variables.
 
 Use the `token_id` and `token_key` generated for the OpenHound collector client that matches the extension you are configuring. For example, use the GitHub collector client credentials in the GitHub collector's `~/.dlt/secrets_github.toml` file.
 
 | Destination Option | Environment Variable | Description |
 |---|---|---|
+| `url` | DESTINATION__BLOODHOUNDENTERPRISE__URL | The URL of the BloodHound Enterprise tenant. Store this non-sensitive value in `config.toml`. |
 | `token_key` | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_KEY | The API token key generated for the matching OpenHound collector client. |
 | `token_id` | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_ID | The API token ID generated for the matching OpenHound collector client. |
-| `url` | DESTINATION__BLOODHOUNDENTERPRISE__URL | The URL of the BloodHound Enterprise tenant. |
 
 ## Collector-specific settings
 
