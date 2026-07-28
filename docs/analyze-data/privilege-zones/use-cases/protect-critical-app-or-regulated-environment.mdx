@@ -7,7 +7,31 @@ description: Model critical applications and regulated environments as Privilege
 
 Privilege Zones help you protect important systems that do not fit neatly into a traditional tiering model. Use this approach to draw a boundary around a critical application or regulated environment and analyze attack paths into it.
 
-Some systems matter because of the data they process, the business function they support, or the regulatory exposure they create. Examples include clinical systems, payment environments, customer data platforms, production control planes, and other high-impact systems.
+Some systems matter because of the data they process, the business function they support, or the regulatory exposure they create.
+
+Examples include:
+
+- Clinical systems
+- Payment systems
+- Customer data platforms
+- Production control planes
+- Trading or settlement systems
+- Identity infrastructure for a specific business unit
+- Systems in scope for PCI, HIPAA, SOX, or other regulatory programs
+
+## Scenario
+
+A healthcare organization wants to understand attack paths into a set of critical clinical application servers. These systems may not be Tier Zero in the traditional sense, but compromise would create patient care, regulatory, financial, and reputational impact.
+
+The team creates a Privilege Zone containing the application servers and supporting infrastructure. The first version may use known server lists, application owner input, organizational units, or naming conventions. Once the zone is analyzed, BloodHound Enterprise identifies the users, groups, systems, and relationships that can create paths into that environment.
+
+### What this can reveal
+
+- Broad server groups with access to application servers
+- Administrative users outside the expected support model
+- Legacy permissions inherited from prior domain or application structures
+- Misaligned ownership between application teams and infrastructure teams
+- Paths from ordinary users or lower-tier systems into regulated environments
 
 ## Focus on business impact
 
@@ -17,17 +41,7 @@ Who can reach this environment, and should they be able to?
 
 When you model that environment as a Privilege Zone, BloodHound helps you identify lower-trust identities, systems, or platforms that can control assets inside the boundary.
 
-## Define a practical scope
-
-Start with the assets that directly support the application or regulated environment. Include the objects that create meaningful control over those assets, then refine the zone as you review findings.
-
-Common scope inputs include:
-
-- Application administration groups
-- Service accounts and managed identities
-- Servers, databases, or cloud resources that support the environment
-- Identity provider objects that grant access
-- Shared platforms that administer or deploy into the environment
+Critical application zones make it easier to connect Attack Path Management to business priorities. This approach is also useful in complex environments where full tiering may take time. A critical application zone gives you a practical starting point with clear business relevance.
 
 ## Use this approach when
 
@@ -36,6 +50,73 @@ Common scope inputs include:
 - Application owners need visibility into inherited identity risk.
 - You want a business-aligned starting point for Privilege Zones.
 
+## Suggested workflow
+
+1. Select one critical application or regulated environment.
+1. Identify the systems, groups, service accounts, and administrative roles that support it.
+1. Create a zone using known objects, organizational units, naming conventions, or Cypher.
+1. Review attack paths into the zone.
+1. Validate findings with the application owner and infrastructure owner.
+1. Remediate unexpected paths.
+1. Keep the zone for ongoing monitoring, or use the process to define the next critical application zone.
+
 ## Move from concept to configuration
 
 Create a [zone](/analyze-data/privilege-zones/zones) for the protected application or environment. Use [labels](/analyze-data/privilege-zones/labels) for supporting dimensions such as compliance scope, application owner, or remediation status. Define [rules](/analyze-data/privilege-zones/rules) to match the objects that belong in each zone or label.
+
+<Note>
+  Broad keyword searches are useful for discovery, but production rules should be reviewed with application owners so the zone remains credible.
+</Note>
+
+You can use starter Cypher queries to find candidate objects for a critical application zone. Click the tabs below to see example queries.
+
+<Tabs>
+  <Tab title="Healthcare or clinical systems">
+    ```cypher
+    MATCH (n)
+    WHERE toUpper(COALESCE(n.name, '')) CONTAINS 'EPIC'
+       OR toUpper(COALESCE(n.name, '')) CONTAINS 'EHR'
+       OR toUpper(COALESCE(n.name, '')) CONTAINS 'EMR'
+       OR toUpper(COALESCE(n.name, '')) CONTAINS 'CLINICAL'
+       OR toUpper(COALESCE(n.name, '')) CONTAINS 'PATIENT'
+    RETURN n
+    LIMIT 1000
+    ```
+  </Tab>
+  <Tab title="PCI or payment systems">
+    ```cypher
+    MATCH (n)
+    WHERE toUpper(COALESCE(n.name, '')) CONTAINS 'PCI'
+       OR toUpper(COALESCE(n.name, '')) CONTAINS 'CARD'
+       OR toUpper(COALESCE(n.name, '')) CONTAINS 'PAYMENT'
+       OR toUpper(COALESCE(n.name, '')) CONTAINS 'POS'
+       OR toUpper(COALESCE(n.name, '')) CONTAINS 'CDE'
+    RETURN n
+    LIMIT 1000
+    ```
+  </Tab>
+  <Tab title="Production systems">
+    ```cypher
+    MATCH (n)
+    WHERE toUpper(COALESCE(n.name, '')) CONTAINS 'PROD'
+       OR toUpper(COALESCE(n.name, '')) CONTAINS 'PRODUCTION'
+       OR toUpper(COALESCE(n.name, '')) CONTAINS 'PRD'
+    RETURN n
+    LIMIT 1000
+    ```
+  </Tab>
+  <Tab title="Paths into the zone">
+    Replace `Tag_Critical_App` with your application zone's tag label:
+
+    ```cypher
+    MATCH p=(s)-[:AD_ATTACK_PATHS*1..]->(t:Tag_Critical_App)
+    WHERE NOT (s:Tag_Critical_App)
+    RETURN p
+    LIMIT 1000
+    ```
+  </Tab>
+</Tabs>
+
+## Key takeaway
+
+Privilege Zones help teams apply Attack Path Management to the applications and regulated environments that carry the highest business impact.
