@@ -3,44 +3,40 @@ title: Plan Attack Path Management
 description: Expand Privilege Zones beyond Tier Zero by connecting Attack Path Management to business priorities.
 ---
 
-import AnalysisRefreshPrerequisite from '/snippets/privilege-zones/analysis-refresh-prerequisite.mdx';
-
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }} />
 
-Privilege Zones help you expand identity Attack Path Management beyond the default **Tier Zero** view. Use them to define the next protected boundary, analyze who can reach it, and decide where access violates your security model.
+Privilege Zones help organizations expand Identity Attack Path Management beyond the default Tier Zero view. Tier Zero is the natural starting point because it contains the identities, systems, and permissions that can control the broader environment. Once a team begins reducing paths to Tier Zero, the next question is usually straightforward: what should we protect next?
 
-Tier Zero is the natural starting point because it contains identities, systems, and permissions that can control the broader environment. After you begin reducing attack paths to Tier Zero, use Privilege Zones to answer the next operational question: what do you protect next?
+That answer varies by organization. For one customer, the next priority may be Tier One administrative systems. For another, it may be a clinical application, a payment environment, a production deployment repository, an endpoint management platform, or a business-unit-owned infrastructure boundary.
 
-The answer varies by organization. One team's next priority may be Tier One administrative systems. Another's may be a clinical application, a payment environment, a production deployment repository, an endpoint management platform, or a business-unit-owned infrastructure boundary.
+Privilege Zones give teams a way to define those priorities and analyze attack paths into them.
 
-## Choose the next boundary
-
-The next boundary depends on your environment and your business priorities. A Privilege Zone can represent a durable part of your operating model or a temporary focus area for a specific initiative, such as a campaign, audit response, or focused investigation.
-
-Common examples include:
+A zone can represent:
 
 - A traditional administrative tier
 - A critical application
 - A regulated environment
 - A business unit
 - A platform team
-- A source code or deployment boundary
+- A source code boundary
 - An endpoint management boundary
-- A technology control plane that needs focused analysis
+- A technology control plane
 
-This approach helps your team turn broad security priorities into visible attack path boundaries. Instead of asking only whether an attacker can reach Tier Zero, you can ask whether lower-trust identities, systems, or platforms can reach the assets your organization has decided are most important.
+Some zones become durable parts of an organization's operating model. Others support a specific campaign, audit response, or focused investigation.
+
+Teams do not need a perfect model before starting. Many organizations begin with known groups, object IDs, OUs, naming conventions, asset metadata, or simple Cypher queries. They use the results to validate assumptions, find unexpected control paths, and refine the zone over time.
 
 <Note>
   Treat Privilege Zones as living documents. Revisit and refine them as your environment changes, ownership becomes clearer, and your Attack Path Management program matures.
 </Note>
 
-## Use this approach when
+## When to use this approach
 
-- Your team has started reducing Tier Zero attack paths.
-- Your team wants to expand Attack Path Management to additional critical systems.
-- You need to organize remediation around business priorities, ownership boundaries, or regulatory scope.
-- You need a repeatable way to decide what to protect next.
-- You are adding OpenGraph-connected technologies and need to define which assets deserve focused analysis.
+- Your organization has started reducing Tier Zero attack paths
+- Your team wants to expand attack path management to additional critical systems
+- You need to organize remediation around business priorities, ownership boundaries, or regulatory scope
+- You want a repeatable model for deciding what to protect next
+- You are adding OpenGraph-connected technologies and need to define which assets deserve focused analysis
 
 ## Example progression
 
@@ -51,21 +47,17 @@ This approach helps your team turn broad security priorities into visible attack
 1. Add OpenGraph-connected technologies, such as GitHub, Jamf, Okta, or cloud platforms.
 1. Use zones to understand inherited risk across identity systems, endpoint management platforms, source code systems, and cloud environments.
 
-## Move from concept to configuration
-
-Start with a practical first version of the boundary. You do not need a perfect model before you begin. Many teams start with known groups, object IDs, organizational units, naming conventions, asset metadata, or simple Cypher queries, then use the results to validate assumptions, uncover unexpected control paths, and refine the zone over time.
-
-Ask these questions to identify a starting point:
+## Practical starting questions
 
 - What system would create the most business impact if compromised?
 - What systems are subject to regulatory, audit, or compliance scrutiny?
-- What administrative boundary do you need to validate after Tier Zero?
+- What administrative boundary do we need to validate after Tier Zero?
 - Which application owners need visibility into inherited identity risk?
 - Which business unit or platform team owns remediation?
 - Which source code repositories, workflows, or endpoint management systems can influence production?
-- What existing structure can help you build a first version of the zone?
+- What existing structure can help us build a first version of the zone?
 
-You can use a broad naming pattern to discover candidate objects across your environment:
+### Starter Cypher: broad discovery by naming pattern
 
 ```cypher
 MATCH (n:Base)
@@ -77,26 +69,17 @@ RETURN n
 LIMIT 1000
 ```
 
-Or narrow the search to a specific critical application by replacing `APPNAME` and `APPLICATION-ALIAS` with your application's name or alias:
+### Starter Cypher: critical application keyword search **
 
 ```cypher
+// Replace APPNAME / APPLICATION-ALIAS with your critical application.
 MATCH (n)
-WHERE toUpper(COALESCE(n.name, '')) CONTAINS 'APPNAME'
-   OR toUpper(COALESCE(n.name, '')) CONTAINS 'APPLICATION-ALIAS'
+WHERE toUpper(coalesce(n.name, '')) CONTAINS 'APPNAME'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'APPLICATION-ALIAS'
 RETURN n
 LIMIT 1000
 ```
 
-After you choose a boundary:
-
-- Create a [zone](/analyze-data/privilege-zones/zones) to represent the protected boundary.
-- Use [labels](/analyze-data/privilege-zones/labels) to organize objects by owner, business function, campaign, or status.
-- Define [rules](/analyze-data/privilege-zones/rules) to match the objects that belong in the zone or label.
-
-<AnalysisRefreshPrerequisite />
-
-After analysis completes, review [Attack Paths](/analyze-data/findings/attack-paths) and [Posture](/analyze-data/findings/posture) to track exposure and remediation progress.
-
 ## Key takeaway
 
-Privilege Zones give teams a repeatable way to decide what to protect after Tier Zero and to keep expanding Attack Path Management as the environment matures.
+Privilege Zones give teams a repeatable way to decide what to protect after Tier Zero and to keep expanding attack path management as the environment matures.

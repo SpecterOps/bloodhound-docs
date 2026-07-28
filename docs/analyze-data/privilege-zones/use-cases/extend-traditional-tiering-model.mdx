@@ -3,31 +3,21 @@ title: Extend a Traditional Tiering Model
 description: Use Privilege Zones to test whether administrative tier boundaries hold up against real attack paths.
 ---
 
-import AnalysisRefreshPrerequisite from '/snippets/privilege-zones/analysis-refresh-prerequisite.mdx';
-
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }} />
 
-Privilege Zones help you turn a traditional administrative tiering model into something BloodHound can analyze. Use this approach to compare the intended model against real attack paths in your environment.
-
-Many organizations start with a tiering model where **Tier Zero** contains the identities and systems that control the environment. **Tier One** may contain servers, applications, or administrative systems that support critical operations. **Tier Two** may contain workstations, users, or broader operational assets.
+Many organizations begin with a traditional administrative tiering model. Tier Zero contains the systems and identities that control the environment. Tier One may contain servers, applications, or administrative systems that support critical operations. Tier Two may contain workstations, users, or broader operational assets.
 
 Privilege Zones help teams test whether that model holds up in the environment.
-
-## Validate the intended boundary
-
-A policy document can define which lower-tier users, groups, service accounts, or systems must not control higher-tier assets. BloodHound helps you test whether those control paths exist in practice.
-
-When you create a Privilege Zone for the next administrative boundary, BloodHound can identify attack paths where lower-trust objects control higher-priority assets. These paths show where permissions, group membership, delegation, or inherited control conflict with the model your organization intends to enforce.
 
 ## Scenario
 
 A security team has already started reducing attack paths to Tier Zero. The team now wants to understand whether lower-privileged users, groups, or systems can control Tier One assets.
 
-The team creates a simple Tier One zone using known administrative groups, server lists, organizational units, and a small number of hand-selected objects. The first version is intentionally practical. It gives the team enough structure to start analysis and review findings.
+The team creates a simple Tier One zone using known administrative groups, server lists, OUs, and a small number of hand-selected objects. The first version is intentionally practical. It gives the team enough structure to start analysis and review findings.
 
 Once the zone is created, BloodHound Enterprise analyzes attack paths into that zone. The team can then identify where lower-tier principals have unexpected control over higher-tier systems.
 
-### What this can reveal
+## What this can reveal
 
 - Help desk users with control over Tier One systems
 - Lower-tier administrators with rights that cross tier boundaries
@@ -35,100 +25,69 @@ Once the zone is created, BloodHound Enterprise analyzes attack paths into that 
 - Groups that appear operational but have privileged reach
 - Legacy permissions that violate the intended administrative model
 
-## Guidance
+## Why this works
 
-You do not need perfect tiering documentation before you start. Begin with the groups, systems, and administrative boundaries your team already understands, then refine the zone as findings clarify scope and ownership.
+The value comes from testing the tiering model against attack paths. A policy document may say that lower-tier users should not control Tier One systems. BloodHound Enterprise can show whether those paths exist.
 
-<Note>
-  A useful first version of a zone can generate enough visibility to begin productive conversations with infrastructure, IAM, and security teams.
-</Note>
-
-For example, your first version can include:
-
-- Known administrative groups for a tier
-- Systems that administer or host tier-scoped assets
-- Shared services that create control over the tier
-- Identity provider objects that grant privileged access
-
-Smaller organizations may start with list-based rules and known objects. More advanced organizations may use Cypher queries, naming conventions, organizational units, or other structural indicators.
-
-## Use this approach when
-
-- Your organization already uses Tier Zero, Tier One, Tier Two, or a similar administrative model.
-- You want to validate whether tier boundaries are real in the environment.
-- You need to identify cross-tier access that violates the intended model.
-- You want to show progress as attack paths are reduced over time.
+The first version of the zone can be simple. Smaller organizations may start with list-based rules and known objects. More advanced organizations may use Cypher queries, naming conventions, OUs, or other structural indicators.
 
 ## Suggested workflow
 
 1. Identify the next administrative tier to model after Tier Zero.
-1. Build a first version of the zone using known groups, servers, organizational units, or object IDs.
+1. Build a first version of the zone using known groups, servers, OUs, or object IDs.
 1. Run analysis and review findings.
 1. Validate whether each finding is expected.
 1. Refine the zone as ownership and scope become clearer.
 1. Use remediation progress to show movement in the attack path management journey.
 
-## Move from concept to configuration
+### Starter Cypher: candidate Tier One administrative objects
 
-Use [zones](/analyze-data/privilege-zones/zones) to represent each protected tier boundary. Use [rules](/analyze-data/privilege-zones/rules) to match known tier members.
+```cypher
+MATCH (n)
+WHERE toUpper(coalesce(n.name, '')) CONTAINS 'TIER1'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'T1'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'SERVER ADMIN'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'INFRA ADMIN'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'PLATFORM ADMIN'
+RETURN n
+LIMIT 1000
+```
 
-You can use starter Cypher queries to find candidate objects for a Tier One zone. Click the tabs below to see example queries.
+### Starter Cypher: candidate help desk or support groups
 
-<Tabs>
-  <Tab title="Administrative naming patterns">
-    Search for common administrative naming patterns:
+```cypher
+MATCH (n)
+WHERE toUpper(coalesce(n.name, '')) CONTAINS 'HELPDESK'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'HELP DESK'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'DESKTOP SUPPORT'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'WORKSTATION ADMIN'
+RETURN n
+LIMIT 1000
+```
 
-    ```cypher
-    MATCH (n)
-    WHERE toUpper(COALESCE(n.name, '')) CONTAINS 'TIER1'
-       OR toUpper(COALESCE(n.name, '')) CONTAINS 'T1'
-       OR toUpper(COALESCE(n.name, '')) CONTAINS 'SERVER ADMIN'
-       OR toUpper(COALESCE(n.name, '')) CONTAINS 'INFRA ADMIN'
-       OR toUpper(COALESCE(n.name, '')) CONTAINS 'PLATFORM ADMIN'
-    RETURN n
-    LIMIT 1000
-    ```
-  </Tab>
-  <Tab title="Help desk or support groups">
-    Search for help desk and support groups that may have unexpected reach into Tier One:
+### Starter Cypher: direct relationships from lower-tier candidates to Tier One
 
-    ```cypher
-    MATCH (n)
-    WHERE toUpper(COALESCE(n.name, '')) CONTAINS 'HELPDESK'
-       OR toUpper(COALESCE(n.name, '')) CONTAINS 'HELP DESK'
-       OR toUpper(COALESCE(n.name, '')) CONTAINS 'DESKTOP SUPPORT'
-       OR toUpper(COALESCE(n.name, '')) CONTAINS 'WORKSTATION ADMIN'
-    RETURN n
-    LIMIT 1000
-    ```
-  </Tab>
-  <Tab title="Direct relationships into Tier One">
-    After you create the zone, look for direct relationships from lower-tier candidates into Tier One. Replace `Tag_Tier_One` with your Tier One Privilege Zone's tag label:
+```cypher
+// Replace Tag_Tier_One with your Tier One Privilege Zone's tag label.
+MATCH p=(s)-[r]->(t:Tag_Tier_One)
+WHERE NOT (s:Tag_Tier_One)
+RETURN p
+LIMIT 1000
+```
 
-    ```cypher
-    MATCH p=(s)-[r]->(t:Tag_Tier_One)
-    WHERE NOT (s:Tag_Tier_One)
-    RETURN p
-    LIMIT 1000
-    ```
-  </Tab>
-  <Tab title="Multi-hop paths from Tier Two">
-    You can also look for multi-hop attack paths from Tier Two into Tier One. Replace `Tag_Tier_One` with your Tier One Privilege Zone's tag label:
+### Starter Cypher: paths from Tier Two to Tier One
 
-    ```cypher
-    MATCH p=(s)-[:AD_ATTACK_PATHS*1..]->(t:Tag_Tier_One)
-    WHERE NOT (s:Tag_Tier_One)
-    RETURN p
-    LIMIT 1000
-    ```
-  </Tab>
-</Tabs>
+```cypher
+// Replace Tag_Tier_One with your Tier One Privilege Zone's tag label.
+MATCH p=(s)-[:AD_ATTACK_PATHS*1..]->(t:Tag_Tier_One)
+WHERE NOT (s:Tag_Tier_One)
+RETURN p
+LIMIT 1000
+```
 
-<AnalysisRefreshPrerequisite />
+## Guidance
 
-After analysis completes, review the resulting attack paths to find cross-tier control relationships.
-
-To understand the default starting point for tiering work, see [Tier Zero: Members and Modification](/get-started/security-boundaries/tier-zero-members).
+Teams can start before they have perfect tiering documentation. A useful first version of a zone can generate enough visibility to begin productive conversations with infrastructure, IAM, and security teams.
 
 ## Key takeaway
 

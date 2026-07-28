@@ -5,33 +5,154 @@ description: Model high-impact GitHub repositories, workflows, and deployment pa
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }} />
 
-Privilege Zones help you treat high-impact source code and deployment boundaries as protected operating boundaries. Use this approach when GitHub permissions influence production systems, infrastructure, secrets, or release workflows.
+## Use case
 
-In source code platforms, the most important asset is not always a single repository. A repository can be sensitive because it contains important code, triggers workflows, deploys infrastructure, publishes production artifacts, accesses secrets, or assumes cloud roles. The protected boundary is often the software delivery path, not only the code itself.
+In source code platforms, a critical asset may be a repository, workflow, deployment environment, secret, app installation, personal access token, or role that can influence production systems.
 
-## Model GitHub as a control plane
+GitHub is a strong example. Some repositories are sensitive because they contain important code. Others are sensitive because a commit, pull request, workflow, app installation, or token can trigger follow-on actions that affect downstream infrastructure.
 
-A GitHub-focused Privilege Zone can represent objects that influence production or other high-impact systems.
+Privilege Zones can help teams isolate and analyze attack paths into high-impact GitHub assets.
 
-Common examples include:
+## Scenario
 
-- Repositories that contain production code or infrastructure-as-code
-- Workflows that build, publish, deploy, or rotate sensitive material
-- Environments, secrets, and variables that affect deployment behavior
-- Teams and roles that administer high-impact repositories
-- Applications or integrations that can change repository or workflow behavior
+A software company uses GitHub Actions to build and deploy code into a cloud environment. Several repositories contain workflows that can deploy infrastructure, publish production artifacts, or assume cloud roles through OIDC federation.
 
-This framing helps your team analyze who can control the GitHub objects that matter most and how those paths connect to broader identity, cloud, infrastructure, or application risk.
+The security team creates a Privilege Zone around the repositories and GitHub objects that can influence production deployment. The zone may include:
 
-## Use this approach when
+- Production application repositories
+- Infrastructure-as-code repositories
+- Repositories with workflows that deploy to production
+- Repositories with privileged GitHub Actions workflows
+- Repositories that publish production containers or packages
+- Repositories with access to cloud deployment secrets
+- Organization or repository secrets
+- GitHub environments tied to production deployment
+- GitHub teams or roles with administrative access
+- GitHub environments tied to production
+- Personal access tokens with broad write scope
+- Workflows that can assume cloud roles or access deployment credentials
+- Organization owner roles
+- All-repository admin roles
+- App installations scoped to all repositories with write permissions
+- Personal access tokens scoped to all repositories with write permissions
 
-- A repository or workflow can influence production systems.
-- GitHub permissions are part of the deployment or infrastructure trust chain.
-- You need to understand who can control high-impact repositories or workflows.
-- You want to connect source code risk to broader attack path analysis.
+The objective is to answer a simple question: who or what can influence code or workflows that can affect production?
 
-## Move from concept to configuration
+## What this can reveal
 
-Use the [GitHub OpenGraph extension](/opengraph/extensions/github/overview) to model GitHub organizations, identities, repositories, workflows, secrets, roles, and related relationships in BloodHound. Then use the [GitHub Privilege Zone rules](/opengraph/extensions/github/privilege-zone-rules) as a starting point for classifying high-value GitHub assets.
+- Users or teams with write, maintain, or admin access to critical repositories
+- Repository administrators with broader access than intended
+- Workflows that can access secrets or deployment environments
+- GitHub Apps with write access to all repositories
+- Personal access tokens scoped broadly across the organization
+- Paths from identity providers into GitHub roles
+- GitHub permissions that can lead to cloud access
+- Repositories that function as indirect control points for production
 
-After GitHub data is available, create a [zone](/analyze-data/privilege-zones/zones) for the protected GitHub boundary and define [rules](/analyze-data/privilege-zones/rules) that match the relevant repositories, workflows, teams, and roles.
+## Why this works
+
+In GitHub, privilege is often contextual. A repository may be critical because it stores sensitive code, but it may also be critical because it can trigger a workflow, deploy infrastructure, publish an artifact, or assume a role in a cloud environment.
+
+That makes GitHub a strong candidate for Privilege Zones. The zone can define the repositories, workflows, teams, apps, and secrets that matter most, then BloodHound Enterprise can help identify attack paths that lead to them.
+
+## Suggested workflow
+
+1. Identify repositories that can affect production or critical infrastructure.
+1. Identify workflows that deploy, publish, or assume cloud roles.
+1. Identify secrets, environments, teams, and roles connected to those repositories.
+1. Create a Privilege Zone around those GitHub objects.
+1. Analyze who or what can control the zone.
+1. Validate findings with application, platform, DevOps, and cloud owners.
+1. Reduce unnecessary access and monitor the zone over time.
+
+### Starter Cypher: production repository discovery
+
+```cypher
+MATCH (n:GH_Repository)
+WHERE toUpper(COALESCE(n.name, '')) CONTAINS 'PROD'
+   OR toUpper(COALESCE(n.name, '')) CONTAINS 'PRODUCTION'
+   OR toUpper(COALESCE(n.name, '')) CONTAINS 'PRD'
+RETURN n
+LIMIT 1000
+```
+
+### Starter Cypher: infrastructure-as-code repository discovery
+
+```cypher
+MATCH (n:GH_Repository)
+WHERE toUpper(coalesce(n.name, '')) CONTAINS 'TERRAFORM'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'TF'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'IAC'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'INFRA'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'CLOUD'
+RETURN n
+LIMIT 1000
+```
+
+### Starter Cypher: GitHub organization owner users
+
+```cypher
+MATCH (n:GH_User)-[:GH_HasRole]->(:GH_OrgRole {short_name: 'owners'})
+RETURN n
+LIMIT 1000
+```
+
+### Starter Cypher: GitHub owners role
+
+```cypher
+MATCH (n:GH_OrgRole {short_name: 'owners'})
+RETURN n
+LIMIT 1000
+```
+
+### Starter Cypher: all-repository admin role **
+
+```cypher
+MATCH (n:GH_OrgRole)
+WHERE n.short_name CONTAINS 'all_repo_admin'
+RETURN n
+LIMIT 1000
+```
+
+### Starter Cypher: all-repository GitHub App installations with write permission
+
+```cypher
+MATCH (n:GH_AppInstallation {repository_selection:'all'})
+WHERE n.permissions CONTAINS '"write"'
+RETURN n
+```
+
+### Starter Cypher: GitHub Apps with all-repository write installations
+
+```cypher
+MATCH (n:GH_AppInstallation {repository_selection: 'all'})
+WHERE n.permissions CONTAINS '"write"'
+RETURN n
+LIMIT 1000
+```
+
+### Starter Cypher: all-repository personal access tokens with write permission
+
+```cypher
+MATCH (n:GH_App)-[:GH_InstalledAs]->(i:GH_AppInstallation {repository_selection: 'all'})
+WHERE i.permissions CONTAINS '"write"'
+RETURN n
+LIMIT 1000
+```
+
+### Starter Cypher: external identities mapped to GitHub owners
+
+```cypher
+MATCH (n:GH_ExternalIdentity)-[:GH_MapsToUser]->(:GH_User)
+      -[:GH_HasRole]->(:GH_OrgRole {short_name: 'owners'})
+RETURN n
+LIMIT 1000
+```
+
+## Guidance
+
+GitHub zones should be defined around impact. A repository named production may be important. A repository with a workflow that can deploy to production may be even more important. Work with platform engineering, DevOps, application owners, and cloud teams to understand which repositories create downstream control.
+
+## Key takeaway
+
+In OpenGraph-connected environments, critical assets may be repositories, workflows, secrets, app installations, tokens, or deployment relationships. Privilege Zones help teams define those assets and understand the attack paths that can influence them.

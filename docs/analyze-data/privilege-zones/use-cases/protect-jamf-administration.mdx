@@ -5,33 +5,163 @@ description: Model Jamf administration and sensitive managed Mac boundaries as P
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }} />
 
-Privilege Zones help you analyze endpoint administration as part of identity attack path management. Use this approach when Jamf administration creates meaningful control over sensitive managed Macs or the users and roles that depend on them.
+## Use case
 
-Endpoint management platforms create powerful control relationships. In Jamf environments, users, groups, scripts, integrations, sites, and managed devices can influence how macOS systems are configured and operated. Some endpoints also deserve focused review because of who uses them, what data they access, or what administrative roles they support.
+Endpoint management platforms can create powerful control relationships. In Jamf Pro environments, users, groups, scripts, API integrations, sites, and computers may influence managed macOS endpoints. Some endpoints may also be more sensitive than others because of who uses them, what data they access, or what administrative roles they support.
 
-## Model Jamf as a control plane
+Privilege Zones can help teams organize Jamf-related risk around high-impact administrators, scripts, integrations, sites, or managed device groups.
 
-A Jamf-focused Privilege Zone can represent the Jamf objects and managed device boundaries that deserve focused analysis.
+## Scenario
 
-Common examples include:
+An organization uses Jamf Pro to manage macOS endpoints across executive users, engineers, administrators, and general employees. The security team wants to understand whether lower-privileged Jamf users, groups, scripts, or integrations can influence sensitive endpoints or administrative workflows.
 
-- Jamf administrator users and groups
-- Scripts or integrations that can change sensitive device configuration
-- Sites or device groups tied to privileged users
-- Managed Macs used by executives, administrators, engineers, or security teams
-- Jamf objects that influence access to applications, credentials, or operational data
+The team creates a Privilege Zone around the most important Jamf objects. Depending on the organization, that zone may include:
 
-This framing treats Jamf as more than an inventory source. If a team can manage sensitive endpoints, run high-impact scripts, or influence devices used by privileged users, that relationship belongs in the attack path discussion.
+- Jamf administrators
+- High-impact Jamf groups
+- Scripts with privileged execution
+- API integrations
+- Executive or administrator device groups
+- Sites or policies tied to sensitive endpoints
+- Managed devices used by privileged users
 
-## Use this approach when
+The objective is to understand which Jamf identities and relationships can influence sensitive managed endpoints.
 
-- Jamf administration creates meaningful control over sensitive endpoints.
-- Executive, administrator, engineering, or security device groups need extra review.
-- You want to understand how endpoint management relates to identity and application risk.
-- You need a clearer governance model for sensitive Jamf administration paths.
+## What this can reveal
 
-## Move from concept to configuration
+- Jamf users or groups with broader administrative reach than expected
+- Scripts or policies that can influence sensitive devices
+- API integrations with powerful permissions
+- Delegated administration paths that cross intended boundaries
+- Exposure from endpoint management into identity or application administration
 
-Use the [Jamf OpenGraph extension](/opengraph/extensions/jamf/overview) to model Jamf Pro users, groups, sites, scripts, API integrations, and related relationships in BloodHound. Then use the [Jamf getting started guide](/opengraph/extensions/jamf/getting-started#configure-privilege-zones) to configure Privilege Zone rules for Jamf data.
+## Why this works
 
-After Jamf data is available, create a [zone](/analyze-data/privilege-zones/zones) for the protected Jamf boundary and define [rules](/analyze-data/privilege-zones/rules) that match the relevant Jamf objects and managed devices.
+As organizations add Jamf data to BloodHound Enterprise, endpoint management becomes part of the attack path picture. Privilege may exist in the ability to manage devices, run scripts, modify policies, or influence endpoints used by privileged users.
+
+Privilege Zones can help security, endpoint, and infrastructure teams define which Jamf objects deserve closer analysis and ongoing monitoring.
+
+## Suggested workflow
+
+1. Identify the Jamf users, groups, scripts, integrations, and sites that matter most.
+1. Identify sensitive managed device groups, such as administrator, developer, or executive endpoints.
+1. Create a zone around the high-impact Jamf objects.
+1. Review attack paths into the zone.
+1. Validate findings with endpoint management and security teams.
+1. Reduce unnecessary administrative reach.
+1. Use the zone to support ongoing endpoint management governance.
+
+### Starter Cypher: Jamf tenant
+
+```cypher
+MATCH (n:jamf_Tenant)
+RETURN n
+LIMIT 1000
+```
+
+### Starter Cypher: Jamf Tier Zero principals
+
+```cypher
+MATCH (n)
+WHERE n.tier = 0
+  AND n.primarykind STARTS WITH 'jamf'
+RETURN n
+LIMIT 1000
+```
+
+### Starter Cypher: all Jamf computers
+
+```cypher
+MATCH (n:jamf_Computer)
+RETURN n
+LIMIT 1000
+```
+
+### Starter Cypher: all Jamf groups
+
+```cypher
+MATCH (n:jamf_Group)
+RETURN n
+LIMIT 1000
+```
+
+### Starter Cypher: Jamf API client immediate edges
+
+```cypher
+MATCH p=(s:jamf_ApiClient)-[]->(t)
+RETURN p
+LIMIT 1000
+```
+
+### Starter Cypher: Jamf account paths
+
+```cypher
+MATCH p=(s:jamf_Account)-[*1..4]->(t)
+RETURN p
+LIMIT 1000
+```
+
+### Starter Cypher: Jamf account to tenant edges
+
+```cypher
+MATCH p=(s:jamf_Account)-[]->(t:jamf_Tenant)
+RETURN p
+LIMIT 1000
+```
+
+### Starter Cypher: Jamf group edges to accounts
+
+```cypher
+MATCH p=(s:jamf_Group)-[]->(t:jamf_Account)
+RETURN p
+LIMIT 1000
+```
+
+### Starter Cypher: Tier One to Tier Zero Jamf paths
+
+#### CySQL issue with TraversableEdges: "AND r.traversable = True"
+
+###### getting variable-length relationship binding e0 is a list and does not support direct property lookup
+
+```cypher
+MATCH p=(s:jamf)-[r*1..5]->(t:jamf)
+WHERE s.tier = 1
+  AND t.tier = 0
+  AND s.primarykind <> 'jamf_Tenant'
+  AND s.primarykind <> 'jamf_Site'
+RETURN p
+LIMIT 1000
+```
+
+### Starter Cypher: direct Tier One to Tier Zero Jamf edges
+
+```cypher
+MATCH p=(s)-[]->(t)
+WHERE s.tier = 1
+  AND t.tier = 0
+RETURN p
+LIMIT 1000
+```
+
+### Starter Cypher: Jamf sensitive endpoint discovery
+
+###### Many companies use serial numbers for naming schemes, however some companies naming schemes would match the below.
+
+```cypher
+MATCH (n:jamf_Computer)
+WHERE toUpper(coalesce(n.name, '')) CONTAINS 'EXEC'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'ADMIN'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'ENG'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'DEVELOPER'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'SECURITY'
+RETURN n
+LIMIT 1000
+```
+
+## Guidance
+
+Jamf zones should be developed with the endpoint management team. The security team may understand the risk, but the endpoint team usually understands which scripts, policies, integrations, and sites are operationally sensitive.
+
+## Key takeaway
+
+Privilege Zones can extend attack path management into endpoint administration by helping teams define and monitor the Jamf objects that create control over sensitive devices.
