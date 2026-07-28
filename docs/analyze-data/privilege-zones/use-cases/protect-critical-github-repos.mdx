@@ -1,7 +1,9 @@
 ---
-title: Protect GitHub Repositories
+title: Protect Critical GitHub Repositories
 description: Model high-impact GitHub repositories, workflows, and deployment paths as protected Privilege Zone boundaries.
 ---
+
+import StarterQueriesCallout from "/snippets/privilege-zones/starter-queries-callout.mdx";
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }} />
 
@@ -63,7 +65,11 @@ That makes GitHub a strong candidate for Privilege Zones. The zone can define th
 1. Validate findings with application, platform, DevOps, and cloud owners.
 1. Reduce unnecessary access and monitor the zone over time.
 
-### Starter Cypher: production repository discovery
+## Starter Cypher queries
+
+<StarterQueriesCallout />
+
+### Production repository discovery
 
 ```cypher
 MATCH (n:GH_Repository)
@@ -74,7 +80,7 @@ RETURN n
 LIMIT 1000
 ```
 
-### Starter Cypher: infrastructure-as-code repository discovery
+### Infrastructure-as-code repository discovery
 
 ```cypher
 MATCH (n:GH_Repository)
@@ -87,7 +93,7 @@ RETURN n
 LIMIT 1000
 ```
 
-### Starter Cypher: GitHub organization owner users
+### GitHub organization owner users
 
 ```cypher
 MATCH (n:GH_User)-[:GH_HasRole]->(:GH_OrgRole {short_name: 'owners'})
@@ -95,7 +101,7 @@ RETURN n
 LIMIT 1000
 ```
 
-### Starter Cypher: GitHub owners role
+### GitHub owners role
 
 ```cypher
 MATCH (n:GH_OrgRole {short_name: 'owners'})
@@ -103,7 +109,7 @@ RETURN n
 LIMIT 1000
 ```
 
-### Starter Cypher: all-repository admin role
+### All-repository admin role
 
 ```cypher
 MATCH (n:GH_OrgRole)
@@ -112,7 +118,7 @@ RETURN n
 LIMIT 1000
 ```
 
-### Starter Cypher: all-repository GitHub App installations with write permission
+### All-repository GitHub App installations with write permission
 
 ```cypher
 MATCH (n:GH_AppInstallation {repository_selection:'all'})
@@ -120,7 +126,7 @@ WHERE n.permissions CONTAINS '"write"'
 RETURN n
 ```
 
-### Starter Cypher: GitHub Apps with all-repository write installations
+### GitHub Apps with all-repository write installations
 
 ```cypher
 MATCH (n:GH_AppInstallation {repository_selection: 'all'})
@@ -129,7 +135,7 @@ RETURN n
 LIMIT 1000
 ```
 
-### Starter Cypher: all-repository personal access tokens with write permission
+### All-repository personal access tokens with write permission
 
 ```cypher
 MATCH (n:GH_App)-[:GH_InstalledAs]->(i:GH_AppInstallation {repository_selection: 'all'})
@@ -138,7 +144,7 @@ RETURN n
 LIMIT 1000
 ```
 
-### Starter Cypher: external identities mapped to GitHub owners
+### External identities mapped to GitHub owners
 
 ```cypher
 MATCH (n:GH_ExternalIdentity)-[:GH_MapsToUser]->(:GH_User)

@@ -3,6 +3,8 @@ title: Protect Jamf Administration
 description: Model Jamf administration and sensitive managed Mac boundaries as Privilege Zones for focused analysis.
 ---
 
+import StarterQueriesCallout from "/snippets/privilege-zones/starter-queries-callout.mdx";
+
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }} />
 
 Endpoint management platforms can create powerful control relationships. In Jamf Pro environments, users, groups, scripts, API integrations, sites, and computers may influence managed macOS endpoints. Some endpoints may also be more sensitive than others because of who uses them, what data they access, or what administrative roles they support.
@@ -49,7 +51,11 @@ Privilege Zones can help security, endpoint, and infrastructure teams define whi
 1. Reduce unnecessary administrative reach.
 1. Use the zone to support ongoing endpoint management governance.
 
-### Starter Cypher: Jamf tenant
+## Starter Cypher queries
+
+<StarterQueriesCallout />
+
+### Jamf tenant
 
 ```cypher
 MATCH (n:jamf_Tenant)
@@ -57,7 +63,7 @@ RETURN n
 LIMIT 1000
 ```
 
-### Starter Cypher: Jamf Tier Zero principals
+### Jamf Tier Zero principals
 
 ```cypher
 MATCH (n)
@@ -67,7 +73,7 @@ RETURN n
 LIMIT 1000
 ```
 
-### Starter Cypher: all Jamf computers
+### All Jamf computers
 
 ```cypher
 MATCH (n:jamf_Computer)
@@ -75,7 +81,7 @@ RETURN n
 LIMIT 1000
 ```
 
-### Starter Cypher: all Jamf groups
+### All Jamf groups
 
 ```cypher
 MATCH (n:jamf_Group)
@@ -83,7 +89,7 @@ RETURN n
 LIMIT 1000
 ```
 
-### Starter Cypher: Jamf API client immediate edges
+### Jamf API client immediate edges
 
 ```cypher
 MATCH p=(s:jamf_ApiClient)-[]->(t)
@@ -91,7 +97,7 @@ RETURN p
 LIMIT 1000
 ```
 
-### Starter Cypher: Jamf account paths
+### Jamf account paths
 
 ```cypher
 MATCH p=(s:jamf_Account)-[*1..4]->(t)
@@ -99,7 +105,7 @@ RETURN p
 LIMIT 1000
 ```
 
-### Starter Cypher: Jamf account to tenant edges
+### Jamf account to tenant edges
 
 ```cypher
 MATCH p=(s:jamf_Account)-[]->(t:jamf_Tenant)
@@ -107,7 +113,7 @@ RETURN p
 LIMIT 1000
 ```
 
-### Starter Cypher: Jamf group edges to accounts
+### Jamf group edges to accounts
 
 ```cypher
 MATCH p=(s:jamf_Group)-[]->(t:jamf_Account)
@@ -115,11 +121,7 @@ RETURN p
 LIMIT 1000
 ```
 
-### Starter Cypher: Tier One to Tier Zero Jamf paths
-
-#### CySQL issue with TraversableEdges: "AND r.traversable = True"
-
-###### getting variable-length relationship binding e0 is a list and does not support direct property lookup
+### Tier One to Tier Zero Jamf paths
 
 ```cypher
 MATCH p=(s:jamf)-[r*1..5]->(t:jamf)
@@ -131,7 +133,7 @@ RETURN p
 LIMIT 1000
 ```
 
-### Starter Cypher: direct Tier One to Tier Zero Jamf edges
+### Direct Tier One to Tier Zero Jamf edges
 
 ```cypher
 MATCH p=(s)-[]->(t)
@@ -141,9 +143,7 @@ RETURN p
 LIMIT 1000
 ```
 
-### Starter Cypher: Jamf sensitive endpoint discovery
-
-###### Many companies use serial numbers for naming schemes, however some companies naming schemes would match the below.
+### Jamf sensitive endpoint discovery
 
 ```cypher
 MATCH (n:jamf_Computer)
@@ -162,4 +162,4 @@ Jamf zones should be developed with the endpoint management team. The security t
 
 ## Key takeaway
 
-Privilege Zones can extend attack path management into endpoint administration by helping teams define and monitor the Jamf objects that create control over sensitive devices.
+Privilege Zones can extend Attack Path Management into endpoint administration by helping teams define and monitor the Jamf objects that create control over sensitive devices.
