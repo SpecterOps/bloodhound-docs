@@ -19,7 +19,7 @@ Use the **Data Quality** page after you upload or refresh data to:
 - Review object counts across supported data sources.
 - Compare current counts with historical collection trends.
 - Verify that expected object types appear for a directory, platform, or extension.
-- Check privileged Active Directory collection coverage for local groups and sessions.
+- Check Active Directory data completeness for privileged collection coverage, including local groups and sessions.
 
 <Note>
   Data quality does not replace collector logs or Cypher queries. If the page shows unexpected counts or coverage gaps, use it to identify where to investigate next.
@@ -31,7 +31,9 @@ Before you review data quality, complete the collection or upload workflow for t
 
 - For Active Directory, collect and ingest SharpHound data.
 - For Azure and Entra ID, collect and ingest AzureHound data.
-- For structured OpenGraph data, verify or install the matching [OpenGraph extension definition schema](/opengraph/extensions/manage#verify-or-install-an-extension), then upload a conforming [data payload](/opengraph/developer/graph-data).
+- For <Tooltip tip="OpenGraph data conforming to the basic node, edge, and metadata format required for a data payload and associated with an installed extension definition schema." cta="Learn more" href="/opengraph/overview#structured-graphs">structured</Tooltip> OpenGraph data, verify or install the matching [OpenGraph extension definition schema](/opengraph/extensions/manage#verify-or-install-an-extension), then upload a conforming [data payload](/opengraph/developer/graph-data).
+
+  The **Data Quality** page does not support <Tooltip tip="OpenGraph data conforming to the basic node, edge, and metadata format required for a data payload, with no associated extension definition schema." cta="Learn more" href="/opengraph/overview#generic-graphs">generic</Tooltip> OpenGraph data.
 
   <FeatureFlagNote />
 
@@ -80,15 +82,13 @@ The available views depend on the data in your BloodHound database. The page can
 
 ## Count behavior
 
-Data quality counts are designed to represent included object data, not every internal label stored in the graph. BloodHound excludes internal or metadata objects when those objects support platform features but are not useful as user-facing object types.
+Data quality counts show user-facing object data. They do not include internal labels or metadata objects that BloodHound uses to support platform features.
 
 For example, internal labels such as `Base` and `AZBase` can support calculations for Active Directory and Azure totals. They do not appear as separate object types in the breakdown because showing them separately can double count the same objects.
 
-Use data quality counts as validation indicators. If the counts do not match your expected collection or ingest results, review collector output, upload history, collection permissions, and extension compatibility before troubleshooting with Cypher.
-
 ## Completeness charts
 
-Completeness charts apply to Active Directory data collected with SharpHound privileged collection. They help you understand collection coverage for data types that depend on host availability and permissions.
+Completeness charts apply to Active Directory data collected with SharpHound [privileged collection](/collect-data/enterprise-collection/privileged-collection). They help you understand collection coverage for data types that depend on host availability and permissions.
 
 | Chart | What it measures |
 |---|---|
@@ -101,18 +101,8 @@ Completeness below 100% is common. Workstations and servers can be offline, unav
 
 <FeatureFlagNote />
 
-In BloodHound v9.5.0 and later, the **Data Quality** page includes structured OpenGraph object counts and historical trends. This enhancement helps you validate OpenGraph ingest without writing custom Cypher queries.
+In BloodHound v9.5.0 and later, the **Data Quality** page includes [structured](/opengraph/overview#graph-structure) OpenGraph object counts and historical trends. This enhancement helps you validate OpenGraph ingest without writing custom Cypher queries.
 
-<Note>
-  Data quality coverage for structured OpenGraph data is count-based. It does not add OpenGraph-specific coverage for sessions, data completeness, local group completeness, session completeness, or Environment Targeted Access Control (ETAC).
-</Note>
+For structured OpenGraph data, BloodHound organizes counts by extension and registered [`source_kind`](/opengraph/developer/graph-data#data-source). The `source_kind` identifies the OpenGraph data source and can come from payload metadata or from `environments.source_kind` in an extension definition schema.
 
-For structured OpenGraph data, BloodHound organizes counts by extension. Extensions include SpecterOps-supported OpenGraph extensions, community extensions, and custom extensions.
-
-Select a specific extension or environment to review that extension's object type counts and historical trends.
-
-## Environments and extensions
-
-BloodHound uses environments to group data for platform-specific analysis and access workflows. Active Directory data uses domains, Azure and Entra ID data uses tenants, and structured OpenGraph extensions can define their own environment kinds.
-
-Not every OpenGraph extension defines environments. If an extension does not define environments, use aggregate and extension-specific views to validate the ingested data.
+Select a specific extension or source kind to review object type counts and historical trends for that OpenGraph source.
