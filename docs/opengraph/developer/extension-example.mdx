@@ -27,12 +27,45 @@ Follow the examples in this tutorial in order. Each section adds incremental cap
 
 By the end of this tutorial, you'll have a sample extension definition schema and matching payload that:
 
+- Defines extension metadata with the `schema` object
 - Defines an environment to establish analysis scope
 - Styles nodes with display kinds
 - Identifies principal kinds for pathfinding and <Tooltip tip="Exposure and impact">metrics calculation</Tooltip>
 - Makes relationships traversable for attack path analysis
 - Adds a Privilege Zone target for finding evaluation
 - Defines relationship findings with context and remediation guidance in BloodHound Enterprise
+
+## Define the schema object
+
+Every extension definition schema starts with a top-level [`schema`](/opengraph/developer/graph-definition#schema) object. Define this object first because it establishes the extension's name, version, and namespace, which the rest of this tutorial reuses.
+
+```jsonc
+{
+  "schema": {
+    "name": "ExampleExtension",
+    "display_name": "Example Extension",
+    "version": "v1.0.0",
+    "namespace": "EX"
+  },
+  "node_kinds": [],
+  "relationship_kinds": []
+}
+```
+
+- [`schema.name`](/opengraph/developer/graph-definition#param-name) uniquely identifies this extension in BloodHound. Uploading a schema with a matching `schema.name` and a newer `schema.version` overwrites the existing extension definition schema.
+- [`schema.display_name`](/opengraph/developer/graph-definition#param-display-name) is the human-readable label shown for the extension in BloodHound.
+- [`schema.version`](/opengraph/developer/graph-definition#param-version) tracks the extension schema version and must use v-prefixed semantic versioning, for example `v1.0.0`.
+- [`schema.namespace`](/opengraph/developer/graph-definition#param-namespace) is the prefix, `EX`, applied to every `name` field you define later in this tutorial (for example, `EX_Domain` and `EX_MemberOf`) to avoid collisions with built-in graph elements and other extensions.
+
+<Warning>
+  **Uploading schema iterations**
+
+  As you follow this tutorial and [upload](/opengraph/extensions/manage#update-an-extension) each iteration of the sample schema, increment `schema.version` before every upload. BloodHound rejects an upload that reuses the same `schema.name` and `schema.version` pairing as an already-installed schema, so you cannot re-upload an unchanged version to pick up new edits.
+
+  For example, bump the version from `v1.0.0` to `v1.0.1` (or higher) each time you add the node kinds, relationship kinds, environments, or findings from the following sections and re-upload the schema.
+</Warning>
+
+The remaining sections in this tutorial build on this `schema` object by adding `node_kinds`, `relationship_kinds`, `environments`, and `relationship_findings` entries.
 
 ## Define environments
 
@@ -64,7 +97,7 @@ In a custom extension, this behavior comes from the environment node kind you de
     "schema": {
       "name": "ExampleExtension",
       "display_name": "Example Extension",
-      "version": "v1.0.0",
+      "version": "v1.0.1",
       "namespace": "EX"
     },
     "node_kinds": [
@@ -98,6 +131,14 @@ In a custom extension, this behavior comes from the environment node kind you de
   It's important to include the [`metadata.source_kind`](/opengraph/developer/metadata#param-source-kind) value in the payload so that BloodHound can associate the payload with the schema definition. This helps facilitate organizing and managing graph data by [source](/opengraph/developer/graph-data#data-source).
   
   The [`properties.environmentid`](/opengraph/developer/nodes#param-properties-environmentid) and [`properties.collected`](/opengraph/developer/nodes#param-properties-collected) values on the environment node are required for BloodHound to recognize the environment and scope analysis correctly.
+
+  <Note>
+    **What `collected` means**
+
+    `properties.collected` only applies to environment node kinds. It indicates whether a collector actually ran against that environment, as opposed to the environment node existing because another collection run discovered a reference to it.
+
+    For example, SharpHound can discover a domain through a trust relationship without running against that domain directly. In that case, BloodHound creates a node for the discovered domain, but its contents remain unknown, so `collected` should be `false`. Set `collected` to `true` only for environments where the collector ran directly.
+  </Note>
 
   ```json highlight={3, 13-14, 23}
   {
@@ -167,7 +208,7 @@ This example builds on the environment definition from the previous section by a
     "schema": {
       "name": "ExampleExtension",
       "display_name": "Example Extension",
-      "version": "v1.0.0",
+      "version": "v1.0.2",
       "namespace": "EX"
     },
     "node_kinds": [
@@ -356,7 +397,7 @@ This setting affects analysis scope. If a node kind is not listed in `principal_
     "schema": {
       "name": "ExampleExtension",
       "display_name": "Example Extension",
-      "version": "v1.0.0",
+      "version": "v1.0.3",
       "namespace": "EX"
     },
     "node_kinds": [
@@ -451,7 +492,7 @@ When you set `is_traversable` to `true` on a relationship kind, every edge of th
     "schema": {
       "name": "ExampleExtension",
       "display_name": "Example Extension",
-      "version": "v1.0.0",
+      "version": "v1.0.4",
       "namespace": "EX"
     },
     "node_kinds": [
@@ -737,7 +778,7 @@ This example builds on the traversable `EX_HasSession` relationship and the Tier
     "schema": {
       "name": "ExampleExtension",
       "display_name": "Example Extension",
-      "version": "v1.0.0",
+      "version": "v1.0.5",
       "namespace": "EX"
     },
     "node_kinds": [
@@ -891,6 +932,7 @@ The following conditions may lead to unexpected behavior when you create an Open
 - The node or relationship kind name does not exactly match the schema definition.
 - Kind names are not properly [namespaced](/opengraph/developer/graph-definition#namespacing) (for example, missing the `namespace_` prefix) and cause schema upload validation failures.
 - The `tag` namespace prefix is used in a kind name. BloodHound rejects schema uploads that use this reserved prefix in any letter case (`tag`, `Tag`, `TAG`).
+- The [`schema.version`](/opengraph/developer/graph-definition#param-version) value does not use v-prefixed semantic versioning (for example, `v1.0.0`). BloodHound rejects schema uploads that use a different format.
 - The environment node exists, but `properties.collected` is not set to `true`.
 - Nodes are missing `properties.environmentid`.
 - The environment or payload does not include a registered `source_kind`.
