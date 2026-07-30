@@ -60,14 +60,16 @@ That makes GitHub a strong candidate for Privilege Zones. The zone can define th
 1. Identify repositories that can affect production or critical infrastructure.
 1. Identify workflows that deploy, publish, or assume cloud roles.
 1. Identify secrets, environments, teams, and roles connected to those repositories.
-1. Create a Privilege Zone around those GitHub objects.
+1. Create a [zone](/analyze-data/privilege-zones/zones) around those GitHub objects.
 1. Analyze who or what can control the zone.
-1. Validate findings with application, platform, DevOps, and cloud owners.
+1. Validate [findings](/analyze-data/findings/attack-paths) with application, platform, DevOps, and cloud owners.
 1. Reduce unnecessary access and monitor the zone over time.
 
 ## Starter Cypher queries
 
 <StarterQueriesCallout />
+
+For queries covering owner roles, all-repository admin access, app installations, personal access tokens, and external identity mappings, see the GitHub extension's [Privilege Zone Rules](/opengraph/extensions/github/privilege-zone-rules) page.
 
 ### Production repository discovery
 
@@ -89,66 +91,6 @@ WHERE toUpper(coalesce(n.name, '')) CONTAINS 'TERRAFORM'
    OR toUpper(coalesce(n.name, '')) CONTAINS 'IAC'
    OR toUpper(coalesce(n.name, '')) CONTAINS 'INFRA'
    OR toUpper(coalesce(n.name, '')) CONTAINS 'CLOUD'
-RETURN n
-LIMIT 1000
-```
-
-### GitHub organization owner users
-
-```cypher
-MATCH (n:GH_User)-[:GH_HasRole]->(:GH_OrgRole {short_name: 'owners'})
-RETURN n
-LIMIT 1000
-```
-
-### GitHub owners role
-
-```cypher
-MATCH (n:GH_OrgRole {short_name: 'owners'})
-RETURN n
-LIMIT 1000
-```
-
-### All-repository admin role
-
-```cypher
-MATCH (n:GH_OrgRole)
-WHERE n.short_name CONTAINS 'all_repo_admin'
-RETURN n
-LIMIT 1000
-```
-
-### All-repository GitHub App installations with write permission
-
-```cypher
-MATCH (n:GH_AppInstallation {repository_selection:'all'})
-WHERE n.permissions CONTAINS '"write"'
-RETURN n
-```
-
-### GitHub Apps with all-repository write installations
-
-```cypher
-MATCH (n:GH_AppInstallation {repository_selection: 'all'})
-WHERE n.permissions CONTAINS '"write"'
-RETURN n
-LIMIT 1000
-```
-
-### All-repository personal access tokens with write permission
-
-```cypher
-MATCH (n:GH_App)-[:GH_InstalledAs]->(i:GH_AppInstallation {repository_selection: 'all'})
-WHERE i.permissions CONTAINS '"write"'
-RETURN n
-LIMIT 1000
-```
-
-### External identities mapped to GitHub owners
-
-```cypher
-MATCH (n:GH_ExternalIdentity)-[:GH_MapsToUser]->(:GH_User)
-      -[:GH_HasRole]->(:GH_OrgRole {short_name: 'owners'})
 RETURN n
 LIMIT 1000
 ```
