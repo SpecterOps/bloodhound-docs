@@ -32,6 +32,7 @@ By the end of this tutorial, you'll have a sample extension definition schema an
 - Styles nodes with display kinds
 - Identifies principal kinds for pathfinding and <Tooltip tip="Exposure and impact">metrics calculation</Tooltip>
 - Makes relationships traversable for attack path analysis
+- Adds custom Entity Panel content to a relationship kind
 - Adds a Privilege Zone target for finding evaluation
 - Defines relationship findings with context and remediation guidance in BloodHound Enterprise
 
@@ -718,6 +719,123 @@ When you set `is_traversable` to `true` on a relationship kind, every edge of th
   </Tab>
 </Tabs>
 
+## Define custom Entity Panel content
+
+Use the [`info`](/opengraph/developer/graph-definition#custom-entity-panel-content) object on a node kind or relationship kind to add custom accordion sections to the Entity Panel. Every Entity Panel starts with **Object Information**; BloodHound renders any `info` entries after that section, ordered by `position`.
+
+This example builds on the traversable relationship kinds from the previous section by adding an `info` entry to `EX_HasSession` that explains how an attacker can abuse that relationship.
+
+<Tabs>
+  <Tab title="Example definition">
+  Add an `info` object with an `abuse` section to the `EX_HasSession` relationship kind.
+
+  ```jsonc
+  {
+    "schema": {
+      "name": "ExampleExtension",
+      "display_name": "Example Extension",
+      "version": "v1.0.5",
+      "namespace": "EX"
+    },
+    "node_kinds": [
+      {
+        "name": "EX_Domain",
+        "display_name": "Example Domain",
+        "is_display_kind": true,
+        "icon": "building",
+        "color": "#0057b8"
+      },
+      {
+        "name": "EX_User",
+        "display_name": "Example User",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#d33115"
+      },
+      {
+        "name": "EX_DomainAdmin",
+        "display_name": "Example Domain Admin",
+        "description": "Privileged identity used to demonstrate paths from standard users to Tier Zero.",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#b42318"
+      },
+      {
+        "name": "EX_Group",
+        "display_name": "Example Group",
+        "description": "Identity group used to demonstrate membership-based control paths.",
+        "is_display_kind": true,
+        "icon": "users",
+        "color": "#7c3aed"
+      },
+      {
+        "name": "EX_Computer",
+        "display_name": "Example Computer",
+        "description": "Computer or server that can host sessions and grant local administrative control.",
+        "is_display_kind": true,
+        "icon": "server",
+        "color": "#0f766e"
+      },
+      {
+        "name": "EX_HighValue",
+        "display_name": "Example High Value",
+        "description": "Secondary classification kind that should not control node styling.",
+        "is_display_kind": false
+      }
+    ],
+    "relationship_kinds": [
+      {
+        "name": "EX_MemberOf",
+        "description": "Membership that grants the source identity the permissions of the target group.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_FullControl",
+        "description": "Permission that lets the source identity control the target identity.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_AdminTo",
+        "description": "Local administrative control over a computer or server.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_HasSession",
+        "description": "Session exposure where control of the source computer can lead to control of the target identity.",
+        "is_traversable": true,
+        "info": { // [!code ++:9]
+          "abuse": {
+            "title": "Abuse",
+            "position": 1,
+            "markdown": {
+              "content": "An attacker who controls the source computer can hijack this session to act as the target identity, including a Tier Zero identity such as Domain Admin."
+            }
+          }
+        }
+      }
+    ],
+    "environments": [
+      {
+        "environment_kind": "EX_Domain",
+        "source_kind": "EX",
+        "principal_kinds": [
+          "EX_User",
+          "EX_Computer",
+          "EX_DomainAdmin"
+        ]
+      }
+    ]
+  }
+  ```
+  </Tab>
+  <Tab title="Example payload">
+  Use the same payload from the traversable relationship example. Custom Entity Panel content does not require a separate payload object.
+  </Tab>
+  <Tab title="BloodHound behavior">
+  _Placeholder: describe and show how the `EX_HasSession` Entity Panel displays the custom **Abuse** section defined by `info`, in addition to the default **Object Information** section._
+  </Tab>
+</Tabs>
+
 ## Create a Privilege Zone rule
 
 <img
@@ -778,7 +896,7 @@ This example builds on the traversable `EX_HasSession` relationship and the Tier
     "schema": {
       "name": "ExampleExtension",
       "display_name": "Example Extension",
-      "version": "v1.0.5",
+      "version": "v1.0.6",
       "namespace": "EX"
     },
     "node_kinds": [
