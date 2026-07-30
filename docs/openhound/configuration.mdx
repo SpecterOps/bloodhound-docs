@@ -21,52 +21,26 @@ The syntax allows for nested sections, collector-specific configurations, and co
 
 Configuration precedence follows a global-to-specific order: a collector-specific override in `[sources.source.<collector>.extract]` takes priority over a global setting in `[extract]`, which in turn takes priority over the built-in default.
 
-### File layout
+OpenHound reads configuration from DLT files, environment variables, or both. Keep non-sensitive settings and secrets in separate files:
 
-OpenHound reads configuration from DLT configuration files, environment variables, or both. Use separate files for non-sensitive settings and secrets:
-
-| File | Purpose | Example contents |
-|---|---|---|
-| `config.toml` | Non-sensitive runtime, pipeline, and destination settings | BloodHound Enterprise tenant URL, logging, retry behavior, worker counts |
-| `secrets.toml` | Sensitive values required by the running collector | BloodHound Enterprise API credentials |
-| Collector-specific secrets files | Per-collector host files used by Docker Compose and mounted into the container as `secrets.toml` | `secrets_github.toml`, `secrets_jamf.toml`, `secrets_okta.toml` |
-
-For Docker Compose deployments, create the DLT files under `~/.dlt` on the host. The Enterprise example Compose file mounts the shared `config.toml` and maps the extension-specific secrets file into the container as `/app/.dlt/secrets.toml`.
-
-Add the BloodHound Enterprise tenant URL to the shared `config.toml` file:
-
-```toml title="~/.dlt/config.toml"
-[destination.bloodhoundenterprise]
-url = "https://your-tenant.bloodhoundenterprise.io"
-```
-
-Each collector-specific secrets file must include the `destination.bloodhoundenterprise` section with the `token_id` and `token_key` generated for the matching collector client in BloodHound Enterprise and the `collector_name`.
-
-```toml title="~/.dlt/secrets_github.toml"
-[destination.bloodhoundenterprise]
-token_id = "client_token_id"
-token_key = "client_token_key"
-collector_name = "github"
-
-[sources.source.github.credentials]
-# Add the GitHub collector credentials for your authentication method.
-```
+| File | Purpose |
+|---|---|
+| `config.toml` | Non-sensitive runtime settings shared across collectors. This file also holds your BloodHound Enterprise tenant URL for scheduled collection. |
+| `secrets.toml` | The single secrets file each collector run reads. Its contents [differ by edition](/openhound/configuration#secrets-by-edition). |
+| Collector key files | Extra key material referenced from `secrets.toml`, such as a GitHub App `.pem` private key or an Okta JSON key file. Required only by collectors that use key-based authentication. |
 
 <Note>
-  The `destination.bloodhoundenterprise` settings are for scheduled OpenHound collection. Extension asset upload commands use a separate `destination.bloodhound` section with a browser JWT in `~/.dlt/secrets.toml`.
-
-  Existing collector secrets files that still define `destination.bloodhoundenterprise.url` continue to work, but new configurations should store the URL in `config.toml`.
+  For Docker Compose deployments, create the DLT files under `~/.dlt` on the host.
 </Note>
 
-Some collectors require additional secret files, such as a GitHub App `.pem` private key or an Okta JSON key file. Store these files outside version control and configure the collector-specific path to match the path inside the container.
+## `config.toml`
 
-<Note>
-  For production environments, use environment variables or your container platform's secret management features when local secret files do not meet your organization's credential handling requirements.
-</Note>
+The following example configuration sets global values for runtime, normalize, and load, then overrides the extract worker count for the Okta and GitHub collectors.
 
-The following sample configuration sets global values for runtime, normalize, and load, then overrides the extract worker count for the Okta and GitHub collectors.
+The only difference between Enterprise and Community editions is that the `destination.bloodhoundenterprise` section is required for scheduled collection in BloodHound Enterprise. It is not used for Community Edition collection.
 
-```toml Example ~/.dlt/config.toml
+<CodeGroup>
+```toml title="Enterprise ~/.dlt/config.toml" highlight {16-17}
 [runtime]
 log_level = "INFO"
 log_rotate_when = "midnight"
@@ -103,13 +77,127 @@ truncate_staging_dataset=true
 workers=2
 ```
 
+```toml title="Community ~/.dlt/config.toml"
+[runtime]
+log_level = "INFO"
+log_rotate_when = "midnight"
+log_interval = 1
+
+# HTTP retry/backoff for source requests; rides out API rate limits
+# (e.g. GitHub during large collections) instead of failing the run.
+request_max_attempts = 15
+request_backoff_factor = 1.3
+request_max_retry_delay = 900
+
+# Default: logs are set to human readable text
+# To switch to structured JSON instead, uncomment the line below (must be uppercase "JSON")
+# log_format = "JSON"
+
+[extract]
+workers = 4
+
+[sources.source.github.extract]
+workers=2
+
+[sources.source.okta.extract]
+workers=12
+
+[normalize]
+workers = 4
+
+[load]
+delete_completed_jobs=true
+truncate_staging_dataset=true
+workers=2
+```
+</CodeGroup>
+
+<Tip>
+  See [Runtime settings](/openhound/configuration#runtime-settings) for the full list of common runtime settings.
+</Tip>
+
+## `secrets.toml`
+
+Each OpenHound container runs a single collector, so each container needs its own `secrets.toml` file. To run multiple collectors on one host, keep a separate secrets file per collector, for example:
+
+- `~/.dlt/secrets_github.toml`
+- `~/.dlt/secrets_okta.toml`
+- `~/.dlt/secrets_jamf.toml`
+
+<Tip>
+  At runtime, OpenHound always reads the `secrets.toml` file. The collector-specific secrets files are an authoring convenience on the host. Your deployment mounts the correct one into each container as `secrets.toml`.
+</Tip>
+
+The example Docker Compose files follow this pattern for both BloodHound Enterprise and BloodHound Community.
+
+Each service mounts one host secrets file as the container's `secrets.toml` and mounts any collector key files (such as `github.pem` or `okta.json`) to the paths referenced by the collector credentials.
+
+Store these key files outside version control and set the collector's key path to match the path inside the container.
+
+### Edition-specific secrets
+
+The structure of the `secrets.toml` file is the main configuration difference between the Enterprise and Community editions. The following table summarizes the required sections for each edition:
+
+| `secrets.toml` section | Enterprise | Community |
+|---|---|---|
+| `[destination.bloodhoundenterprise]` | Required. Authenticates the collector client that uploads data to your tenant. | Omit. Community writes OpenGraph files to the local filesystem instead of a BloodHound Enterprise destination. |
+| `[sources.source.<collector>.credentials]` | Required. Authenticates to the source system. | Required. Authenticates to the source system. |
+
+Because Community collection has no BloodHound Enterprise destination, the `collect`, `preprocess`, and `convert` commands read and write local files, so the secrets file only needs the collector's source credentials.
+
+<CodeGroup>
+```toml title="Community ~/.dlt/secrets_github.toml"
+[sources.source.github.credentials]
+# GitHub collector credentials for your authentication method.
+```
+
+```toml title="Enterprise ~/.dlt/secrets_github.toml"
+[destination.bloodhoundenterprise]
+token_id = "client_token_id"
+token_key = "client_token_key"
+
+[sources.source.github.credentials]
+# GitHub collector credentials for your authentication method.
+```
+</CodeGroup>
+
+### Collector-specific secrets
+
+<CollectorSpecificConfig />
+
 ## BloodHound Enterprise settings
 
-Each OpenHound collector needs a minimum BloodHound Enterprise destination configuration. Set the following values in the file that matches each setting, or use the equivalent environment variables:
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "20%" }}/>
 
-- **`config.toml`** — Add the non-sensitive `url` to the `[destination.bloodhoundenterprise]` section. This file is shared across collectors.
-- **The collector's secrets file** (for example, `~/.dlt/secrets_github.toml`) — Add the `token_id` and `token_key` generated for the OpenHound collector client that matches the extension you are configuring to the `[destination.bloodhoundenterprise]` section.
-- **`collector_name`** — Set this to the same extension, such as `github`.
+Add your BloodHound Enterprise tenant URL to the shared `config.toml` file. This value is non-sensitive, so keep it out of the `secrets.toml` files. The URL is required for scheduled collection and is used by the OpenHound CLI commands that upload extension assets (saved queries, Privilege Zone rules, etc.) to your tenant:
+
+```toml title="~/.dlt/config.toml"
+[destination.bloodhoundenterprise]
+url = "https://your-tenant.bloodhoundenterprise.io"
+```
+
+<Note>
+  For production environments, use environment variables or your container platform's secret management features when local secret files do not meet your organization's credential handling requirements.
+</Note>
+
+The `destination.bloodhoundenterprise` settings apply to BloodHound Enterprise scheduled collection only. They authenticate each collector container to your tenant. Community Edition and standalone CLI runs omit this section.
+
+Each collector-specific secrets file must include a `[destination.bloodhoundenterprise]` section with the `token_id` and `token_key` generated for that collector's client in BloodHound Enterprise.
+
+The scheduler also needs `collector_name` to know which collector to run. The example Docker Compose files set this per service with the `DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME` environment variable, so the shipped secrets files omit it. You can also set it in `config.toml` or the secrets file.
+
+```toml title="~/.dlt/secrets_github.toml"
+[destination.bloodhoundenterprise]
+token_id = "client_token_id"
+token_key = "client_token_key"
+
+[sources.source.github.credentials]
+# Add the GitHub collector credentials for your authentication method.
+```
+
+<Warning>
+  Do not confuse `destination.bloodhoundenterprise` with `destination.bloodhound`. The `destination.bloodhound` section uses a browser JWT (`url` and `token`) and applies only to the OpenHound CLI commands that [upload extension assets](/openhound/upload-extension-assets), such as saved queries and Privilege Zone rules. It is not used for scheduled collection.
+</Warning>
 
 | Destination Option | Environment Variable | Description |
 |---|---|---|
@@ -117,10 +205,6 @@ Each OpenHound collector needs a minimum BloodHound Enterprise destination confi
 | `token_key` | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_KEY | The API token key generated for the matching OpenHound collector client. |
 | `token_id` | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_ID | The API token ID generated for the matching OpenHound collector client. |
 | `collector_name` | DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME | Required when running the scheduler (Docker Compose or Helm). Must match the extension being run, such as `okta`, `jamf`, or `github`. |
-
-## Collector-specific settings
-
-<CollectorSpecificConfig />
 
 ## Runtime settings
 
