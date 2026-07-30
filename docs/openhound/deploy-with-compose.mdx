@@ -109,7 +109,7 @@ Follow these steps to deploy OpenHound with Docker Compose and run a collector f
   <Step title="Create the collector-specific secrets file">
     Create one secrets file for each collector you want to run.
 
-    The example Compose file uses [collector-specific](/openhound/configuration#collector-specific-settings) files on the host and maps the matching file into the container as `/app/.dlt/secrets.toml`.
+    The example Compose file uses [collector-specific](/openhound/configuration#collector-specific-secrets) secrets files on the host and maps the matching file into the container as `/app/.dlt/secrets.toml`.
 
     | Collector | Host secrets file | Container secrets file |
     |---|---|---|
@@ -117,9 +117,9 @@ Follow these steps to deploy OpenHound with Docker Compose and run a collector f
     | Jamf | `~/.dlt/secrets_jamf.toml` | `/app/.dlt/secrets.toml` |
     | Okta | `~/.dlt/secrets_okta.toml` | `/app/.dlt/secrets.toml` |
 
-    Each extension secrets file must include:
+    Each collector-specific secrets file must include:
 
-    - `[destination.bloodhoundenterprise]` with the `token_id` and `token_key` for the matching OpenHound collector client
+    - `[destination.bloodhoundenterprise]` with the `token_id` and `token_key` for the matching OpenHound collector client in BloodHound Enterprise
     - The collector-specific credentials section, such as `[sources.source.github.credentials]`, `[sources.source.jamf.credentials]`, or `[sources.source.okta.credentials]`
 
       The following GitHub example uses an organization GitHub App.
@@ -138,7 +138,7 @@ Follow these steps to deploy OpenHound with Docker Compose and run a collector f
       ```
 
     <Note>
-      The scheduler uses `destination.bloodhoundenterprise` with collector client credentials. Store the destination URL in `config.toml` and store `token_id` and `token_key` in the extension secrets file.
+      The scheduler uses `destination.bloodhoundenterprise` with collector client credentials. Store the destination URL in `config.toml` and store `token_id` and `token_key` in the collector's secrets file.
 
       Do not use the JWT-based `destination.bloodhound` settings from [Upload Extension Assets](/openhound/upload-extension-assets) for scheduled collection.
     </Note>
