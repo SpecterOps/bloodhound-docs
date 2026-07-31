@@ -40,33 +40,79 @@ By the end of this tutorial, you'll have a sample extension definition schema an
 
 Every extension definition schema starts with a top-level [`schema`](/opengraph/developer/graph-definition#schema) object. Define this object first because it establishes the extension's name, version, and namespace, which the rest of this tutorial reuses.
 
-```jsonc
-{
-  "schema": {
-    "name": "ExampleExtension",
-    "display_name": "Example Extension",
-    "version": "v1.0.0",
-    "namespace": "EX"
-  },
-  "node_kinds": [],
-  "relationship_kinds": []
-}
-```
+<Tabs>
+  <Tab title="Example definition">
+  The following example shows the minimum required fields for a valid extension definition schema. BloodHound rejects a schema upload where `node_kinds` is empty, so this example defines a single `EX_Domain` node kind. The `relationship_kinds` array is empty because this is the first iteration of the schema.
 
-- [`schema.name`](/opengraph/developer/graph-definition#param-name) uniquely identifies this extension in BloodHound. Uploading a schema with a matching `schema.name` and a newer `schema.version` overwrites the existing extension definition schema.
-- [`schema.display_name`](/opengraph/developer/graph-definition#param-display-name) is the human-readable label shown for the extension in BloodHound.
-- [`schema.version`](/opengraph/developer/graph-definition#param-version) tracks the extension schema version and must use v-prefixed semantic versioning, for example `v1.0.0`.
-- [`schema.namespace`](/opengraph/developer/graph-definition#param-namespace) is the prefix, `EX`, applied to every `name` field you define later in this tutorial (for example, `EX_Domain` and `EX_MemberOf`) to avoid collisions with built-in graph elements and other extensions.
+  ```jsonc title="example-extension-definition.json"
+  {
+    "schema": {
+      "name": "ExampleExtension",
+      "display_name": "Example Extension",
+      "version": "v1.0.0",
+      "namespace": "EX"
+    },
+    "node_kinds": [
+      {
+        "name": "EX_Domain",
+        "display_name": "Example Domain"
+      }
+    ],
+    "relationship_kinds": []
+  }
+  ```
 
-<Warning>
-  **Uploading schema iterations**
+  - [`schema.name`](/opengraph/developer/graph-definition#param-name) uniquely identifies this extension in BloodHound. Uploading a schema with a matching `schema.name` and a newer `schema.version` overwrites the existing extension definition schema.
+  - [`schema.display_name`](/opengraph/developer/graph-definition#param-display-name) is the human-readable label shown for the extension in BloodHound.
+  - [`schema.version`](/opengraph/developer/graph-definition#param-version) tracks the extension schema version and must use v-prefixed semantic versioning, for example `v1.0.0`.
+  - [`schema.namespace`](/opengraph/developer/graph-definition#param-namespace) is the prefix, `EX`, applied to every `name` field you define later in this tutorial (for example, `EX_Domain` and `EX_MemberOf`) to avoid collisions with built-in graph elements and other extensions.
+  - [`node_kinds`](/opengraph/developer/graph-definition#node_kinds) requires at least one entry. BloodHound rejects a schema upload where `node_kinds` is empty, even if `relationship_kinds` is populated.
 
-  As you follow this tutorial and [upload](/opengraph/extensions/manage#update-an-extension) each iteration of the sample schema, increment `schema.version` before every upload. BloodHound rejects an upload that reuses the same `schema.name` and `schema.version` pairing as an already-installed schema, so you cannot re-upload an unchanged version to pick up new edits.
+  <Warning>
+    **Uploading schema iterations**
 
-  For example, bump the version from `v1.0.0` to `v1.0.1` (or higher) each time you add the node kinds, relationship kinds, environments, or findings from the following sections and re-upload the schema.
-</Warning>
+    As you follow this tutorial and [upload](/opengraph/extensions/manage#update-an-extension) each iteration of the sample schema, increment `schema.version` before every upload. BloodHound rejects an upload that reuses the same `schema.name` and `schema.version` pairing as an already-installed schema, so you cannot re-upload an unchanged version to pick up new edits.
 
-The remaining sections in this tutorial build on this `schema` object by adding `node_kinds`, `relationship_kinds`, `environments`, and `relationship_findings` entries.
+    For example, bump the version from `v1.0.0` to `v1.0.1` (or higher) each time you add the node kinds, relationship kinds, environments, or findings from the following sections and re-upload the schema.
+  </Warning>
+
+  The remaining sections in this tutorial build on this `schema` object by adding `node_kinds`, `relationship_kinds`, `environments`, and `relationship_findings` entries.
+  </Tab>
+  <Tab title="Example payload">
+  The payload is a separate JSON object that contains the graph data you want BloodHound to ingest and analyze.
+
+  Don't worry about uploading the payload yet. This section shows the minimum required fields for a valid payload, which is empty because the schema does not yet define any relationship kinds, and no node instances have been added yet.
+  
+  <Note>
+    The payload must include a [`metadata.source_kind`](/opengraph/developer/metadata#param-source-kind) value that matches the `schema.namespace` value in the extension definition schema.
+  </Note>
+
+  ```jsonc title="example-extension-payload.json" highlight={3}
+  {
+    "metadata": {
+      "source_kind": "EX"
+    },
+    "graph": {
+      "nodes": [],
+      "edges": []
+    }
+  }
+  ```
+  </Tab>
+  <Tab title="BloodHound behavior">
+  BloodHound does not display any graph data because the payload is empty. However, you can still upload the schema to BloodHound to see how the extension appears in the UI.
+  
+  The extension's display name appears in the **Active Extensions** list on the **OpenGraph Extension Management** page.
+
+  <Frame>
+    <img
+      src="/images/opengraph/extensions/develop/extension-management.png"
+      alt="An example of how the Example Extension appears in the BloodHound UI on the OpenGraph Extension Management page."
+      style={{ "width":"70%" }}
+    />
+  </Frame>
+  </Tab>
+</Tabs>
 
 ## Define environments
 
@@ -89,11 +135,11 @@ In a custom extension, this behavior comes from the environment node kind you de
 
 <Tabs>
   <Tab title="Example definition">
-  In this example, the `EX_Domain` node and environment kinds represent an environment (both are necessary to complete the definition).
+  This example builds on the `EX_Domain` node kind from the previous section. In this example, the `EX_Domain` node kind becomes the environment kind for a new `environments` object (both are necessary to complete the definition).
   
   The `EX_User` node kind is a principal that can be evaluated within that environment.
 
-  ```json highlight={9-15, 25-31}
+  ```jsonc title="example-extension-definition.json"
   {
     "schema": {
       "name": "ExampleExtension",
@@ -104,21 +150,15 @@ In a custom extension, this behavior comes from the environment node kind you de
     "node_kinds": [
       {
         "name": "EX_Domain",
-        "display_name": "Example Domain",
-        "is_display_kind": true,
-        "icon": "building",
-        "color": "#0057b8"
+        "display_name": "Example Domain"
       },
-      {
+      { // [!code ++:4]
         "name": "EX_User",
-        "display_name": "Example User",
-        "is_display_kind": true,
-        "icon": "user",
-        "color": "#d33115"
+        "display_name": "Example User"
       }
     ],
     "relationship_kinds": [],
-    "environments": [
+    "environments": [ // [!code ++:7]
       {
         "environment_kind": "EX_Domain",
         "source_kind": "EX",
@@ -129,26 +169,26 @@ In a custom extension, this behavior comes from the environment node kind you de
   ```
   </Tab>
   <Tab title="Example payload">
-  It's important to include the [`metadata.source_kind`](/opengraph/developer/metadata#param-source-kind) value in the payload so that BloodHound can associate the payload with the schema definition. This helps facilitate organizing and managing graph data by [source](/opengraph/developer/graph-data#data-source).
+  It's important to include the [`metadata.source_kind`](/opengraph/developer/metadata#param-source-kind) value in the payload so that BloodHound can associate the payload with the schema definition. This helps facilitate organizing and managing graph data by [source](/opengraph/developer/graph-data#data-source), which is especially useful for monitoring [data quality](/collect-data/data-quality).
   
   The [`properties.environmentid`](/opengraph/developer/nodes#param-properties-environmentid) and [`properties.collected`](/opengraph/developer/nodes#param-properties-collected) values on the environment node are required for BloodHound to recognize the environment and scope analysis correctly.
 
   <Note>
-    **What `collected` means**
+    **What does "collected" mean?**
 
-    `properties.collected` only applies to environment node kinds. It indicates whether a collector actually ran against that environment, as opposed to the environment node existing because another collection run discovered a reference to it.
+    The `properties.collected` value only applies to environment node kinds. It indicates whether a collector actually ran against that environment, as opposed to the environment node existing because another collection run discovered a reference to it.
 
     For example, SharpHound can discover a domain through a trust relationship without running against that domain directly. In that case, BloodHound creates a node for the discovered domain, but its contents remain unknown, so `collected` should be `false`. Set `collected` to `true` only for environments where the collector ran directly.
   </Note>
 
-  ```json highlight={3, 13-14, 23}
+  ```jsonc title="example-extension-payload.json"
   {
     "metadata": {
       "source_kind": "EX"
     },
     "graph": {
       "nodes": [
-        {
+        { // [!code ++:10]
           "id": "example-domain-1",
           "kinds": ["EX_Domain"],
           "properties": {
@@ -158,7 +198,7 @@ In a custom extension, this behavior comes from the environment node kind you de
             "collected": true
           }
         },
-        {
+        { // [!code ++:9]
           "id": "example-user-a",
           "kinds": ["EX_User"],
           "properties": {
@@ -181,13 +221,23 @@ In a custom extension, this behavior comes from the environment node kind you de
   - In BloodHound Enterprise, the same environment definition also scopes findings and metrics when the other required analysis conditions are met.
   - If the environment node kind is missing from the schema, or if payload nodes do not point to the environment node through `properties.environmentid`, the environment does not appear or scope data as expected.
 
-    <Frame>
+  <Columns cols={2}>
+    <Frame caption="Environment selector (Enterprise)">
       <img
         src="/images/opengraph/extensions/develop/environment-selector.png"
         alt="An example of how the environment selector appears in the BloodHound Enterprise UI for a custom extension."
-        style={{ "width":"70%" }}
+        style={{ "width":"100%" }}
       />
     </Frame>
+
+    <Frame caption="Data quality">
+      <img
+        src="/images/opengraph/extensions/develop/data-quality.png"
+        alt="An example of how data quality appears in the BloodHound Enterprise UI for a custom extension."
+        style={{ "width":"100%" }}
+      />
+    </Frame>
+  </Columns>
   </Tab>
 </Tabs>
 
@@ -198,13 +248,14 @@ The [`is_display_kind`](/opengraph/developer/graph-definition#param-is-display-k
 - Use `true` on the kind that should supply the node's icon and color.
 - Use `false` for secondary kinds that help classify the node but should not define its appearance.
 
-This example builds on the environment definition from the previous section by adding group, computer, domain admin, and high-value classification kinds.
+This example builds on the environment definition from the previous section by styling the existing `EX_Domain` and `EX_User` node kinds and adding group, computer, domain admin, and high-value classification kinds.
 <Tabs>
   <Tab title="Example definition">
-  Let's add the `EX_DomainAdmin`, `EX_Group`, `EX_Computer`, and `EX_HighValue` node kinds to the schema to support the example scenario.
+  Add `is_display_kind`, `icon`, and `color` to the existing `EX_Domain` and `EX_User` node kinds, then add the `EX_DomainAdmin`, `EX_Group`, `EX_Computer`, and `EX_HighValue` node kinds to the schema to support the example scenario.
 
-  The first three node kinds are display kinds that control the node's icon and color. The last node kind is a secondary classification kind that does not control the node's appearance.
-  ```jsonc
+  The first five node kinds are display kinds that control the node's icon and color. The last node kind is a secondary classification kind that does not control the node's appearance.
+
+  ```jsonc title="example-extension-definition.json"
   {
     "schema": {
       "name": "ExampleExtension",
@@ -216,16 +267,16 @@ This example builds on the environment definition from the previous section by a
       {
         "name": "EX_Domain",
         "display_name": "Example Domain",
-        "is_display_kind": true,
-        "icon": "building",
-        "color": "#0057b8"
+        "is_display_kind": true, // [!code ++]
+        "icon": "building", // [!code ++]
+        "color": "#0057b8" // [!code ++]
       },
       {
         "name": "EX_User",
         "display_name": "Example User",
-        "is_display_kind": true,
-        "icon": "user",
-        "color": "#d33115"
+        "is_display_kind": true, // [!code ++]
+        "icon": "user", // [!code ++]
+        "color": "#d33115" // [!code ++]
       },
       { // [!code ++:8]
         "name": "EX_DomainAdmin",
@@ -272,7 +323,7 @@ This example builds on the environment definition from the previous section by a
   <Tab title="Example payload">
   The `example-domain-admin` node has two kinds, but only the `EX_DomainAdmin` display kind controls how BloodHound renders the node.
  
-  ```jsonc
+  ```jsonc title="example-extension-payload.json"
   {
     "metadata": {
       "source_kind": "EX"
@@ -393,7 +444,7 @@ This setting affects analysis scope. If a node kind is not listed in `principal_
     BloodHound Enterprise derives the finding from the environment definition, the [traversable relationship kind](/opengraph/developer/extension-example#define-relationships), the [Privilege Zone target](/opengraph/developer/extension-example#create-a-privilege-zone-rule), the matching [relationship findings](/opengraph/developer/extension-example#define-relationship-findings) definition, and the uploaded graph data.
   </Note>
 
-  ```jsonc
+  ```jsonc title="example-extension-definition.json"
   {
     "schema": {
       "name": "ExampleExtension",
@@ -488,7 +539,7 @@ When you set `is_traversable` to `true` on a relationship kind, every edge of th
   <Tab title="Example definition">
   Each relationship is traversable because it represents a control transition. Auditing User A in isolation shows a standard user, but tracing the edges shows that User A can reach the Domain Admin identity.
 
-  ```jsonc
+  ```jsonc title="example-extension-definition.json"
   {
     "schema": {
       "name": "ExampleExtension",
@@ -586,7 +637,7 @@ When you set `is_traversable` to `true` on a relationship kind, every edge of th
   - User C is a local administrator on Server D.
   - Server D hosts a session for the Domain Admin identity.
 
-  ```jsonc
+  ```jsonc title="example-extension-payload.json"
   {
     "metadata": {
       "source_kind": "EX"
@@ -729,7 +780,7 @@ This example builds on the traversable relationship kinds from the previous sect
   <Tab title="Example definition">
   Add an `info` object with an `abuse` section to the `EX_HasSession` relationship kind.
 
-  ```jsonc
+  ```jsonc title="example-extension-definition.json"
   {
     "schema": {
       "name": "ExampleExtension",
@@ -832,7 +883,14 @@ This example builds on the traversable relationship kinds from the previous sect
   Use the same payload from the traversable relationship example. Custom Entity Panel content does not require a separate payload object.
   </Tab>
   <Tab title="BloodHound behavior">
-  _Placeholder: describe and show how the `EX_HasSession` Entity Panel displays the custom **Abuse** section defined by `info`, in addition to the default **Object Information** section._
+  The example definition and payload work together to create a graph that uses the `info` object to add an **Abuse** section to the Entity Panel for every `EX_HasSession` edge.
+
+  <Frame>
+    <img
+      src="/images/opengraph/extensions/develop/define-custom-content.png"
+      alt="An example of how custom Entity Panel content appears in the BloodHound graph for a custom extension."
+    />
+  </Frame>
   </Tab>
 </Tabs>
 
@@ -872,7 +930,7 @@ After analysis, the example data contains the required privilege boundary:
 - Server D hosts a session for the Domain Admin identity.
 - The Domain Admin identity is a Tier Zero target.
 
-With that boundary in place, the traversable path `User A -> Group B -> User C -> Server D -> Domain Admin` can generate a finding when the schema includes a matching `relationship_findings` definition.
+With that boundary in place, the traversable path `User A -> Group B -> User C -> Server D -> Domain Admin` can generate a finding when the schema includes a matching `relationship_findings` definition. Continue to the next section to define that finding.
 
 ## Define relationship findings
 
@@ -891,7 +949,7 @@ This example builds on the traversable `EX_HasSession` relationship and the Tier
   <Tab title="Example definition">
   Define the finding on the relationship kind that crosses into the higher Privilege Zone. In this example, `EX_HasSession` targets the Tier Zero Domain Admin identity.
 
-  ```jsonc
+  ```jsonc title="example-extension-definition.json"
   {
     "schema": {
       "name": "ExampleExtension",
@@ -996,7 +1054,11 @@ This example builds on the traversable `EX_HasSession` relationship and the Tier
   ```
   </Tab>
   <Tab title="Example payload">
-  Use the same payload from the traversable relationship example and the same Tier Zero zone configuration from the Privilege Zone example. Relationship findings do not require a separate payload object.
+  Use the same payload from the traversable relationship example and the same Tier Zero zone configuration from the Privilege Zone example.
+  
+  Relationship findings do not require a separate payload object, but it does require manually running analysis after uploading the example definition for the first time.
+
+  To manually run analysis, go to **Administration** > **BloodHound Configuration** and click **Analyze Now**.
   </Tab>
   <Tab title="BloodHound behavior">
   The example definition and payload work together to create a finding that BloodHound Enterprise can display on the Attack Paths page.
