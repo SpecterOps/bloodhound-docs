@@ -1,27 +1,29 @@
 ---
 title: SyncedToEntraDSUser
-description: The Entra user is synchronized to the user in Microsoft Entra Domain Services.
+description: The Entra user is synchronized to a corresponding Entra Domain Services user.
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-The Entra user is synchronized to the user in Microsoft Entra Domain Services (formerly Azure Active Directory Domain Services).
+This relationship indicates that the Entra user and the Entra Domain Services user are the same identity across the Entra ID and managed domain boundary.
 
-The Entra user may be able to authenticate as the Entra DS user with its own password.
+The Entra Domain Services user is created from the Entra user during synchronization and can be correlated through the BloodHound `aadobjectid` property, collected from the LDAP attribute `msDS-aadObjectId`. Password changes in Entra ID generate and synchronize the password material required for the Entra Domain Services user to authenticate.
+
+For cloud-only users, Entra ID does not generate the NT hash required by Entra Domain Services until a password change occurs while the managed domain is active. A newly synchronized cloud-only user may exist in Entra Domain Services but remain unusable until the password is changed in Entra ID.
 
 ## Abuse Info
 
-An attacker may authenticate as the Microsoft Entra Domain Services user using the Entra user's credentials, for example by key-logging the users password, or by changing the Entra user's password and waiting for the password write-back operation to complete.
+An attacker may authenticate as the Entra Domain Services user using the Entra user's credentials. For a cloud-only user that has not changed its password while the managed domain is active, changing the Entra user's password and waiting for Entra Domain Services synchronization to complete generates the password material required for authentication.
 
 ## Opsec Considerations
 
-The attacker may create artifacts of abusing this relationship in Microsoft Entra Domain Services in the form of Windows Logon Events and in log solutions if Azure Monitor Diagnostic settings are enabled for Entra Domain Services.
+Authenticating as the Entra Domain Services user may create Windows Logon Events and entries in log solutions if Azure Monitor Diagnostic settings are enabled for Entra Domain Services. Changing the Entra user's password may also create Entra ID audit logs.
 
 ## Edge Schema
 
-Source: [AZUser](/resources/nodes/az-user)   
-Destination: [User](/resources/nodes/user)   
-Traversable: **Yes**  
+Source: [AZUser](/resources/nodes/az-user)<br />
+Destination: [User](/resources/nodes/user)<br />
+Traversable: **Yes**
 
 ## References
 

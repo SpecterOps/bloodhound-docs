@@ -1,25 +1,23 @@
 ---
 title: SyncedToEntraDSGroup
-description: The Entra group is synchronized to the Microsoft Entra Domain Services group.
+description: The Entra group is synchronized to a corresponding Entra Domain Services group.
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-The Entra group and the direct/first-level group members are synchronized to the Microsoft Entra Domain Services group (formerly Azure Active Directory Domain Services).
+This relationship indicates that the Entra group and the Entra Domain Services group are the same group across the Entra ID and managed domain boundary.
 
-## Abuse Info
+The Entra Domain Services group is created from the Entra group during synchronization and can be correlated through the BloodHound `aadobjectid` property, collected from the LDAP attribute `msDS-aadObjectId`. Membership changes made to the Entra group are synchronized into the corresponding Entra Domain Services group.
 
-An attacker may be able to add or remove members of the Entra group, and changes will be synchronized to the Microsoft Entra Domain Services group.
+Only direct membership is synchronized. Nested Entra groups do not become nested Entra Domain Services groups through this relationship.
 
-## Opsec Considerations
-
-The attacker may create artifacts of abusing this relationship in Microsoft Entra Domain Services in the form of Windows Logon Events and in log solutions if Azure Monitor Diagnostic settings are enabled for Entra Domain Services.
+This relationship is informational. Control of the Entra group does not by itself provide a usable Entra Domain Services identity. The related [AddEntraDSGroupMember edge](/resources/edges/add-entra-ds-group-member) captures the case where a synchronized Entra user can use control of a synchronized Entra group to gain effective membership in the Entra Domain Services group.
 
 ## Edge Schema
 
-Source: [AZGroup](/resources/nodes/az-group)   
-Destination: [Group](/resources/nodes/group)   
-Traversable: **No**  
+Source: [AZGroup](/resources/nodes/az-group)<br />
+Destination: [Group](/resources/nodes/group)<br />
+Traversable: **No**
 
 ## References
 

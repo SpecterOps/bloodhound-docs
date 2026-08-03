@@ -1,0 +1,57 @@
+---
+title: AddEntraDSGroupMember
+description: The Entra user can add principals to the Entra Domain Services group through control of its synchronized Entra group.
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+This relationship indicates that a synchronized Entra user can effectively add members to an Entra Domain Services group by controlling the corresponding synchronized Entra group.
+
+The relationship is composed from three conditions:
+
+1. The Entra user is synchronized to Entra Domain Services.
+2. The Entra user owns or can add members to an Entra group.
+3. The Entra group is synchronized to an Entra Domain Services group.
+
+Because the Entra user already has a usable Entra Domain Services identity, they can add themselves or another controlled synchronized principal to the Entra group and wait for membership to synchronize into the Entra Domain Services group. This effectively grants the Entra user any privileges held by the Entra Domain Services group.
+
+Only direct membership in the source Entra group is synchronized. Nested Entra groups do not satisfy this relationship.
+
+## Abuse Info
+
+### Windows
+
+Using the Entra user's control over the Entra group, add the Entra user or another controlled synchronized principal as a direct member of the Entra group. In Microsoft Graph PowerShell this can be done with:
+
+```powershell
+New-MgGroupMemberByRef -GroupId "<entra-group-object-id>" -OdataId "https://graph.microsoft.com/v1.0/directoryObjects/<member-object-id>"
+```
+
+After Entra Domain Services synchronizes the direct membership change, the principal becomes a member of the corresponding Entra Domain Services group and inherits its access within the managed domain.
+
+### Linux
+
+Using the Entra user's control over the Entra group, add the Entra user or another controlled synchronized principal as a direct member of the Entra group. Using the Microsoft Graph API, for example with a POST to the group's members reference:
+
+```bash
+curl -X POST -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  https://graph.microsoft.com/v1.0/groups/<entra-group-object-id>/members/\$ref \
+  -d '{"@odata.id": "https://graph.microsoft.com/v1.0/directoryObjects/<member-object-id>"}'
+```
+
+After Entra Domain Services synchronizes the direct membership change, the principal becomes a member of the corresponding Entra Domain Services group and inherits its access within the managed domain.
+
+## Opsec Considerations
+
+Modifying Entra group membership generates directory audit logs in Microsoft Entra ID, and the resulting change is replicated into Microsoft Entra Domain Services, which may produce Windows Logon Events and entries in log solutions when Azure Monitor Diagnostic settings are enabled for Entra Domain Services.
+
+## Edge Schema
+
+Source: [AZUser](/resources/nodes/az-user)<br />
+Destination: [Group](/resources/nodes/group)<br />
+Traversable: **Yes**
+
+## References
+
+* [How objects and credentials are synchronized in a Microsoft Entra Domain Services managed domain](https://learn.microsoft.com/en-us/entra/identity/domain-services/synchronization)
+* [Add members to a group using Microsoft Graph](https://learn.microsoft.com/en-us/graph/api/group-post-members)

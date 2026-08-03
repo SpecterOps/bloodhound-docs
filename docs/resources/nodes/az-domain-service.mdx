@@ -1,0 +1,83 @@
+---
+title: AZDomainService
+description: A Microsoft Entra Domain Services managed domain represented by an Azure Resource Manager resource.
+icon: '/images/nodes/azure/az-domain-service.svg'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+An `AZDomainService` node represents a `Microsoft.AAD/domainServices` Azure Resource Manager resource. Microsoft Entra Domain Services provides managed domain controllers and synchronizes selected identities and credential material from Microsoft Entra ID into the managed domain.
+
+AzureHound collects this node as part of the `az-rm` collection scope. The collector requires `Microsoft.AAD/domainServices/read`. Collecting direct role assignments against the resource additionally requires `Microsoft.Authorization/roleAssignments/read`.
+
+<Note>
+AzureHound does not collect the Secure LDAP public certificate, certificate expiration, or certificate thumbprint from this resource.
+</Note>
+
+## Node properties
+
+The node supports the properties in the following table.
+
+<Note>
+Properties that are blank or null do not appear in the Entity Panel.
+</Note>
+
+| Entity Panel name | Description |
+| --- | --- |
+| Tier Zero / High Value | BloodHound Enterprise: Whether the object is part of Tier Zero or another configured privilege zone. BloodHound CE: Whether the object is marked as High Value. |
+| Display Name | The Azure resource name of the managed domain. |
+| Object ID | The full Azure Resource Manager resource ID of the managed domain. |
+| Last Collected by BloodHound | The most recent time the object was collected and ingested. |
+| Tenant ID | The unique identifier of the Microsoft Entra tenant associated with the managed domain. |
+| Domain Name | The DNS name of the managed domain. |
+| Domain Configuration Type | The domain configuration type reported by the `Microsoft.AAD` resource provider. |
+| Filtered Sync | Whether group-based filtered synchronization is enabled. When enabled, MEDS synchronizes explicitly scoped groups and their direct user members. |
+| Sync Scope | The eligible identity population. `All` includes all Entra identities, while `CloudOnly` limits eligibility to cloud-only identities. Group filtering can further restrict this population. |
+| Sync Application ID | The application/client ID reported for the tenant-local MEDS synchronization application. |
+| NTLM V1 | Whether NTLMv1 authentication is enabled in the managed domain. |
+| TLS V1 | Whether legacy TLS is enabled. A disabled value represents TLS 1.2-only mode. |
+| Sync NTLM Passwords | Whether NTLM-compatible password hashes are synchronized into the managed domain. |
+| Sync Kerberos Passwords | Whether Kerberos-compatible password material is synchronized into the managed domain. |
+| Sync On-Premises Passwords | Whether password material for identities synchronized from an on-premises directory is synchronized into the managed domain. |
+| Kerberos RC4 Encryption | Whether Kerberos RC4 encryption is enabled. |
+| Kerberos Armoring | Whether Kerberos armoring is enabled. |
+| LDAP Signing | Whether LDAP signing is enabled. |
+| Channel Binding | Whether LDAP channel binding is enabled. |
+| Sync On-Premises SAM Account Name | Whether MEDS populates `sAMAccountName` from the Entra `onPremisesSamAccountName` property. |
+| Secure LDAP | Whether Secure LDAP is enabled. |
+| Secure LDAP External Access | Whether Secure LDAP access over the public internet is enabled. |
+
+## Relationships
+
+AzureHound and BloodHound create the following containment relationship:
+
+```cypher
+(:AZResourceGroup)-[:AZContains]->(:AZDomainService)
+```
+
+BloodHound also creates direct Azure RBAC relationships to the node for supported role assignments whose scope exactly matches the domain service resource:
+
+| Azure role | BloodHound relationship |
+| --- | --- |
+| Owner | [`AZOwner`](/resources/edges/az-owner) |
+| User Access Administrator | [`AZUserAccessAdministrator`](/resources/edges/az-user-access-administrator) |
+| Contributor | [`AZContributor`](/resources/edges/az-contributor) |
+| Domain Services Contributor | [`AZContributor`](/resources/edges/az-contributor) |
+
+Assignments inherited from a resource group, subscription, or management group are represented through [`AZContains`](/resources/edges/az-contains) paths rather than duplicated as direct relationships.
+
+BloodHound post-processing also creates the following outgoing relationship when it can correlate the managed domain to its MEDS `Domain Users` group:
+
+```cypher
+(:AZDomainService)-[:SyncEntraDSUsers]->(:Group)
+```
+
+This relationship represents the managed domain's control over the broad synchronization boundary through its `Filtered Sync` and `Sync Scope` settings. See [`SyncEntraDSUsers`](/resources/edges/sync-entra-ds-users) for the conditional service-principal variant.
+
+## References
+
+* [Microsoft.AAD/domainServices reference](https://learn.microsoft.com/en-us/azure/templates/microsoft.aad/domainservices)
+* [How synchronization works in Microsoft Entra Domain Services](https://learn.microsoft.com/en-us/entra/identity/domain-services/synchronization)
+* [Configure scoped synchronization](https://learn.microsoft.com/en-us/entra/identity/domain-services/scoped-synchronization)
+* [Secure a Microsoft Entra Domain Services managed domain](https://learn.microsoft.com/en-us/entra/identity/domain-services/secure-your-domain)
+* [Configure Secure LDAP](https://learn.microsoft.com/en-us/entra/identity/domain-services/tutorial-configure-ldaps)
