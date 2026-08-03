@@ -1,0 +1,35 @@
+---
+title: AZDomainServicesContributor
+description: An Entra principal has a direct assignment of the Domain Services Contributor Azure role on a Microsoft Entra Domain Services managed domain.
+---
+
+import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
+
+<ResourceEditionPill />
+
+This relationship indicates that an Entra principal has a direct assignment of the built-in Domain Services Contributor Azure Resource Manager role on the target [AZDomainService](/resources/nodes/az-domain-service). The role definition ID is `eeaeda52-9324-47f6-8069-5d5bade478b2`, and the role grants `Microsoft.AAD/domainServices/*` together with permissions for related network configuration.
+
+Assignments of the general Contributor role continue to produce [AZContributor](/resources/edges/az-contributor). AzureHound currently emits `AZDomainServicesContributor` only for role assignments scoped directly to the managed-domain resource; inherited Domain Services Contributor assignments are not represented by this edge.
+
+## Abuse Info
+
+The role permits Azure Resource Manager operations against the target managed domain. Potential abuse includes changing synchronization eligibility, weakening NTLM, Kerberos, LDAP signing, or channel binding settings, and changing Secure LDAP exposure or configuration.
+
+Changing the synchronization boundary may allow an attacker-controlled Entra identity to materialize in the managed domain with Domain Users access. BloodHound represents that downstream capability with [SyncEntraDSUsers](/resources/edges/sync-entra-ds-users).
+
+## Opsec Considerations
+
+Azure records managed-domain updates in the Activity Log. Synchronization-scope changes can also generate Microsoft Entra audit activity and trigger a full managed-domain resynchronization, including deletion of objects that fall out of scope.
+
+## Edge Schema
+
+Source: An Azure principal, such as [AZUser](/resources/nodes/az-user), [AZGroup](/resources/nodes/az-group), or [AZServicePrincipal](/resources/nodes/az-service-principal)<br />
+Destination: [AZDomainService](/resources/nodes/az-domain-service)<br />
+Traversable: **Yes**
+
+## References
+
+* [Domain Services Contributor built-in role](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/identity#domain-services-contributor)
+* [Microsoft.AAD/domainServices reference](https://learn.microsoft.com/en-us/azure/templates/microsoft.aad/domainservices)
+* [Harden a Microsoft Entra Domain Services managed domain](https://learn.microsoft.com/en-us/entra/identity/domain-services/secure-your-domain)
+* [Configure scoped synchronization](https://learn.microsoft.com/en-us/entra/identity/domain-services/scoped-synchronization)
