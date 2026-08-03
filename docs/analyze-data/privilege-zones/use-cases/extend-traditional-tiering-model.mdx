@@ -1,0 +1,100 @@
+---
+title: Extend a Traditional Tiering Model
+description: Use Privilege Zones to test whether administrative tier boundaries hold up against real attack paths.
+---
+
+import StarterQueriesCallout from "/snippets/privilege-zones/starter-queries-callout.mdx";
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }} />
+
+Many organizations begin with a traditional administrative tiering model. Tier Zero contains the systems and identities that control the environment. Tier One may contain servers, applications, or administrative systems that support critical operations. Tier Two may contain workstations, users, or broader operational assets.
+
+Privilege Zones help teams test whether that model holds up in the environment.
+
+## Scenario
+
+A security team has already started reducing attack paths to Tier Zero. The team now wants to understand whether lower-privileged users, groups, or systems can control Tier One assets.
+
+The team creates a simple Tier One zone using known administrative groups, server lists, OUs, and a small number of hand-selected objects. The first version is intentionally practical. It gives the team enough structure to start analysis and review findings.
+
+Once the zone is created, BloodHound Enterprise analyzes attack paths into that zone. The team can then identify where lower-tier principals have unexpected control over higher-tier systems.
+
+## What this can reveal
+
+- Help desk users with control over Tier One systems
+- Lower-tier administrators with rights that cross tier boundaries
+- Service accounts that can influence higher-tier assets
+- Groups that appear operational but have privileged reach
+- Legacy permissions that violate the intended administrative model
+
+## Why this works
+
+The value comes from testing the tiering model against attack paths. A policy document may say that lower-tier users should not control Tier One systems. BloodHound Enterprise can show whether those paths exist.
+
+The first version of the zone can be simple. Smaller organizations may start with list-based rules and known objects. More advanced organizations may use Cypher queries, naming conventions, OUs, or other structural indicators.
+
+## Suggested workflow
+
+1. Identify the next administrative tier to model after Tier Zero.
+1. Build a first version of the [zone](/analyze-data/privilege-zones/zones) using known groups, servers, OUs, or object IDs.
+1. Run [analysis](/analyze-data/findings/analysis) and review [findings](/analyze-data/findings/attack-paths).
+1. Validate whether each finding is expected.
+1. Refine the zone as ownership and scope become clearer.
+1. Use [remediation progress](/analyze-data/findings/posture) to show movement in the Attack Path Management journey.
+
+## Starter Cypher queries
+
+<StarterQueriesCallout />
+
+### Candidate Tier One administrative objects
+
+```cypher
+MATCH (n)
+WHERE toUpper(coalesce(n.name, '')) CONTAINS 'TIER1'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'T1'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'SERVER ADMIN'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'INFRA ADMIN'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'PLATFORM ADMIN'
+RETURN n
+LIMIT 1000
+```
+
+### Candidate help desk or support groups
+
+```cypher
+MATCH (n)
+WHERE toUpper(coalesce(n.name, '')) CONTAINS 'HELPDESK'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'HELP DESK'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'DESKTOP SUPPORT'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'WORKSTATION ADMIN'
+RETURN n
+LIMIT 1000
+```
+
+### Direct relationships from lower-tier candidates to Tier One
+
+```cypher
+// Replace Tag_Tier_One with your Tier One Privilege Zone's tag label.
+MATCH p=(s)-[r]->(t:Tag_Tier_One)
+WHERE NOT (s:Tag_Tier_One)
+RETURN p
+LIMIT 1000
+```
+
+### Multi-hop attack paths to Tier One
+
+```cypher
+// Replace Tag_Tier_One with your Tier One Privilege Zone's tag label.
+MATCH p=(s)-[:AD_ATTACK_PATHS*1..]->(t:Tag_Tier_One)
+WHERE NOT (s:Tag_Tier_One)
+RETURN p
+LIMIT 1000
+```
+
+## Guidance
+
+Teams can start before they have perfect tiering documentation. A useful first version of a zone can generate enough visibility to begin productive conversations with infrastructure, IAM, and security teams.
+
+## Key takeaway
+
+A traditional tiering model becomes actionable when the team can compare the intended model against attack paths in the environment.

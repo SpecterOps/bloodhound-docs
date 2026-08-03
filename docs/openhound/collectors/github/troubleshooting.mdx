@@ -7,6 +7,31 @@ description: Common issues and solutions when running the OpenHound GitHub colle
 
 This guide covers common issues encountered when running the OpenHound GitHub collector and how to resolve them.
 
+## Docker Compose Issues
+
+### Docker commands fail from WSL
+
+If you run OpenHound from Windows with WSL and Docker commands fail or cannot find the Docker daemon, verify Docker Desktop WSL integration.
+
+1. Open Docker Desktop.
+1. Click **Settings** > **Resources** > **WSL integration**.
+1. Enable integration for the WSL distribution where you run OpenHound.
+1. Return to your WSL terminal and run:
+
+   ```bash
+   docker compose version
+   ```
+
+### More than one collector starts
+
+The Enterprise Docker Compose example defines services for GitHub, Jamf, and Okta. Start only the service for the extension you configured.
+
+```bash
+docker compose up -d scheduler-github
+```
+
+If you run `docker compose up -d` without a service name, Docker starts every service in the Compose file.
+
 ## Authentication Errors
 
 ### "Bad credentials" or 401 Unauthorized
@@ -42,8 +67,20 @@ This error indicates insufficient GitHub App permissions. Verify:
 If you encounter errors related to the private key:
 
 - Ensure the `.pem` file path is correct and accessible.
+- When you run OpenHound with Docker Compose, ensure `key_path` points to the mounted container path, such as `/app/.dlt/github.pem`.
 - Verify the file contains a complete private key (begins with `-----BEGIN RSA PRIVATE KEY-----`).
 - If the key doesn't match, regenerate a new private key from the GitHub App settings.
+
+### Enterprise and organization parameter mismatch
+
+The GitHub collector uses different parameters for enterprise-scoped and organization-scoped collection:
+
+| Collection scope | Required parameter |
+|---|---|
+| Enterprise GitHub App | `enterprise_name` |
+| Organization GitHub App or PAT | `org_name` |
+
+If collection fails after authentication succeeds, confirm that the configured parameter matches the GitHub authentication method.
 
 ## Rate Limiting
 
@@ -59,8 +96,9 @@ For small to medium environments (< 500 repos), the built-in rate limit handling
 
 For large environments (500+ repos):
 
-1. Use the [App Installation method](/openhound/collectors/github/configure-app) for 3x higher rate limits (15,000/hour vs 5,000/hour).
+1. Use a [GitHub App authentication method](/openhound/collectors/github/configure-enterprise-app) instead of a PAT for higher rate limits.
 2. Run collection during off-peak hours.
+3. Tune the [HTTP request parameters](/openhound/configuration#http-request-parameters) so OpenHound waits out rate limits instead of failing the run.
 
 ## Large Environment Issues
 
@@ -68,8 +106,9 @@ For large environments (500+ repos):
 
 For organizations with thousands of repositories, a full collection can take several hours.
 
-1. Use the [App Installation method](/openhound/collectors/github/configure-app) for higher rate limits.
+1. Use a [GitHub App authentication method](/openhound/collectors/github/configure-enterprise-app) for higher rate limits.
 2. Run collection during off-peak hours.
+3. Tune the [HTTP request parameters](/openhound/configuration#http-request-parameters).
 
 ### Memory Issues
 

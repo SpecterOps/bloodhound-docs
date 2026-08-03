@@ -4,6 +4,8 @@ sidebarTitle: Configuration
 description: "Learn about configuring the OpenHound framework."
 ---
 
+import CollectorSpecificConfig from '/snippets/hounds/collector-specific-config.mdx'
+
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 OpenHound uses [DLT configuration management](https://dlthub.com/docs/general-usage/credentials/setup), which lets you set parameters through configuration files, environment variables, or both.
@@ -18,6 +20,50 @@ OpenHound and DLT use a TOML-based configuration layout that organizes settings 
 
 The syntax allows for nested sections, collector-specific configurations, and collector-specific overrides. For example,  the `[extract]` parallel worker count can be set globally for all collectors, but can also be increased/decreased for a specific collector.
 
+Configuration precedence follows a global-to-specific order: a collector-specific override in `[sources.source.<collector>.extract]` takes priority over a global setting in `[extract]`, which in turn takes priority over the built-in default.
+
+### File layout
+
+OpenHound reads configuration from DLT configuration files, environment variables, or both. Use separate files for non-sensitive settings and secrets:
+
+| File | Purpose | Example contents |
+|---|---|---|
+| `config.toml` | Non-sensitive runtime, pipeline, and destination settings | BloodHound Enterprise tenant URL, logging, retry behavior, worker counts |
+| `secrets.toml` | Sensitive values required by the running collector | BloodHound Enterprise API credentials |
+| Extension-specific secrets files | Per-extension host files used by Docker Compose and mounted into the container as `secrets.toml` | `secrets_github.toml`, `secrets_jamf.toml`, `secrets_okta.toml` |
+
+For Docker Compose deployments, create the DLT files under `~/.dlt` on the host. The Enterprise example Compose file mounts the shared `config.toml` and maps the extension-specific secrets file into the container as `/app/.dlt/secrets.toml`.
+
+Add the BloodHound Enterprise tenant URL to the shared `config.toml` file:
+
+```toml title="~/.dlt/config.toml"
+[destination.bloodhoundenterprise]
+url = "https://your-tenant.bloodhoundenterprise.io"
+```
+
+Each extension-specific secrets file must include the `destination.bloodhoundenterprise` section with the `token_id` and `token_key` generated for the matching collector client. It must also include the credentials section required by that collector.
+
+```toml title="~/.dlt/secrets_github.toml"
+[destination.bloodhoundenterprise]
+token_id = "client_token_id"
+token_key = "client_token_key"
+
+[sources.source.github.credentials]
+# Add the GitHub collector credentials for your authentication method.
+```
+
+<Note>
+  The `destination.bloodhoundenterprise` settings are for scheduled OpenHound collection. Extension asset upload commands use a separate `destination.bloodhound` section with a browser JWT in `~/.dlt/secrets.toml`.
+
+  Existing collector secrets files that still define `destination.bloodhoundenterprise.url` continue to work, but new configurations should store the URL in `config.toml`.
+</Note>
+
+Some collectors require additional secret files, such as a GitHub App `.pem` private key or an Okta JSON key file. Store these files outside version control and configure the collector-specific path to match the path inside the container.
+
+<Note>
+  For production environments, use environment variables or your container platform's secret management features when local secret files do not meet your organization's credential handling requirements.
+</Note>
+
 The following sample configuration sets global values for runtime, normalize, and load, then overrides the extract worker count for the Okta and GitHub collectors.
 
 ```toml Example ~/.dlt/config.toml
@@ -25,6 +71,19 @@ The following sample configuration sets global values for runtime, normalize, an
 log_level = "INFO"
 log_rotate_when = "midnight"
 log_interval = 1
+
+# HTTP retry/backoff for source requests; rides out API rate limits
+# (e.g. GitHub during large collections) instead of failing the run.
+request_max_attempts = 15
+request_backoff_factor = 1.3
+request_max_retry_delay = 900
+
+# Default: logs are set to human readable text
+# To switch to structured JSON instead, uncomment the line below (must be uppercase "JSON")
+# log_format = "JSON"
+
+[destination.bloodhoundenterprise]
+url = "https://your-tenant.bloodhoundenterprise.io"
 
 [extract]
 workers = 4
@@ -42,48 +101,63 @@ workers = 4
 delete_completed_jobs=true
 truncate_staging_dataset=true
 workers=2
-
 ```
 
-## BloodHound Enterprise configuration parameters
+## BloodHound Enterprise settings
 
-The following parameters must be set in the `[destination.bloodhoundenterprise]` section of the configuration file (or via environment variables) to run OpenHound and schedule data collection for BloodHound Enterprise.
+Each extension-specific OpenHound collector needs a minimum BloodHound Enterprise destination configuration. Add `url` to the `[destination.bloodhoundenterprise]` section of `config.toml` and add `token_id` and `token_key` to the `[destination.bloodhoundenterprise]` section of that collector's secrets file, or set the matching environment variables.
 
-| Destination option     | Environment Variable      | Description |
-|--------------------|---------------------------|------------------------------|
-| `token_key`        | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_KEY | The API token key for authenticating with BloodHound Enterprise.|
-| `token_id`  | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_ID  | The API token ID for authenticating with BloodHound Enterprise. | 
-| `url`     | DESTINATION__BLOODHOUNDENTERPRISE__URL | The URL of the BloodHound Enterprise instance. | 
-| `interval`    | DESTINATION__BLOODHOUNDENTERPRISE__INTERVAL | The interval at which OpenHound will check for available jobs. |
+Use the `token_id` and `token_key` generated for the OpenHound collector client that matches the extension you are configuring. For example, use the GitHub collector client credentials in the GitHub collector's `~/.dlt/secrets_github.toml` file.
 
+| Destination Option | Environment Variable | Description |
+|---|---|---|
+| `url` | DESTINATION__BLOODHOUNDENTERPRISE__URL | The URL of the BloodHound Enterprise tenant. Store this non-sensitive value in `config.toml`. |
+| `token_key` | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_KEY | The API token key generated for the matching OpenHound collector client. |
+| `token_id` | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_ID | The API token ID generated for the matching OpenHound collector client. |
 
-## Collector-specific configuration parameters
+## Collector-specific settings
 
-Each collector may have additional required or optional configuration parameters that are specific to the data source being collected. These parameters can also be set in the configuration file or via environment variables.
+<CollectorSpecificConfig />
 
-For more information on collector-specific configuration, visit the configuration documentation page for each collector using the links below.
+## Runtime settings
 
-<CardGroup cols={3}>
+The following configuration parameters are common for all OpenHound deployments and collectors. 
 
-  <Card title="Github" href="/openhound/collectors/github/collect-data#configure-openhound">
-    View the configuration parameters for the Github collector.
-  </Card>
+### Logging modes
 
-  <Card title="Jamf" href="/openhound/collectors/jamf/collect-data#configure-openhound" >
-    View the configuration parameters for the Jamf collector.
-  </Card>
+OpenHound automatically detects how it's running and selects a logging mode accordingly, with no configuration required:
 
-  <Card title="Okta" href="/openhound/collectors/okta/collect-data#configure-openhound" >
-      View the configuration parameters for the Okta collector.
-  </Card>
+| Mode | Detected when | Console output | File output |
+|------|----------------|-----------------|--------------|
+| `CLI` | Running interactively in a terminal (TTY) | Rich, human-friendly formatted output | Yes |
+| `CONTAINER` | `LOG_CONTAINER` is set, or `KUBERNETES_SERVICE_HOST` is present (running inside a Kubernetes pod) | Plain text or JSON streamed to `stdout` | Yes |
+| `SERVICE` | None of the above (for example, running as a background/scheduled process) | None | Yes |
 
-</CardGroup>
+OpenHound checks for container indicators first, then falls back to a TTY check, and defaults to `SERVICE` mode otherwise.
 
-## Common configuration parameters
+<Note>
+  To force `CONTAINER` mode outside of Kubernetes, set the `LOG_CONTAINER` environment variable to a truthy value (for example, `LOG_CONTAINER=true`). 
 
-The following parameters are common for all OpenHound deployments and collectors. 
+  This is the default behavior in the OpenHound Helm chart and the example Docker Compose files, since `KUBERNETES_SERVICE_HOST` is only present when running inside a Kubernetes pod.
+</Note>
 
-### Log rotation
+### Log format
+
+By default, OpenHound writes logs as human-readable text. Set `log_format` to `JSON` to switch to structured JSON logging, which is useful for ingestion into log aggregation systems.
+
+`JSON` is the only value you can set for this option. To keep the default text logging, omit `log_format` from your configuration or comment it out.
+
+| Runtime Option | Environment Variable | Description |
+|-----------------|------------------------|--------------|
+| `log_format`    | RUNTIME__LOG_FORMAT    | The log output format. `JSON` is the only supported value. |
+
+<Warning>
+  The value must be uppercase `JSON`. DLT's internal logger performs a case-sensitive check for `"JSON"` to decide whether to emit its own structured logs.
+
+  Any other casing (for example, `json` or `Json`) leaves DLT's internal log messages in text format even though OpenHound's own logs switch to JSON, resulting in mixed-format output.
+</Warning>
+
+### Log level and rotation
 
 OpenHound implements both time-based and size-based log rotation. When a log is rotated, a timestamp is appended to the filename (for example, `openhound.log.2026-02-19`) and rotated files are compressed using `gzip` to reduce disk usage.
 
@@ -95,13 +169,65 @@ By default, OpenHound maintains two types of log files:
 The following log configuration options are supported by setting the parameters in the `[runtime]` section or via environment
 variables:
 
-| Runtime option     | Environment Variable      | Description                                                                                                                   | Default Value   |
+| Runtime Option     | Environment Variable      | Description                                                                                                                   | Default Value   |
 |--------------------|---------------------------|-------------------------------------------------------------------------------------------------------------------------------|-----------------|
 | `log_level`        | RUNTIME__LOG_LEVEL        | Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)                                                                             | INFO            |
-| `log_rotate_when`  | RUNTIME__LOG_ROTATE_WHEN  | The time based rotation settings. S for seconds, H for hours, D for days and 'midnight' for rotating at midnight              | midnight        |
+| `log_cli_level`    | RUNTIME__LOG_CLI_LEVEL    | Console-only verbosity when running in `CLI` mode, independent of `log_level`, which controls file logging.                   | ERROR           |
+| `log_rotate_when`  | RUNTIME__LOG_ROTATE_WHEN  | The time-based rotation settings. S for seconds, H for hours, D for days and 'midnight' for rotating at midnight              | midnight        |
 | `log_interval`     | RUNTIME__LOG_INTERVAL     | Rotate every X unit of seconds, hours, days etc. Ignored when rotate_when is 'midnight'                                       | 1               |
-| `log_max_bytes`    | RUNTIME__LOG_MAX_BYTES    | The size based rotation settings. Rotate the files after an item exceeds the specified byte size. 0 means rotate by time only | 5_000_000_000  (5GB) |
+| `log_max_bytes`    | RUNTIME__LOG_MAX_BYTES    | The size-based rotation settings. Rotate the files after an item exceeds the specified byte size. 0 means rotate by time only | 5_000_000_000  (5GB) |
 | `log_backup_count` | RUNTIME__LOG_BACKUP_COUNT | The amount of files to keep before deleting the oldest.                                                                       | 14              |
+
+<Note>
+  The code default for `log_cli_level` is `ERROR`, which keeps console output nearly silent. We recommend setting it to `WARNING` for day-to-day use so operators see actionable issues on screen without the noise of full `DEBUG`/`INFO` logging.
+
+  Both example configurations shipped with OpenHound set `log_cli_level = "WARNING"`.
+</Note>
+
+### HTTP request parameters
+
+OpenHound uses these `[runtime]` parameters to control how it handles and retries failing HTTP requests to source APIs.
+
+| Runtime Option | Environment Variable | Description | Default Value |
+|---|---|---|---|
+| `http_show_error_body` | RUNTIME__HTTP_SHOW_ERROR_BODY | Includes the HTTP response body in raised exceptions/logs. Useful for diagnosing API errors from collectors (GitHub, Okta, Jamf). May expose sensitive response data in logs when enabled. | false |
+| `request_max_attempts` | RUNTIME__REQUEST_MAX_ATTEMPTS | Maximum number of retry attempts for a failing HTTP request before OpenHound gives up and fails the pipeline. | 5 |
+| `request_backoff_factor` | RUNTIME__REQUEST_BACKOFF_FACTOR | Multiplier for the exponential delay between retries. The delay for a given attempt is `backoff_factor * 2^(attempt - 1)` seconds. | 1 |
+| `request_max_retry_delay` | RUNTIME__REQUEST_MAX_RETRY_DELAY | Upper bound, in seconds, on the computed exponential delay. Prevents the wait time from growing unbounded on later attempts. | 300 |
+
+#### How retries mitigate API rate limits
+
+OpenHound automatically retries requests that fail with `5xx` or `429` status codes, or when the connection is dropped or unreachable. If the API response includes a `Retry-After` header, OpenHound honors that value instead of the computed backoff delay.
+
+The three retry parameters work together as a single exponential-backoff algorithm rather than as independent settings:
+
+- `request_backoff_factor` sets the starting pace of the delay curve. The delay doubles on each subsequent retry attempt (standard exponential backoff).
+- `request_max_retry_delay` caps how long any single wait can grow to, so retries don't stall indefinitely between attempts.
+- `request_max_attempts` sets how many times OpenHound rides out this curve before it fails the collection run entirely.
+
+The following table compares the default retry curve to the tuned values shipped in OpenHound's example configurations:
+
+| Attempt | Default (`factor=1`, `max=300s`) | Tuned example (`factor=1.3`, `max=900s`) |
+|---|---|---|
+| 1 | 1s | 1.3s |
+| 5 | 16s | 20.8s |
+| 10 | 300s (capped) | 665.6s |
+| 15 | — (default stops at attempt 5) | 900s (capped) |
+
+<Note>
+  The example values (`request_max_attempts = 15`, `request_backoff_factor = 1.3`, `request_max_retry_delay = 900`) in the shipped `config.toml` templates aren't arbitrary. They were added specifically to work around GitHub API rate-limiting issues encountered during large collections.
+
+  GitHub's secondary/abuse rate limits can take several minutes to clear, and the DLT defaults (5 attempts, 300s cap) aren't enough to ride them out. Raising the attempt count and delay cap lets OpenHound patiently wait out GitHub's rate limits instead of failing the run.
+</Note>
+
+```toml Example ~/.dlt/config.toml with tuned retry settings
+[runtime]
+request_max_attempts = 15
+request_backoff_factor = 1.3
+request_max_retry_delay = 900
+```
+
+If you collect from rate-limit-sensitive sources, particularly GitHub, start from these tuned values rather than the DLT defaults.
 
 
 ### Data writing parameters
@@ -127,10 +253,13 @@ file_max_items=100000
 file_max_items=50000
 ```
 
-<Note>The `data_writer` parameters directly influence the performance and memory use of the collection/conversion pipeline.
-Edges and nodes are processed in batches and the amount of processed items is determined by the `data_writer` parameters. Setting these parameters too low can result in a large amount of small files and increased overhead with less memory usage,
-while setting them too high can result in increased memory use and slower performance. We recommend experimenting
-with different values to find the optimal configuration, which typically depends on the size of your environment.</Note>
+<Note>
+  The `data_writer` parameters directly influence the performance and memory use of the collection/conversion pipeline. Edges and nodes are processed in batches and the amount of processed items is determined by the `data_writer` parameters.
+
+  Setting these parameters too low can result in a large amount of small files and increased overhead with less memory usage, while setting them too high can result in increased memory use and slower performance.
+
+  We recommend experimenting with different values to find the optimal configuration, which typically depends on the size of your environment.
+</Note>
 
 
 ### Extract parameters
@@ -172,4 +301,3 @@ The following parameters are configured under the `[load]` section in the config
 | `delete_completed_jobs`    | LOAD__DELETE_COMPLETED_JOBS    | Whether to delete completed jobs after a pipeline has completed.                                                | false          |
 | `truncate_staging_dataset` | LOAD__TRUNCATE_STAGING_DATASET | Whether to truncate the staging dataset after loading data into the destination.                                | false          |
 | `workers`                  | LOAD__WORKERS                  | The amount of concurrent workers used during the loading phase, is when uploading data to BloodHound Enterprise | 1             |
-
