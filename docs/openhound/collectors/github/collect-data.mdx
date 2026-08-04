@@ -44,6 +44,7 @@ Click the tab that matches your authentication setup for details and example con
     | `enterprise_name` | The slug of the GitHub enterprise to collect data from. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__ENTERPRISE_NAME` |
     | `install_id` | The GitHub App Installation ID for the enterprise installation. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__INSTALL_ID` |
     | `api_uri` | The GitHub API base URI. For GitHub.com, use `https://api.github.com`. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__API_URI` |
+    | `pat_token` | Optional classic PAT from an Enterprise Owner with the `read:enterprise` scope. OpenHound uses this token only to collect enterprise SAML SSO and SCIM data. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__PAT_TOKEN` |
 
     **`secrets.toml`**
 
@@ -55,6 +56,7 @@ Click the tab that matches your authentication setup for details and example con
     enterprise_name = "your-enterprise-slug"
     install_id = "12345678"
     api_uri = "https://api.github.com"
+    pat_token = "ghp_xxxxxxxxxxxxxxxxxxxx"
     ```
 
     **Environment variables**
@@ -66,7 +68,12 @@ Click the tab that matches your authentication setup for details and example con
     SOURCES__SOURCE__GITHUB__CREDENTIALS__ENTERPRISE_NAME=your-enterprise-slug
     SOURCES__SOURCE__GITHUB__CREDENTIALS__INSTALL_ID=12345678
     SOURCES__SOURCE__GITHUB__CREDENTIALS__API_URI=https://api.github.com
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__PAT_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
     ```
+
+    <Note>
+      The `pat_token` field is optional for enterprise collection, but strongly recommended. If you omit it, the collector continues to collect GitHub App-supported enterprise and organization data, but enterprise SAML SSO and SCIM nodes and relationships are not collected.
+    </Note>
   </Tab>
   <Tab title="Organization GitHub App">
     Use this option for organization-scoped collection with higher GitHub API rate limits.
@@ -128,6 +135,10 @@ Click the tab that matches your authentication setup for details and example con
 ## Running OpenHound and Collecting Data
 
 <RunAndCollect source="GitHub" env="organization or enterprise account" />
+
+<Note>
+  If your GitHub collection includes SCIM nodes and edges, upload the [SCIM extension schema](/opengraph/extensions/scim/overview) before importing the collected data.
+</Note>
 
 <Note>
   Large GitHub organizations or enterprises can trigger GitHub's API rate limits during collection. If you see failed or retried requests, tune the [HTTP request parameters](/openhound/configuration#http-request-parameters) to ride out rate limits instead of failing the run.
