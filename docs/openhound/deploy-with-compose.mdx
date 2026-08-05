@@ -1,6 +1,6 @@
 ---
 title: Deploy with Docker Compose
-sidebarTitle: Deploy with Docker
+sidebarTitle: Deploy with Compose
 description: Deploy OpenHound for BloodHound Enterprise with Docker Compose.
 ---
 
@@ -106,20 +106,20 @@ Follow these steps to deploy OpenHound with Docker Compose and run a collector f
     </Tip>
   </Step>
 
-  <Step title="Create the extension-specific secrets file">
-    Create one secrets file for each extension you want to run.
-    
-    The example Compose file uses [collector-specific](/openhound/configuration#collector-specific-settings) files on the host and maps the matching file into the container as `/app/.dlt/secrets.toml`.
+  <Step title="Create the collector-specific secrets file">
+    Create one secrets file for each collector you want to run.
 
-    | Extension | Host secrets file | Container secrets file |
+    The example Compose file uses [collector-specific](/openhound/configuration#collector-specific-secrets) secrets files on the host and maps the matching file into the container as `/app/.dlt/secrets.toml`.
+
+    | Collector | Host secrets file | Container secrets file |
     |---|---|---|
     | GitHub | `~/.dlt/secrets_github.toml` | `/app/.dlt/secrets.toml` |
     | Jamf | `~/.dlt/secrets_jamf.toml` | `/app/.dlt/secrets.toml` |
     | Okta | `~/.dlt/secrets_okta.toml` | `/app/.dlt/secrets.toml` |
 
-    Each extension secrets file must include:
+    Each collector-specific secrets file must include:
 
-    - `[destination.bloodhoundenterprise]` with the `token_id` and `token_key` for the matching OpenHound collector client
+    - `[destination.bloodhoundenterprise]` with the `token_id` and `token_key` for the matching OpenHound collector client in BloodHound Enterprise
     - The collector-specific credentials section, such as `[sources.source.github.credentials]`, `[sources.source.jamf.credentials]`, or `[sources.source.okta.credentials]`
 
       The following GitHub example uses an organization GitHub App.
@@ -138,14 +138,14 @@ Follow these steps to deploy OpenHound with Docker Compose and run a collector f
       ```
 
     <Note>
-      The scheduler uses `destination.bloodhoundenterprise` with collector client credentials. Store the destination URL in `config.toml` and store `token_id` and `token_key` in the extension secrets file.
+      The scheduler uses `destination.bloodhoundenterprise` with collector client credentials. Store the destination URL in `config.toml` and store `token_id` and `token_key` in the collector's secrets file.
 
       Do not use the JWT-based `destination.bloodhound` settings from [Upload Extension Assets](/openhound/upload-extension-assets) for scheduled collection.
     </Note>
   </Step>
 
-  <Step title="Add extension secret files">
-    Some extensions require an additional secret file.
+  <Step title="Add collector secret files">
+    Some collectors require an additional secret file.
     
     For example, the GitHub App authentication method requires you to copy the GitHub App private key to the path referenced by the Compose file:
 
@@ -161,6 +161,8 @@ Follow these steps to deploy OpenHound with Docker Compose and run a collector f
     cd ~/openhound
     docker compose up -d scheduler-github
     ```
+
+    The example Compose file sets `DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME` inside each scheduler service. For example, `scheduler-github` sets the collector name to `github`.
 
     To run another extension, configure its secrets file and start the matching service, such as `scheduler-jamf` or `scheduler-okta`.
 
