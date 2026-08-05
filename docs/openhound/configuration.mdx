@@ -87,7 +87,7 @@ The following example configuration sets global values for runtime, normalize, a
   | Destination Option | Environment Variable | Description |
   |---|---|---|
   | `url` | DESTINATION__BLOODHOUNDENTERPRISE__URL | The URL of the BloodHound Enterprise tenant. Store this non-sensitive value in `config.toml`. |
-  | `collector_name` | DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME | Required when running the scheduler (Docker Compose or Helm). Must match the extension being run, such as `okta`, `jamf`, or `github`. |
+  | `collector_name` | DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME | Required for scheduled collection. Identifies the extension this scheduler runs, such as `github`, `jamf`, or `okta`. |
   </Tab>
   <Tab title="Community">
   The following example is nearly identical to the Enterprise example, except that it omits the `destination.bloodhoundenterprise` section.
@@ -127,6 +127,11 @@ The following example configuration sets global values for runtime, normalize, a
   ```
   </Tab>
 </Tabs>
+<Note>
+  Each OpenHound scheduler runs one collector, so scheduled collection needs one `collector_name` value per scheduler container.
+
+  The example Docker Compose services set this value for you when you start a service such as `scheduler-github`. Helm and other container deployments must provide the value manually through chart values, environment variables, or the `[destination.bloodhoundenterprise]` section.
+</Note>
 <Tip>
   See [Runtime settings](/openhound/configuration#runtime-settings) for the full list of common runtime settings.
 </Tip>
