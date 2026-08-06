@@ -1,0 +1,18 @@
+---
+title: 'GH_CanDeployToEnvironment'
+description: '[Computed] Repository, branch, repo role, or self-approving reviewer can deploy to this GitHub environment after evaluating deployment branch policy, reviewer gates, and admin bypass behavior'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+Traversable: true
+
+## General Information
+
+The traversable GH_CanDeployToEnvironment edge represents the ability for a repository, branch, repository role, or self-approving reviewer to satisfy the modeled deployment constraints for a GitHub Environment.
+
+This edge is computed from environment deployment branch policy, branch protection state, required reviewer behavior, and administrator bypass behavior. For environments without required reviewers, unrestricted environments emit repository and branch edges, protected-branch-only environments emit edges only for protected branches unless no branch protection rules exist, and custom branch policies emit edges only for matching branches.
+
+When required reviewers are configured and self-review is allowed, the configured [GH_User](/opengraph/extensions/github/nodes/gh_user) or [GH_Team](/opengraph/extensions/github/nodes/gh_team) reviewer receives GH_CanDeployToEnvironment because that reviewer can satisfy the approval gate themselves. When prevent_self_review is enabled, no direct deploy edge is emitted for the reviewer because the required split-principal flow is not currently modeled. [GH_ApprovesDeploymentTo](/opengraph/extensions/github/edges/gh_approvesdeploymentto) remains non-traversable reviewer context in both cases.
