@@ -1,0 +1,380 @@
+---
+title: Upgrade BloodHound Enterprise
+description: Upgrade an on-premises BloodHound Enterprise instance with the embedded cluster deployment option.
+---
+
+import { Checklist} from '/snippets/components/checklist.jsx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+The embedded cluster installer upgrades the BloodHound Enterprise application and the cluster infrastructure together. Depending on the release, this can include Kubernetes, embedded cluster components, and application workloads. Run the upgrade from the Linux host where BloodHound Enterprise is installed.
+
+<Warning>
+  Do not stop the BloodHound Enterprise application deployment or other embedded cluster services before running the upgrade unless SpecterOps Support instructs you to do so. The `upgrade` command coordinates the required application and cluster changes, including any service or pod restarts needed during the process.
+</Warning>
+
+## Pre-upgrade checklist
+
+The following checklist summarizes the upgrade-blocking gates and pre-deployment work that must be completed before running the installer.
+
+<Note>
+  For detailed host sizing, collector specifications, supported filesystems, and kernel versions, see the full [system requirements](/on-premises/system-requirements).
+</Note>
+
+<Checklist checklistKey="embedded-cluster-pre-upgrade">
+- Confirm that a new BloodHound Enterprise version is available in **SpecterOps - BloodHound Enterprise Portal** > **Release History**
+- Schedule a maintenance window for the upgrade
+- Confirm that you have SSH access to the Linux host with `sudo` privileges
+- Confirm that the installer binary and `license.yaml` file are available on the Linux host
+- Confirm that the host can reach `replicated.app`, `proxy.replicated.com`, and `registry.replicated.com` for online upgrades
+- For air-gapped upgrades, download the new release archive and transfer it to the Linux host before starting
+</Checklist>
+
+## CLI-based upgrade
+
+Use the `bloodhound-enterprise` installer binary to verify the current installation, generate a support bundle, and run the upgrade from the command line.
+
+### Before you begin
+
+This guide uses the following example values. Replace these values with the paths and Kubernetes resources used by your deployment.
+
+| Item | Example value |
+| --- | --- |
+| Install directory | `/home/bhe-admin` |
+| Installer binary | `/home/bhe-admin/bloodhound-enterprise` |
+| License file | `/home/bhe-admin/license.yaml` |
+| Namespace | `bloodhound-enterprise` |
+| Deployment | `bloodhound` |
+
+<Tip>
+  Run all host-level commands from the BloodHound Enterprise installation directory. Run Kubernetes inspection commands from the embedded cluster shell so the correct `kubeconfig` and binaries are available.
+</Tip>
+
+### Verify the current state
+
+Verify the current installation before you generate a support bundle or run the upgrade.
+
+<Steps>
+  <Step title="SSH into the Linux host">
+    SSH into the Linux host where BloodHound Enterprise is installed.
+  </Step>
+  <Step title="Change to the installation directory">
+    Change to the directory that contains the BloodHound Enterprise installer binary and license file.
+
+    **Example:**
+
+    ```bash
+    cd /home/bhe-admin
+    ```
+  </Step>
+  <Step title="Confirm the installation assets">
+    Confirm that the installer binary and license file are present.
+
+    The `stat` command uses the `--format` option to print the file permissions and file name for each installation asset. The installer binary must be executable.
+
+    ```bash
+    stat --format="%A %n" ./bloodhound-enterprise ./license.yaml
+    ```
+
+    Expected output looks similar to the following:
+
+    ```text
+    -rwxr-xr-x ./bloodhound-enterprise
+    -rw-r--r-- ./license.yaml
+    ```
+  </Step>
+  <Step title="Check the installed version">
+    Print the embedded cluster and BloodHound Enterprise application versions. Save the output so you can compare it with the post-upgrade version.
+
+    ```bash
+    sudo ./bloodhound-enterprise version
+    ```
+
+    Expected output looks similar to the following:
+
+    ```text
+    Embedded Cluster: 3.0.0-alpha-9 (commit 181fed8, built 2026-01-28_18:35:09)
+    Application: bloodhound-enterprise 0.0.1 (revision 1, channel sequence 9)
+    ```
+  </Step>
+  <Step title="Load the kubectl shell environment">
+    Start the embedded cluster shell before running `kubectl` commands.
+
+    ```bash
+    sudo ./bloodhound-enterprise shell
+    ```
+
+    <Note>
+      The shell exports the appropriate `kubeconfig` and adds useful binaries such as `kubectl`, preflight, and support-bundle tools to `PATH`.
+    </Note>
+  </Step>
+  <Step title="Check cluster health">
+    Confirm that the cluster node, BloodHound Enterprise namespace, pods, and persistent volume claims are healthy.
+
+    The `kubectl get pods` and `kubectl get persistentvolumeclaims` commands use the `--all-namespaces` option to show resources across the whole cluster. The `kubectl get all` command uses the `--namespace` option to show resources only in the BloodHound Enterprise namespace.
+
+    ```bash
+    kubectl get nodes
+    kubectl get pods --all-namespaces
+    kubectl get persistentvolumeclaims --all-namespaces
+    kubectl get all --namespace bloodhound-enterprise
+    ```
+
+    Resolve any unhealthy nodes, pending pods, failing pods, or unbound persistent volume claims before continuing.
+  </Step>
+  <Step title="Exit the kubectl shell">
+    Exit the embedded cluster shell before running the upgrade command from the host shell.
+
+    ```bash
+    exit
+    ```
+  </Step>
+</Steps>
+
+### Generate a support bundle
+
+A support bundle captures diagnostic information from the host, cluster, Replicated embedded cluster components, and BloodHound Enterprise application-specific support bundle specifications.
+
+For embedded cluster deployments, support bundles include host-level information that helps troubleshoot DNS, networking, and storage problems. They also include cluster-level information about the embedded cluster components that manage install and upgrade operations.
+
+<Note>
+  Generating a support bundle is optional, but it is strongly recommended before running the upgrade. If the upgrade fails, provide the pre-upgrade support bundle to SpecterOps Support along with a post-failure support bundle and the `upgrade` command output.
+</Note>
+
+<Steps>
+  <Step title="Generate the support bundle">
+    Run the `support-bundle` command from the BloodHound Enterprise installation directory.
+
+    ```bash
+    sudo ./bloodhound-enterprise support-bundle
+    ```
+
+    Expected output looks similar to the following:
+
+    ```text
+    ✓ Metadata loaded
+    ✓ Architecture detected: amd64
+    2026/08/03 20:20:50 INFO support-bundle binary already exists path=/var/lib/bloodhound-enterprise/bin/support-bundle
+    ✓ Support-bundle tool ready
+    ✓ Support bundle saved: /home/bhe-admin/support-bundle-2026-08-03T20_20_50.tar.gz
+    Bundle size: 1.05 MB
+    ```
+  </Step>
+  <Step title="Store the bundle">
+    Save the generated support bundle in a secure location that is separate from the Linux host.
+
+    If the upgrade fails, provide the pre-upgrade support bundle to SpecterOps Support along with a post-failure support bundle and the `upgrade` command output.
+  </Step>
+</Steps>
+
+### Upgrade BloodHound Enterprise
+
+Use the BloodHound Enterprise installer binary for the version you want to install. Each embedded cluster binary targets a specific BloodHound Enterprise release.
+
+<Steps>
+  <Step title="Run the upgrade command">
+    Run the `upgrade` command from the BloodHound Enterprise installation directory to upgrade to the latest available version.
+
+    The command uses the following options:
+
+    | Option | Description |
+    | --- | --- |
+    | `--license` | Provides the path to the BloodHound Enterprise license file. |
+    | `--headless` | Runs the upgrade without the interactive installer UI. |
+
+    **Example:**
+
+    ```bash
+    sudo ./bloodhound-enterprise upgrade \
+      --license /home/bhe-admin/license.yaml \
+      --headless
+    ```
+
+    A successful upgrade prints progress for the embedded cluster and application upgrade stages. Output looks similar to the following:
+
+    ```text
+    Upgrading system...
+
+    System upgraded. Daemon service restarted.
+    Downloading new release...
+    Downloaded release version: 0.0.1
+    2026/08/03 20:34:24 WARN revision directory already exists, removing revision=pending
+    Found EC bundle: ec-3.0.0-alpha-9+k8s-1.34.online
+    2026/08/03 20:34:24 INFO Extracting bundle bundle=/home/bhe-admin/ec-3.0.0-alpha-9+k8s-1.34.online dest=/var/lib/bloodhound-enterprise/bundles/ec
+    2026/08/03 20:34:28 INFO Bundle extracted successfully dest=/var/lib/bloodhound-enterprise/bundles/ec
+
+    Upgrade package loaded successfully.
+    ✓ K0s upgraded
+    ✓ Addons upgraded
+    ✓ Application upgraded
+
+    Upgrade complete.
+    ```
+  </Step>
+</Steps>
+
+### Verify the upgrade
+
+After the upgrade completes, verify that the cluster is healthy and BloodHound Enterprise reports the expected version.
+
+<Steps>
+  <Step title="Load the kubectl shell environment">
+    Start the embedded cluster shell so `kubectl` uses the BloodHound Enterprise cluster context.
+
+    ```bash
+    sudo ./bloodhound-enterprise shell
+    ```
+  </Step>
+  <Step title="Confirm pod health">
+    Check pod health across the cluster and in the BloodHound Enterprise namespace.
+
+    The first command uses `--all-namespaces` to show every pod in the cluster. The second command uses `--namespace` to show only BloodHound Enterprise pods.
+
+    ```bash
+    kubectl get pods --all-namespaces
+    kubectl get pods --namespace bloodhound-enterprise
+    ```
+  </Step>
+  <Step title="Confirm the deployment rollout">
+    Confirm that the BloodHound Enterprise deployment finishes its rollout.
+
+    The command uses `--namespace` to target the BloodHound Enterprise namespace.
+
+    ```bash
+    kubectl rollout status deployment/bloodhound --namespace bloodhound-enterprise
+    ```
+
+    Expected output looks similar to the following:
+
+    ```text
+    deployment "bloodhound" successfully rolled out
+    ```
+  </Step>
+  <Step title="Restart the deployment only if needed">
+    The upgrade command applies the application upgrade, so a manual restart is not part of the standard upgrade path.
+
+    If the cluster is healthy but the BloodHound Enterprise web UI still displays the previous version, restart the BloodHound Enterprise deployment and wait for the rollout to complete.
+
+    The first command uses `--namespace` to restart only the BloodHound Enterprise deployment. The second command uses `--namespace` to watch the rollout in the same namespace.
+
+    ```bash
+    kubectl rollout restart deployment/bloodhound --namespace bloodhound-enterprise
+    kubectl rollout status deployment/bloodhound --namespace bloodhound-enterprise
+    ```
+  </Step>
+  <Step title="Exit the kubectl shell">
+    Exit the embedded cluster shell.
+
+    ```bash
+    exit
+    ```
+  </Step>
+  <Step title="Check the installed version">
+    Print the embedded cluster and BloodHound Enterprise application versions again and compare them with the version you recorded before the upgrade.
+
+    ```bash
+    sudo ./bloodhound-enterprise version
+    ```
+
+    Example output:
+
+    ```text
+    Embedded Cluster: 3.0.0-alpha-9 (commit 181fed8, built 2026-01-28_18:35:09)
+    Application: bloodhound-enterprise 0.0.1 (revision 2, channel sequence 9)
+    ```
+  </Step>
+  <Step title="Confirm access in the web UI">
+    Log in to the BloodHound Enterprise web UI and confirm that the displayed BloodHound Enterprise version matches the target version.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+Use the following troubleshooting steps if the upgrade fails or BloodHound Enterprise does not become healthy after the upgrade.
+
+<AccordionGroup>
+<Accordion title="Check overall cluster health">
+Load the embedded cluster shell before running these commands:
+
+```bash
+sudo ./bloodhound-enterprise shell
+```
+
+The following commands check node health, pod health, and recent cluster events. The `--all-namespaces` option shows resources across the whole cluster. The `--sort-by` option sorts events by their last timestamp.
+
+```bash
+kubectl get nodes
+kubectl get pods --all-namespaces
+kubectl get events --all-namespaces --sort-by=.lastTimestamp
+```
+
+Resolve node, pod, or event errors before retrying the upgrade.
+</Accordion>
+
+<Accordion title="Check BloodHound Enterprise logs">
+Load the embedded cluster shell before running these commands:
+
+```bash
+sudo ./bloodhound-enterprise shell
+```
+
+Use deployment logs when you do not know the current pod name. The `--namespace` option targets the BloodHound Enterprise namespace. The `--tail` option limits the output to the most recent log lines.
+
+```bash
+kubectl logs deployment/bloodhound --namespace bloodhound-enterprise --tail=200
+```
+
+To follow logs live, add the `--follow` option:
+
+```bash
+kubectl logs deployment/bloodhound --namespace bloodhound-enterprise --follow
+```
+
+If the BloodHound Enterprise pod restarted, use the `--previous` option to view logs from the previous container instance:
+
+```bash
+kubectl logs deployment/bloodhound --namespace bloodhound-enterprise --previous --tail=200
+```
+</Accordion>
+
+<Accordion title="Check the embedded cluster controller service">
+Run these commands from the Linux host shell.
+
+The `systemctl status` command uses `--no-pager` to print output directly to the terminal. The `journalctl` command uses `--unit` to select the embedded cluster controller service, `--lines` to limit recent output, and `--no-pager` to print output directly to the terminal.
+
+```bash
+sudo systemctl status k0scontroller --no-pager
+sudo journalctl --unit k0scontroller --lines 150 --no-pager
+```
+
+To follow controller logs live, use `journalctl` with the `--follow` option:
+
+```bash
+sudo journalctl --unit k0scontroller --follow
+```
+</Accordion>
+
+<Accordion title="Generate a post-failure support bundle">
+Generate a new support bundle after the failure so SpecterOps Support can compare the post-failure state with the pre-upgrade state.
+
+```bash
+sudo ./bloodhound-enterprise support-bundle
+```
+
+Include the pre-upgrade support bundle, post-failure support bundle, and full upgrade command output when you contact SpecterOps Support.
+</Accordion>
+
+<Accordion title="Retry a failed upgrade">
+After you resolve the underlying issue, re-run the same `upgrade` command with the same installer binary.
+
+The command uses `--license` to provide the license file and `--headless` to run without the interactive installer UI.
+
+```bash
+sudo ./bloodhound-enterprise upgrade \
+  --license /home/bhe-admin/license.yaml \
+  --headless
+```
+
+Embedded cluster upgrade stages are designed to be safe to retry. If the same failure occurs again, stop and contact SpecterOps Support before making additional changes.
+</Accordion>
+</AccordionGroup>
