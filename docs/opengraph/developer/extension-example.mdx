@@ -1,0 +1,1122 @@
+---
+title: Build a sample OpenGraph extension
+description: Use this tutorial to learn how BloodHound renders, scopes, traverses, and reports on custom graph data.
+sidebarTitle: Example extension
+---
+
+import FeatureFlagNote from '/snippets/feature-flag.mdx';
+
+<img
+  noZoom
+  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise and Community Edition"
+/>
+
+An OpenGraph extension definition schema tells BloodHound how to display, scope, and analyze custom graph data. In this tutorial, you'll build a small sample extension that models an identity control path:
+
+```text
+User A -> Group B -> User C -> Server D -> Domain Admin
+```
+
+In this model, every identity or asset is a node. Every group membership, permission, and session is an edge that connects two nodes. Because BloodHound evaluates traversable edges transitively, a standard user can still control a critical identity through a chain of relationships. This is a structural failure of the least privilege principle.
+
+Follow the examples in this tutorial in order. Each section adds incremental capabilities to the same sample extension so that you can:
+
+- See how the schema and payload work together
+- Understand how BloodHound uses the schema to render and analyze the payload
+
+By the end of this tutorial, you'll have a sample extension definition schema and matching payload that:
+
+- Defines extension metadata with the `schema` object
+- Defines an environment to establish analysis scope
+- Styles nodes with display kinds
+- Identifies principal kinds for pathfinding and <Tooltip tip="Exposure and impact">metrics calculation</Tooltip>
+- Makes relationships traversable for attack path analysis
+- Adds custom Entity Panel content to a relationship kind
+- Adds a Privilege Zone target for finding evaluation
+- Defines relationship findings with context and remediation guidance in BloodHound Enterprise
+
+## Define the schema object
+
+Every extension definition schema starts with a top-level [`schema`](/opengraph/developer/graph-definition#schema) object. Define this object first because it establishes the extension's name, version, and namespace, which the rest of this tutorial reuses.
+
+<Tabs>
+  <Tab title="Example definition">
+  The following example shows the minimum required fields for a valid extension definition schema. BloodHound rejects a schema upload where `node_kinds` is empty, so this example defines a single `EX_Domain` node kind. The `relationship_kinds` array is empty because this is the first iteration of the schema.
+
+  ```jsonc title="example-extension-definition.json"
+  {
+    "schema": {
+      "name": "ExampleExtension",
+      "display_name": "Example Extension",
+      "version": "v1.0.0",
+      "namespace": "EX"
+    },
+    "node_kinds": [
+      {
+        "name": "EX_Domain",
+        "display_name": "Example Domain"
+      }
+    ],
+    "relationship_kinds": []
+  }
+  ```
+
+  - [`schema.name`](/opengraph/developer/graph-definition#param-name) uniquely identifies this extension in BloodHound. Uploading a schema with a matching `schema.name` and a newer `schema.version` overwrites the existing extension definition schema.
+  - [`schema.display_name`](/opengraph/developer/graph-definition#param-display-name) is the human-readable label shown for the extension in BloodHound.
+  - [`schema.version`](/opengraph/developer/graph-definition#param-version) tracks the extension schema version and must use v-prefixed semantic versioning, for example `v1.0.0`.
+  - [`schema.namespace`](/opengraph/developer/graph-definition#param-namespace) is the prefix, `EX`, applied to every `name` field you define later in this tutorial (for example, `EX_Domain` and `EX_MemberOf`) to avoid collisions with built-in graph elements and other extensions.
+  - [`node_kinds`](/opengraph/developer/graph-definition#node_kinds) requires at least one entry. BloodHound rejects a schema upload where `node_kinds` is empty, even if `relationship_kinds` is populated.
+
+  <Warning>
+    **Uploading schema iterations**
+
+    As you follow this tutorial and [upload](/opengraph/extensions/manage#update-an-extension) each iteration of the sample schema, increment `schema.version` before every upload. BloodHound rejects an upload that reuses the same `schema.name` and `schema.version` pairing as an already-installed schema, so you cannot re-upload an unchanged version to pick up new edits.
+
+    For example, bump the version from `v1.0.0` to `v1.0.1` (or higher) each time you add the node kinds, relationship kinds, environments, or findings from the following sections and re-upload the schema.
+  </Warning>
+
+  The remaining sections in this tutorial build on this `schema` object by adding `node_kinds`, `relationship_kinds`, `environments`, and `relationship_findings` entries.
+  </Tab>
+  <Tab title="Example payload">
+  The payload is a separate JSON object that contains the graph data you want BloodHound to ingest and analyze.
+
+  Don't worry about uploading the payload yet. This section shows the minimum required fields for a valid payload, which is empty because the schema does not yet define any relationship kinds, and no node instances have been added yet.
+  
+  <Note>
+    The payload must include a [`metadata.source_kind`](/opengraph/developer/metadata#param-source-kind) value that matches the `schema.namespace` value in the extension definition schema.
+  </Note>
+
+  ```jsonc title="example-extension-payload.json" highlight={3}
+  {
+    "metadata": {
+      "source_kind": "EX"
+    },
+    "graph": {
+      "nodes": [],
+      "edges": []
+    }
+  }
+  ```
+  </Tab>
+  <Tab title="BloodHound behavior">
+  BloodHound does not display any graph data because the payload is empty. However, you can still upload the schema to BloodHound to see how the extension appears in the UI.
+  
+  The extension's display name appears in the **Active Extensions** list on the **OpenGraph Extension Management** page.
+
+  <Frame>
+    <img
+      src="/images/opengraph/extensions/develop/extension-management.png"
+      alt="An example of how the Example Extension appears in the BloodHound UI on the OpenGraph Extension Management page."
+      style={{ "width":"70%" }}
+    />
+  </Frame>
+  </Tab>
+</Tabs>
+
+## Define environments
+
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ "width":"20%" }}
+/>
+
+Use [`environments.environment_kind`](/opengraph/developer/graph-definition#param-environment-kind) to tell BloodHound which node kind represents an environment for organization, filtering, and analysis.
+
+In a custom extension, this behavior comes from the environment node kind you define in the schema and then reference from the payload. In the UI, this schema definition enables environment selection controls on the following pages:
+
+- **Attack Paths**
+- **Posture**
+- **Zone Builder**
+
+<FeatureFlagNote />
+
+<Tabs>
+  <Tab title="Example definition">
+  This example builds on the `EX_Domain` node kind from the previous section. In this example, the `EX_Domain` node kind becomes the environment kind for a new `environments` object (both are necessary to complete the definition).
+  
+  The `EX_User` node kind is a principal that can be evaluated within that environment.
+
+  ```jsonc title="example-extension-definition.json"
+  {
+    "schema": {
+      "name": "ExampleExtension",
+      "display_name": "Example Extension",
+      "version": "v1.0.1",
+      "namespace": "EX"
+    },
+    "node_kinds": [
+      {
+        "name": "EX_Domain",
+        "display_name": "Example Domain"
+      },
+      { // [!code ++:4]
+        "name": "EX_User",
+        "display_name": "Example User"
+      }
+    ],
+    "relationship_kinds": [],
+    "environments": [ // [!code ++:7]
+      {
+        "environment_kind": "EX_Domain",
+        "source_kind": "EX",
+        "principal_kinds": ["EX_User"]
+      }
+    ]
+  }
+  ```
+  </Tab>
+  <Tab title="Example payload">
+  It's important to include the [`metadata.source_kind`](/opengraph/developer/metadata#param-source-kind) value in the payload so that BloodHound can associate the payload with the schema definition. This helps facilitate organizing and managing graph data by [source](/opengraph/developer/graph-data#data-source), which is especially useful for monitoring [data quality](/collect-data/data-quality).
+  
+  The [`properties.environmentid`](/opengraph/developer/nodes#param-properties-environmentid) and [`properties.collected`](/opengraph/developer/nodes#param-properties-collected) values on the environment node are required for BloodHound to recognize the environment and scope analysis correctly.
+
+  <Note>
+    **What does "collected" mean?**
+
+    The `properties.collected` value only applies to environment node kinds. It indicates whether a collector actually ran against that environment, as opposed to the environment node existing because another collection run discovered a reference to it.
+
+    For example, SharpHound can discover a domain through a trust relationship without running against that domain directly. In that case, BloodHound creates a node for the discovered domain, but its contents remain unknown, so `collected` should be `false`. Set `collected` to `true` only for environments where the collector ran directly.
+  </Note>
+
+  ```jsonc title="example-extension-payload.json"
+  {
+    "metadata": {
+      "source_kind": "EX"
+    },
+    "graph": {
+      "nodes": [
+        { // [!code ++:10]
+          "id": "example-domain-1",
+          "kinds": ["EX_Domain"],
+          "properties": {
+            "name": "corp.example.local",
+            "displayname": "Corp Example Domain",
+            "environmentid": "example-domain-1",
+            "collected": true
+          }
+        },
+        { // [!code ++:9]
+          "id": "example-user-a",
+          "kinds": ["EX_User"],
+          "properties": {
+            "name": "user-a",
+            "displayname": "User A",
+            "environmentid": "example-domain-1"
+          }
+        }
+      ]
+    }
+  }
+  ```
+  </Tab>
+  <Tab title="BloodHound behavior">
+  The example definition and payload work together to create an environment that scopes analysis for the `EX_User` principal kind.
+
+  - The payload's `metadata.source_kind` value registers `EX` as a source kind and applies it to each node in the payload.
+  - BloodHound can organize extension data under the environment represented by `EX_Domain` and expose that environment through the relevant environment selector and filters in the UI.
+  - Nodes associated with that environment through `properties.environmentid` are evaluated within that scope.
+  - In BloodHound Enterprise, the same environment definition also scopes findings and metrics when the other required analysis conditions are met.
+  - If the environment node kind is missing from the schema, or if payload nodes do not point to the environment node through `properties.environmentid`, the environment does not appear or scope data as expected.
+
+  <Columns cols={2}>
+    <Frame caption="Environment selector (Enterprise)">
+      <img
+        src="/images/opengraph/extensions/develop/environment-selector.png"
+        alt="An example of how the environment selector appears in the BloodHound Enterprise UI for a custom extension."
+        style={{ "width":"100%" }}
+      />
+    </Frame>
+
+    <Frame caption="Data quality">
+      <img
+        src="/images/opengraph/extensions/develop/data-quality.png"
+        alt="An example of how data quality appears in the BloodHound Enterprise UI for a custom extension."
+        style={{ "width":"100%" }}
+      />
+    </Frame>
+  </Columns>
+  </Tab>
+</Tabs>
+
+## Define node styling
+
+The [`is_display_kind`](/opengraph/developer/graph-definition#param-is-display-kind) field controls a node's visual appearance in the graph.
+
+- Use `true` on the kind that should supply the node's icon and color.
+- Use `false` for secondary kinds that help classify the node but should not define its appearance.
+
+This example builds on the environment definition from the previous section by styling the existing `EX_Domain` and `EX_User` node kinds and adding group, computer, domain admin, and high-value classification kinds.
+<Tabs>
+  <Tab title="Example definition">
+  Add `is_display_kind`, `icon`, and `color` to the existing `EX_Domain` and `EX_User` node kinds, then add the `EX_DomainAdmin`, `EX_Group`, `EX_Computer`, and `EX_HighValue` node kinds to the schema to support the example scenario.
+
+  The first five node kinds are display kinds that control the node's icon and color. The last node kind is a secondary classification kind that does not control the node's appearance.
+
+  ```jsonc title="example-extension-definition.json"
+  {
+    "schema": {
+      "name": "ExampleExtension",
+      "display_name": "Example Extension",
+      "version": "v1.0.2",
+      "namespace": "EX"
+    },
+    "node_kinds": [
+      {
+        "name": "EX_Domain",
+        "display_name": "Example Domain",
+        "is_display_kind": true, // [!code ++]
+        "icon": "building", // [!code ++]
+        "color": "#0057b8" // [!code ++]
+      },
+      {
+        "name": "EX_User",
+        "display_name": "Example User",
+        "is_display_kind": true, // [!code ++]
+        "icon": "user", // [!code ++]
+        "color": "#d33115" // [!code ++]
+      },
+      { // [!code ++:8]
+        "name": "EX_DomainAdmin",
+        "display_name": "Example Domain Admin",
+        "description": "Privileged identity used to demonstrate paths from standard users to Tier Zero.",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#b42318"
+      },
+      { // [!code ++:8]
+        "name": "EX_Group",
+        "display_name": "Example Group",
+        "description": "Identity group used to demonstrate membership-based control paths.",
+        "is_display_kind": true,
+        "icon": "users",
+        "color": "#7c3aed"
+      },
+      { // [!code ++:8]
+        "name": "EX_Computer",
+        "display_name": "Example Computer",
+        "description": "Computer or server that can host sessions and grant local administrative control.",
+        "is_display_kind": true,
+        "icon": "server",
+        "color": "#0f766e"
+      },
+      { // [!code ++:6]
+        "name": "EX_HighValue",
+        "display_name": "Example High Value",
+        "description": "Secondary classification kind that should not control node styling.",
+        "is_display_kind": false
+      }
+    ],
+    "relationship_kinds": [],
+    "environments": [
+      {
+        "environment_kind": "EX_Domain",
+        "source_kind": "EX",
+        "principal_kinds": ["EX_User"]
+      }
+    ]
+  }
+  ```
+  </Tab>
+  <Tab title="Example payload">
+  The `example-domain-admin` node has two kinds, but only the `EX_DomainAdmin` display kind controls how BloodHound renders the node.
+ 
+  ```jsonc title="example-extension-payload.json"
+  {
+    "metadata": {
+      "source_kind": "EX"
+    },
+    "graph": {
+      "nodes": [
+        {
+          "id": "example-domain-1",
+          "kinds": ["EX_Domain"],
+          "properties": {
+            "name": "corp.example.local",
+            "displayname": "Corp Example Domain",
+            "environmentid": "example-domain-1",
+            "collected": true
+          }
+        },
+        {
+          "id": "example-user-a",
+          "kinds": ["EX_User"],
+          "properties": {
+            "name": "user-a",
+            "displayname": "User A",
+            "environmentid": "example-domain-1"
+          }
+        },
+        { // [!code ++:11]
+          "id": "example-group-b",
+          "kinds": ["EX_Group"],
+          "properties": {
+            "name": "group-b",
+            "displayname": "Group B",
+            "environmentid": "example-domain-1"
+          }
+        },
+        { // [!code ++:11]
+          "id": "example-user-c",
+          "kinds": ["EX_User"],
+          "properties": {
+            "name": "user-c",
+            "displayname": "User C",
+            "environmentid": "example-domain-1"
+          }
+        },
+        { // [!code ++:11]
+          "id": "example-server-d",
+          "kinds": ["EX_Computer"],
+          "properties": {
+            "name": "server-d",
+            "displayname": "Server D",
+            "environmentid": "example-domain-1"
+          }
+        },
+        { // [!code ++:14]
+          "id": "example-domain-admin",
+          "kinds": [
+            "EX_DomainAdmin",
+            "EX_HighValue"
+          ],
+          "properties": {
+            "name": "domain-admin",
+            "displayname": "Domain Admin",
+            "environmentid": "example-domain-1"
+          }
+        }
+      ]
+    }
+  }
+  ```
+  </Tab>
+  <Tab title="BloodHound behavior">
+  The example definition and payload work together to create a graph that uses display kinds to control node styling.
+
+  - BloodHound uses `EX_DomainAdmin` for the domain admin node's icon and color because it is the first display kind in the node's `kinds` array. In the Entity panel, this is referred to as the node's **Primary Kind**.
+  - The `EX_HighValue` kind still classifies the node, but it does not affect the visual styling because `is_display_kind` is `false`.
+  - `EX_User`, `EX_Group`, `EX_Computer`, and `EX_DomainAdmin` define distinct visual styles for User A, Group B, Server D, and Domain Admin.
+
+  Use the following Cypher query to see how the node kinds appear in the graph:
+
+  ```cypher
+  MATCH (n)
+  WHERE n:EX
+  RETURN n
+  ```
+
+    <Frame>
+      <img
+        src="/images/opengraph/extensions/develop/display-kind.png"
+        alt="An example of how a node with multiple kinds appears in the BloodHound graph when the first kind is a display kind."
+      />
+    </Frame>
+  </Tab>
+</Tabs>
+
+## Define principals
+
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ "width":"20%" }}
+/>
+
+The [`principal_kinds`](/opengraph/developer/graph-definition#param-principal-kinds) field identifies which node kinds BloodHound Enterprise should treat as <Tooltip tip="An entity that can authenticate, be assigned permissions, and serve as a basis for risk metric calculations">principals</Tooltip> inside an environment.
+
+This setting affects analysis scope. If a node kind is not listed in `principal_kinds`, BloodHound Enterprise can still ingest and display those nodes, but BloodHound Enterprise does not treat them as principals for findings and <Tooltip tip="(Exposure and impact)">metrics calculation</Tooltip> in that environment.
+
+<Tabs>
+  <Tab title="Example definition">
+  This example builds on the previous definition by adding the computer and domain admin node kinds to `principal_kinds`.
+
+  Do not include `EX_Group` in `principal_kinds` for this example. Group B is still an important node in the path because it receives permissions and passes control through the `EX_MemberOf` edge, but it does not authenticate as an identity. BloodHound can still traverse through Group B when the relationship kinds are traversable.
+
+  <Note>
+    **Findings and metrics**
+
+    The `principal_kinds` definition does not create findings by itself, and the payload does not include a separate finding object.
+
+    BloodHound Enterprise derives the finding from the environment definition, the [traversable relationship kind](/opengraph/developer/extension-example#define-relationships), the [Privilege Zone target](/opengraph/developer/extension-example#create-a-privilege-zone-rule), the matching [relationship findings](/opengraph/developer/extension-example#define-relationship-findings) definition, and the uploaded graph data.
+  </Note>
+
+  ```jsonc title="example-extension-definition.json"
+  {
+    "schema": {
+      "name": "ExampleExtension",
+      "display_name": "Example Extension",
+      "version": "v1.0.3",
+      "namespace": "EX"
+    },
+    "node_kinds": [
+      {
+        "name": "EX_Domain",
+        "display_name": "Example Domain",
+        "is_display_kind": true,
+        "icon": "building",
+        "color": "#0057b8"
+      },
+      {
+        "name": "EX_User",
+        "display_name": "Example User",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#d33115"
+      },
+      {
+        "name": "EX_DomainAdmin",
+        "display_name": "Example Domain Admin",
+        "description": "Privileged identity used to demonstrate paths from standard users to Tier Zero.",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#b42318"
+      },
+      {
+        "name": "EX_Group",
+        "display_name": "Example Group",
+        "description": "Identity group used to demonstrate membership-based control paths.",
+        "is_display_kind": true,
+        "icon": "users",
+        "color": "#7c3aed"
+      },
+      {
+        "name": "EX_Computer",
+        "display_name": "Example Computer",
+        "description": "Computer or server that can host sessions and grant local administrative control.",
+        "is_display_kind": true,
+        "icon": "server",
+        "color": "#0f766e"
+      },
+      {
+        "name": "EX_HighValue",
+        "display_name": "Example High Value",
+        "description": "Secondary classification kind that should not control node styling.",
+        "is_display_kind": false
+      }
+    ],
+    "relationship_kinds": [],
+    "environments": [
+      {
+        "environment_kind": "EX_Domain",
+        "source_kind": "EX",
+        "principal_kinds": [
+          "EX_User",
+          "EX_Computer", // [!code ++]
+          "EX_DomainAdmin" // [!code ++]
+        ]
+      }
+    ]
+  }
+  ```
+  </Tab>
+  <Tab title="Example payload">
+  Use the same payload from the display kind example. Principal kinds do not require a separate payload object.
+
+  <Tip>
+    How you define principal kinds in the schema affects how BloodHound Enterprise calculates exposure and impact on the [Attack Paths](/analyze-data/findings/attack-paths) and [Posture](/analyze-data/findings/posture) pages.
+
+    If you remove a node kind from `principal_kinds`, BloodHound Enterprise does not treat that node kind as a principal for findings and metrics, even if the node kind is present in the payload.
+  </Tip>
+  </Tab>
+  <Tab title="BloodHound behavior">
+  At this point, you won't see any visual changes in BloodHound, but the extension definition now enables findings and metrics for `EX_User`, `EX_Computer`, and `EX_DomainAdmin` principals in the target environment.
+
+  The remaining examples in this guide build on this definition to show the other conditions required for findings and metrics.
+  </Tab>
+</Tabs>
+
+## Define relationships
+
+Use [`relationship_kinds.is_traversable`](/opengraph/developer/graph-definition#param-is-traversable) to control whether edges of a relationship kind are used for pathfinding and Attack Path detection.
+
+When you set `is_traversable` to `true` on a relationship kind, every edge of that kind inherits the same traversability behavior. Use traversable relationships to represent conditions where the starting node can take control of the ending node to a degree that lets an attacker abuse the ending node's outgoing edges.
+
+<Tabs>
+  <Tab title="Example definition">
+  Each relationship is traversable because it represents a control transition. Auditing User A in isolation shows a standard user, but tracing the edges shows that User A can reach the Domain Admin identity.
+
+  ```jsonc title="example-extension-definition.json"
+  {
+    "schema": {
+      "name": "ExampleExtension",
+      "display_name": "Example Extension",
+      "version": "v1.0.4",
+      "namespace": "EX"
+    },
+    "node_kinds": [
+      {
+        "name": "EX_Domain",
+        "display_name": "Example Domain",
+        "is_display_kind": true,
+        "icon": "building",
+        "color": "#0057b8"
+      },
+      {
+        "name": "EX_User",
+        "display_name": "Example User",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#d33115"
+      },
+      {
+        "name": "EX_DomainAdmin",
+        "display_name": "Example Domain Admin",
+        "description": "Privileged identity used to demonstrate paths from standard users to Tier Zero.",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#b42318"
+      },
+      {
+        "name": "EX_Group",
+        "display_name": "Example Group",
+        "description": "Identity group used to demonstrate membership-based control paths.",
+        "is_display_kind": true,
+        "icon": "users",
+        "color": "#7c3aed"
+      },
+      {
+        "name": "EX_Computer",
+        "display_name": "Example Computer",
+        "description": "Computer or server that can host sessions and grant local administrative control.",
+        "is_display_kind": true,
+        "icon": "server",
+        "color": "#0f766e"
+      },
+      {
+        "name": "EX_HighValue",
+        "display_name": "Example High Value",
+        "description": "Secondary classification kind that should not control node styling.",
+        "is_display_kind": false
+      }
+    ],
+    "relationship_kinds": [ // [!code ++:20]
+      {
+        "name": "EX_MemberOf",
+        "description": "Membership that grants the source identity the permissions of the target group.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_FullControl",
+        "description": "Permission that lets the source identity control the target identity.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_AdminTo",
+        "description": "Local administrative control over a computer or server.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_HasSession",
+        "description": "Session exposure where control of the source computer can lead to control of the target identity.",
+        "is_traversable": true
+      }
+    ],
+    "environments": [
+      {
+        "environment_kind": "EX_Domain",
+        "source_kind": "EX",
+        "principal_kinds": [
+          "EX_User",
+          "EX_Computer",
+          "EX_DomainAdmin"
+        ]
+      }
+    ]
+  }
+  ```
+  </Tab>
+  <Tab title="Example payload">
+  This example connects the five nodes from the previous sections:
+
+  - User A is a member of Group B.
+  - Group B has full control over User C.
+  - User C is a local administrator on Server D.
+  - Server D hosts a session for the Domain Admin identity.
+
+  ```jsonc title="example-extension-payload.json"
+  {
+    "metadata": {
+      "source_kind": "EX"
+    },
+    "graph": {
+      "nodes": [
+        {
+          "id": "example-domain-1",
+          "kinds": ["EX_Domain"],
+          "properties": {
+            "name": "corp.example.local",
+            "displayname": "Corp Example Domain",
+            "environmentid": "example-domain-1",
+            "collected": true
+          }
+        },
+        {
+          "id": "example-user-a",
+          "kinds": ["EX_User"],
+          "properties": {
+            "name": "user-a",
+            "displayname": "User A",
+            "environmentid": "example-domain-1"
+          }
+        },
+        {
+          "id": "example-group-b",
+          "kinds": ["EX_Group"],
+          "properties": {
+            "name": "group-b",
+            "displayname": "Group B",
+            "environmentid": "example-domain-1"
+          }
+        },
+        {
+          "id": "example-user-c",
+          "kinds": ["EX_User"],
+          "properties": {
+            "name": "user-c",
+            "displayname": "User C",
+            "environmentid": "example-domain-1"
+          }
+        },
+        {
+          "id": "example-server-d",
+          "kinds": ["EX_Computer"],
+          "properties": {
+            "name": "server-d",
+            "displayname": "Server D",
+            "environmentid": "example-domain-1"
+          }
+        },
+        {
+          "id": "example-domain-admin",
+          "kinds": [
+            "EX_DomainAdmin",
+            "EX_HighValue"
+          ],
+          "properties": {
+            "name": "domain-admin",
+            "displayname": "Domain Admin",
+            "environmentid": "example-domain-1"
+          }
+        }
+      ],
+      "edges": [ // [!code ++:48]
+        {
+          "kind": "EX_MemberOf",
+          "start": {
+            "match_by": "id",
+            "value": "example-user-a"
+          },
+          "end": {
+            "match_by": "id",
+            "value": "example-group-b"
+          }
+        },
+        {
+          "kind": "EX_FullControl",
+          "start": {
+            "match_by": "id",
+            "value": "example-group-b"
+          },
+          "end": {
+            "match_by": "id",
+            "value": "example-user-c"
+          }
+        },
+        {
+          "kind": "EX_AdminTo",
+          "start": {
+            "match_by": "id",
+            "value": "example-user-c"
+          },
+          "end": {
+            "match_by": "id",
+            "value": "example-server-d"
+          }
+        },
+        {
+          "kind": "EX_HasSession",
+          "start": {
+            "match_by": "id",
+            "value": "example-server-d"
+          },
+          "end": {
+            "match_by": "id",
+            "value": "example-domain-admin"
+          }
+        }
+      ]
+    }
+  }
+  ```
+  </Tab>
+  <Tab title="BloodHound behavior">
+  The example definition and payload work together to create a graph that uses traversable relationships for pathfinding and Attack Path detection.
+
+  - BloodHound includes every `EX_MemberOf`, `EX_FullControl`, `EX_AdminTo`, and `EX_HasSession` edge in pathfinding because all four relationship kinds set `is_traversable` to `true`.
+  - The path starts at User A, reaches Group B, reaches User C, reaches Server D, and then reaches the Domain Admin identity.
+  - This path can contribute to Attack Path detection, findings, and metrics when the Domain Admin identity is in a higher Privilege Zone than User A.
+  - If `is_traversable` is `false`, the relationship can still exist in the graph, but BloodHound does not use edges of that kind for pathfinding, findings, or metrics.
+
+    <Frame>
+      <img
+        src="/images/opengraph/extensions/develop/define-relationships.png"
+        alt="An example of how traversable relationships appear in the BloodHound graph for a custom extension."
+      />
+    </Frame>
+  </Tab>
+</Tabs>
+
+## Define custom Entity Panel content
+
+Use the [`info`](/opengraph/developer/graph-definition#custom-entity-panel-content) object on a node kind or relationship kind to add custom accordion sections to the Entity Panel. Every Entity Panel starts with **Object Information**; BloodHound renders any `info` entries after that section, ordered by `position`.
+
+This example builds on the traversable relationship kinds from the previous section by adding an `info` entry to `EX_HasSession` that explains how an attacker can abuse that relationship.
+
+<Tabs>
+  <Tab title="Example definition">
+  Add an `info` object with an `abuse` section to the `EX_HasSession` relationship kind.
+
+  ```jsonc title="example-extension-definition.json"
+  {
+    "schema": {
+      "name": "ExampleExtension",
+      "display_name": "Example Extension",
+      "version": "v1.0.5",
+      "namespace": "EX"
+    },
+    "node_kinds": [
+      {
+        "name": "EX_Domain",
+        "display_name": "Example Domain",
+        "is_display_kind": true,
+        "icon": "building",
+        "color": "#0057b8"
+      },
+      {
+        "name": "EX_User",
+        "display_name": "Example User",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#d33115"
+      },
+      {
+        "name": "EX_DomainAdmin",
+        "display_name": "Example Domain Admin",
+        "description": "Privileged identity used to demonstrate paths from standard users to Tier Zero.",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#b42318"
+      },
+      {
+        "name": "EX_Group",
+        "display_name": "Example Group",
+        "description": "Identity group used to demonstrate membership-based control paths.",
+        "is_display_kind": true,
+        "icon": "users",
+        "color": "#7c3aed"
+      },
+      {
+        "name": "EX_Computer",
+        "display_name": "Example Computer",
+        "description": "Computer or server that can host sessions and grant local administrative control.",
+        "is_display_kind": true,
+        "icon": "server",
+        "color": "#0f766e"
+      },
+      {
+        "name": "EX_HighValue",
+        "display_name": "Example High Value",
+        "description": "Secondary classification kind that should not control node styling.",
+        "is_display_kind": false
+      }
+    ],
+    "relationship_kinds": [
+      {
+        "name": "EX_MemberOf",
+        "description": "Membership that grants the source identity the permissions of the target group.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_FullControl",
+        "description": "Permission that lets the source identity control the target identity.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_AdminTo",
+        "description": "Local administrative control over a computer or server.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_HasSession",
+        "description": "Session exposure where control of the source computer can lead to control of the target identity.",
+        "is_traversable": true,
+        "info": { // [!code ++:9]
+          "abuse": {
+            "title": "Abuse",
+            "position": 1,
+            "markdown": {
+              "content": "An attacker who controls the source computer can hijack this session to act as the target identity, including a Tier Zero identity such as Domain Admin."
+            }
+          }
+        }
+      }
+    ],
+    "environments": [
+      {
+        "environment_kind": "EX_Domain",
+        "source_kind": "EX",
+        "principal_kinds": [
+          "EX_User",
+          "EX_Computer",
+          "EX_DomainAdmin"
+        ]
+      }
+    ]
+  }
+  ```
+  </Tab>
+  <Tab title="Example payload">
+  Use the same payload from the traversable relationship example. Custom Entity Panel content does not require a separate payload object.
+  </Tab>
+  <Tab title="BloodHound behavior">
+  The example definition and payload work together to create a graph that uses the `info` object to add an **Abuse** section to the Entity Panel for every `EX_HasSession` edge.
+
+  <Frame>
+    <img
+      src="/images/opengraph/extensions/develop/define-custom-content.png"
+      alt="An example of how custom Entity Panel content appears in the BloodHound graph for a custom extension."
+    />
+  </Frame>
+  </Tab>
+</Tabs>
+
+## Create a Privilege Zone rule
+
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ "width":"20%" }}
+/>
+
+Use [Privilege Zones](/analyze-data/privilege-zones/overview) to identify which graph objects represent higher-privilege targets. BloodHound Enterprise generates Attack Path findings when a lower-privileged principal can reach a higher-privileged zone through traversable relationships.
+
+This example builds on the relationship payload from the previous section. The schema and payload define the path from User A to the Domain Admin identity, but the Domain Admin identity must be in a higher Privilege Zone before BloodHound Enterprise can treat the path as a finding.
+
+<Steps>
+  <Step title="Open the pathfinding graph">
+    Use the [Pathfinding](/analyze-data/explore/search#pathfinding) tab on the **Explore** page to display the path from `User A` to `Domain Admin` from the previous example.
+  </Step>
+  <Step title="Open the Domain Admin context menu">
+    Right-click the `Domain Admin` node in the graph to open the [context menu](/analyze-data/explore/search#context-menu).
+  </Step>
+  <Step title="Add Domain Admin to Tier Zero">
+    Select **Add to Tier Zero**. BloodHound Enterprise adds the Domain Admin identity to the Tier Zero Privilege Zone and starts analysis.
+  </Step>
+  <Step title="Wait for analysis">
+    Wait for analysis to finish before proceeding to the next step.
+  </Step>
+</Steps>
+
+After analysis, the example data contains the required privilege boundary:
+
+- User A is a lower-privileged `EX_User` principal.
+- Group B has full control over User C through a traversable permission edge.
+- User C is a local administrator on Server D.
+- Server D hosts a session for the Domain Admin identity.
+- The Domain Admin identity is a Tier Zero target.
+
+With that boundary in place, the traversable path `User A -> Group B -> User C -> Server D -> Domain Admin` can generate a finding when the schema includes a matching `relationship_findings` definition. Continue to the next section to define that finding.
+
+## Define relationship findings
+
+<img
+  noZoom
+  src="/assets/enterprise-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise only"
+  style={{ "width":"20%" }}
+/>
+
+Use [`relationship_findings`](/opengraph/developer/graph-definition#relationship_findings) when you want BloodHound Enterprise to attach a finding definition and remediation guidance to a relationship kind that represents an Attack Path condition.
+
+This example builds on the traversable `EX_HasSession` relationship and the Tier Zero Domain Admin target from the previous sections. The `relationship_findings` entry adds the finding metadata and remediation text that BloodHound Enterprise can display on the [Attack Paths](/analyze-data/findings/attack-paths) page when matching graph data satisfies the Attack Path conditions.
+
+<Tabs>
+  <Tab title="Example definition">
+  Define the finding on the relationship kind that crosses into the higher Privilege Zone. In this example, `EX_HasSession` targets the Tier Zero Domain Admin identity.
+
+  ```jsonc title="example-extension-definition.json"
+  {
+    "schema": {
+      "name": "ExampleExtension",
+      "display_name": "Example Extension",
+      "version": "v1.0.6",
+      "namespace": "EX"
+    },
+    "node_kinds": [
+      {
+        "name": "EX_Domain",
+        "display_name": "Example Domain",
+        "is_display_kind": true,
+        "icon": "building",
+        "color": "#0057b8"
+      },
+      {
+        "name": "EX_User",
+        "display_name": "Example User",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#d33115"
+      },
+      {
+        "name": "EX_DomainAdmin",
+        "display_name": "Example Domain Admin",
+        "description": "Privileged identity used to demonstrate paths from standard users to Tier Zero.",
+        "is_display_kind": true,
+        "icon": "user",
+        "color": "#b42318"
+      },
+      {
+        "name": "EX_Group",
+        "display_name": "Example Group",
+        "description": "Identity group used to demonstrate membership-based control paths.",
+        "is_display_kind": true,
+        "icon": "users",
+        "color": "#7c3aed"
+      },
+      {
+        "name": "EX_Computer",
+        "display_name": "Example Computer",
+        "description": "Computer or server that can host sessions and grant local administrative control.",
+        "is_display_kind": true,
+        "icon": "server",
+        "color": "#0f766e"
+      },
+      {
+        "name": "EX_HighValue",
+        "display_name": "Example High Value",
+        "description": "Secondary classification kind that should not control node styling.",
+        "is_display_kind": false
+      }
+    ],
+    "relationship_kinds": [
+      {
+        "name": "EX_MemberOf",
+        "description": "Membership that grants the source identity the permissions of the target group.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_FullControl",
+        "description": "Permission that lets the source identity control the target identity.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_AdminTo",
+        "description": "Local administrative control over a computer or server.",
+        "is_traversable": true
+      },
+      {
+        "name": "EX_HasSession",
+        "description": "Session exposure where control of the source computer can lead to control of the target identity.",
+        "is_traversable": true
+      }
+    ],
+    "environments": [
+      {
+        "environment_kind": "EX_Domain",
+        "source_kind": "EX",
+        "principal_kinds": [
+          "EX_User",
+          "EX_Computer",
+          "EX_DomainAdmin"
+        ]
+      }
+    ],
+    "relationship_findings": [ // [!code ++:14]
+      {
+        "name": "EX_HasSession_TierZeroPath_Finding",
+        "display_name": "Tier Zero Session Exposure Path",
+        "environment_kind": "EX_Domain",
+        "relationship_kind": "EX_HasSession",
+        "remediation": {
+          "short_description": "Review computers that expose sessions for Tier Zero identities.",
+          "long_description": "This finding appears when a traversable session edge lets a lower-privileged principal reach a Tier Zero identity through transitive relationships.",
+          "short_remediation": "Remove unnecessary Tier Zero sessions from lower-trust computers.",
+          "long_remediation": "Review the source computer, the Tier Zero identity session, and the upstream path. Remove unnecessary sessions, restrict where privileged identities sign in, remove excessive group and full-control permissions, and validate that local administrator rights are limited to approved operators."
+        }
+      }
+    ]
+  }
+  ```
+  </Tab>
+  <Tab title="Example payload">
+  Use the same payload from the traversable relationship example and the same Tier Zero zone configuration from the Privilege Zone example.
+  
+  Relationship findings do not require a separate payload object, but it does require manually running analysis after uploading the example definition for the first time.
+
+  To manually run analysis, go to **Administration** > **BloodHound Configuration** and click **Analyze Now**.
+  </Tab>
+  <Tab title="BloodHound behavior">
+  The example definition and payload work together to create a finding that BloodHound Enterprise can display on the Attack Paths page.
+
+  - When BloodHound Enterprise detects a qualifying `EX_HasSession` edge on a path from User A to the Tier Zero Domain Admin identity, the finding can display the custom title and remediation content from the schema.
+  - The finding is based on the privilege boundary violation: User A is lower privileged, but User A can traverse group membership, identity control, local administrator rights, and session exposure to reach Tier Zero.
+  - If you do not define a matching `relationship_findings` entry, the relationship can still exist in the graph, but BloodHound Enterprise does not have extension-provided finding and remediation text to display for that condition.
+  - If the Domain Admin identity is not in a higher Privilege Zone, BloodHound Enterprise does not have the privilege boundary it needs to generate this Attack Path finding.
+
+  The following images show how the finding and remediation content appear on the [Attack Paths](/analyze-data/findings/attack-paths) page when the schema, payload, and Privilege Zone conditions are met.
+
+  The finding details panel shows text from the following fields:
+  
+  - [`relationship_findings.display_name`](/opengraph/developer/graph-definition#param-display-name-2)
+  - [`remediation.short_description`](/opengraph/developer/graph-definition#param-remediation-short-description)
+  - [`remediation.short_remediation`](/opengraph/developer/graph-definition#param-remediation-short-remediation)
+
+  <Frame>
+    <img
+      src="/images/opengraph/extensions/develop/findings-and-remediation.png"
+      alt="An example of how a finding appears in the BloodHound Enterprise UI for a custom extension."
+    />
+  </Frame>
+
+  To see the full remediation plan, click **View/Export Full Remediation Plan** in the finding details panel. The remediation plan includes text from the following fields:
+  
+  - [`remediation.long_description`](/opengraph/developer/graph-definition#param-remediation-long-description)
+  - [`remediation.long_remediation`](/opengraph/developer/graph-definition#param-remediation-long-remediation)
+
+  <Frame>
+    <img
+      src="/images/opengraph/extensions/develop/full-remediation-plan.png"
+      alt="An example of how a full remediation plan appears in the BloodHound Enterprise UI for a custom extension."
+    />
+  </Frame>
+  </Tab>
+</Tabs>
+
+## Next steps
+
+Use these examples as a checklist when you design an OpenGraph extension definition schema. Start with the environment model, then add the node kinds, relationship kinds, Privilege Zone targets, and finding definitions that BloodHound needs to display, scope, and analyze your data.
+
+- Review the full [extension definition schema reference](/opengraph/developer/graph-definition) before you define your schema fields.
+- Build a matching [graph data payload](/opengraph/developer/graph-data) that uses the node kinds, relationship kinds, environment IDs, and source kind from your schema.
+- Check the [node](/opengraph/developer/nodes) and [edge](/opengraph/developer/edges) requirements when you prepare data for ingestion.
+
+## Troubleshoot
+
+The following conditions may lead to unexpected behavior when you create an OpenGraph extension:
+
+- The node or relationship kind name does not exactly match the schema definition.
+- Kind names are not properly [namespaced](/opengraph/developer/graph-definition#namespacing) (for example, missing the `namespace_` prefix) and cause schema upload validation failures.
+- The `tag` namespace prefix is used in a kind name. BloodHound rejects schema uploads that use this reserved prefix in any letter case (`tag`, `Tag`, `TAG`).
+- The [`schema.version`](/opengraph/developer/graph-definition#param-version) value does not use v-prefixed semantic versioning (for example, `v1.0.0`). BloodHound rejects schema uploads that use a different format.
+- The environment node exists, but `properties.collected` is not set to `true`.
+- Nodes are missing `properties.environmentid`.
+- The environment or payload does not include a registered `source_kind`.
+- The relationship kind is not traversable.
+- The expected node kind is not included in `principal_kinds`.
+- The target node is not in the expected Privilege Zone.
+- The finding definition references the wrong `environment_kind` or `relationship_kind`.
