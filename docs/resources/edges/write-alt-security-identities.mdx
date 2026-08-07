@@ -1,7 +1,6 @@
 ---
 title: WriteAltSecurityIdentities
 description: "The principal can write to the altSecurityIdentities attribute on a user or computer, enabling explicit certificate mappings and ADCS ESC14 Scenario A."
-hidden: true
 ---
 
 import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
@@ -18,9 +17,10 @@ An attacker can add an explicit certificate mapping on the target that refers to
 
 The certificate must meet the following requirements:
 
-1. Chain up to a trusted root CA on the domain controller.
-2. Include an Enhanced Key Usage (EKU) extension that enables domain authentication.
-3. Not include an Other Name / Principal Name entry (UPN) in the Subject Alternative Name (SAN).
+1. Chain to a root CA trusted by the domain controller.
+2. Be issued by a CA whose certificate is in the domain controller's NTAuth store.
+3. Include an Enhanced Key Usage (EKU) extension that enables domain authentication.
+4. Not include an Other Name / Principal Name entry (UPN) in the Subject Alternative Name (SAN).
 
 The EKUs that enable domain authentication over Kerberos are:
 
@@ -34,13 +34,9 @@ The last certificate requirement means user certificates typically do not work, 
 
 The last requirement does not apply if a domain controller has UPN mapping disabled. See [How to disable the Subject Alternative Name for UPN mapping](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/ff520074(v=ws.10)).
 
-If the attacker cannot obtain a suitable certificate from the target environment, they may also be able to use a third-party Client Authentication certificate.
+If the attacker cannot obtain a suitable certificate from ADCS, they may be able to obtain one from another PKI provider used in the target environment.
 
-This works because explicit certificate mapping differs from implicit certificate mapping. Implicit mapping requires the certificate to chain to a CA certificate in the domain controller's NTAuth store. Explicit mapping does not. For explicit mapping, the certificate only needs to chain to a trusted root CA on the domain controller.
-
-Windows trusts many third-party root CAs by default, so an attacker may be able to buy or steal a third-party certificate with the Client Authentication EKU and use it for ESC14 Scenario A. For example, providers such as [SSL.com](https://www.ssl.com/products/device-machine-trust/client-authentication/) are trusted by Windows and offer client authentication certificates.
-
-The abuse is possible with the strong explicit certificate mappings `X509IssuerSerialNumber` or `X509SHA1PublicKey`. The examples below use `X509SHA1PublicKey`.
+This abuse is possible with the strong explicit certificate mappings `X509IssuerSerialNumber`, `X509SKI`, or `X509SHA1PublicKey`. The examples below use `X509SHA1PublicKey`.
 
 ### Linux
 

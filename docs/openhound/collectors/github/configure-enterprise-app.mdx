@@ -12,6 +12,8 @@ This page covers creating a GitHub App in a GitHub Enterprise account so OpenHou
 
 Use this flow when you need to install the app at the enterprise level and then reuse that same app across the organizations owned by the enterprise.
 
+To collect enterprise SAML Single Sign-On (SSO) and System for Cross-domain Identity Management (SCIM) data, you also create a GitHub Personal Access Token (classic) from an Enterprise Owner account. OpenHound uses this token only for the enterprise SSO and SCIM endpoints; all other GitHub data is collected through the GitHub App installation.
+
 <Tip>
   For organization-only collection, use [Configure an Organization GitHub App](/openhound/collectors/github/configure-app).
 </Tip>
@@ -20,6 +22,7 @@ Use this flow when you need to install the app at the enterprise level and then 
 
 - Verify that you can create or manage GitHub Apps in the target enterprise account.
 - Verify that you can install GitHub Apps on the enterprise account and on each organization that OpenHound will collect.
+- Verify that an Enterprise Owner can create a classic PAT with the `read:enterprise` scope if you need enterprise SSO and SCIM data.
 - Identify the enterprise slug you will use during configuration, such as `your-enterprise-name` from `https://github.com/enterprises/your-enterprise-name`.
 
 ## Create the GitHub App
@@ -80,11 +83,57 @@ Install the same GitHub App in the enterprise account and in each organization y
   </Step>
 </Steps>
 
+## Create a Classic PAT for SSO and SCIM
+
+GitHub Enterprise App installations are currently in preview and do not support all GitHub Enterprise REST APIs. The GitHub App installation token cannot access the enterprise SAML SSO and SCIM endpoints that OpenHound uses to collect enterprise identity configuration.
+
+Create a classic PAT when you need OpenHound to collect enterprise SSO and SCIM objects.
+
+The following video provides a walkthrough of creating a classic PAT for enterprise SSO and SCIM collection. Text instructions follow the video.
+
+<iframe
+  className="w-full aspect-video rounded-xl"
+  src="https://app.arcade.software/share/gnXenQtRti4tLcHgUDor"
+  title="YouTube video player"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+></iframe>
+
+<Steps>
+  <Step title="Open your user settings">
+    Sign in to GitHub as an **Enterprise Owner**.
+
+    From your user profile menu, click **Settings**. Do not open the enterprise settings page for this token.
+  </Step>
+  <Step title="Open classic token settings">
+    Click **Developer settings** > **Personal access tokens** > **Tokens (classic)**.
+  </Step>
+  <Step title="Open the new token creation page">
+    Click **Generate new token (classic)**.
+
+    Enter a descriptive name, such as `OpenHound Enterprise Collector`, and select an expiration that matches your organization's security policy.
+  </Step>
+  <Step title="Set the required scope">
+    Grant the `read:enterprise` scope.
+  </Step>
+  <Step title="Generate and copy the token">
+    Click **Generate token**, then copy the token immediately.
+
+    You add this token to the `pat_token` field in your `secrets.toml` file when you [configure the collector](/openhound/collectors/github/collect-data).
+    <Warning>
+      GitHub displays the token value only once. Store it securely and never commit it to version control.
+    </Warning>
+  </Step>
+</Steps>
+
 ## Security Considerations
 
 - Store the `.pem` private key securely and never commit it to version control.
+- Store the classic PAT securely and never commit it to version control.
 - Rotate private keys periodically and revoke keys that you no longer use.
+- Rotate the classic PAT according to your organization's credential rotation policy.
 - Limit the app to the minimum repository, organization, and enterprise permissions required for collection.
+- Grant the classic PAT only the `read:enterprise` scope.
 - Install the app only on the enterprise account and organizations that you intend to collect.
 
 ## Next Steps
