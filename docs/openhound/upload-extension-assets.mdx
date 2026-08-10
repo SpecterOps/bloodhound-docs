@@ -5,7 +5,7 @@ description: Upload saved queries and Privilege Zone rules for OpenHound extensi
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise"/>
 
-OpenHound extensions include saved queries and Privilege Zone rules that help you analyze the data collected from the GitHub, Jamf, and Okta extensions. 
+OpenHound extensions include saved queries and Privilege Zone rules that help you analyze the data collected from the GitHub, Jamf, and Okta extensions.
 
 Use the OpenHound CLI to upload these assets after the matching extension definition schema is installed or verified in BloodHound.
 
@@ -23,23 +23,33 @@ Before you upload extension assets, ensure that you have done the following:
 
 ## Configure CLI authentication
 
-OpenHound asset uploads use JWT-based authentication. Add the BloodHound Enterprise tenant URL and browser JWT to your local `~/.dlt/secrets.toml` file.
+OpenHound uses DLT configuration management for CLI asset uploads. Add the BloodHound Enterprise tenant URL to your local `~/.dlt/config.toml` file, and the browser JWT to your local `~/.dlt/secrets.toml` file.
 
-This workflow uses the `destination.bloodhound` section. It is separate from scheduled OpenHound collection, which uses `destination.bloodhoundenterprise` with collector client credentials.
+The asset upload commands use the `destination.bloodhound` section with a URL and a JWT bearer token.
+
+This is different from the `destination.bloodhoundenterprise` collector client configuration, which uses `token_id` and `token_key` for scheduled OpenHound collection.
 
 <Note>
   Scheduled collector examples separate the BloodHound Enterprise destination URL into `config.toml` and keep collector client credentials in extension-specific secrets files, such as `~/.dlt/secrets_github.toml`.
 
-  Asset upload commands still run from the OpenHound CLI and read the generic `~/.dlt/secrets.toml` file shown below.
+  Asset upload commands run from the OpenHound CLI and read the generic `~/.dlt/config.toml` and `~/.dlt/secrets.toml` files shown below.
 </Note>
 
 To get the browser JWT, follow the [BloodHound API JWT guidance](/integrations/bloodhound-api/working-with-api#use-a-jwt%2Fbearer-token). Copy only the token value and omit the `Bearer` prefix.
 
-```toml title="~/.dlt/secrets.toml"
+```toml title="~/.dlt/config.toml"
 [destination.bloodhound]
 url = "https://your-tenant.bloodhoundenterprise.io"
+```
+
+```toml title="~/.dlt/secrets.toml"
+[destination.bloodhound]
 token = "your-browser-jwt"
 ```
+
+<Note>
+  If an existing `~/.dlt/secrets.toml` file still has `url` under `[destination.bloodhound]` from a previous OpenHound version, it continues to work, but following the new pattern is preferred. Use `config.toml` for `url` in new configurations.
+</Note>
 
 <Warning>
   Do not commit `secrets.toml` or token values to version control. Browser JWTs are short-lived and intended for user-authenticated API calls, not long-running integrations.
@@ -124,7 +134,7 @@ Saved queries and Privilege Zone rules are stored in each extension repository i
       <Tip>
         The default upload strategy is `skip`, which leaves existing assets unchanged.
 
-        Use `--strategy overwrite` when you need to update previously uploaded saved queries or Privilege Zone rules. 
+        Use `--strategy overwrite` when you need to update previously uploaded saved queries or Privilege Zone rules.
       </Tip>
   </Step>
 </Steps>
@@ -142,5 +152,5 @@ After the upload completes:
 | Issue | Cause | Resolution |
 |---|---|---|
 | Existing assets do not update | The `upload` command uses the `skip` strategy by default. | Run the upload again with the `--strategy overwrite` option. |
-| Upload fails with an authentication error | The BloodHound Enterprise URL or JWT is invalid or expired. | Update the `~/.dlt/secrets.toml` file with a valid browser JWT and rerun the command. |
+| Upload fails with an authentication error | The BloodHound Enterprise URL or JWT is invalid or expired. | Verify both values; update `~/.dlt/config.toml` with a valid URL and `~/.dlt/secrets.toml` with a valid browser JWT as needed, then rerun the command. |
 | No files are uploaded | The command points to the wrong directory. | Confirm that the path contains the extension assets. |
