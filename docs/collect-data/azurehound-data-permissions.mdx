@@ -75,7 +75,7 @@ This information includes:
 * Logic apps.
 * Container registries.
 * Managed clusters (AKS).
-* Entra Domain Services.
+* Microsoft Entra Domain Services (Entra DS).
 * RBAC role assignments at every resource scope (management group, subscription, resource group, and individual resources).
 
 **Collection Method:** AzureHound collects this information via GET requests to the [ARM REST API](https://learn.microsoft.com/en-us/rest/api/azure/) (`https://management.azure.com`).
@@ -89,3 +89,11 @@ For step-by-step instructions on creating and assigning this as a custom role â€
 Download <a href="/assets/azurehound-reader-role.json" download>azurehound-reader-role.json</a>
 
 <Info>Key vault access policies are extracted from the vault properties returned by `Microsoft.KeyVault/vaults/read` â€” this is a management plane operation only. AzureHound does not access the Key Vault data plane and cannot read secrets, keys, or certificates. It only reads vault metadata to determine *who has access* to the vault, not the vault contents themselves.</Info>
+
+### Microsoft Entra Domain Services
+
+AzureHound collects the Entra ID and Azure Resource Manager data that BloodHound uses to model Entra DS. Ensure the AzureHound collection includes both Entra ID (`az-ad`) and Azure Resource Manager (`az-rm`) data. The `az-rm` scope collects each accessible [`AZEntraDS`](/resources/nodes/az-entra-ds) resource and role assignments scoped directly to that resource.
+
+Collecting an Entra DS resource requires permissions which are included in the downloadable AzureHound Reader role above.
+
+AzureHound does not collect the users, groups, computers, ACLs, or other Active Directory objects in the managed domain. Use [SharpHound to collect the Entra DS managed domain](/collect-data/sharphound-data-permissions#microsoft-entra-domain-services).
