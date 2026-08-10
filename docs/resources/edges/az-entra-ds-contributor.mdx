@@ -1,0 +1,29 @@
+---
+title: AZEntraDSContributor
+description: An Entra principal has the built-in Domain Services Contributor Azure role over a Microsoft Entra Domain Services resource.
+---
+
+import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
+
+<ResourceEditionPill />
+
+This relationship records raw Azure Resource Manager authorization. The built-in Domain Services Contributor role, definition ID `eeaeda52-9324-47f6-8069-5d5bade478b2`, grants `Microsoft.AAD/domainServices/*` and related network permissions over the target [AZEntraDS](/resources/nodes/az-entra-ds).
+
+The edge is not independently traversable. BloodHound creates [AZManageEntraDS](/resources/edges/az-manage-entra-ds) only when the same effective principal also has Application Administrator and Groups Administrator.
+
+## Abuse Info
+
+This assignment supplies the Azure Resource Manager portion of the managed-domain authorization condition. The raw assignment alone does not prove that the source can complete managed-domain security or synchronization changes.
+
+Remove unnecessary Domain Services Contributor assignments and avoid combining the role with both required Entra roles on one standing principal.
+
+## Edge Schema
+
+Source: [AZUser](/resources/nodes/az-user), [AZGroup](/resources/nodes/az-group), or [AZServicePrincipal](/resources/nodes/az-service-principal)<br />
+Destination: [AZEntraDS](/resources/nodes/az-entra-ds)<br />
+Traversable: **No**
+
+## References
+
+* [Domain Services Contributor built-in role](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/identity#domain-services-contributor)
+* [Microsoft.AAD/domainServices reference](https://learn.microsoft.com/en-us/azure/templates/microsoft.aad/domainservices)
