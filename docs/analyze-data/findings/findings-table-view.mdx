@@ -1,0 +1,116 @@
+---
+title: Findings Table View
+description: Review, filter, and sort Attack Path findings at scale in BloodHound Enterprise.
+---
+
+import EarlyAccessNote from '/snippets/feature-flag-user-managed.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+**Findings Table View** is a findings-first table on the [Attack Paths](/analyze-data/findings/attack-paths) page. Use it to review many findings at once, narrow results to the slice that matters, and compare finding state across environments and zones without relying only on graph navigation.
+
+Findings Table View helps analysts triage high-volume result sets faster. You can start from a broad Attack Paths result set, filter by common investigation clues, sort by severity or date, and return to the same table state from the page URL.
+
+<EarlyAccessNote feature="Findings Table" />
+
+## Use cases
+
+Use Findings Table View when you need to shorten the path from many findings to a focused investigation:
+
+- **Triage findings at scale:** Review a dense list of Attack Path findings and sort by severity, date, status, or contextual columns.
+- **Focus an investigation:** Filter by environment, zone, severity, platform, and status to move from a broad result set to a smaller working slice.
+- **Compare scope across environments or zones:** Select multiple environments or zones and review the matching findings together.
+- **Review finding state and recency:** Use **Status**, **First Seen**, and **Last Seen** to understand whether findings are open, accepted, remediated, deprecated, or orphaned, and when BloodHound Enterprise last updated them.
+- **Preserve table context:** Use the page URL to return to or share the same view, filters, and sort order.
+
+## Prerequisites
+
+Before you can use Findings Table View, you must have the following:
+
+- BloodHound Enterprise with the **Findings Table** early-access feature enabled.
+- Access to the **Attack Paths** page.
+- Access to the environments you want to analyze. [Environment Targeted Access Control](/manage-bloodhound/auth/environment-targeted-access-control) limits which findings and environments appear for your account.
+
+## Open the table
+
+Findings Table View is an alternate view on the **Attack Paths** page.
+
+<Steps>
+  <Step title="Open Attack Paths">
+    In the left navigation menu, click **Attack Paths**.
+  </Step>
+
+  <Step title="Switch to Table">
+    Use the page view control to switch from **Graph** to **Table**.
+  </Step>
+</Steps>
+
+The page stores the selected view and table filters in the URL as you work.
+
+## What a row represents
+
+Each row is a single <Tooltip tip="A specific instance of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">finding</Tooltip>. A finding can be relationship-based, such as an abusable path between principals, or list-based, such as a risky configuration on a principal or object.
+
+Rows include the finding name, platform, environment, zone, source principal where applicable, target principal, status, and timestamps. List-based findings do not always have a source principal.
+
+<Note>
+  A table row is a finding, not a work item, assignment, or remediation task.
+</Note>
+
+## Access boundaries
+
+The table shows only findings available to your account. Results are constrained by your environment and asset-group access, so two users can see different rows for the same filters.
+
+## Filter findings
+
+Use filters to narrow the current result set.
+
+| Filter | What it does |
+| --- | --- |
+| **Environment** | Select one or more environments, such as an Active Directory domain, Azure tenant, or OpenGraph environment. |
+| **Zone** | Select one or more privilege zones to focus on findings within those zones. |
+| **Severity** | Select one or more severity levels: **Critical**, **High**, **Moderate**, and **Low**. |
+| **Platform** | Search for and select one or more platforms to focus on findings from specific sources. |
+| **Status** | Select one or more finding statuses: **Open**, **Accepted**, **Remediated**, **Deprecated**, and **Orphaned**. By default, the table shows **Open** and **Accepted** findings. |
+
+The filters support multi-select. Selecting **All** for a filter removes that filter from the query, except **All Statuses**, which explicitly includes every supported status. Clearing every value in a filter returns no rows until you select a value or return to **All**.
+
+Your filter and view selections are captured in the page URL. You can bookmark or share a link to return to the same table view.
+
+<Note>
+  BloodHound Enterprise also provides an API endpoint for available finding types, but the early-access table does not expose a finding-type filter in the user interface.
+</Note>
+
+<Tip>
+  To reset your view, return filters to their **All** selections.
+</Tip>
+
+## Sort and interpret columns
+
+The table displays columns for **Severity**, **Attack Path**, **Platform**, **Environment**, **Zone**, **Source Principal**, **Target Principal**, **First Seen**, **Last Seen**, and **Status**.
+
+You can sort by each table column. Sorting reorders the full result set for the current filters, not just the rows currently loaded. The default sort is **Attack Path** descending, with **Severity** descending as a secondary sort.
+
+### First Seen
+
+**First Seen** shows when BloodHound Enterprise first created the finding. Sort by **First Seen** to distinguish newer findings from findings that have persisted across analysis runs.
+
+### Last Seen
+
+**Last Seen** shows when BloodHound Enterprise last updated the finding. Sort by **Last Seen** to review the most recently updated findings for the current filters.
+
+### Status
+
+**Status** renders as a compact pill so you can scan the state of many findings quickly.
+
+| Status | What it means |
+| --- | --- |
+| **Open** | The finding is active. |
+| **Accepted** | The finding has an active risk acceptance. |
+| **Remediated** | The finding was archived with a remediated state. |
+| **Deprecated** | The finding type is deprecated. |
+| **Orphaned** | The finding is associated with an orphaned environment state. |
+
+<Warning>
+  Treat **Remediated**, **Deprecated**, and **Orphaned** as product states, not proof that the underlying risk is remediated. See [Risk Acceptance](/analyze-data/findings/risk-acceptance) for how accepted findings are handled.
+</Warning>
