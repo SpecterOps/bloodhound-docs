@@ -1,0 +1,113 @@
+---
+title: Manage Collector Support Bundles
+description: "Request, download, and delete SharpHound Enterprise support bundles in BloodHound Enterprise."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+A collector support bundle is a ZIP file that contains diagnostic information from a collector client. Use a support bundle when you need to troubleshoot a SharpHound Enterprise collector without signing in to the system where the collector runs.
+
+You can request a support bundle from **Administration** > **Manage Clients**. After the collector processes the request and uploads the file, BloodHound Enterprise shows download and delete actions for that client.
+
+<Warning>
+Support bundles can contain diagnostic data from your environment. Handle downloaded bundles according to your organization's data handling process and share them only through approved support channels.
+</Warning>
+
+## Requirements
+
+- BloodHound Enterprise with the collector support bundle feature enabled.
+- A SharpHound Enterprise collector client that appears on the **Manage Clients** page.
+- A user assigned the **Administrator** role. The support-bundle controls require permission to manage users and access client-management actions.
+- Environment access to the client. If Environment Targeted Access Control (ETAC) restricts your access to the client's environment, BloodHound blocks support-bundle actions for that client.
+
+<Note>
+Support bundles are currently available for SharpHound Enterprise clients. AzureHound Enterprise and OpenHound clients do not show support-bundle actions.
+</Note>
+
+## Support bundle lifecycle
+
+| State | What you see | What to do |
+| --- | --- | --- |
+| No bundle exists | **Request Support Bundle** | Request a bundle when you need collector diagnostics. |
+| Request in progress | **Requesting Support Bundle...** | Wait for the collector to process the request. |
+| Bundle is ready | **Download Support Bundle** and **Delete Support Bundle** | Download the bundle or delete it when it is no longer needed. |
+| Request failed or was canceled | **Request Support Bundle** | Request a new bundle, or contact support if the request fails again. |
+
+BloodHound allows one downloadable support bundle per client. To request a more recent bundle after one is available, delete the existing bundle first.
+
+Uploaded support bundles expire 90 days after the upload session is created. Deleting a bundle removes it sooner. Downloaded copies are outside BloodHound retention after they leave the application.
+
+## Request a support bundle
+
+<Steps>
+  <Step title="Open the Manage Clients page">
+    In the left menu, click **Administration** > **Manage Clients**.
+  </Step>
+
+  <Step title="Open the client action menu">
+    Find the SharpHound Enterprise client you want to troubleshoot, then click the action menu in that client's row.
+  </Step>
+
+  <Step title="Request the bundle">
+    Click **Request Support Bundle**.
+  </Step>
+
+  <Step title="Confirm the request">
+    BloodHound displays **Support bundle requested successfully.** The action menu changes to **Requesting Support Bundle...** while the collector processes the request.
+  </Step>
+</Steps>
+
+The request is asynchronous. BloodHound checks for completion in the background and displays a notification when the request succeeds, fails, or is canceled. You can also reopen the client action menu and check whether **Download Support Bundle** appears.
+
+## Download a support bundle
+
+<Steps>
+  <Step title="Open the client action menu">
+    In **Administration** > **Manage Clients**, open the action menu for the SharpHound Enterprise client.
+  </Step>
+
+  <Step title="Download the bundle">
+    Click **Download Support Bundle**.
+  </Step>
+
+  <Step title="Save the ZIP file">
+    Your browser downloads the bundle as a `.zip` file. The filename includes the client name, support-bundle type, and upload timestamp.
+  </Step>
+</Steps>
+
+BloodHound displays **Support bundle downloaded successfully.** after the download starts successfully. Provide the ZIP file through the approved support workflow, or inspect it locally if you are troubleshooting without SpecterOps support.
+
+## Delete a support bundle
+
+Delete a support bundle when you no longer need it or when you need to request a newer bundle for the same client.
+
+<Steps>
+  <Step title="Open the client action menu">
+    In **Administration** > **Manage Clients**, open the action menu for the SharpHound Enterprise client.
+  </Step>
+
+  <Step title="Start deletion">
+    Click **Delete Support Bundle**.
+  </Step>
+
+  <Step title="Confirm deletion">
+    In the **Delete Support Bundle** confirmation dialog, confirm that you want to delete the bundle.
+  </Step>
+</Steps>
+
+BloodHound displays **Support bundle deleted successfully.** after deletion completes. The client action menu returns to **Request Support Bundle** after the client table refreshes.
+
+## Troubleshoot support bundles
+
+| Symptom | Likely cause | Action |
+| --- | --- | --- |
+| **Request Support Bundle** is missing. | The feature is not enabled, the client is not SharpHound Enterprise, or your role cannot use support-bundle controls. | Confirm that the client type is **SharpHound Enterprise** and that you are assigned the **Administrator** role. Contact SpecterOps if the feature is not available in your tenant. |
+| The action menu is missing. | Your role can read clients but cannot manage client actions. | Ask an administrator to assign a role with client-management permissions or request the bundle for you. |
+| The request fails immediately. | BloodHound cannot queue the request because of permissions, feature availability, client visibility, or a temporary service error. | Retry once. If it fails again, record the client name, request time, and error text. |
+| **Requesting Support Bundle...** stays visible. | The collector has not picked up the request, is offline, or has not finished uploading the bundle. | Confirm the client status on **Manage Clients**. If the client is **Disconnected** or **Delayed**, troubleshoot collector connectivity before retrying. |
+| BloodHound says the bundle does not exist. | The request completed without an uploaded artifact. | Request a new bundle. If the problem repeats, contact support with the client name, collector version, and request time. |
+| The request failed or was canceled. | The collector or server ended the support-bundle operation before a downloadable file was available. | Request a new bundle. If the second request fails, collect the visible notification text and contact support. |
+| Download fails. | The browser, network path, permissions, or stored artifact is unavailable. | Try again. If it still fails, confirm that the bundle has not been deleted and contact support with the visible error. |
+| You need a newer bundle. | BloodHound keeps one downloadable support bundle per client. | Delete the existing support bundle, then request a new one. |
+
+When you contact support, include the tenant name, client name, collector type and version, request time, visible status or notification text, and whether you or a SpecterOps TAM requested the bundle. Do not include secrets, tokens, or unrelated customer data in the support request.
