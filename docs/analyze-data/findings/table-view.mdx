@@ -24,7 +24,7 @@ Each row in the table represents a single finding. The table displays the follow
 | **Target Principal** | The principal where the Attack Path ends. |
 | **First Seen** | When BloodHound Enterprise first created the finding. |
 | **Last Seen** | When BloodHound Enterprise last updated the finding. |
-| **Status** | The current status of the finding:<ul><li>**Open**: The finding is active</li><li>**Accepted**: The finding has an active risk acceptance</li><li>**Remediated**: The finding was archived with a remediated state</li><li>**Deprecated**: The finding type is deprecated</li><li>**Orphaned**: The finding is associated with an orphaned environment state</li></ul> |
+| **Status** | The current status of the finding: **Open**, **Accepted**, **Remediated**, **Deprecated**, or **Orphaned**. See [Finding status lifecycle](#finding-status-lifecycle) for definitions and the actions that move a finding between statuses. |
 
 <Frame>
   <img src="/images/attack-paths/table-view.png" alt="A view of the Attack Paths page that shows the findings table view" />
@@ -79,3 +79,81 @@ You can sort by each table column and resize column width. Sorting reorders the 
 
 - Sort by **First Seen** to distinguish newer findings from findings that have persisted across analysis runs.
 - Sort by **Last Seen** to review the most recently updated findings for the current filters.
+
+## Finding status lifecycle
+
+A finding moves through a lifecycle as BloodHound Enterprise detects it, as you act on it, and as your environment changes. The **Status** column reflects where a finding is in that lifecycle. The diagram separates active findings from system-archived outcomes.
+
+```mermaid
+flowchart LR
+    detected["BloodHound detects<br/>the finding"] --> open
+
+    subgraph active["Active findings"]
+        direction TB
+        open["Open<br/>No active acceptance"]
+        accepted["Accepted<br/>Risk acceptance is active"]
+        open -->|"Accept risk"| accepted
+        accepted -->|"Remove or expire<br/>acceptance"| open
+    end
+
+    open --> systemChange
+    accepted --> systemChange
+
+    subgraph archived["System-archived outcomes"]
+        direction TB
+        systemChange{"System change"}
+        remediated["Remediated<br/>Analysis no longer detects the finding"]
+        orphaned["Orphaned<br/>Environment archived or removed"]
+        deprecated["Deprecated<br/>Finding type removed from the schema"]
+        systemChange --> remediated
+        systemChange --> orphaned
+        systemChange --> deprecated
+    end
+```
+
+### Status definitions
+
+The following table describes the stored value and meaning of each finding status, and whether the status marks a finding as archived.
+
+| Status | Stored value | Meaning | Archived |
+| --- | --- | --- | --- |
+| **Open** | `active` | BloodHound currently detects the finding and no acceptance applies. This is the default state for a newly detected finding, and it needs attention. | No |
+| **Accepted** | `accepted` | You accepted the finding as a known risk and the acceptance has not expired. Accepted findings remain in posture calculations. | No |
+| **Remediated** | `remediated` | A later analysis run no longer detects the Attack Path, so BloodHound archived the finding. This reflects actual risk reduction. | Yes |
+| **Orphaned** | `orphaned` | The environment associated with the finding was archived or removed and is no longer collected, so BloodHound archived the finding. | Yes |
+| **Deprecated** | `deprecated` | The finding type is no longer defined in the current schema, so BloodHound archived existing findings of that type. | Yes |
+
+<Note>
+  **Open** and **Accepted** are not stored as a status value. BloodHound derives them from the finding's acceptance state. **Remediated**, **Orphaned**, and **Deprecated** are stored statuses that also mark a finding as archived.
+</Note>
+
+### How BloodHound determines status
+
+BloodHound evaluates a finding's status in the following order:
+
+1. If the finding has a stored lifecycle status (**Remediated**, **Orphaned**, or **Deprecated**) BloodHound displays that status. These findings are archived.
+1. Otherwise, if the finding has an acceptance that has not yet expired, BloodHound displays **Accepted**.
+1. Otherwise, BloodHound displays **Open**.
+
+Because BloodHound derives **Accepted** and **Open** from the acceptance expiration, an accepted finding automatically returns to **Open** when its acceptance period expires.
+
+### User-driven transitions
+
+You control the transition between **Open** and **Accepted**:
+
+- **Open to Accepted:** Accept the finding and set an acceptance duration. BloodHound records an acceptance expiration for the finding. For steps, see [Risk Acceptance](/analyze-data/findings/risk-acceptance).
+- **Accepted to Open:** Remove the acceptance manually, or wait for the acceptance period to expire. In both cases, the finding returns to **Open**.
+
+### System-driven transitions
+
+BloodHound sets the archived statuses automatically during analysis. You cannot set these statuses manually:
+
+- **Remediated:** A subsequent analysis run no longer detects the Attack Path or vulnerable principal. Use this status to confirm that a risk was actually removed.
+- **Orphaned:** The environment associated with the finding (such as an Active Directory domain or Azure tenant) is archived or removed and is no longer collected.
+- **Deprecated:** The finding type is removed from (or deprecated in) the current schema, for example when an OpenGraph extension no longer defines it.
+
+<Note>
+  **Remediated**, **Orphaned**, and **Deprecated** are terminal, archived states. When BloodHound archives a finding, it records an archive time and updates the finding's last-updated time.
+
+  **First Seen** reflects when the finding was first created, and **Last Seen** reflects the most recent update, including a status change. **Open** and **Accepted** findings are not archived and continue to count toward your posture.
+</Note>
