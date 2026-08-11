@@ -21,7 +21,7 @@ Composition exposes the effective ARM assignment, group-membership and resource-
 
 ## Abuse Info
 
-The source can change the managed domain's security configuration and broad synchronization boundary. Live validation confirmed changes to a representative security setting, `syncScope`, and `filteredSync` only when the complete conjunction was present.
+The source can change the managed domain's security configuration and broad synchronization boundary when all three authorization components are present.
 
 ### Procedure
 
@@ -39,6 +39,10 @@ The source can change the managed domain's security configuration and broad sync
    PUT https://management.azure.com/{resource-id}?api-version=2025-06-01
    ```
 
+## Opsec Considerations
+
+Azure records managed-domain updates in the Activity Log. Synchronization-scope changes can also generate Microsoft Entra audit activity and trigger a full managed-domain resynchronization, including deletion of objects that fall out of scope.
+
 ## Edge Schema
 
 Source: [AZUser](/resources/nodes/az-user), [AZGroup](/resources/nodes/az-group), or [AZServicePrincipal](/resources/nodes/az-service-principal)<br />
@@ -47,6 +51,8 @@ Traversable: **Yes**
 
 ## References
 
+- [Domain Services Contributor built-in role](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/identity#domain-services-contributor)
 - [Microsoft.AAD/domainServices reference](https://learn.microsoft.com/en-us/azure/templates/microsoft.aad/domainservices)
+- [Secure a Microsoft Entra Domain Services managed domain](https://learn.microsoft.com/en-us/entra/identity/domain-services/secure-your-domain)
 - [Configure scoped synchronization](https://learn.microsoft.com/en-us/entra/identity/domain-services/scoped-synchronization)
-- [MITRE ATT&CK T1484](https://attack.mitre.org/techniques/T1484/)
+- [MITRE ATT&CK T1484: Domain or Tenant Policy Modification](https://attack.mitre.org/techniques/T1484/)
