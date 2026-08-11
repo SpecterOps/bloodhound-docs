@@ -3,7 +3,7 @@ title: Table View
 description: Review, filter, and sort Attack Path findings at scale in BloodHound Enterprise.
 ---
 
-import EarlyAccessNote from '/snippets/feature-flag-user-managed.mdx';
+import BetaAccessNote from '/snippets/feature-flag-user-managed.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
@@ -26,17 +26,13 @@ Each row in the table represents a single finding. The table displays the follow
 | **Last Seen** | When BloodHound Enterprise last updated the finding. |
 | **Status** | The current status of the finding:<ul><li>**Open**</li><li>**Accepted**</li><li>**Remediated**</li><li>**Deprecated**</li><li>**Orphaned**</li></ul> See [Finding status lifecycle](#finding-status-lifecycle) for definitions and the actions that move a finding between statuses. |
 
-<Frame>
-  <img src="/images/attack-paths/table-view.png" alt="A view of the Attack Paths page that shows the findings table view" />
-</Frame>
-
 <Note>
-  [List-based findings](/analyze-data/findings/attack-paths#list-based-finding) do not always have a source principal.
+  Some findings, typically called [list-based findings](/analyze-data/findings/attack-paths#list-based-finding), do not have a source principal.
 </Note>
 
 ## Use cases
 
-Use the **Findings Table** when you need to shorten the path from many findings to a focused investigation:
+Use the **Findings Table** to focus an investigation on a set of findings:
 
 - **Triage findings at scale:** Review a dense list of Attack Path findings and sort by severity, date, status, or contextual columns.
 - **Focus an investigation:** Filter by severity, platform, environment, zone, and status to move from a broad result set to a smaller set that matches your investigation goal.
@@ -48,7 +44,7 @@ Use the **Findings Table** when you need to shorten the path from many findings 
 
 Before you can use the **Findings Table**, you must have the following:
 
-- BloodHound Enterprise with the **Findings Table** early-access feature enabled.
+- BloodHound Enterprise with the **Findings Table** beta feature enabled on the **Early Access Features** page.
 - Access to the environments you want to analyze.
 
   <Note>
@@ -120,22 +116,8 @@ The following table describes the stored value and meaning of each finding statu
 | **Open** | `active` | BloodHound currently detects the finding and no acceptance applies. This is the default state for a newly detected finding, and it needs attention. | No |
 | **Accepted** | `accepted` | You accepted the finding as a known risk and the acceptance has not expired. Accepted findings remain in posture calculations. | No |
 | **Remediated** | `remediated` | A later analysis run no longer detects the Attack Path, so BloodHound archived the finding. This reflects actual risk reduction. | Yes |
-| **Orphaned** | `orphaned` | The environment associated with the finding was archived or removed and is no longer collected, so BloodHound archived the finding. | Yes |
+| **Orphaned** | `orphaned` | The environment or OpenGraph extension associated with the finding was archived or removed and is no longer collected, so BloodHound archived the finding. | Yes |
 | **Deprecated** | `deprecated` | The finding type is no longer defined in the current schema, so BloodHound archived existing findings of that type. | Yes |
-
-<Note>
-  **Open** and **Accepted** are not stored as a status value. BloodHound derives them from the finding's acceptance state. **Remediated**, **Orphaned**, and **Deprecated** are stored statuses that also mark a finding as archived.
-</Note>
-
-### How BloodHound determines status
-
-BloodHound evaluates a finding's status in the following order:
-
-1. If the finding has a stored lifecycle status (**Remediated**, **Orphaned**, or **Deprecated**) BloodHound displays that status. These findings are archived.
-1. Otherwise, if the finding has an acceptance that has not yet expired, BloodHound displays **Accepted**.
-1. Otherwise, BloodHound displays **Open**.
-
-Because BloodHound derives **Accepted** and **Open** from the acceptance expiration, an accepted finding automatically returns to **Open** when its acceptance period expires.
 
 ### User-driven transitions
 
