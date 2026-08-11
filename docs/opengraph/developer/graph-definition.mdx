@@ -73,7 +73,7 @@ Although the `schema.name` field does not use a namespace prefix, it must still 
 
 ## Custom Entity Panel content
 
-Use the `info` object to define custom Entity Panel sections for node kinds and relationship kinds. When a user selects a node or relationship in Explore, BloodHound renders an Entity Panel with the specified accordion sections as defined by the `info` entries.
+Use the [`info`](opengraph/developer/graph-definition#param-info) object to define custom Entity Panel sections for node kinds and relationship kinds. When a user selects a node or relationship in Explore, BloodHound renders an Entity Panel with the specified accordion sections as defined by the `info` entries.
 
 Each `info` object is a map of section identifiers to rendered sections. Use stable identifiers for the keys so future schema updates can modify the same section without changing its identity.
 
@@ -89,18 +89,58 @@ Each `info` object is a map of section identifiers to rendered sections. Use sta
 }
 ```
 
-| Field | Requirement | Description |
-| --- | --- | --- |
-| `info` key | Required | Stable section identifier. Must match `^[a-z0-9_-]{1,128}$`, which allows lowercase letters, numbers, hyphens, and underscores. |
-| `title` | Required | Section title displayed in the Entity Panel accordion header. |
-| `position` | Required | Integer that controls the order of extension-defined sections. Lower values render first. Use `1` or greater. |
-| `markdown.content` | Required | Markdown content rendered in the section body. |
+| Field | Description |
+| --- | --- |
+| `info` key | Stable section identifier. Must match `^[a-z0-9_-]{1,128}$`, which allows lowercase letters, numbers, hyphens, and underscores. |
+| `title` | Section title displayed in the Entity Panel accordion header. |
+| `position` | Integer that controls the order of extension-defined sections. Lower values render first. Use `1` or greater. |
+| `markdown.content` | Markdown rendered in the section body. Required when `markdown` is present. Validated on upload. See [Markdown validation](/opengraph/developer/graph-definition#markdown-validation). |
 
 Every Entity Panel starts with **Object Information** at position `0`. This section lists all properties for the selected node or relationship.
 
 BloodHound renders additional `info` entries for the selected node's primary kind or the selected relationship's kind after **Object Information**. BloodHound orders those extension-defined sections by `position`, then `title`.
 
 If no `info` entries are defined for the selected kind, BloodHound still renders **Object Information**, but does not render additional extension-defined Entity Panel sections.
+
+## Markdown validation
+
+When you upload an extension definition schema, BloodHound validates each Markdown field to ensure it does not contain unsafe or disallowed HTML.
+
+<Note>
+  Validation only checks the content; BloodHound stores your original Markdown without modifying it.
+</Note>
+
+BloodHound validates Markdown in the following fields:
+
+| Field(s) | Where |
+| --- | --- |
+| `info.<section>.markdown.content` | `node_kinds` and `relationship_kinds` arrays (see [Custom Entity Panel content](/opengraph/developer/graph-definition#custom-entity-panel-content)) |
+| `remediation.short_description` `remediation.long_description` `remediation.short_remediation` `remediation.long_remediation` | `relationship_findings` array (BloodHound Enterprise only) |
+
+### Supported Markdown
+
+BloodHound supports [CommonMark](https://commonmark.org/) plus the following [GitHub Flavored Markdown](https://github.github.com/gfm/) extensions:
+
+- Tables
+- Strikethrough
+- Task lists
+- Autolinks
+- Fenced code blocks (with an alphanumeric language hint)
+
+You can also include inline HTML that is on BloodHound's allowlist of safe elements and attributes, such as links and basic text formatting.
+
+### Rejected content
+
+BloodHound rejects the upload when a Markdown field contains unsafe or disallowed HTML, including:
+
+- `<script>` tags and other executable content
+- Inline event-handler attributes, such as `onclick`
+- `javascript:` links
+- `<iframe>`, `<style>`, and similar elements
+
+<Warning>
+  If any Markdown field fails validation, the entire extension definition schema upload fails.
+</Warning>
 
 ## Findings and metrics
 
@@ -322,16 +362,16 @@ Defines findings based on relationships. Each finding represents a single instan
   Relationship kind that contributes to this finding when matching edges are present and the edge crosses a Privilege Zone boundary. Must match a `relationship_kinds.name` defined in any installed extension definition schema.
 </ResponseField>
 <ResponseField name="remediation" type="object">
-  Remediation guidance to resolve the finding, including both short and long forms.
+  Remediation guidance to resolve the finding, including both short and long forms. The `short_description`, `long_description`, `short_remediation`, and `long_remediation` fields accept Markdown and are validated on upload. See [Markdown validation](/opengraph/developer/graph-definition#markdown-validation).
 </ResponseField>
 <ResponseField name="remediation.short_description" type="string">
-  A concise summary of the recommended remediation action.
+  A concise summary of the recommended remediation action, which can include Markdown formatting for better readability.
 </ResponseField>
 <ResponseField name="remediation.long_description" type="string">
   A detailed explanation of the finding and its cause, which can include Markdown formatting for better readability.
 </ResponseField>
 <ResponseField name="remediation.short_remediation" type="string">
-  A concise summary of the steps to remediate the finding.
+  A concise summary of the steps to remediate the finding, which can include Markdown formatting for better readability.
 </ResponseField>
 <ResponseField name="remediation.long_remediation" type="string">
   A detailed, step-by-step guide to remediate the finding, which can include Markdown formatting for better readability.
