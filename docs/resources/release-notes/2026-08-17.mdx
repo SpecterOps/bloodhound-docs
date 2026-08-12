@@ -21,17 +21,17 @@ import BetaAccessNote from '/snippets/feature-flag-user-managed.mdx';
   {/* TODO: BED-9096 is Unrefined in Jira; follow up before publishing. */}
   ## Collector Compatibility for Case-Sensitive Object IDs
 
-  BloodHound keeps graph identities stable as it prepares default support for case-sensitive OpenGraph object IDs, by moving object ID normalization into the AzureHound and OpenHound collectors.
-
-  BloodHound introduced support for [case-sensitive OpenGraph object IDs](/resources/release-notes/2026-07-29#case-sensitive-opengraph-object-ids) in the 2026-07-29 release.
+  BloodHound introduced [case-sensitive OpenGraph object IDs](/resources/release-notes/2026-07-29#case-sensitive-opengraph-object-ids) (a SpecterOps-managed feature) in the 2026-07-29 release. This feature is not enabled by default.
   
   This release updates collector compatibility so BloodHound can preserve case-sensitive OpenGraph object IDs without changing the effective case-insensitive behavior of Active Directory, Microsoft Entra ID, Okta, and Jamf identities.
 
-  This release includes the following collector compatibility changes:
+  These updates help keep graph identities stable while object ID normalization moves into the AzureHound and OpenHound collectors. This groundwork prepares BloodHound to enable case-sensitive OpenGraph object IDs by default in a future release.
+
+  See the following table for a summary of collector compatibility changes:
 
   | Component | Change |
   | --- | --- |
-  | BloodHound | Rejects older unsupported OpenHound collector versions when the case-sensitive OpenGraph ID feature is enabled.<br/><br/>This prevents case-sensitive OpenGraph object IDs from being ingested by collector versions that still depend on server-side normalization. |
+  | BloodHound | Rejects older unsupported OpenHound collector versions when the case-sensitive OpenGraph object ID feature is enabled.<br/><br/>This prevents case-sensitive OpenGraph object IDs from being ingested by collector versions that still depend on server-side normalization. |
   | OpenHound Okta and Jamf collectors | Uppercases the object ID values they own before output. GitHub object IDs remain case-sensitive. |
   | AzureHound | Normalizes object IDs and additional related identifier fields before output while preserving case-sensitive application ID values where required. |
   | SharpHound | No change. SharpHound already normalizes Active Directory object identifiers to uppercase before output. |
@@ -70,7 +70,7 @@ import BetaAccessNote from '/snippets/feature-flag-user-managed.mdx';
   {/*BED-8341, BED-9170, BED-9161, BED-8832, BED-8787*/}
   ## PostgreSQL Graph Storage Optimization
 
-  BloodHound improves PostgreSQL graph database performance with more reliable storage optimization after ingest and analysis.
+  Get more reliable PostgreSQL graph database performance with storage optimization.
 
   BloodHound now runs graph storage optimization automatically after key ingest and analysis workflows and records timing details in the logs. These changes help large PostgreSQL-backed environments stay responsive as graph data changes over time.
   
@@ -83,9 +83,9 @@ import BetaAccessNote from '/snippets/feature-flag-user-managed.mdx';
 
   <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
 
-  Triage findings at scale with the new [Findings Table](/analyze-data/findings/table-view) view on the **Attack Paths** page in BloodHound Enterprise.
+  Try the new [Findings Table](/analyze-data/findings/table-view) view on the **Attack Paths** page.
 
-  Use it to review a dense list of findings, compare finding state across environments and Privilege Zones, and focus high-volume result sets with multi-select filters for severity, platform, environment, zone, and status.
+  Use it to review a list of findings, compare finding state across environments and Privilege Zones, and focus high-volume result sets with multi-select filters for severity, platform, environment, zone, and status.
   
   <BetaAccessNote feature="Findings Table" />
 </Update>
@@ -109,6 +109,11 @@ import BetaAccessNote from '/snippets/feature-flag-user-managed.mdx';
 
   - {/*BED-8799*/} Resolved an issue where selecting **All graph data** on the **Database Management** page did not call the correct full-graph deletion path.
 
+  ## OpenGraph
+
+  - {/*BED-9076*/} Resolved an issue where OpenGraph nodes with a `ref` property could crash the Entity Panel.
+  - {/*BED-9059*/} Resolved an issue where findings for OpenGraph objects were not correctly displaying schema-defined object icons.
+
   ## UI
 
   - {/*BED-9057*/} Resolved an issue where the table layout on the **Explore** page could become difficult to read or scroll correctly at smaller window sizes.
@@ -116,16 +121,11 @@ import BetaAccessNote from '/snippets/feature-flag-user-managed.mdx';
   - {/*BED-7910*/} Resolved an issue where the **Download Collectors** page could show redundant scrollbars.
   - {/*BED-9062*/} Resolved an issue where the table on the **Manage Clients** page in BloodHound Enterprise could show a horizontal scrollbar when column content became too wide.
 
-  ## OpenGraph
-
-  - {/*BED-9076*/} Resolved an issue where OpenGraph nodes with a `ref` property could crash the Entity Panel.
-  - {/*BED-9059*/} Resolved an issue where findings for OpenGraph objects were not correctly displaying schema-defined object icons.
-
   ## Zone Builder
 
-  - {/*BED-8922*/} Improved the **Privilege Zone History** display for non-system records with empty notes.
-  - {/*BED-8926*/} Resolved an issue where the **Certification** page did not preserve `environmentId` in the URL when navigating back from another Zone Builder page.
   - {/*BED-8284*/} Resolved an issue where Cypher-based rules could fail to tag all expected objects.
+  - {/*BED-8926*/} Resolved an issue where the **Certification** page did not preserve `environmentId` in the URL when navigating back from another Zone Builder page.
+  - {/*BED-8922*/} Improved the **Privilege Zone History** display for non-system records with empty notes.
 </Update>
 
 <Update label="OpenHound" tags={["Fixed Issues"]}>
