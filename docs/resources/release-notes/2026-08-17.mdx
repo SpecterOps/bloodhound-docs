@@ -1,0 +1,163 @@
+---
+title: 2026-08-17 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-08-17"
+---
+
+import CollectorDeprecationNotice from '/snippets/resources/collector-deprecation-notice.mdx';
+
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-08-17 | v9.6.0 | v0.3.0 | v2.15.0 | v3.1.0 |
+
+<CollectorDeprecationNotice />
+
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+<Update label="BloodHound" description="New Feature" tags={["Attack Paths"]}>
+  {/*BED-9191, BED-9151, BED-8921, BED-8920, BED-8626, BED-8621, BED-8619, BED-8673, BED-8567*/}
+  ## Findings Table Open Beta
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Review and filter Attack Path findings from the new Findings table in BloodHound Enterprise.
+
+  This release makes the Findings table available as an open beta and adds filtering by status, severity, platform, environment, and Privilege Zone. The table also shows finding status with clearer status pills, and the [Attack Path findings APIs](/reference/attack-paths/list-attack-path-findings) now use `asset_group_tag_id` consistently and expose [finding types](/reference/attack-paths/list-attack-path-finding-types) for aggregated environments.
+</Update>
+
+<Update label="OpenHound" description="New Feature" tags={["GitHub"]}>
+  {/*BED-9185*/}
+  {/* TODO: BED-9185 is Unrefined in Jira; follow up before publishing. */}
+  ## GitHub Self-Hosted Runner Modeling
+
+  Identify which repositories can use GitHub self-hosted runners across enterprise and organization scopes with expanded OpenHound GitHub collection and graph modeling.
+
+  The OpenHound GitHub collector now models enterprise runner groups, enterprise runners, organization runner groups, and runner membership. New relationships expose runner group assignment, inheritance, repository access, and composed repository-to-runner access paths.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  {/*BED-9051, BED-8964, BED-8756, BED-8757*/}
+  ## OpenGraph Management and Kind Metadata Improvements
+
+  Manage OpenGraph extensions by default and retrieve node and relationship kind metadata more easily.
+
+  The **OpenGraph Management** page is now enabled by default. BloodHound also validates markdown supplied in OpenGraph extension remediations and Entity Panel kind information, and adds experimental APIs to retrieve [node kind](/reference/opengraph-experimental/get-node-kind) and [relationship kind](/reference/opengraph-experimental/get-relationship-kind) details by graph-assigned kind ID.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["PostgreSQL"]}>
+  {/*BED-8341, BED-9170, BED-9161, BED-8832, BED-8787*/}
+  ## PostgreSQL Graph Storage Optimization
+
+  Improve PostgreSQL graph database performance with more reliable storage optimization after ingest and analysis.
+
+  BloodHound now enables graph storage optimization by default, logs optimization timing, and runs `VACUUM` and `ANALYZE` during optimization so PostgreSQL query plans use current partition statistics. Graph data deletion paths are also faster for full graph wipes and source-kind or relationship deletions on PostgreSQL graph databases.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-8602*/}
+  ## Findings for Uncollected Environments
+
+  Keep finding status clearer when previously collected environments become uncollected.
+
+  BloodHound now archives findings associated with uncollected environments using the **Unassociated Environment** status, helping you separate active findings from findings that no longer have an associated collected environment.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9096, BED-8973*/}
+  {/* TODO: BED-9096 is Unrefined in Jira; follow up before publishing. */}
+  {/* TODO: BED-8973 is In Review in Jira; follow up before publishing. */}
+  ## Collector Compatibility for Raw Object ID Ingest
+
+  Keep graph identities stable during the transition to collector-side Object ID normalization.
+
+  BloodHound Enterprise now rejects older unsupported OpenHound collector versions when raw Object ID ingest is enabled. This compatibility check helps prevent case-sensitive OpenGraph IDs from being ingested with collector versions that still depend on server-side normalization.
+</Update>
+
+<Update label="SharpHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-8834, BED-8835*/}
+  ## SharpHound Enterprise Support Bundles
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Collect and upload SharpHound Enterprise support bundles from managed collectors with less manual intervention.
+
+  SharpHound Enterprise collectors can now poll for management operations, package current logs into a support bundle, and upload the bundle through resumable, checksum-verified upload sessions.
+</Update>
+
+<Update label="SharpHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-8968*/}
+  ## Uppercase Active Directory Object IDs
+
+  Preserve existing Active Directory ingest behavior as BloodHound moves Object ID normalization from server-side ingest into collectors.
+
+  SharpHound and SharpHound Enterprise now normalize Active Directory object identifiers to uppercase before output, keeping case-insensitive AD graph identities stable across the raw Object ID ingest migration.
+</Update>
+
+<Update label="AzureHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-8944, BED-9100*/}
+  ## AzureHound Identifier Casing Updates
+
+  Preserve stable Entra ID graph identities with expanded collector-side identifier casing normalization.
+
+  AzureHound now normalizes Object IDs and additional related identifier fields before output while preserving case-sensitive application ID values where required.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-8973*/}
+  {/* TODO: BED-8973 is In Review in Jira; follow up before publishing. */}
+  ## OpenHound Okta and Jamf Object ID Normalization
+
+  Preserve stable Okta and Jamf graph identities as BloodHound moves Object ID normalization from server-side ingest into collectors.
+
+  The OpenHound Okta and Jamf collectors now uppercase the Object ID values they own before output. GitHub Object IDs remain case-sensitive.
+</Update>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## Administration
+
+  - {/*BED-9062*/} Resolved an issue where the **Manage Clients** table in BloodHound Enterprise could show a horizontal scrollbar when column content became too wide.
+  - {/*BED-7910*/} Resolved an issue where the **Download Collectors** page could show redundant scrollbars.
+
+  ## Cypher
+
+  - {/*BED-8967*/} Resolved an issue where backtick-escaped Cypher property accessors did not work correctly for property names that included special characters.
+  - {/*BED-8321*/} Resolved an issue where directed multi-hop pattern predicates could lose row correlation on PostgreSQL graph databases when an outer-bound node appeared after the root traversal step.
+
+  ## Database Management
+
+  {/*BED-8799*/} Resolved an issue where selecting **All graph data** on the **Database Management** page did not call the correct full-graph deletion path.
+
+  ## Explore and UI
+
+  - {/*BED-9094*/} Resolved an issue where pages using the shared `PageWithTitle` layout could lose horizontal spacing below the `xl` breakpoint.
+  - {/*BED-9057*/} Resolved an issue where table virtualization in Explore could stop working and slow rendering for large result sets.
+  - {/*BED-8997*/} Resolved an issue where hovering over environment or zone selector options could invert inline icon colors.
+
+  ## OpenGraph
+
+  - {/*BED-9076*/} Resolved an issue where OpenGraph nodes with a `ref` property could crash the Entity Panel.
+  - {/*BED-9059*/} Resolved an issue where Attack Path pages could display OpenGraph object types instead of object glyphs.
+
+  ## Privilege Zones
+
+  - {/*BED-8922*/} Improved the **Privilege Zone History** display for non-system records with empty notes.
+  - {/*BED-8926*/} Resolved an issue where the Certification view did not preserve `environmentId` in the URL when navigating back from another Privilege Zone view.
+  - {/*BED-8284*/} Resolved an issue where Privilege Zone Cypher rules could fail to tag all expected objects.
+</Update>
+
+<Update label="OpenHound" tags={["Fixed Issues"]}>
+  ## Okta
+
+  - {/*BED-9222*/} {/* TODO: BED-9222 is Unrefined in Jira; follow up before publishing. */} Resolved an issue where long-running Okta collections using OAuth application credentials could fail after bearer tokens expired. The collector now refreshes OAuth tokens during collection and retries eligible token-related authentication failures once.
+  - {/*BED-9238, BED-9328*/} {/* TODO: BED-9238 is In Progress in Jira; follow up before publishing. */} Resolved an issue where Okta Org2Org group synchronization relationships could fail to resolve because group names and application-group matchers used inconsistent casing and property names.
+  - {/*BED-9242*/} Resolved an issue where relationships between Active Directory computers and their Okta AD Agents could be missing when agent host matching did not use the complete computer `sAMAccountName` and AD domain.
+</Update>
+
+<Update label="AzureHound" tags={["Fixed Issues"]}>
+  ## Data Collection
+
+  {/*GH-205*/} Resolved an issue where AzureHound uppercased `appId` values that must remain case-sensitive.
+</Update>
