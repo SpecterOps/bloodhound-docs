@@ -11,8 +11,6 @@ import CollectorDeprecationNotice from '/snippets/resources/collector-deprecatio
 | **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
 | 2026-08-17 | v9.6.0 | v0.3.0 | v2.15.0 | v3.1.0 |
 
-<CollectorDeprecationNotice />
-
 <Tip>
   Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
 </Tip>
@@ -47,14 +45,27 @@ import CollectorDeprecationNotice from '/snippets/resources/collector-deprecatio
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Data Collection"]}>
-  {/*BED-9096, BED-8973*/}
+  {/*BED-9096, BED-8973, BED-8968, BED-8944, BED-9100*/}
   {/* TODO: BED-9096 is Unrefined in Jira; follow up before publishing. */}
   {/* TODO: BED-8973 is In Review in Jira; follow up before publishing. */}
-  ## Collector Compatibility for Raw Object ID Ingest
+  ## Collector Compatibility for Case-Sensitive OpenGraph Object IDs
 
-  Keep graph identities stable during the transition to collector-side Object ID normalization.
+  Keep graph identities stable as BloodHound prepares to support case-sensitive OpenGraph Object IDs by moving Object ID normalization into AzureHound and OpenHound collectors.
 
-  BloodHound Enterprise now rejects older unsupported OpenHound collector versions when raw Object ID ingest is enabled. This compatibility check helps prevent case-sensitive OpenGraph IDs from being ingested with collector versions that still depend on server-side normalization.
+  <CollectorDeprecationNotice />
+
+  BloodHound introduced the supporting case-sensitive OpenGraph ingest behavior in the [2026-07-29 release notes](/resources/release-notes/2026-07-29#case-sensitive-opengraph-object-ids). This 2026-08-17 release updates collector compatibility so BloodHound Enterprise can preserve case-sensitive OpenGraph IDs without changing the effective case-insensitive behavior of Active Directory, Microsoft Entra ID, Okta, and Jamf identities.
+
+  This release includes the following collector compatibility changes:
+
+  | Component | Change |
+  | --- | --- |
+  | BloodHound Enterprise | Rejects older unsupported OpenHound collector versions when raw Object ID ingest is enabled. This prevents case-sensitive OpenGraph IDs from being ingested by collector versions that still depend on server-side normalization. |
+  | OpenHound Okta and Jamf collectors | Uppercase the Object ID values they own before output. GitHub Object IDs remain case-sensitive. |
+  | AzureHound | Normalizes Object IDs and additional related identifier fields before output while preserving case-sensitive application ID values where required. |
+  | SharpHound and SharpHound Enterprise | Already normalize Active Directory object identifiers to uppercase before output. SharpHound is not included in the AzureHound and OpenHound collector deprecation associated with raw Object ID ingest. |
+
+  Upgrade AzureHound and OpenHound before the release the week of November 8, 2026 to keep data collection compatible with current BloodHound versions.
 </Update>
 
 <Update label="OpenHound" description="Enhancement" tags={["GitHub"]}>
@@ -65,34 +76,6 @@ import CollectorDeprecationNotice from '/snippets/resources/collector-deprecatio
   Identify which repositories can use GitHub self-hosted runners across enterprise and organization scopes with expanded OpenHound GitHub collection and graph modeling.
 
   The OpenHound GitHub collector now models enterprise runner groups, enterprise runners, organization runner groups, and runner membership. New relationships expose runner group assignment, inheritance, repository access, and composed repository-to-runner access paths.
-</Update>
-
-<Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
-  {/*BED-8973*/}
-  {/* TODO: BED-8973 is In Review in Jira; follow up before publishing. */}
-  ## OpenHound Okta and Jamf Object ID Normalization
-
-  Preserve stable Okta and Jamf graph identities as BloodHound moves Object ID normalization from server-side ingest into collectors.
-
-  The OpenHound Okta and Jamf collectors now uppercase the Object ID values they own before output. GitHub Object IDs remain case-sensitive.
-</Update>
-
-<Update label="SharpHound" description="Enhancement" tags={["Data Collection"]}>
-  {/*BED-8968*/}
-  ## Uppercase Active Directory Object IDs
-
-  Preserve existing Active Directory ingest behavior as BloodHound moves Object ID normalization from server-side ingest into collectors.
-
-  SharpHound and SharpHound Enterprise now normalize Active Directory object identifiers to uppercase before output, keeping case-insensitive AD graph identities stable across the raw Object ID ingest migration.
-</Update>
-
-<Update label="AzureHound" description="Enhancement" tags={["Data Collection"]}>
-  {/*BED-8944, BED-9100*/}
-  ## AzureHound Identifier Casing Updates
-
-  Preserve stable Entra ID graph identities with expanded collector-side identifier casing normalization.
-
-  AzureHound now normalizes Object IDs and additional related identifier fields before output while preserving case-sensitive application ID values where required.
 </Update>
 
 <Update label="BloodHound" tags={["Fixed Issues"]}>
