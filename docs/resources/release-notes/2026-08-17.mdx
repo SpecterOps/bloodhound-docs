@@ -23,17 +23,24 @@ import BetaAccessNote from '/snippets/feature-flag-user-managed.mdx';
 
   BloodHound introduced [case-sensitive OpenGraph object IDs](/resources/release-notes/2026-07-29#case-sensitive-opengraph-object-ids) (a SpecterOps-managed feature) in the 2026-07-29 release. This feature is not enabled by default.
   
-  This release updates collector compatibility so BloodHound can preserve case-sensitive OpenGraph object IDs without changing the effective case-insensitive behavior of Active Directory, Microsoft Entra ID, Okta, and Jamf identities.
+  This release updates collector compatibility as BloodHound moves property-value normalization out of ingest and into collectors. BloodHound will ingest object IDs, names, and other properties exactly as collector output supplies them.
 
-  These updates help keep graph identities stable while object ID normalization moves into the AzureHound and OpenHound collectors. This groundwork prepares BloodHound to enable case-sensitive OpenGraph object IDs by default in a future release.
+  This change lets BloodHound preserve case-sensitive OpenGraph object IDs while keeping existing Active Directory, Microsoft Entra ID, Okta, and Jamf graph identities stable. AzureHound and the OpenHound Okta and Jamf collectors now uppercase the object ID and related identifier values they own before output. GitHub object IDs remain case-sensitive to prevent collisions between distinct GitHub objects.
+
+  <Warning>
+    BloodHound treats node object IDs as case-sensitive. After this ingest change is enabled, submitting the same object ID with different casing creates a separate node.
+  </Warning>
+
+  These updates prepare BloodHound to enable case-sensitive OpenGraph object IDs by default in a future release.
 
   See the following table for a summary of collector compatibility changes:
 
   | Component | Change |
   | --- | --- |
-  | BloodHound | Rejects older unsupported OpenHound collector versions when the case-sensitive OpenGraph object ID feature is enabled.<br/><br/>This prevents case-sensitive OpenGraph object IDs from being ingested by collector versions that still depend on server-side normalization. |
-  | OpenHound Okta and Jamf collectors | Uppercases the object ID values they own before output. GitHub object IDs remain case-sensitive. |
-  | AzureHound | Normalizes object IDs and additional related identifier fields before output while preserving case-sensitive application ID values where required. |
+  | BloodHound Enterprise | Rejects client and file ingest uploads from deprecated AzureHound and OpenHound versions after the ingest change is enabled.<br/><br/>This prevents collector output that depends on server-side normalization from creating duplicate nodes or identity mismatches. |
+  | OpenHound Okta and Jamf collectors | Uppercase the object ID values they own before output. |
+  | OpenHound GitHub collector | Preserves case-sensitive GitHub object IDs before output. |
+  | AzureHound | Uppercases object IDs and additional related identifier fields before output while preserving case-sensitive application ID values where required. |
   | SharpHound | No change. SharpHound already normalizes Active Directory object identifiers to uppercase before output. |
 
   <CollectorDeprecationNotice />
