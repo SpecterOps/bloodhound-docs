@@ -4,10 +4,9 @@ description: Configure the OpenHound AWS collector to gather data from your AWS 
 hidden: true
 ---
 
-import RunAndCollect from '/snippets/hounds/openhound-run-and-collect.mdx';
 import AwsBetaNote from '/snippets/hounds/openhound-aws-beta-note.mdx';
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
 <AwsBetaNote />
 
@@ -18,9 +17,7 @@ This page covers configuring the OpenHound AWS collector for an AWS account or o
 Before you configure the AWS collector, ensure that the following prerequisites are met:
 
 - OpenHound installed with the AWS collector included.
-  - For BloodHound Community Edition, install the [OpenHound CLI](/openhound/community).
-  - For BloodHound Enterprise, [deploy](/openhound/enterprise) OpenHound as a container.
-- For BloodHound Enterprise, a [collector client](/collect-data/enterprise-collection/create-collector) created in BloodHound Enterprise.
+- [Collector client](/collect-data/enterprise-collection/create-collector) created in BloodHound Enterprise.
 - AWS collector permissions [configured](/openhound/collectors/aws/configure-permissions) for the target AWS account or organization.
 
 ## Configure OpenHound
@@ -34,9 +31,50 @@ The AWS collector needs different settings based on the collection strategy you 
 
 ## Choose an account collection strategy
 
+The collector supports three strategies:
+
+- **AWS organization profile** <Badge color="green">Recommended</Badge>: Collect AWS organization metadata and fan out collection across member accounts.
+- **Single AWS profile**: Collect resources from one AWS account.
+- **Multiple AWS profiles**: Collect resources from multiple independent AWS accounts.
+
+<Tip>
+  **AWS organization profile** is the recommended collection strategy.
+</Tip>
+
 Click the tab that matches the strategy of the AWS scope you want to collect.
 
 <Tabs>
+  <Tab title="AWS organization profile (recommended)" icon="star">
+    Use an organization profile to enumerate over all members accounts via the AWS management account.
+
+    This assumes the configured IAM role in each member account. Also used to collect the organization structure, SCPs and RCPs.
+
+    | Setting | Required | Default | Description |
+    | --- | --- | --- | --- |
+    | `profile_name` | Yes | None | Name of the AWS SDK profile used for collection. |
+    | `org_role_name` | Yes | - | Name of the IAM role to assume in each active member account. The collector constructs `arn:aws:iam::<account-id>:role/<org_role_name>`. |
+    | `org_role_session_name` | No | openhound-aws-org-collector | STS role session name used when assuming the member-account role.          |
+    | `include_management_account` | No | false | Whether to collect account resources from the management account in addition to organization metadata and policies.  |
+
+    **`secrets.toml`**
+
+    ```toml title="~/.dlt/secrets_aws.toml"
+    [sources.source.aws.credentials]
+    profile_name = "my_organization"
+    org_role_name = "arn:aws:iam::123123:role/my_org_role"
+    org_role_session_name = "optional_session_name"
+    include_management_account = true
+    ```
+
+    **Environment variables**
+
+    ```bash
+    SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME="my_organization"
+    SOURCES__SOURCE__AWS__CREDENTIALS__ORG_ROLE_NAME="arn:aws:iam::123123:role/my_org_role"
+    SOURCES__SOURCE__AWS__CREDENTIALS__ORG_ROLE_SESSION_NAME="optional_session_name"
+    SOURCES__SOURCE__AWS__CREDENTIALS__INCLUDE_MANAGEMENT_ACCOUNT=true
+    ```
+  </Tab>
   <Tab title="Single AWS profile">
     Use a single named AWS profile to collect resources from one AWS account.
 
@@ -75,37 +113,6 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
 
     ```bash
     SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAMES='["production","testing"]'
-    ```
-  </Tab>
-  <Tab title="AWS organization profile">
-    Use an organization profile to enumerate over all members accounts via the AWS management account.
-
-    This assumes the configured IAM role in each member account. Also used to collect the organization structure, SCPs and RCPs.
-
-    | Setting | Required | Default | Description |
-    | --- | --- | --- | --- |
-    | `profile_name` | Yes | None | Name of the AWS SDK profile used for collection. |
-    | `org_role_name` | Yes | - | Name of the IAM role to assume in each active member account. The collector constructs `arn:aws:iam::<account-id>:role/<org_role_name>`. |
-    | `org_role_session_name` | No | openhound-aws-org-collector | STS role session name used when assuming the member-account role.          |
-    | `include_management_account` | No | false | Whether to collect account resources from the management account in addition to organization metadata and policies.  |
-
-    **`secrets.toml`**
-
-    ```toml title="~/.dlt/secrets_aws.toml"
-    [sources.source.aws.credentials]
-    profile_name = "my_organization"
-    org_role_name = "arn:aws:iam::123123:role/my_org_role"
-    org_role_session_name = "optional_session_name"
-    include_management_account = true
-    ```
-
-    **Environment variables**
-
-    ```bash
-    SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME="my_organization"
-    SOURCES__SOURCE__AWS__CREDENTIALS__ORG_ROLE_NAME="arn:aws:iam::123123:role/my_org_role"
-    SOURCES__SOURCE__AWS__CREDENTIALS__ORG_ROLE_SESSION_NAME="optional_session_name"
-    SOURCES__SOURCE__AWS__CREDENTIALS__INCLUDE_MANAGEMENT_ACCOUNT=true
     ```
   </Tab>
 </Tabs>
