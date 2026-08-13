@@ -1,0 +1,303 @@
+---
+title: Configure the Collector
+description: Configure the OpenHound AWS collector to gather data from your AWS account or organization.
+hidden: true
+---
+
+import RunAndCollect from '/snippets/hounds/openhound-run-and-collect.mdx';
+import AwsBetaNote from '/snippets/hounds/openhound-aws-beta-note.mdx';
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+<AwsBetaNote />
+
+This page covers configuring the OpenHound AWS collector for an AWS account or organization. Use this page to choose a collection strategy and configure the collector settings in the `secrets.toml` file or with environment variables.
+
+## Prerequisites
+
+Before you configure the AWS collector, ensure that the following prerequisites are met:
+
+- OpenHound installed with the AWS collector included.
+  - For BloodHound Community Edition, install the [OpenHound CLI](/openhound/community).
+  - For BloodHound Enterprise, [deploy](/openhound/enterprise) OpenHound as a container.
+- For BloodHound Enterprise, a [collector client](/collect-data/enterprise-collection/create-collector) created in BloodHound Enterprise.
+- AWS collector permissions [configured](/openhound/collectors/aws/configure-permissions) for the target AWS account or organization.
+
+## Configure OpenHound
+
+The AWS collector needs different settings based on the collection strategy you choose. You can set these values in one of two places:
+
+| Method | Set the values here |
+| --- | --- |
+| `secrets.toml` file | `[sources.source.aws.credentials]` section |
+| Environment variables | `SOURCES__SOURCE__AWS__CREDENTIALS` prefix |
+
+## Choose an account collection strategy
+
+Click the tab that matches the strategy of the AWS scope you want to collect.
+
+<Tabs>
+  <Tab title="Single AWS profile">
+    Use a single named AWS profile to collect resources from one AWS account.
+
+    | Setting | Required | Default | Description |
+    | --- | --- | --- | --- |
+    | `profile_name` | Yes | None | Name of the AWS SDK profile used for collection. |
+
+    **`secrets.toml`**
+
+    ```toml title="~/.dlt/secrets_aws.toml"
+    [sources.source.aws.credentials]
+    profile_name = "production"
+    ```
+
+    **Environment variables**
+
+    ```bash
+    SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME=production
+    ```
+  </Tab>
+  <Tab title="Multiple AWS profiles">
+    Use multiple named AWS profiles to collect resources from multiple independent AWS accounts.
+
+    | Setting | Required | Default | Description |
+    | --- | --- | --- | --- |
+    | `profile_names` | Yes | None | Names of the AWS SDK profiles used for collection. |
+
+    **`secrets.toml`**
+
+    ```toml title="~/.dlt/secrets_aws.toml"
+    [sources.source.aws.credentials]
+    profile_names = ["production", "testing"]
+    ```
+
+    **Environment variables**
+
+    ```bash
+    SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAMES='["production","testing"]'
+    ```
+  </Tab>
+  <Tab title="AWS organization profile">
+    Use an organization profile to enumerate over all members accounts via the AWS management account.
+
+    This assumes the configured IAM role in each member account. Also used to collect the organization structure, SCPs and RCPs.
+
+    | Setting | Required | Default | Description |
+    | --- | --- | --- | --- |
+    | `profile_name` | Yes | None | Name of the AWS SDK profile used for collection. |
+    | `org_role_name` | Yes | - | Name of the IAM role to assume in each active member account. The collector constructs `arn:aws:iam::<account-id>:role/<org_role_name>`. |
+    | `org_role_session_name` | No | openhound-aws-org-collector | STS role session name used when assuming the member-account role.          |
+    | `include_management_account` | No | false | Whether to collect account resources from the management account in addition to organization metadata and policies.  |
+
+    **`secrets.toml`**
+
+    ```toml title="~/.dlt/secrets_aws.toml"
+    [sources.source.aws.credentials]
+    profile_name = "my_organization"
+    org_role_name = "arn:aws:iam::123123:role/my_org_role"
+    org_role_session_name = "optional_session_name"
+    include_management_account = true
+    ```
+
+    **Environment variables**
+
+    ```bash
+    SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME="my_organization"
+    SOURCES__SOURCE__AWS__CREDENTIALS__ORG_ROLE_NAME="arn:aws:iam::123123:role/my_org_role"
+    SOURCES__SOURCE__AWS__CREDENTIALS__ORG_ROLE_SESSION_NAME="optional_session_name"
+    SOURCES__SOURCE__AWS__CREDENTIALS__INCLUDE_MANAGEMENT_ACCOUNT=true
+    ```
+  </Tab>
+</Tabs>
+
+## Configure S3 collection
+
+S3 bucket collection is disabled by default. Enable it with the `bucket_policy.include` setting, then define bucket and object rules to control which S3 objects the collector stores for processing.
+
+| Setting | Required | Default | Description |
+| --- | --- | --- | --- |
+| `include` | No | `false` | Enables S3 bucket collection. |
+| `max_objects` | No | `10` | Maximum number of objects to collect from each included bucket. Set to `0` to skip object collection. |
+| `rule.include` | No | `true` | Includes or excludes matching buckets or objects. Exclusion rules take precedence. |
+| `rule.match_bucket` | No | None | Regular expression matched against the S3 bucket name. |
+| `rule.match_object` | No | None | Regular expression matched against the S3 object key. |
+
+Buckets and objects are excluded from object collection by default. A bucket or object must match at least one rule where `include` is `true`. If a bucket or object also matches a rule where `include` is `false`, the exclusion wins.
+
+```toml
+[sources.source.aws.bucket_policy]
+include = true
+max_objects = 100
+
+[[sources.source.aws.bucket_policy.rule]]
+include = true
+match_bucket = "^production.*$"
+
+[[sources.source.aws.bucket_policy.rule]]
+include = false
+match_bucket = ".*logs.*"
+
+[[sources.source.aws.bucket_policy.rule]]
+include = true
+match_object = "\\.(json|csv)$"
+
+[[sources.source.aws.bucket_policy.rule]]
+include = false
+match_object = ".*secret.*"
+```
+
+<Note>
+  Bucket and object filters apply after AWS API responses are returned. Excluded buckets or objects can still appear in API responses, but the collector does not store excluded objects for further processing.
+</Note>
+
+## Configuration examples
+
+The following examples show how to configure the AWS collector for different collection strategies. Replace placeholder values with your own.
+
+### Single account collection without buckets
+
+```toml 
+[destination.bloodhoundenterprise]
+token_key = "<BHE_TOKEN_KEY>"
+token_id = "<BHE_TOKEN_ID>"
+url = "https://your-tenant.bhe.io"
+
+[sources.source.aws.credentials]
+profile_name = "<AWS_PROFILE_NAME>"
+
+[sources.source.aws.bucket_policy]
+include = false
+max_objects = 0
+```
+
+### Single account collection for all buckets
+
+```toml
+[destination.bloodhoundenterprise]
+token_key = "<BHE_TOKEN_KEY>"
+token_id = "<BHE_TOKEN_ID>"
+url = "https://your-tenant.bhe.io"
+
+[sources.source.aws.credentials]
+profile_name = "<AWS_PROFILE_NAME>"
+
+[sources.source.aws.bucket_policy]
+include = true
+max_objects = 50
+
+[[sources.source.aws.bucket_policy.rule]]
+include = true
+match_bucket = ".*"
+
+[[sources.source.aws.bucket_policy.rule]]
+include = true
+match_object = ".*"
+```
+
+### Multi-account collection without buckets
+
+```toml
+[destination.bloodhoundenterprise]
+token_key = "<BHE_TOKEN_KEY>"
+token_id = "<BHE_TOKEN_ID>"
+url = "https://your-tenant.bhe.io"
+
+[sources.source.aws.credentials]
+profile_names = [
+  "<AWS_PROFILE_NAME_1>",
+  "<AWS_PROFILE_NAME_2>",
+  "<AWS_PROFILE_NAME_3>"
+]
+
+[sources.source.aws.bucket_policy]
+include = false
+max_objects = 0
+```
+
+### Organization-wide collection without buckets
+
+```toml
+[destination.bloodhoundenterprise]
+token_key = "<BHE_TOKEN_KEY>"
+token_id = "<BHE_TOKEN_ID>"
+url = "https://your-tenant.bhe.io"
+
+[sources.source.aws.credentials]
+profile_name = "<AWS_MANAGEMENT_PROFILE_NAME>"
+org_role_name = "OpenHoundCollectorRole"
+org_role_session_name = "OpenHoundCollectorSession"
+include_management_account = true
+
+[sources.source.aws.bucket_policy]
+include = false
+max_objects = 0
+```
+
+## Deployment examples
+
+Before continuing, ensure that a valid `secrets.toml` file is available and contains the BloodHound Enterprise credentials, AWS target profile(s), and optionally bucket collection policies. The Compose examples assume that the secrets file is stored in the user's home directory at `~/.dlt/secrets.toml`.
+
+### Internal SO step for BETA ONLY
+
+The openhound-aws container image is available via the following (private) ECR repository:
+
+708252512390.dkr.ecr.us-east-2.amazonaws.com/openhound/openhound-aws
+
+To pull container images from this account, run the following command to configure the docker (or podman) cli to authenticate using your AWS IAM session/credentials.
+
+```bash
+# Login to the account
+aws login --profile openhound-admin
+
+# Then create a valid, authenticated session for the Docker/Podman CLI
+aws ecr get-login-password --profile openhound-admin --region us-east-2 | docker login --username AWS --password-stdin 708252512390.dkr.ecr.us-east-2.amazonaws.com
+
+# Now test if you can succesfully pull the openhound-aws image. 
+# You can replace docker with podman if needed
+docker pull 708252512390.dkr.ecr.us-east-2.amazonaws.com/openhound/openhound-aws:main
+```
+
+### Docker compose
+
+Save the following Compose template as `docker-compose.yaml` , then run `docker compose up` to start the collector. You can
+
+```yaml
+x-scheduler: &scheduler
+  image: 708252512390.dkr.ecr.us-east-2.amazonaws.com/openhound/openhound-aws:main
+  restart: unless-stopped
+  init: true
+
+  environment: &env
+    LOG_LEVEL: INFO
+    EXTRACT__WORKERS: 8
+    LOG_CONTAINER: true
+
+services:
+  scheduler-aws:
+    <<: *scheduler
+    environment:
+      <<: *env
+      DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME: aws
+      AWS_CONFIG_FILE: /app/.aws/config
+      AWS_SHARED_CREDENTIALS_FILE: /app/.aws/credentials
+
+    secrets:
+      - source: secrets_aws
+        target: /app/.dlt/secrets.toml
+
+      - source: config_aws
+        target: /app/.aws/config
+
+      - source: credentials_aws
+        target: /app/.aws/credentials
+        
+secrets:
+  secrets_aws:
+    file: ${HOME}/.dlt/secrets.toml
+
+  config_aws:
+    file: ${HOME}/.aws/config
+
+  credentials_aws:
+    file: ${HOME}/.aws/credentials
+```
