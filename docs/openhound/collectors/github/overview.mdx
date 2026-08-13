@@ -12,6 +12,7 @@ If you are evaluating collector options for the GitHub extension, this is the re
 ## Data Collection & Privacy
 
 The GitHub collector is an open-source, read-only data collector. It requests only **read-only** permissions and never modifies your GitHub organization, repositories, or settings.
+The one exception is the optional `manage_runners:enterprise` PAT scope used for enterprise self-hosted runner collection: GitHub does not offer a read-only equivalent, and the scope permits runner-management operations even though OpenHound only uses it to read runner data.
 
 ### What the GitHub collector collects
 
@@ -39,11 +40,11 @@ Authentication credentials are held in memory only during collection and are nev
 
 The OpenHound GitHub collector supports the following authentication setup options:
 
-- [Enterprise GitHub App installation](/openhound/collectors/github/configure-enterprise-app): Use this option when you need enterprise-scoped collection (<Badge color="green">recommended</Badge>). To collect enterprise SSO, SCIM, and self-hosted runner data, add a classic PAT from an Enterprise Owner during collector configuration.
+- [Enterprise GitHub App installation](/openhound/collectors/github/configure-enterprise-app): Use this option when you need enterprise-scoped collection (<Badge color="green">recommended</Badge>). To collect enterprise SSO and SCIM data, add a classic PAT from an Enterprise Owner with the `read:enterprise` scope. To also collect enterprise self-hosted runner data, add the `manage_runners:enterprise` scope.
 - [Organization GitHub App installation](/openhound/collectors/github/configure-app): Recommended for larger GitHub organizations because it offers higher rate limits.
 - [Fine-grained Personal Access Token](/openhound/collectors/github/configure-pat): Simpler to set up for smaller environments and testing.
 
-All options require read-only permissions. See [Configure the Collector](/openhound/collectors/github/collect-data) for the required permission set and runtime configuration.
+The GitHub App installation and Fine-grained PAT options require only read-only permissions. The optional classic PAT scopes for enterprise SSO, SCIM, and self-hosted runner data are read-only for `read:enterprise`, but `manage_runners:enterprise` permits runner-management operations and is not read-only. See [Configure the Collector](/openhound/collectors/github/collect-data) for the required permission set and runtime configuration.
 
 ## Next Steps
 
