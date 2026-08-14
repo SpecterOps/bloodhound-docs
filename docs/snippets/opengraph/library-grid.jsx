@@ -715,10 +715,15 @@ const MaintainerBadge = ({ maintainer }) => {
       className={`og-maintainer-badge ${
         isSpecterOps ? 'og-maintainer-so' : 'og-maintainer-community'
       }`}
-      title={isSpecterOps ? 'SpecterOps-attributed maintainer' : 'Community maintainer'}
+      title={isSpecterOps ? 'SpecterOps-maintained community extension' : 'Community maintainer'}
     >
-      <span aria-hidden="true">{isSpecterOps ? 'SO' : 'C'}</span>
-      <span>{isSpecterOps ? 'SpecterOps' : 'Community'}</span>
+      <span aria-hidden="true">
+        {isSpecterOps ? (
+          <SO_Icon size={36} />
+        ) : (
+          <Icon icon="people-group" iconType="solid" color="currentColor" size={36} />
+        )}
+      </span>
     </span>
   );
 };
@@ -1177,17 +1182,20 @@ const CategoryGroup = ({ category }) => {
           width: 1.55rem;
           height: 1.55rem;
           border-radius: 50%;
-          color: #fff;
+          color: var(--og-text);
           font-size: 0.68rem;
           line-height: 1;
         }
 
         .og-maintainer-so > span:first-child {
-          background: var(--og-purple);
+          --brand-green: #02b36c;
+          --brand-light: var(--og-text);
         }
 
-        .og-maintainer-community > span:first-child {
-          background: #2f3a45;
+        .og-maintainer-so :global(svg),
+        .og-maintainer-community :global(svg) {
+          width: 0.95rem;
+          height: 0.95rem;
         }
 
         .og-category-list {
