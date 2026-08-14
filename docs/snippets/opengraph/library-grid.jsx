@@ -1,45 +1,6 @@
 // Must use arrow function syntax in Mintlify snippets
 
 export const OpenGraphLibrary = () => {
-const enterpriseExtensions = [
-  {
-    name: 'GitHub Extension',
-    vendor: 'GitHub',
-    icon: { type: 'github', label: 'GH' },
-    description:
-      'Models GitHub organizations, identities, repositories, workflows, secrets, roles, and related relationships as structured OpenGraph data.',
-    href: '/opengraph/extensions/github/getting-started',
-    action: 'Setup via OpenHound',
-  },
-  {
-    name: 'Jamf Extension',
-    vendor: 'Jamf',
-    icon: { type: 'jamf', label: 'J' },
-    description:
-      'Models Jamf Pro devices, users, groups, sites, policies, API integrations, and related relationships as BloodHound OpenGraph data.',
-    href: '/opengraph/extensions/jamf/getting-started',
-    action: 'Setup via OpenHound',
-  },
-  {
-    name: 'Okta Extension',
-    vendor: 'Okta',
-    icon: { type: 'okta', label: 'O' },
-    description:
-      'Models Okta users, groups, applications, roles, policies, and related relationships as structured graph data in BloodHound.',
-    href: '/opengraph/extensions/okta/getting-started',
-    action: 'Setup via OpenHound',
-  },
-  {
-    name: 'SCIM Extension',
-    vendor: 'SCIM',
-    icon: { type: 'scim', label: 'SC' },
-    description:
-      'Provides a technology-neutral schema for SCIM-provisioned users, groups, and roles so identities connect across supported OpenGraph extensions.',
-    href: '/opengraph/extensions/scim/overview',
-    action: 'Setup via OpenHound',
-  },
-];
-
 const libraryCategories = [
   {
     name: '1Password',
@@ -913,19 +874,6 @@ const CategoryGroup = ({ category }) => {
       <LibraryGuide />
 
       <LibrarySection
-        eyebrow="Managed extensions"
-        title="Enterprise Extensions"
-        description="Enterprise extensions are maintained by SpecterOps and managed through BloodHound Enterprise."
-        count={`${enterpriseExtensions.length} enterprise extensions`}
-      >
-        <div className="og-card-grid og-card-grid-enterprise">
-          {enterpriseExtensions.map((extension) => (
-            <ExtensionCard key={extension.name} extension={extension} />
-          ))}
-        </div>
-      </LibrarySection>
-
-      <LibrarySection
         eyebrow="SpecterOps-attributed maintainers"
         title="Community Extensions"
         description="These community extensions are created or maintained by SpecterOps employees and extend the BloodHound graph with additional OpenGraph data."
@@ -1159,10 +1107,6 @@ const CategoryGroup = ({ category }) => {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 1rem;
-        }
-
-        .og-card-grid-enterprise {
-          grid-template-columns: repeat(4, minmax(0, 1fr));
         }
 
         .og-extension-card {
@@ -1464,15 +1408,13 @@ const CategoryGroup = ({ category }) => {
         }
 
         @media (max-width: 1200px) {
-          .og-card-grid,
-          .og-card-grid-enterprise {
+          .og-card-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
           }
         }
 
         @media (max-width: 900px) {
-          .og-card-grid,
-          .og-card-grid-enterprise {
+          .og-card-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
@@ -1489,8 +1431,7 @@ const CategoryGroup = ({ category }) => {
             grid-template-columns: 1fr;
           }
 
-          .og-card-grid,
-          .og-card-grid-enterprise {
+          .og-card-grid {
             grid-template-columns: 1fr;
           }
 
