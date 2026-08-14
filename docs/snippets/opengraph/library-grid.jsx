@@ -947,14 +947,19 @@ const CategoryGroup = ({ category }) => {
 
       <style jsx>{`
         .og-library {
-          --og-purple: #312783;
-          --og-purple-hover: #261d72;
-          --og-text: #1f2937;
-          --og-muted: #556987;
-          --og-soft: #f7f9fc;
-          --og-border: #d7e0ec;
-          --og-border-strong: #c8d4e3;
-          --og-orange: #ff8a3d;
+          --og-primary: var(--color-primary, #2c2677);
+          --og-primary-hover: #241f63;
+          --og-primary-light: var(--color-primary-light, #5465ff);
+          --og-text: #292524;
+          --og-title: #292524;
+          --og-muted: #57534e;
+          --og-muted-soft: #78716c;
+          --og-card-bg: #fff;
+          --og-border: rgba(12, 10, 9, 0.1);
+          --og-callout-bg: #fff7ed;
+          --og-callout-border: #fed7aa;
+          --og-callout-text: #9a3412;
+          --og-focus-ring: rgba(44, 38, 119, 0.24);
           color: var(--og-text);
         }
 
@@ -981,8 +986,10 @@ const CategoryGroup = ({ category }) => {
 
         .og-library-hero-copy h1 {
           margin: 0;
-          font-size: 2.1rem;
-          line-height: 1.1;
+          color: var(--og-title);
+          font-size: 2rem;
+          line-height: 1.2;
+          font-weight: 700;
           letter-spacing: 0;
         }
 
@@ -1008,12 +1015,11 @@ const CategoryGroup = ({ category }) => {
           justify-content: center;
           min-height: 2.4rem;
           border-radius: 999px;
-          background: var(--og-purple);
-          color: #fff !important;
-          font-size: 0.85rem;
-          font-weight: 700;
-          box-shadow: 0 8px 18px rgba(49, 39, 131, 0.22);
-          transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+          background: var(--og-primary);
+          color: #fff;
+          font-size: 0.875rem;
+          font-weight: 600;
+          transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
         }
 
         .og-submit-link {
@@ -1021,12 +1027,18 @@ const CategoryGroup = ({ category }) => {
           white-space: nowrap;
         }
 
+        .og-submit-link:focus-visible,
+        .og-extension-card:focus-visible {
+          outline: 2px solid var(--og-focus-ring);
+          outline-offset: 2px;
+        }
+
         .og-security-note,
         .og-limited-note {
-          border: 1px solid var(--og-orange);
-          background: #fff7ed;
-          color: #8a2f0a;
-          border-radius: 6px;
+          border: 1px solid var(--og-callout-border);
+          background: var(--og-callout-bg);
+          color: var(--og-callout-text);
+          border-radius: 0.75rem;
           padding: 0.95rem 1rem;
           line-height: 1.5;
         }
@@ -1056,36 +1068,38 @@ const CategoryGroup = ({ category }) => {
 
         .og-section-heading h2 {
           margin: 0;
-          font-size: 1.45rem;
-          line-height: 1.2;
+          color: var(--og-title);
+          font-size: 1.5rem;
+          line-height: 1.25;
+          font-weight: 700;
           letter-spacing: 0;
         }
 
         .og-section-heading p {
           max-width: 58rem;
           margin: 0.35rem 0 0;
-          font-size: 0.95rem;
-          line-height: 1.45;
+          font-size: 1rem;
+          line-height: 1.5;
         }
 
         .og-section-eyebrow {
-          margin: 0 0 0.25rem !important;
-          color: var(--og-purple) !important;
-          font-size: 0.76rem !important;
-          font-weight: 800;
-          letter-spacing: 0.06em !important;
+          margin: 0 0 0.25rem;
+          color: var(--og-primary);
+          font-size: 0.75rem;
+          font-weight: 600;
+          letter-spacing: 0;
           text-transform: uppercase;
         }
 
         .og-section-count {
           flex: 0 0 auto;
           border: 1px solid var(--og-border);
-          border-radius: 999px;
-          padding: 0.4rem 0.7rem;
-          color: var(--og-muted);
-          font-size: 0.82rem;
-          font-weight: 700;
-          background: #fff;
+          border-radius: 0.5rem;
+          padding: 0.35rem 0.6rem;
+          color: var(--og-muted-soft);
+          font-size: 0.875rem;
+          font-weight: 500;
+          background: var(--og-card-bg);
         }
 
         .og-card-grid {
@@ -1102,13 +1116,14 @@ const CategoryGroup = ({ category }) => {
           display: flex;
           min-height: 16.75rem;
           flex-direction: column;
-          gap: 1rem;
+          gap: 0.75rem;
           border: 1px solid var(--og-border);
-          border-radius: 6px;
-          padding: 1rem;
-          background: #fff;
-          color: inherit !important;
-          transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+          border-radius: 1rem;
+          padding: 1.25rem 1.5rem;
+          background: var(--og-card-bg);
+          color: inherit;
+          font-weight: 400;
+          transition: border-color 160ms ease;
         }
 
         .og-extension-card-compact {
@@ -1116,15 +1131,13 @@ const CategoryGroup = ({ category }) => {
         }
 
         .og-extension-card:hover {
-          border-color: var(--og-border-strong);
-          box-shadow: 0 14px 32px rgba(25, 37, 60, 0.1);
-          transform: translateY(-1px);
+          border-color: var(--og-primary);
         }
 
         .og-extension-card:hover .og-extension-action,
         .og-submit-link:hover {
-          background: var(--og-purple-hover);
-          box-shadow: 0 10px 22px rgba(49, 39, 131, 0.28);
+          background: var(--og-primary-hover);
+          color: #fff;
         }
 
         .og-extension-card-top {
@@ -1136,22 +1149,23 @@ const CategoryGroup = ({ category }) => {
 
         .og-extension-card h3 {
           margin: 0;
-          color: var(--og-text);
+          color: var(--og-title);
           font-size: 1rem;
-          line-height: 1.25;
+          line-height: 1.5;
+          font-weight: 600;
           letter-spacing: 0;
         }
 
         .og-extension-vendor {
           margin: 0.25rem 0 0;
-          font-size: 0.86rem;
-          line-height: 1.3;
+          font-size: 0.875rem;
+          line-height: 1.25;
         }
 
         .og-extension-description {
           margin: 0;
-          line-height: 1.45;
-          font-size: 0.93rem;
+          line-height: 1.5;
+          font-size: 1rem;
         }
 
         .og-extension-action {
@@ -1167,12 +1181,12 @@ const CategoryGroup = ({ category }) => {
           gap: 0.4rem;
           min-height: 2.75rem;
           border: 1px solid var(--og-border);
-          border-radius: 4px;
-          padding: 0.4rem 0.55rem;
-          background: #fff;
-          color: var(--og-muted);
-          font-size: 0.74rem;
-          font-weight: 700;
+          border-radius: 0.5rem;
+          padding: 0.35rem 0.55rem;
+          background: var(--og-card-bg);
+          color: var(--og-muted-soft);
+          font-size: 0.75rem;
+          font-weight: 500;
         }
 
         .og-maintainer-badge > span:first-child {
@@ -1182,7 +1196,7 @@ const CategoryGroup = ({ category }) => {
           width: 1.55rem;
           height: 1.55rem;
           border-radius: 50%;
-          color: var(--og-text);
+          color: var(--og-title);
           font-size: 0.68rem;
           line-height: 1;
         }
@@ -1218,14 +1232,16 @@ const CategoryGroup = ({ category }) => {
 
         .og-category-heading h3 {
           margin: 0;
-          font-size: 1.05rem;
-          line-height: 1.25;
+          color: var(--og-title);
+          font-size: 1rem;
+          line-height: 1.5;
+          font-weight: 600;
           letter-spacing: 0;
         }
 
         .og-category-heading p {
           margin: 0.15rem 0 0;
-          font-size: 0.84rem;
+          font-size: 0.875rem;
         }
 
         .og-category-icon {
@@ -1236,9 +1252,9 @@ const CategoryGroup = ({ category }) => {
           width: 2.75rem;
           height: 2.75rem;
           border: 1px solid var(--og-border);
-          border-radius: 4px;
-          background: #fff;
-          color: var(--og-text);
+          border-radius: 0.5rem;
+          background: var(--og-card-bg);
+          color: var(--og-title);
           overflow: hidden;
         }
 
@@ -1355,11 +1371,18 @@ const CategoryGroup = ({ category }) => {
         }
 
         .dark .og-library {
-          --og-text: #f4f7fb;
-          --og-muted: #b8c4d6;
-          --og-soft: #111827;
-          --og-border: #344054;
-          --og-border-strong: #526179;
+          --og-primary: var(--color-primary, #2c2677);
+          --og-primary-hover: #3b32a0;
+          --og-title: #fff;
+          --og-text: #d6d3d1;
+          --og-muted: #a8a29e;
+          --og-muted-soft: #78716c;
+          --og-card-bg: var(--color-background-dark, rgb(14, 14, 15));
+          --og-border: rgba(255, 255, 255, 0.1);
+          --og-callout-bg: rgba(154, 52, 18, 0.18);
+          --og-callout-border: rgba(251, 146, 60, 0.35);
+          --og-callout-text: #fdba74;
+          --og-focus-ring: rgba(165, 180, 252, 0.28);
         }
 
         .dark .og-library-hero,
@@ -1371,22 +1394,12 @@ const CategoryGroup = ({ category }) => {
         .dark .og-maintainer-badge,
         .dark .og-category-icon,
         .dark .og-section-count {
-          background: #101828;
-        }
-
-        .dark .og-extension-card {
-          box-shadow: none;
+          background: var(--og-card-bg);
         }
 
         .dark .og-extension-card h3,
         .dark .og-category-heading h3 {
-          color: var(--og-text);
-        }
-
-        .dark .og-security-note,
-        .dark .og-limited-note {
-          background: rgba(138, 47, 10, 0.15);
-          color: #ffbd8a;
+          color: var(--og-title);
         }
 
         .dark .og-category-icon-okta {
