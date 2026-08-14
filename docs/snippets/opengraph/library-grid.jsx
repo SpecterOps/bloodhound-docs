@@ -870,12 +870,10 @@ const CategoryGroup = ({ category }) => {
         </a>
       </header>
 
-      <div className="og-security-note">
-        <strong>Use linked code at your own risk.</strong>
-        <span>
-          Code linked from this page is provided as is and has not been audited for accuracy, security, or fitness for any purpose.
-        </span>
-      </div>
+      <Warning>
+        <strong>Use linked code at your own risk.</strong><br/><br/>
+        Code linked from this page is provided as is and has not been audited for accuracy, security, or fitness for any purpose.
+      </Warning>
 
       <LibrarySection
         eyebrow="Managed extensions"
@@ -896,9 +894,9 @@ const CategoryGroup = ({ category }) => {
         description="These community extensions are created or maintained by SpecterOps employees and extend the BloodHound graph with additional OpenGraph data."
         count={`${specterOpsExtensions.length} extensions`}
       >
-        <div className="og-limited-note">
+        <Note>
           For security reasons, only community extensions created or maintained by SpecterOps employees are highlighted in this section. The full list of extensions appears in OpenGraph Library.
-        </div>
+        </Note>
         <div className="og-card-grid">
           {specterOpsExtensions.map((extension) => (
             <ExtensionCard key={extension.name} extension={extension} />
@@ -1031,27 +1029,6 @@ const CategoryGroup = ({ category }) => {
         .og-extension-card:focus-visible {
           outline: 2px solid var(--og-focus-ring);
           outline-offset: 2px;
-        }
-
-        .og-security-note,
-        .og-limited-note {
-          border: 1px solid var(--og-callout-border);
-          background: var(--og-callout-bg);
-          color: var(--og-callout-text);
-          border-radius: 0.75rem;
-          padding: 0.95rem 1rem;
-          line-height: 1.5;
-        }
-
-        .og-security-note {
-          display: grid;
-          gap: 0.2rem;
-          margin-bottom: 2rem;
-        }
-
-        .og-limited-note {
-          margin-bottom: 1rem;
-          font-size: 0.92rem;
         }
 
         .og-library-section {
