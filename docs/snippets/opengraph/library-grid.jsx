@@ -544,7 +544,7 @@ const libraryCategories = [
   },
   {
     name: 'Windows',
-    icon: { type: 'microsoft', label: 'WIN' },
+    icon: { type: 'windows', label: 'WIN' },
     extensions: [
       {
         name: 'PrivHound',
@@ -763,7 +763,50 @@ const MaintainerBadge = ({ maintainer }) => {
   );
 };
 
+const vendorIconMap = {
+  onepassword: { src: '/assets/icons/vendor/onepassword.svg', wide: false },
+  ansible: { src: '/assets/icons/vendor/ansible.svg', wide: false },
+  microsoft: { src: '/assets/icons/vendor/microsoft.svg', wide: false },
+  aws: { src: '/assets/icons/vendor/aws.svg', wide: true },
+  atlassian: { src: '/assets/icons/vendor/atlassian.svg', wide: false },
+  cisco: { src: '/assets/icons/vendor/cisco.svg', wide: false },
+  cyberark: { src: '/assets/icons/vendor/cyberark.svg', wide: true },
+  freeipa: { src: '/assets/icons/vendor/freeipa.svg', wide: false },
+  github: { src: '/assets/icons/vendor/github.svg', wide: false },
+  gitlab: { src: '/assets/icons/vendor/gitlab.svg', wide: true },
+  gcp: { src: '/assets/icons/vendor/gcp.svg', wide: false },
+  jamf: { src: '/assets/icons/vendor/jamf.svg', wide: false },
+  kubernetes: { src: '/assets/icons/vendor/kubernetes.svg', wide: false },
+  linux: { src: '/assets/icons/vendor/linux.svg', wide: false },
+  okta: { src: '/assets/icons/vendor/okta.svg', wide: false },
+  oracle: { src: '/assets/icons/vendor/oracle.svg', wide: true },
+  ping: { src: '/assets/icons/vendor/ping.svg', wide: true },
+  mainframe: { src: '/assets/icons/vendor/ibm.svg', wide: true },
+  runzero: { src: '/assets/icons/vendor/runzero.svg', wide: true },
+  salesforce: { src: '/assets/icons/vendor/salesforce.svg', wide: false },
+  snowflake: { src: '/assets/icons/vendor/snowflake.svg', wide: false },
+  tailscale: { src: '/assets/icons/vendor/tailscale.svg', wide: false },
+  vmware: { src: '/assets/icons/vendor/vmware.svg', wide: true },
+  windows: { src: '/assets/icons/vendor/windows.svg', wide: false },
+  mitre: { src: '/assets/icons/vendor/mitre.svg', wide: true },
+};
+
 const CategoryIcon = ({ icon }) => {
+  const vendorIcon = vendorIconMap[icon.type];
+
+  if (vendorIcon) {
+    return (
+      <span
+        className={`og-category-icon og-category-icon-image ${
+          vendorIcon.wide ? 'og-category-icon-image-wide' : ''
+        }`}
+        aria-label={`${icon.label} category`}
+      >
+        <img src={vendorIcon.src} alt="" loading="lazy" />
+      </span>
+    );
+  }
+
   if (icon.type === 'microsoft') {
     return (
       <span className="og-category-icon og-category-icon-microsoft" aria-label={`${icon.label} category`}>
@@ -1445,6 +1488,22 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
           fill: currentColor;
         }
 
+        .og-category-icon-image {
+          padding: 0.45rem;
+          background: #fff;
+        }
+
+        .og-category-icon-image img {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+
+        .og-category-icon-image-wide {
+          width: 4.6rem;
+        }
+
         .og-category-icon-microsoft {
           display: grid;
           grid-template-columns: repeat(2, 0.8rem);
@@ -1570,6 +1629,10 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
         .dark .og-category-icon,
         .dark .og-section-count {
           background: var(--og-card-bg);
+        }
+
+        .dark .og-category-icon-image {
+          background: #fff;
         }
 
         .dark .og-library-legend-item {
