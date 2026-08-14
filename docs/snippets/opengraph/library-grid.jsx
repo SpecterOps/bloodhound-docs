@@ -865,7 +865,7 @@ const CategoryGroup = ({ category }) => {
             Explore enterprise extensions, community collectors, and helper tools that extend BloodHound coverage with OpenGraph.
           </p>
         </div>
-        <a className="og-submit-link" href="https://github.com/SpecterOps/bloodhound-docs/issues" target="_blank" rel="noopener noreferrer">
+        <a className="og-submit-link" href="https://github.com/SpecterOps/bloodhound-docs/issues/new?template=opengraph-library-change.md" target="_blank" rel="noopener noreferrer">
           Submit a library change
         </a>
       </header>
