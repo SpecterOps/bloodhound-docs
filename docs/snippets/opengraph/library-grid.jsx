@@ -830,6 +830,57 @@ const LibrarySection = ({ title, eyebrow, description, count, children }) => {
   );
 };
 
+const LibraryHero = () => {
+  return (
+    <header className="og-library-hero">
+      <div className="og-library-hero-copy">
+        <h1>OpenGraph Library</h1>
+        <p>
+          Explore extensions created by the community and SpecterOps that extend the coverage of BloodHound with OpenGraph.
+        </p>
+      </div>
+    </header>
+  );
+};
+
+const LibraryGuide = () => {
+  return (
+    <section className="og-library-guide" aria-label="OpenGraph Library contribution and icon guide">
+      <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE" />
+      <p>
+        Have you built a cool extension using OpenGraph and want to feature it on this page? Is your extension already in the list and you need to update something?
+      </p>
+      <p>
+        Submit an issue in the BloodHound Docs repository on GitHub and someone from the team will review it and get back to you!
+      </p>
+      <div className="og-library-guide-actions">
+        <a className="og-submit-link" href="https://github.com/SpecterOps/bloodhound-docs/issues/new?template=opengraph-library-change.md" target="_blank" rel="noopener noreferrer">
+          Submit a library change
+        </a>
+      </div>
+      <div className="og-library-legend" aria-label="Maintainer icon legend">
+        <div className="og-library-legend-item">
+          <MaintainerBadge maintainer="community" />
+          <p>
+            Community icons represent community extensions that leverage OpenGraph to extend BloodHound's coverage and capabilities.
+          </p>
+        </div>
+        <div className="og-library-legend-item">
+          <MaintainerBadge maintainer="specterops" />
+          <p>
+            SpecterOps icons represent SpecterOps extensions that can be used as-is or serve as examples and inspiration for your own OpenGraph extensions.
+          </p>
+        </div>
+      </div>
+      <Warning>
+        <strong>Use linked code at your own risk.</strong><br/><br/>
+        All code linked via this library is provided “as is,” without review, approval, or endorsement by SpecterOps, regardless of authorship. It has not been audited for accuracy, security, or fitness for any purpose.<br/><br/>
+        Use at your own risk. You are solely responsible for testing, validating, and ensuring the code meets your requirements before use in any environment. SpecterOps is not responsible for any damages, losses, or security issues arising from the use of any linked code.
+      </Warning>
+    </section>
+  );
+};
+
 const CategoryGroup = ({ category }) => {
   return (
     <section className="og-category-group" id={category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}>
@@ -857,23 +908,9 @@ const CategoryGroup = ({ category }) => {
 
   return (
     <div className="og-library">
-      <header className="og-library-hero">
-        <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE" />
-        <div className="og-library-hero-copy">
-          <h1>OpenGraph Library</h1>
-          <p>
-            Explore enterprise extensions, community collectors, and helper tools that extend BloodHound coverage with OpenGraph.
-          </p>
-        </div>
-        <a className="og-submit-link" href="https://github.com/SpecterOps/bloodhound-docs/issues/new?template=opengraph-library-change.md" target="_blank" rel="noopener noreferrer">
-          Submit a library change
-        </a>
-      </header>
+      <LibraryHero />
 
-      <Warning>
-        <strong>Use linked code at your own risk.</strong><br/><br/>
-        Code linked from this page is provided as is and has not been audited for accuracy, security, or fitness for any purpose.
-      </Warning>
+      <LibraryGuide />
 
       <LibrarySection
         eyebrow="Managed extensions"
@@ -894,9 +931,6 @@ const CategoryGroup = ({ category }) => {
         description="These community extensions are created or maintained by SpecterOps employees and extend the BloodHound graph with additional OpenGraph data."
         count={`${specterOpsExtensions.length} extensions`}
       >
-        <Note>
-          For security reasons, only community extensions created or maintained by SpecterOps employees are highlighted in this section. The full list of extensions appears in OpenGraph Library.
-        </Note>
         <div className="og-card-grid">
           {specterOpsExtensions.map((extension) => (
             <ExtensionCard key={extension.name} extension={extension} />
@@ -967,12 +1001,11 @@ const CategoryGroup = ({ category }) => {
 
         .og-library-hero {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
+          grid-template-columns: minmax(0, 1fr);
           gap: 1rem;
           align-items: end;
           margin-bottom: 1.5rem;
           padding-bottom: 1.5rem;
-          border-bottom: 1px solid var(--og-border);
         }
 
         .og-library-hero img {
@@ -985,7 +1018,7 @@ const CategoryGroup = ({ category }) => {
         .og-library-hero-copy h1 {
           margin: 0;
           color: var(--og-title);
-          font-size: 2rem;
+          font-size: 36px;
           line-height: 1.2;
           font-weight: 700;
           letter-spacing: 0;
@@ -1002,7 +1035,7 @@ const CategoryGroup = ({ category }) => {
         .og-library-hero-copy p {
           max-width: 48rem;
           margin: 0.55rem 0 0;
-          font-size: 1rem;
+          font-size: 18px;
           line-height: 1.55;
         }
 
@@ -1033,6 +1066,49 @@ const CategoryGroup = ({ category }) => {
 
         .og-library-section {
           margin: 0 0 2.4rem;
+        }
+
+        .og-library-guide {
+          display: grid;
+          gap: 1rem;
+          margin: 1.5rem 0 2.4rem;
+        }
+
+        .og-library-guide > p {
+          max-width: 58rem;
+          margin: 0;
+          font-size: 1rem;
+          line-height: 1.55;
+        }
+
+        .og-library-guide-actions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+        }
+
+        .og-library-legend {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.8rem;
+        }
+
+        .og-library-legend-item {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          gap: 0.75rem;
+          align-items: start;
+          border: 1px solid var(--og-border);
+          border-radius: 0.5rem;
+          padding: 0.85rem;
+          background: rgba(120, 113, 108, 0.06);
+        }
+
+        .og-library-legend-item p {
+          margin: 0;
+          color: var(--og-muted);
+          font-size: 0.925rem;
+          line-height: 1.45;
         }
 
         .og-section-heading {
@@ -1374,6 +1450,10 @@ const CategoryGroup = ({ category }) => {
           background: var(--og-card-bg);
         }
 
+        .dark .og-library-legend-item {
+          background: rgba(214, 211, 209, 0.05);
+        }
+
         .dark .og-extension-card h3,
         .dark .og-category-heading h3 {
           color: var(--og-title);
@@ -1420,6 +1500,10 @@ const CategoryGroup = ({ category }) => {
 
           .og-submit-link {
             width: 100%;
+          }
+
+          .og-library-legend {
+            grid-template-columns: 1fr;
           }
 
           .og-extension-card {
