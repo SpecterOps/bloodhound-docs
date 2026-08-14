@@ -795,7 +795,10 @@ const LibraryHero = () => {
   return (
     <header className="og-library-hero">
       <div className="og-library-hero-copy">
-        <h1>OpenGraph Library</h1>
+        <a className="og-library-breadcrumb" href="/opengraph">
+          OpenGraph
+        </a>
+        <h1>BloodHound Community Extensions</h1>
         <p>
           Explore extensions created by the community and SpecterOps that extend the coverage of BloodHound with OpenGraph.
         </p>
@@ -812,7 +815,7 @@ const LibraryGuide = () => {
         Have you built a cool extension using OpenGraph and want to feature it on this page? Is your extension already in the list and you need to update something?
       </p>
       <p>
-        Submit an issue in the BloodHound Docs repository on GitHub and someone from the team will review it and get back to you!
+        Click the button below to open an issue in the BloodHound Docs repository on GitHub and someone from the team will review it and get back to you!
       </p>
       <div className="og-library-guide-actions">
         <a className="og-submit-link" href="https://github.com/SpecterOps/bloodhound-docs/issues/new?template=opengraph-library-change.md" target="_blank" rel="noopener noreferrer">
@@ -972,6 +975,15 @@ const CategoryGroup = ({ category }) => {
           letter-spacing: 0;
         }
 
+        .og-library-breadcrumb {
+          display: inline-flex;
+          margin-bottom: 0.5rem;
+          color: var(--og-primary-light);
+          font-size: 14px;
+          font-weight: 700;
+          line-height: 1.4;
+        }
+
         .og-library-hero-copy p,
         .og-section-heading p,
         .og-category-heading p,
@@ -1025,6 +1037,7 @@ const CategoryGroup = ({ category }) => {
         .og-library-guide > p {
           max-width: 58rem;
           margin: 0;
+          color: var(--og-muted);
           font-size: 1rem;
           line-height: 1.55;
         }
@@ -1370,7 +1383,7 @@ const CategoryGroup = ({ category }) => {
         .dark .og-library {
           --og-primary: var(--color-primary, #2c2677);
           --og-primary-hover: #3b32a0;
-          --og-title: #fff;
+          --og-title: #dfdfe2;
           --og-text: #d6d3d1;
           --og-muted: #a8a29e;
           --og-muted-soft: #78716c;
