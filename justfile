@@ -21,6 +21,12 @@ update-openapi VERSION:
     # Download openapi.json from BloodHound's stage branch
     curl -L --fail "https://raw.githubusercontent.com/SpecterOps/BloodHound/stage/{{VERSION}}/packages/go/openapi/doc/openapi.json" -o docs/openapi.json || (echo "Failed to download OpenAPI spec for version {{VERSION}}" && exit 1)
 
+# Generate OpenGraph library data from the JSON source files
+generate-opengraph-library:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  node scripts/generate-opengraph-library-data.mjs
+
 # Check docs coverage for edge help texts vs code registry
 check-edges bh_root="../BloodHound":
   #!/usr/bin/env bash
