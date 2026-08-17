@@ -16,9 +16,6 @@ const readCategoryDirectory = (directory) =>
 const libraryCategories = readCategoryDirectory(
   join(opengraphSnippetDir, 'library-categories'),
 );
-const nonAttackPathCategories = readCategoryDirectory(
-  join(opengraphSnippetDir, 'non-attack-path-categories'),
-);
 const openGraphTools = readJson(join(opengraphSnippetDir, 'open-graph-tools.json'));
 
 const generatedFile = join(opengraphSnippetDir, 'library-data.generated.jsx');
@@ -27,8 +24,6 @@ const generatedContent = `// Generated from the OpenGraph library JSON files. Do
 // node scripts/generate-opengraph-library-data.mjs
 
 export const libraryCategories = ${JSON.stringify(libraryCategories, null, 2)};
-
-export const nonAttackPathCategories = ${JSON.stringify(nonAttackPathCategories, null, 2)};
 
 export const openGraphTools = ${JSON.stringify(openGraphTools, null, 2)};
 `;

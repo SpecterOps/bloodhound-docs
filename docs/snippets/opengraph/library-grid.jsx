@@ -2,7 +2,6 @@
 
 export const OpenGraphLibrary = ({
   libraryCategories = [],
-  nonAttackPathCategories = [],
   openGraphTools = [],
 }) => {
 const flattenExtensions = (categories) =>
@@ -19,14 +18,14 @@ const technologyGroups = [
     description: 'Identity providers, directory services, MFA, PAM, and access-control systems.',
     categories: [
       categoryMap['1Password'],
-      categoryMap['Active Directory'],
-      categoryMap['Atlassian'],
+      categoryMap['Atlassian Cloud'],
       categoryMap['Cisco Duo Security'],
       categoryMap['CyberArk'],
-      categoryMap['Entra ID'],
       categoryMap['FreeIPA'],
+      categoryMap['Microsoft Active Directory'],
+      categoryMap['Microsoft Entra ID'],
       categoryMap['Okta'],
-      categoryMap['Ping'],
+      categoryMap['PingOne'],
     ],
   },
   {
@@ -34,9 +33,9 @@ const technologyGroups = [
     description: 'Microsoft infrastructure, collaboration, database, endpoint, and management technologies.',
     categories: [
       categoryMap['Microsoft Exchange'],
-      categoryMap['MSSQL'],
-      categoryMap['System Center'],
-      categoryMap['Windows'],
+      categoryMap['Microsoft SQL Server'],
+      categoryMap['Microsoft System Center'],
+      categoryMap['Microsoft Windows'],
     ],
   },
   {
@@ -53,8 +52,9 @@ const technologyGroups = [
     name: 'Developer and DevOps',
     description: 'Source control, automation, CI/CD, and DevOps-to-MLOps attack-path projects.',
     categories: [
+      // General and cross-vendor scopes come before product-specific categories.
+      categoryMap['Cross-platform DevOps'],
       categoryMap['Ansible'],
-      categoryMap['DevOps'],
       categoryMap['GitHub'],
       categoryMap['GitLab'],
     ],
@@ -63,23 +63,29 @@ const technologyGroups = [
     name: 'SaaS, Data, and Business Systems',
     description: 'Business applications, data platforms, endpoint management, and network access services.',
     categories: [
-      categoryMap['Jamf'],
+      categoryMap['Jamf Pro'],
+      categoryMap['runZero'],
       categoryMap['Salesforce'],
       categoryMap['Snowflake'],
       categoryMap['Tailscale'],
-      categoryMap['runZero'],
     ],
   },
   {
     name: 'Host, Network, and Legacy Systems',
     description: 'Operating systems, network discovery, virtualization, credentials, and mainframe access.',
     categories: [
+      // General and cross-vendor scopes come before product-specific categories.
       categoryMap['Credentials'],
-      categoryMap['Linux'],
       categoryMap['Network'],
-      categoryMap['Resource Access Control Facility'],
-      categoryMap['vCenter'],
+      categoryMap['SSH'],
+      categoryMap['IBM Resource Access Control Facility (RACF)'],
+      categoryMap['VMware vCenter Server'],
     ],
+  },
+  {
+    name: 'Context and Enrichment',
+    description: 'Projects that add context or enrichment but are not primarily designed to create attack-path edges.',
+    categories: [categoryMap['MITRE ATT&CK']],
   },
 ].map((group) => ({
   ...group,
@@ -124,7 +130,6 @@ const vendorIconMap = {
   gcp: { src: '/assets/icons/vendor/gcp.svg', wide: false },
   jamf: { src: '/assets/icons/vendor/jamf.svg', wide: false },
   kubernetes: { src: '/assets/icons/vendor/kubernetes.svg', wide: false },
-  linux: { src: '/assets/icons/vendor/linux.svg', wide: false },
   okta: { src: '/assets/icons/vendor/okta.svg', wide: false },
   oracle: { src: '/assets/icons/vendor/oracle.svg', wide: true },
   ping: { src: '/assets/icons/vendor/ping.svg', wide: true },
@@ -185,6 +190,22 @@ const CategoryIcon = ({ icon }) => {
     );
   }
 
+  if (icon.type === 'cross-platform') {
+    return (
+      <span className="og-category-icon" aria-label={`${icon.label} category`}>
+        <Icon icon="diagram-project" iconType="solid" color="currentColor" size={24} />
+      </span>
+    );
+  }
+
+  if (icon.type === 'terminal') {
+    return (
+      <span className="og-category-icon" aria-label={`${icon.label} category`}>
+        <Icon icon="terminal" iconType="solid" color="currentColor" size={24} />
+      </span>
+    );
+  }
+
   if (icon.type === 'jamf') {
     return (
       <span className="og-category-icon og-category-icon-jamf" aria-label="Jamf category">
@@ -212,15 +233,60 @@ const CategoryIcon = ({ icon }) => {
   );
 };
 
+const AuthorAttribution = ({ authors = [] }) => {
+  if (authors.length === 0) {
+    return null;
+  }
+
+  return (
+    <p className="og-extension-authors">
+      <span className="og-extension-authors-label">
+        {authors.length === 1 ? 'Author' : 'Authors'}:
+      </span>{' '}
+      {authors.map((author, index) => (
+        <span key={`${author.name}-${index}`}>
+          {index > 0 ? ', ' : null}
+          {author.href ? (
+            <a
+              className="og-extension-author-link"
+              href={author.href}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {author.name}
+            </a>
+          ) : (
+            author.name
+          )}
+          {author.organization ? (
+            <>
+              {' @'}
+              {author.organizationHref ? (
+                <a
+                  className="og-extension-author-link"
+                  href={author.organizationHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {author.organization}
+                </a>
+              ) : (
+                author.organization
+              )}
+            </>
+          ) : null}
+        </span>
+      ))}
+    </p>
+  );
+};
+
 const ExtensionCard = ({ extension, compact = false }) => {
   const external = extension.href.startsWith('http');
 
   return (
-    <a
+    <article
       className={`og-extension-card ${compact ? 'og-extension-card-compact' : ''}`}
-      href={extension.href}
-      target={external ? '_blank' : undefined}
-      rel={external ? 'noopener noreferrer' : undefined}
     >
       <div className="og-extension-card-top">
         <div>
@@ -233,9 +299,17 @@ const ExtensionCard = ({ extension, compact = false }) => {
           <CategoryIcon icon={extension.icon} />
         )}
       </div>
+      <AuthorAttribution authors={extension.authors} />
       <p className="og-extension-description">{extension.description}</p>
-      <span className="og-extension-action">{extension.action || 'View on GitHub'}</span>
-    </a>
+      <a
+        className="og-extension-action"
+        href={extension.href}
+        target={external ? '_blank' : undefined}
+        rel={external ? 'noopener noreferrer' : undefined}
+      >
+        {extension.action || 'View on GitHub'}
+      </a>
+    </article>
   );
 };
 
@@ -331,11 +405,11 @@ const CategoryGroup = ({ category }) => {
   );
 };
 
-const TechnologyGroup = ({ group, defaultOpen = false }) => {
+const TechnologyGroup = ({ group }) => {
   const count = categoryExtensionCount(group.categories);
 
   return (
-    <details className="og-technology-group" open={defaultOpen}>
+    <details className="og-technology-group">
       <summary className="og-technology-heading">
         <div>
           <h3>{group.name}</h3>
@@ -358,8 +432,6 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
 };
 
   const fullLibraryCount = categoryExtensionCount(libraryCategories);
-  const nonAttackPathCount = categoryExtensionCount(nonAttackPathCategories);
-
   return (
     <div className="og-library">
       <LibraryHero />
@@ -367,27 +439,14 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
       <LibraryGuide />
 
       <LibrarySection
-        eyebrow="Attack-path projects"
-        title="OpenGraph Library"
-        description="Browse extensions by the technologies they collect from or model. Use the card badge to identify whether the listed project is SpecterOps-attributed or community-maintained."
+        eyebrow="Collect, model, and enrich"
+        title="OpenGraph Extensions"
+        description="Browse extensions by the technologies they collect from, model, or use to enrich BloodHound. Use the card badge to identify whether the listed project is SpecterOps-attributed or community-maintained."
         count={`${fullLibraryCount} extensions`}
       >
         <div className="og-technology-list">
-          {technologyGroups.map((group, index) => (
-            <TechnologyGroup key={group.name} group={group} defaultOpen={index === 0} />
-          ))}
-        </div>
-      </LibrarySection>
-
-      <LibrarySection
-        eyebrow="Context and enrichment"
-        title="Non-Attack Paths"
-        description="These projects add context to BloodHound but are not primarily designed to create attack-path edges."
-        count={`${nonAttackPathCount} project`}
-      >
-        <div className="og-category-list">
-          {nonAttackPathCategories.map((category) => (
-            <CategoryGroup key={category.name} category={category} />
+          {technologyGroups.map((group) => (
+            <TechnologyGroup key={group.name} group={group} />
           ))}
         </div>
       </LibrarySection>
@@ -410,11 +469,13 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
           --og-primary: var(--color-primary, #2c2677);
           --og-primary-hover: #241f63;
           --og-primary-light: var(--color-primary-light, #5465ff);
+          --og-accent-text: var(--og-primary);
           --og-text: #292524;
           --og-title: #292524;
           --og-muted: #57534e;
           --og-muted-soft: #78716c;
           --og-card-bg: #fff;
+          --og-group-heading-bg: rgba(44, 38, 119, 0.04);
           --og-border: rgba(12, 10, 9, 0.1);
           --og-callout-bg: #fff7ed;
           --og-callout-border: #fed7aa;
@@ -423,7 +484,7 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
           color: var(--og-text);
         }
 
-        .og-library :global(a) {
+        .og-library a {
           text-decoration: none;
         }
 
@@ -455,7 +516,7 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
         .og-library-breadcrumb {
           display: inline-flex;
           margin-bottom: 0.5rem;
-          color: var(--og-primary-light);
+          color: var(--og-accent-text);
           font-size: 14px;
           font-weight: 700;
           line-height: 1.4;
@@ -465,6 +526,7 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
         .og-section-heading p,
         .og-category-heading p,
         .og-extension-vendor,
+        .og-extension-authors,
         .og-extension-description {
           color: var(--og-muted);
         }
@@ -496,7 +558,8 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
         }
 
         .og-submit-link:focus-visible,
-        .og-extension-card:focus-visible {
+        .og-extension-action:focus-visible,
+        .og-extension-author-link:focus-visible {
           outline: 2px solid var(--og-focus-ring);
           outline-offset: 2px;
         }
@@ -575,7 +638,7 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
 
         .og-section-eyebrow {
           margin: 0 0 0.25rem;
-          color: var(--og-primary);
+          color: var(--og-accent-text);
           font-size: 0.75rem;
           font-weight: 600;
           letter-spacing: 0;
@@ -595,7 +658,7 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
 
         .og-card-grid {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 1rem;
         }
 
@@ -634,6 +697,10 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
           gap: 0.75rem;
         }
 
+        .og-extension-card-top > div {
+          min-width: 0;
+        }
+
         .og-extension-card h3 {
           margin: 0;
           color: var(--og-title);
@@ -641,12 +708,34 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
           line-height: 1.5;
           font-weight: 600;
           letter-spacing: 0;
+          overflow-wrap: anywhere;
         }
 
         .og-extension-vendor {
           margin: 0.25rem 0 0;
           font-size: 0.875rem;
           line-height: 1.25;
+        }
+
+        .og-extension-authors {
+          margin: 0;
+          font-size: 0.875rem;
+          line-height: 1.45;
+          overflow-wrap: anywhere;
+        }
+
+        .og-extension-authors-label {
+          color: var(--og-title);
+          font-weight: 600;
+        }
+
+        .og-extension-author-link {
+          color: var(--og-accent-text);
+          text-decoration: none;
+        }
+
+        .og-extension-author-link:hover {
+          text-decoration: underline;
         }
 
         .og-extension-description {
@@ -693,8 +782,12 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
           --brand-light: var(--og-text);
         }
 
-        .og-maintainer-so :global(svg),
-        .og-maintainer-community :global(svg) {
+        .og-maintainer-so svg {
+          width: 1.45rem;
+          height: 1.45rem;
+        }
+
+        .og-maintainer-community svg {
           width: 0.95rem;
           height: 0.95rem;
         }
@@ -706,22 +799,30 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
 
         .og-technology-list {
           display: grid;
-          gap: 2rem;
+          gap: 1rem;
         }
 
         .og-technology-group {
           scroll-margin-top: 6rem;
-          border-bottom: 1px solid var(--og-border);
-          padding-bottom: 0.85rem;
+          overflow: hidden;
+          border: 1px solid var(--og-border);
+          border-radius: 0.75rem;
+          background: var(--og-card-bg);
         }
 
         .og-technology-heading {
           display: flex;
           justify-content: space-between;
           gap: 1.2rem;
-          align-items: start;
+          align-items: center;
+          padding: 1rem 1.1rem;
+          background: var(--og-group-heading-bg);
           cursor: pointer;
           list-style: none;
+        }
+
+        .og-technology-group[open] .og-technology-heading {
+          border-bottom: 1px solid var(--og-border);
         }
 
         .og-technology-heading::-webkit-details-marker {
@@ -731,7 +832,7 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
         .og-technology-heading h3 {
           margin: 0;
           color: var(--og-title);
-          font-size: 1.18rem;
+          font-size: 1.1rem;
           line-height: 1.35;
           font-weight: 700;
           letter-spacing: 0;
@@ -779,7 +880,8 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
         }
 
         .og-technology-group > .og-category-list {
-          margin-top: 1rem;
+          margin-top: 0;
+          padding: 1.1rem;
         }
 
         .og-category-group {
@@ -954,11 +1056,13 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
         .dark .og-library {
           --og-primary: var(--color-primary, #2c2677);
           --og-primary-hover: #3b32a0;
+          --og-accent-text: #a5b4fc;
           --og-title: #dfdfe2;
           --og-text: #d6d3d1;
           --og-muted: #a8a29e;
           --og-muted-soft: #78716c;
           --og-card-bg: var(--color-background-dark, rgb(14, 14, 15));
+          --og-group-heading-bg: rgba(165, 180, 252, 0.07);
           --og-border: rgba(255, 255, 255, 0.1);
           --og-callout-bg: rgba(154, 52, 18, 0.18);
           --og-callout-border: rgba(251, 146, 60, 0.35);
@@ -994,12 +1098,6 @@ const TechnologyGroup = ({ group, defaultOpen = false }) => {
 
         .dark .og-category-icon-okta {
           background: #030712;
-        }
-
-        @media (max-width: 1200px) {
-          .og-card-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-          }
         }
 
         @media (max-width: 900px) {

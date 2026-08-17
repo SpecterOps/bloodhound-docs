@@ -29,7 +29,7 @@ For instructions on how to specifically contribute to our docs, check out the [C
 
 ## Generate OpenGraph library data
 
-The OpenGraph library page uses JSON source files for easier maintenance. To add or update a library entry, edit the files in `docs/snippets/opengraph/library-categories/`, `docs/snippets/opengraph/non-attack-path-categories/`, or `docs/snippets/opengraph/open-graph-tools.json`.
+The OpenGraph library page uses JSON source files for easier maintenance. To add or update a library entry, edit the files in `docs/snippets/opengraph/library-categories/` or `docs/snippets/opengraph/open-graph-tools.json`.
 
 After editing the JSON files, regenerate the JSX data bridge that Mintlify imports:
 
