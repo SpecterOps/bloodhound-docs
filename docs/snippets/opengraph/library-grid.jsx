@@ -2,92 +2,23 @@
 
 export const OpenGraphLibrary = ({
   libraryCategories = [],
+  libraryGroups = [],
   openGraphTools = [],
 }) => {
 const flattenExtensions = (categories) =>
   categories.reduce((items, category) => items.concat(category.extensions), []);
 
-const categoryMap = libraryCategories.reduce((categories, category) => {
-  categories[category.name] = category;
-  return categories;
-}, {});
+const compareByOrderThenName = (left, right) =>
+  left.order - right.order || left.name.localeCompare(right.name);
 
-const technologyGroups = [
-  {
-    name: 'Identity, Authentication, and Secrets',
-    description: 'Identity, authentication, impersonation, credential, and authentication-control paths.',
-    categories: [
-      // General and cross-vendor scopes come before product-specific categories.
-      categoryMap['Credentials'],
-      categoryMap['1Password'],
-      categoryMap['Cisco Duo Security'],
-      categoryMap['CyberArk'],
-      categoryMap['FreeIPA'],
-      categoryMap['Microsoft Active Directory'],
-      categoryMap['Microsoft Entra ID'],
-      categoryMap['Okta'],
-      categoryMap['PingOne'],
-    ],
-  },
-  {
-    name: 'Cloud and Cluster Control Planes',
-    description: 'IAM, RBAC, privilege-escalation, and resource-control paths across clouds and clusters.',
-    categories: [
-      categoryMap['Amazon Web Services'],
-      categoryMap['Google Cloud Platform'],
-      categoryMap['Kubernetes'],
-      categoryMap['Oracle Cloud Infrastructure'],
-    ],
-  },
-  {
-    name: 'Endpoint, Network, and Infrastructure Control',
-    description: 'Administrative, remote-access, configuration, and lateral-movement paths through infrastructure.',
-    categories: [
-      // General and cross-vendor scopes come before product-specific categories.
-      categoryMap['SSH'],
-      categoryMap['IBM Resource Access Control Facility (RACF)'],
-      categoryMap['Jamf Pro'],
-      categoryMap['Microsoft System Center'],
-      categoryMap['Microsoft Windows'],
-      categoryMap['Tailscale'],
-      categoryMap['VMware vCenter Server'],
-    ],
-  },
-  {
-    name: 'Software Delivery and Automation',
-    description: 'Source-code, pipeline, automation, and deployment paths that affect downstream workloads.',
-    categories: [
-      // General and cross-vendor scopes come before product-specific categories.
-      categoryMap['Cross-platform DevOps'],
-      categoryMap['Ansible'],
-      categoryMap['GitHub'],
-      categoryMap['GitLab'],
-    ],
-  },
-  {
-    name: 'Application and Data Access',
-    description: 'Access and delegated-control paths through business applications, mail systems, and data platforms.',
-    categories: [
-      categoryMap['Atlassian Cloud'],
-      categoryMap['Microsoft Exchange'],
-      categoryMap['Microsoft SQL Server'],
-      categoryMap['Salesforce'],
-      categoryMap['Snowflake'],
-    ],
-  },
-  {
-    name: 'Exposure and Threat Context',
-    description: 'Reachability, asset-exposure, and threat-intelligence context for identifying and prioritizing paths.',
-    categories: [
-      categoryMap['Network'],
-      categoryMap['MITRE ATT&CK'],
-      categoryMap['runZero'],
-    ],
-  },
-].map((group) => ({
-  ...group,
-  categories: group.categories.filter(Boolean),
-}));
+const technologyGroups = libraryGroups
+  .map((group) => ({
+    ...group,
+    categories: libraryCategories
+      .filter((category) => category.group === group.id)
+      .sort(compareByOrderThenName),
+  }))
+  .filter((group) => group.categories.length > 0);
 
 const categoryExtensionCount = (categories) =>
   flattenExtensions(categories).length;

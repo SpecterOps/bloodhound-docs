@@ -5,6 +5,8 @@
 export const libraryCategories = [
   {
     "name": "1Password",
+    "group": "identity-authentication-secrets",
+    "order": 20,
     "icon": {
       "type": "onepassword",
       "label": "1P"
@@ -29,6 +31,8 @@ export const libraryCategories = [
   },
   {
     "name": "Amazon Web Services",
+    "group": "cloud-cluster-control-planes",
+    "order": 10,
     "icon": {
       "type": "aws",
       "label": "AWS"
@@ -53,6 +57,8 @@ export const libraryCategories = [
   },
   {
     "name": "Ansible",
+    "group": "software-delivery-automation",
+    "order": 20,
     "icon": {
       "type": "ansible",
       "label": "A"
@@ -79,6 +85,8 @@ export const libraryCategories = [
   },
   {
     "name": "Atlassian Cloud",
+    "group": "application-data-access",
+    "order": 10,
     "icon": {
       "type": "atlassian",
       "label": "A"
@@ -103,6 +111,8 @@ export const libraryCategories = [
   },
   {
     "name": "Cisco Duo Security",
+    "group": "identity-authentication-secrets",
+    "order": 30,
     "icon": {
       "type": "cisco",
       "label": "DUO"
@@ -127,6 +137,8 @@ export const libraryCategories = [
   },
   {
     "name": "Credentials",
+    "group": "identity-authentication-secrets",
+    "order": 10,
     "icon": {
       "type": "key",
       "label": "KEY"
@@ -166,6 +178,8 @@ export const libraryCategories = [
   },
   {
     "name": "Cross-platform DevOps",
+    "group": "software-delivery-automation",
+    "order": 10,
     "icon": {
       "type": "cross-platform",
       "label": "Cross-platform"
@@ -190,6 +204,8 @@ export const libraryCategories = [
   },
   {
     "name": "CyberArk",
+    "group": "identity-authentication-secrets",
+    "order": 40,
     "icon": {
       "type": "cyberark",
       "label": "CyberArk"
@@ -216,6 +232,8 @@ export const libraryCategories = [
   },
   {
     "name": "FreeIPA",
+    "group": "identity-authentication-secrets",
+    "order": 50,
     "icon": {
       "type": "freeipa",
       "label": "IPA"
@@ -238,6 +256,8 @@ export const libraryCategories = [
   },
   {
     "name": "GitHub",
+    "group": "software-delivery-automation",
+    "order": 30,
     "icon": {
       "type": "github",
       "label": "GH"
@@ -298,6 +318,8 @@ export const libraryCategories = [
   },
   {
     "name": "GitLab",
+    "group": "software-delivery-automation",
+    "order": 40,
     "icon": {
       "type": "gitlab",
       "label": "GL"
@@ -322,6 +344,8 @@ export const libraryCategories = [
   },
   {
     "name": "Google Cloud Platform",
+    "group": "cloud-cluster-control-planes",
+    "order": 20,
     "icon": {
       "type": "gcp",
       "label": "GCP"
@@ -359,6 +383,8 @@ export const libraryCategories = [
   },
   {
     "name": "IBM Resource Access Control Facility (RACF)",
+    "group": "endpoint-network-infrastructure-control",
+    "order": 20,
     "icon": {
       "type": "mainframe",
       "label": "RACF"
@@ -381,6 +407,8 @@ export const libraryCategories = [
   },
   {
     "name": "Jamf Pro",
+    "group": "endpoint-network-infrastructure-control",
+    "order": 30,
     "icon": {
       "type": "jamf",
       "label": "J"
@@ -432,6 +460,8 @@ export const libraryCategories = [
   },
   {
     "name": "Kubernetes",
+    "group": "cloud-cluster-control-planes",
+    "order": 30,
     "icon": {
       "type": "kubernetes",
       "label": "K8S"
@@ -477,6 +507,8 @@ export const libraryCategories = [
   },
   {
     "name": "Microsoft Active Directory",
+    "group": "identity-authentication-secrets",
+    "order": 60,
     "icon": {
       "type": "microsoft",
       "label": "AD"
@@ -559,6 +591,8 @@ export const libraryCategories = [
   },
   {
     "name": "Microsoft Entra ID",
+    "group": "identity-authentication-secrets",
+    "order": 70,
     "icon": {
       "type": "microsoft",
       "label": "ID"
@@ -598,6 +632,8 @@ export const libraryCategories = [
   },
   {
     "name": "Microsoft Exchange",
+    "group": "application-data-access",
+    "order": 20,
     "icon": {
       "type": "microsoft",
       "label": "EX"
@@ -620,6 +656,8 @@ export const libraryCategories = [
   },
   {
     "name": "Microsoft SQL Server",
+    "group": "application-data-access",
+    "order": 30,
     "icon": {
       "type": "microsoft",
       "label": "SQL"
@@ -644,6 +682,8 @@ export const libraryCategories = [
   },
   {
     "name": "Microsoft System Center",
+    "group": "endpoint-network-infrastructure-control",
+    "order": 40,
     "icon": {
       "type": "microsoft",
       "label": "SC"
@@ -696,6 +736,8 @@ export const libraryCategories = [
   },
   {
     "name": "Microsoft Windows",
+    "group": "endpoint-network-infrastructure-control",
+    "order": 50,
     "icon": {
       "type": "windows",
       "label": "WIN"
@@ -748,6 +790,8 @@ export const libraryCategories = [
   },
   {
     "name": "MITRE ATT&CK",
+    "group": "exposure-threat-context",
+    "order": 20,
     "icon": {
       "type": "mitre",
       "label": "ATT&CK"
@@ -772,6 +816,8 @@ export const libraryCategories = [
   },
   {
     "name": "Network",
+    "group": "exposure-threat-context",
+    "order": 10,
     "icon": {
       "type": "network",
       "label": "NET"
@@ -796,6 +842,8 @@ export const libraryCategories = [
   },
   {
     "name": "Okta",
+    "group": "identity-authentication-secrets",
+    "order": 80,
     "icon": {
       "type": "okta",
       "label": "O"
@@ -841,6 +889,8 @@ export const libraryCategories = [
   },
   {
     "name": "Oracle Cloud Infrastructure",
+    "group": "cloud-cluster-control-planes",
+    "order": 40,
     "icon": {
       "type": "oracle",
       "label": "OCI"
@@ -865,6 +915,8 @@ export const libraryCategories = [
   },
   {
     "name": "PingOne",
+    "group": "identity-authentication-secrets",
+    "order": 90,
     "icon": {
       "type": "ping",
       "label": "P"
@@ -889,6 +941,8 @@ export const libraryCategories = [
   },
   {
     "name": "runZero",
+    "group": "exposure-threat-context",
+    "order": 30,
     "icon": {
       "type": "runzero",
       "label": "rZ"
@@ -913,6 +967,8 @@ export const libraryCategories = [
   },
   {
     "name": "Salesforce",
+    "group": "application-data-access",
+    "order": 40,
     "icon": {
       "type": "salesforce",
       "label": "SF"
@@ -950,6 +1006,8 @@ export const libraryCategories = [
   },
   {
     "name": "Snowflake",
+    "group": "application-data-access",
+    "order": 50,
     "icon": {
       "type": "snowflake",
       "label": "SN"
@@ -974,6 +1032,8 @@ export const libraryCategories = [
   },
   {
     "name": "SSH",
+    "group": "endpoint-network-infrastructure-control",
+    "order": 10,
     "icon": {
       "type": "terminal",
       "label": "SSH"
@@ -996,6 +1056,8 @@ export const libraryCategories = [
   },
   {
     "name": "Tailscale",
+    "group": "endpoint-network-infrastructure-control",
+    "order": 60,
     "icon": {
       "type": "tailscale",
       "label": "TS"
@@ -1026,6 +1088,8 @@ export const libraryCategories = [
   },
   {
     "name": "VMware vCenter Server",
+    "group": "endpoint-network-infrastructure-control",
+    "order": 70,
     "icon": {
       "type": "vmware",
       "label": "vC"
@@ -1047,6 +1111,45 @@ export const libraryCategories = [
         "href": "https://github.com/MorDavid/vCenterHound"
       }
     ]
+  }
+];
+
+export const libraryGroups = [
+  {
+    "id": "identity-authentication-secrets",
+    "name": "Identity, Authentication, and Secrets",
+    "description": "Identity, authentication, impersonation, credential, and authentication-control paths.",
+    "order": 10
+  },
+  {
+    "id": "cloud-cluster-control-planes",
+    "name": "Cloud and Cluster Control Planes",
+    "description": "IAM, RBAC, privilege-escalation, and resource-control paths across clouds and clusters.",
+    "order": 20
+  },
+  {
+    "id": "endpoint-network-infrastructure-control",
+    "name": "Endpoint, Network, and Infrastructure Control",
+    "description": "Administrative, remote-access, configuration, and lateral-movement paths through infrastructure.",
+    "order": 30
+  },
+  {
+    "id": "software-delivery-automation",
+    "name": "Software Delivery and Automation",
+    "description": "Source-code, pipeline, automation, and deployment paths that affect downstream workloads.",
+    "order": 40
+  },
+  {
+    "id": "application-data-access",
+    "name": "Application and Data Access",
+    "description": "Access and delegated-control paths through business applications, mail systems, and data platforms.",
+    "order": 50
+  },
+  {
+    "id": "exposure-threat-context",
+    "name": "Exposure and Threat Context",
+    "description": "Reachability, asset-exposure, and threat-intelligence context for identifying and prioritizing paths.",
+    "order": 60
   }
 ];
 
