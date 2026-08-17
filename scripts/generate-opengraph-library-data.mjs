@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = fileURLToPath(new URL('../', import.meta.url));
 const opengraphSnippetDir = join(repoRoot, 'docs/snippets/opengraph');
+const librarySnippetDir = join(opengraphSnippetDir, 'library');
 
 const readJson = (filePath) => JSON.parse(readFileSync(filePath, 'utf8'));
 
@@ -71,12 +72,12 @@ const validateCategory = (category, knownGroups) => {
 };
 
 const libraryCategories = readCategoryDirectory(
-  join(opengraphSnippetDir, 'library-categories'),
+  join(librarySnippetDir, 'categories'),
 );
-const libraryGroups = readJson(join(opengraphSnippetDir, 'library-groups.json')).sort(
+const libraryGroups = readJson(join(librarySnippetDir, 'groups.json')).sort(
   compareByOrderThenName,
 );
-const openGraphTools = readJson(join(opengraphSnippetDir, 'open-graph-tools.json'));
+const openGraphTools = readJson(join(librarySnippetDir, 'tools.json'));
 
 assertUnique(libraryGroups, (group) => group.id, 'library group id');
 assertUnique(libraryCategories, (category) => category.name, 'library category name');
@@ -91,7 +92,7 @@ for (const category of libraryCategories) {
   validateCategory(category, groupMap);
 }
 
-const generatedFile = join(opengraphSnippetDir, 'library-data.generated.jsx');
+const generatedFile = join(librarySnippetDir, 'data.generated.jsx');
 const generatedContent = `// Generated from the OpenGraph library JSON files. Do not edit directly.
 // Edit the JSON source files, then run:
 // node scripts/generate-opengraph-library-data.mjs
