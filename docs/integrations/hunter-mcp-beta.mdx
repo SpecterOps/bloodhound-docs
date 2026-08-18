@@ -5,23 +5,23 @@ hidden: true
 ---
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-With Hunter, AI agents can help prioritize active findings, check collection health, investigate risky relationships and reachable objects, surface bounded attack paths, and summarize evidence with remediation guidance. 
+With Hunter, AI agents can help prioritize active findings, check collection health, investigate risky relationships and reachable objects, surface bounded attack paths, and summarize evidence with remediation guidance.
 
-Your AI agents can connect to BloodHound Hunter MCP as a remote streamable HTTP server with no local installation required. BloodHound Hunter is currently available in a limited closed Beta and must be enabled for your BloodHound Enterprise tenant.  
+Your AI agents can connect to BloodHound Hunter MCP as a remote streamable HTTP server with no local installation required. BloodHound Hunter is currently available in a limited closed Beta and must be enabled for your BloodHound Enterprise tenant.
 
 ## Requirements
 - A BloodHound Enterprise deployment with the BloodHound Hunter beta enabled.
 - An active OpenAI Codex subscription approved for use with your BloodHound data.
 - Codex in the ChatGPT desktop app, CLI, or IDE extension, with outbound HTTPS access to your BloodHound Enterprise tenant.
-- An active BloodHound session within your browser. 
-- Account used for authentication with Hunter MCP server must have one of the following BloodHound Enterprise roles: User, Power User, or Administrator. 
+- An active BloodHound session within your browser.
+- Account used for authentication with Hunter MCP server must have one of the following BloodHound Enterprise roles: User, Power User, or Administrator.
 
 ## Connect Codex to Hunter
 1. Start a new Codex chat and enter the prompt below, replacing `<bloodhound-host>` with your BloodHound hostname.
-<Prompt description="Connect to Hunter MCP">
-Connect to the MCP server at `https://<bloodhound-host>/api/v2/huntmaster/mcp` and execute the bloodhound-login prompt presented by the MCP server.
-</Prompt>
-2. Codex will present a login URL and a one time code within your chat window, proceed by opening the link in your proffered browser. Sign into BloodHound if necessary and confirm that the page’s code matches the code Codex displayed and approve access. 
+    <Prompt description="Connect to Hunter MCP">
+    Connect to the MCP server at `https://<bloodhound-host>/api/v2/huntmaster/mcp` and execute the bloodhound-login prompt presented by the MCP server. Ask me to provide the BloodHound tenant domain to replace `<bloodhound-host>` to be used for this connection.
+    </Prompt>
+2. Codex will present a login URL and a one time code within your chat window, proceed by opening the link in your proffered browser. Sign into BloodHound if necessary and confirm that the page’s code matches the code Codex displayed and approve access.
 3. Return to the same Codex chat. Codex will poll for approval and refresh Hunter's tools and resources without opening a new MCP transport.
 4. Ask Codex to verify the connection:
 Call bloodhound_status, confirm that Hunter is authenticated, and summarize the available capabilities without querying BloodHound data yet.
@@ -29,33 +29,33 @@ Call bloodhound_status, confirm that Hunter is authenticated, and summarize the 
 <Info>If Codex saves the server but does not expose its tools, restart Codex (or the IDE extension) and repeat the connection prompt.</Info>
 
 ## Codex Workflow Example
-Enter the following prompt into OpenAI Codex to get started with a bounced enviroment and risk overview.
+Enter the following prompt into OpenAI Codex to get started with a BloodHound environment and risk overview.
 <Prompt description="Get started with Hunter MCP">
-Use Hunter to list the BloodHound environments I can access, summarize their collection health and warnings, and then execute the bloodhound-top-findings prompt for the highest-priority active findings. For the top three findings, explain the ranking, show bounded evidence, and provide the short canonical remediation. Preserve any partial-data, truncation, or scan-budget warnings. 
+Use Hunter to list the BloodHound environments I can access, summarize their collection health and warnings, and then execute the bloodhound-top-findings prompt for the highest-priority active findings. For the top three findings, explain the ranking, show bounded evidence, and provide the short canonical remediation.
 </Prompt>
 <Info>Codex uses the typed Hunter tools first, retains the identifiers returned by the server, and avoids raw Cypher unless the typed tools cannot answer the question.</Info>
 
 ## Additional Prompts to Try in Codex
 1. Get started with being presented your highest severity findings along with the reasoning and remediation steps.
-<Prompt description="Prioritize Findings">
-Show my highest-priority active findings, explain why they rank highly, and give me the short remediation for the top three.
-</Prompt>
+    <Prompt description="Prioritize Findings">
+    Show my highest-priority active findings, explain why they rank highly, and give me the short remediation for the top three.
+    </Prompt>
 2. Dig into the details of a specific finding and receive the remediation steps.
-<Prompt description="Investigate a specific finding">
-Investigate finding ID `<id>`, explain any proven current graph relationship, and summarize remediation for a security operator.
-</Prompt>
+    <Prompt description="Investigate a specific finding">
+    Investigate finding ID `<id>`, explain any proven current graph relationship, and summarize remediation for a security operator. Ask me which finding `<ID>` to investigate.
+    </Prompt>
 3. Get a pulse on how your collectors are performing and if any are in need of review.
-<Prompt description="Check collection coverage">
-List my visible AD, Azure, and OpenGraph environments and summarize collection health, stale data, and completeness warnings
-</Prompt>
+    <Prompt description="Check collection coverage">
+    List my visible AD, Azure, and OpenGraph environments and summarize collection health, stale data, and completeness warnings
+    </Prompt>
 4. Investigate a specific object and the attack paths within a certain number of hops.
-<Prompt description="Analyze control and reachability">
-Find the risky inbound control relationships for `<object>`, then show what is reachable within two hops.
-</Prompt>
+    <Prompt description="Analyze control and reachability">
+    Find the risky inbound control relationships for `<object>`, then show what is reachable within two hops. Ask me which `<object>` to evaluate.
+    </Prompt>
 5. Generate a shareable link that includes attack paths between a source and a target object.
-<Prompt description="Find and visualize an attack path">
-Find bounded shortest attack paths from `<source-id> to <target-id>` and create a BloodHound Explore link for the best verified path.
-</Prompt>
+    <Prompt description="Find and visualize an attack path">
+    Find bounded shortest attack paths from `<source-id>` to `<target-id>` and create a BloodHound Explore link for the best verified path. Ask me for the `<source-id>` and `<target-id>`.
+    </Prompt>
 
 ## Known Restrictions and Operational Limits
 <table>
@@ -161,4 +161,4 @@ Find bounded shortest attack paths from `<source-id> to <target-id>` and create 
 </table>
 
 ## Questions and Support
-If you encounter errors or have other questions while using Hunter MCP, please reach out to [Stephen Hink](mailto:shinck@specterops.io) or [Connor Mathena](mailto:cmathena@specterops.io). 
+If you encounter errors or have other questions while using Hunter MCP, please reach out to [Stephen Hinck](mailto:shinck@specterops.io) or [Connor Mathena](mailto:cmathena@specterops.io).
