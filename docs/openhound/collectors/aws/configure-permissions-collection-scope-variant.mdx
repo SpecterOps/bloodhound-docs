@@ -1,0 +1,899 @@
+---
+title: Configure AWS Permissions Variant
+description: Compare a collection-scope tab structure for OpenHound AWS collector permissions.
+hidden: true
+---
+
+import AwsBetaNote from '/snippets/hounds/openhound-aws-beta-note.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<AwsBetaNote />
+
+This page explains how to grant the OpenHound AWS collector the read-only AWS permissions it needs for single-account or organization-wide collection.
+
+## Choose a collection scope
+
+Choose the collection scope that matches the AWS environment you want OpenHound to collect:
+
+| Collection scope | Use this path when |
+| --- | --- |
+| Single-account collection | The collector collects resources from one AWS account. |
+| Organization-wide collection | The collector collects AWS Organizations metadata and resources from member accounts. |
+
+<Tabs>
+  <Tab title="Single-account collection">
+    Use this path when the collector collects one AWS account. Within the procedure, choose the deployment model tab that matches where the collector runs.
+
+    ##### Local or external workload
+
+    Run the collector using an IAM role in the account being collected. Attach the OpenHound permissions policy directly to the collector's workload role.
+
+    ```mermaid
+    flowchart LR
+
+        subgraph CustomerAccount["AWS account"]
+            Workload["OpenHoundCollectorUser"]
+            RuntimeRole["OpenHoundCollectorRole"]
+            ReadPolicy["OpenHound <br/>permissions policy"]
+            AWSResources["AWS resources"]
+
+            Workload -->|"Get temporary credentials"| RuntimeRole
+            ReadPolicy -->|"Attached to"| RuntimeRole
+            RuntimeRole -->|"Reads"| AWSResources
+        end
+        
+        subgraph CustomerStack["Workloads"]
+            VM["OpenHound Service"]
+            VM -->|"Authenticate"| Workload
+        end
+    ```
+
+    ##### AWS-hosted workload
+
+    Run the collector using an IAM role in the account being collected. Attach the OpenHound permissions policy directly to the collector's workload role.
+
+    ```mermaid
+    flowchart LR
+        subgraph CustomerAccount["AWS account"]
+            Workload["EC2 VM / EKS Pod"]
+            RuntimeRole["OpenHoundCollectorRole"]
+            ReadPolicy["OpenHound <br/>permissions policy"]
+            AWSResources["AWS resources"]
+
+            Workload -->|"Get temporary credentials"| RuntimeRole
+            ReadPolicy -->|"Attached to"| RuntimeRole
+            RuntimeRole -->|"Reads"| AWSResources
+        end
+    ```
+  </Tab>
+
+  <Tab title="Organization-wide collection">
+    Use this path when the collector runs from an AWS Organizations management account and assumes a read-only collection role in member accounts. Within the procedure, choose the deployment model tab that matches where the collector runs.
+
+    ##### Local or external workload
+
+    Run the collector centrally from an AWS Organization. The collector's runtime role assumes a read-only collection role in each organization-owned account.
+
+    ```mermaid
+    flowchart LR
+      subgraph SecurityAccount["Management Account"]
+          Workload["OpenHoundCollectorUser"]
+          RuntimeRole["OpenHoundCollectorRuntimeRole"]
+          AssumePolicy["sts:AssumeRole policy<br/>restricted to the organization"]
+
+          Workload -->|"Get temporary credentials"| RuntimeRole
+          AssumePolicy -->|"Attached to"| RuntimeRole
+      end
+
+      subgraph Organization["AWS Organization"]
+          subgraph AccountA["Target account A"]
+              RoleA["OpenHoundCollectorRole"]
+              PolicyA["OpenHound read-only policy"]
+              ResourcesA["AWS metadata"]
+              PolicyA -->|"Attached to"| RoleA
+              RoleA -->|"Reads"| ResourcesA
+          end
+
+          subgraph AccountB["Target account B"]
+              RoleB["OpenHoundCollectorRole"]
+              PolicyB["OpenHound read-only policy"]
+              ResourcesB["AWS metadata"]
+              PolicyB -->|"Attached to"| RoleB
+              RoleB -->|"Reads"| ResourcesB
+          end
+      end
+      
+        subgraph CustomerStack["Workloads"]
+            VM["OpenHound Service"]
+            VM -->|"Authenticate"| Workload
+        end
+
+      RuntimeRole -->|"STS AssumeRole"| RoleA
+      RuntimeRole -->|"STS AssumeRole"| RoleB
+    ```
+
+    ##### AWS-hosted workload
+
+    Run the collector centrally from an AWS Organization. The collector's runtime role assumes a read-only collection role in each organization-owned account.
+
+    ```mermaid
+    flowchart LR
+      subgraph SecurityAccount["Security Account"]
+          Workload["EC2 VM / EKS Pod"]
+          RuntimeRole["OpenHoundCollectorRuntimeRole"]
+          AssumePolicy["sts:AssumeRole policy<br/>restricted to the organization"]
+
+          Workload -->|"Get temporary credentials"| RuntimeRole
+          AssumePolicy -->|"Attached to"| RuntimeRole
+      end
+
+      subgraph Organization["AWS Organization"]
+          subgraph AccountA["Target account A"]
+              RoleA["OpenHoundCollectorRole"]
+              PolicyA["OpenHound read-only policy"]
+              ResourcesA["AWS resources"]
+              PolicyA -->|"Attached to"| RoleA
+              RoleA -->|"Reads"| ResourcesA
+          end
+
+          subgraph AccountB["Target account B"]
+              RoleB["OpenHoundCollectorRole"]
+              PolicyB["OpenHound read-only policy"]
+              ResourcesB["AWS resources"]
+              PolicyB -->|"Attached to"| RoleB
+              RoleB -->|"Reads"| ResourcesB
+          end
+      end
+
+      RuntimeRole -->|"STS AssumeRole"| RoleA
+      RuntimeRole -->|"STS AssumeRole"| RoleB
+    ```
+  </Tab>
+</Tabs>
+
+## Prerequisites
+
+- AWS CLI v2 installed.
+- Administrator access to the AWS account where you create the collector principal and IAM roles.
+- For organization-wide collection, access to the AWS Organizations management account or a delegated administrator account.
+- For organization-wide collection, CloudFormation StackSets enabled with trusted access for AWS Organizations.
+- For AWS-hosted collection, a running EC2 instance or EKS cluster that hosts the OpenHound AWS collector.
+
+## Authenticate to AWS
+
+Run the following commands to authenticate to AWS with an administrative profile:
+
+```bash
+aws login --profile openhound-admin
+export AWS_PROFILE=openhound-admin
+aws sts get-caller-identity
+```
+
+The `aws sts get-caller-identity` command returns the AWS identity that creates the roles and policies in the following steps.
+
+## Save the read-only permissions policy
+
+Save the following policy document as `openhound-collector-policy.json`. This policy grants the read-only API permissions required for the AWS resources collected by the OpenHound AWS collector.
+
+```json title="openhound-collector-policy.json"
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BaseCallerAndRegions",
+      "Effect": "Allow",
+      "Action": [
+        "sts:GetCallerIdentity",
+        "ec2:DescribeRegions"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "IAM",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetAccountAuthorizationDetails",
+        "iam:ListSAMLProviders",
+        "iam:ListOpenIDConnectProviders",
+        "iam:GetSAMLProvider",
+        "iam:GetOpenIDConnectProvider"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "Organizations",
+      "Effect": "Allow",
+      "Action": [
+        "organizations:DescribeOrganization",
+        "organizations:ListRoots",
+        "organizations:ListChildren",
+        "organizations:ListOrganizationalUnitsForParent",
+        "organizations:ListAccountsForParent",
+        "organizations:ListAccounts",
+        "organizations:ListPolicies",
+        "organizations:DescribePolicy",
+        "organizations:ListTargetsForPolicy"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EC2",
+      "Effect": "Allow",
+      "Action": "ec2:DescribeInstances",
+      "Resource": "*"
+    },
+    {
+      "Sid": "S3",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListAllMyBuckets",
+        "s3:GetBucketLocation",
+        "s3:GetBucketPolicy",
+        "s3:GetBucketPolicyStatus",
+        "s3:GetBucketAcl",
+        "s3:GetBucketPublicAccessBlock",
+        "s3:GetAccountPublicAccessBlock",
+        "s3:GetBucketOwnershipControls",
+        "s3:GetBucketTagging",
+        "s3:ListBucket"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "KMS",
+      "Effect": "Allow",
+      "Action": [
+        "kms:ListKeys",
+        "kms:DescribeKey",
+        "kms:GetKeyPolicy",
+        "kms:GetKeyRotationStatus",
+        "kms:ListGrants",
+        "kms:ListAliases",
+        "kms:ListResourceTags"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "SSM",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:DescribeParameters",
+        "ssm:DescribeInstanceInformation",
+        "ssm:ListTagsForResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "Lambda",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:ListFunctions",
+        "lambda:GetPolicy",
+        "lambda:GetFunctionUrlConfig",
+        "lambda:ListTags"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudFormation",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:DescribeStacks",
+        "cloudformation:ListStackResources",
+        "cloudformation:ListStacks",
+        "cloudformation:ListStackSets",
+        "cloudformation:DescribeStackSet"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EKS",
+      "Effect": "Allow",
+      "Action": [
+        "eks:ListClusters",
+        "eks:DescribeCluster",
+        "eks:ListNodegroups",
+        "eks:DescribeNodegroup",
+        "eks:ListAccessEntries",
+        "eks:DescribeAccessEntry",
+        "eks:ListAssociatedAccessPolicies",
+        "eks:ListPodIdentityAssociations",
+        "eks:DescribePodIdentityAssociation"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+## Configure permissions
+
+Click the tab that matches the AWS scope you want OpenHound to collect. Each path includes deployment model tabs for local or external workloads and AWS-hosted workloads.
+
+<Tabs>
+  <Tab title="Single-account collection">
+Use this procedure when the AWS collector collects one AWS account.
+
+<Steps>
+  <Step title="Create or identify the collector principal">
+    <Tabs>
+      <Tab title="Local or external workload">
+        Create an IAM user named `OpenHoundCollectorUser` in the account being collected:
+
+        ```bash
+        aws iam create-user --user-name OpenHoundCollectorUser
+        aws iam create-access-key --user-name OpenHoundCollectorUser
+        ```
+
+        Securely store the returned `AccessKeyId` and `SecretAccessKey`. AWS displays the secret access key only once.
+      </Tab>
+      <Tab title="AWS-hosted workload">
+        Create or identify the IAM role attached to the EC2 instance or EKS pod's service account that runs the collector.
+
+        The examples in this page use `AttachedOpenHoundCollectorRole` as the workload role name.
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="Create the collector role trust policy">
+    Replace `<ACCOUNT_ID>` with the AWS account ID where you create the role.
+
+    <Tabs>
+      <Tab title="Local or external workload">
+        Save the following document as `openhound-collector-trust.json`:
+
+        ```json title="openhound-collector-trust.json"
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AllowOpenHoundCollectorUser",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::<ACCOUNT_ID>:user/OpenHoundCollectorUser"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+        ```
+
+        To restrict role assumption to a known source IP address, add an `IpAddress` condition:
+
+        ```json title="openhound-collector-trust.json"
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AllowOpenHoundCollectorUser",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::<ACCOUNT_ID>:user/OpenHoundCollectorUser"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": { // [!code ++:7]
+                "IpAddress": {
+                  "aws:SourceIp": [
+                    "XX.XX.XX.XX/32"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+        ```
+      </Tab>
+      <Tab title="AWS-hosted workload">
+        Save the following document as `openhound-collector-trust.json`. Replace `<WORKLOAD_ROLE_NAME>` if you use a different workload role name.
+
+        ```json title="openhound-collector-trust.json"
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AllowOpenHoundWorkloadRole",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::<ACCOUNT_ID>:role/<WORKLOAD_ROLE_NAME>"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="Create the collector role">
+    Create `OpenHoundCollectorRole` with the trust policy, then attach the read-only permissions policy:
+
+    ```bash
+    aws iam create-role \
+      --role-name OpenHoundCollectorRole \
+      --assume-role-policy-document file://openhound-collector-trust.json \
+      --max-session-duration 3600 \
+      --description "Read-only role for OpenHound collection"
+
+    aws iam put-role-policy \
+      --role-name OpenHoundCollectorRole \
+      --policy-name OpenHoundCollectorReadOnly \
+      --policy-document file://openhound-collector-policy.json
+    ```
+  </Step>
+  <Step title="Allow the collector principal to assume the collector role">
+    Replace `<ACCOUNT_ID>` with the AWS account ID where you created `OpenHoundCollectorRole`.
+
+    Save the following document as `openhound-assume-role.json`:
+
+    ```json title="openhound-assume-role.json"
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Sid": "AssumeOpenHoundCollectorRole",
+          "Effect": "Allow",
+          "Action": "sts:AssumeRole",
+          "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/OpenHoundCollectorRole"
+        }
+      ]
+    }
+    ```
+
+    <Tabs>
+      <Tab title="Local or external workload">
+        Attach the policy to `OpenHoundCollectorUser`:
+
+        ```bash
+        aws iam put-user-policy \
+          --user-name OpenHoundCollectorUser \
+          --policy-name OpenHoundAssumeCollectorRole \
+          --policy-document file://openhound-assume-role.json
+        ```
+      </Tab>
+      <Tab title="AWS-hosted workload">
+        Attach the policy to the workload role:
+
+        ```bash
+        aws iam put-role-policy \
+          --role-name <WORKLOAD_ROLE_NAME> \
+          --policy-name OpenHoundAssumeCollectorRole \
+          --policy-document file://openhound-assume-role.json
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="Configure the AWS profile">
+    Configure the AWS profile that the OpenHound AWS collector uses. Write down the profile name so you can add it to the collector configuration.
+
+    <Tabs>
+      <Tab title="Local or external workload">
+        Create a source profile with the access keys from the `OpenHoundCollectorUser` user:
+
+        ```bash
+        aws configure --profile openhound-source
+        ```
+
+        Then add a collector profile to `~/.aws/config`:
+
+        ```ini
+        [profile collectaccount1]
+        role_arn = arn:aws:iam::<ACCOUNT_ID>:role/OpenHoundCollectorRole
+        source_profile = openhound-source
+        role_session_name = OpenHoundCollector
+        region = us-east-2
+        ```
+      </Tab>
+      <Tab title="AWS-hosted workload">
+        For EC2, add a collector profile that uses the instance metadata credential source:
+
+        ```ini
+        [profile collectaccount1]
+        role_arn = arn:aws:iam::<ACCOUNT_ID>:role/OpenHoundCollectorRole
+        credential_source = Ec2InstanceMetadata
+        role_session_name = OpenHoundCollector
+        region = us-east-2
+        ```
+
+        For EKS, configure the pod service account role with your normal EKS IAM role workflow, then expose the profile or default AWS SDK credentials to the collector container.
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+  </Tab>
+  <Tab title="Organization-wide collection">
+Use this procedure when the AWS collector runs from the AWS Organizations management account and assumes a read-only collection role in member accounts.
+
+<Note>
+  Run these steps from the AWS Organizations management account or a delegated administrator account. Before continuing, verify the active AWS identity with `aws sts get-caller-identity`.
+</Note>
+
+The AWS organization profile must resolve to credentials in the management account with permissions to read AWS Organizations metadata and assume `OpenHoundCollectorRole` in member accounts. If the StackSet target does not include the management account, create `OpenHoundCollectorRole` in the management account with the single-account procedure before you configure the organization profile.
+
+<Steps>
+  <Step title="Create or identify the management-account collector principal">
+    <Tabs>
+      <Tab title="Local or external workload">
+        Create an IAM user named `OpenHoundCollectorUser` in the management account:
+
+        ```bash
+        aws iam create-user --user-name OpenHoundCollectorUser
+        aws iam create-access-key --user-name OpenHoundCollectorUser
+        ```
+
+        Securely store the returned `AccessKeyId` and `SecretAccessKey`.
+      </Tab>
+      <Tab title="AWS-hosted workload">
+        Create or identify the IAM role attached to the EC2 instance or EKS pod's service account that runs the collector from the management account.
+
+        The examples in this page use `AttachedOpenHoundCollectorRole` as the workload role name.
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="Save the member-account role template">
+    Replace `<MANAGEMENT_ACCOUNT_ID>` with the AWS Organizations management account ID.
+
+    <Tabs>
+      <Tab title="Local or external workload">
+        Save the following template as `collector-role-stack.yaml`:
+
+        ```yaml title="collector-role-stack.yaml"
+        AWSTemplateFormatVersion: "2010-09-09"
+        Description: OpenHound read-only collector role
+
+        Resources:
+          OpenHoundCollectorRole:
+            Type: AWS::IAM::Role
+            Properties:
+              RoleName: OpenHoundCollectorRole
+              MaxSessionDuration: 3600
+              AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                  - Effect: Allow
+                    Principal:
+                      AWS: "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:user/OpenHoundCollectorUser"
+                    Action: sts:AssumeRole
+              Policies:
+                - PolicyName: OpenHoundCollectorReadOnly
+                  PolicyDocument:
+                    Version: "2012-10-17"
+                    Statement:
+                      - Sid: BaseCallerAndRegions
+                        Effect: Allow
+                        Action:
+                          - sts:GetCallerIdentity
+                          - ec2:DescribeRegions
+                        Resource: "*"
+                      - Sid: IAM
+                        Effect: Allow
+                        Action:
+                          - iam:GetAccountAuthorizationDetails
+                          - iam:ListSAMLProviders
+                          - iam:ListOpenIDConnectProviders
+                          - iam:GetSAMLProvider
+                          - iam:GetOpenIDConnectProvider
+                        Resource: "*"
+                      - Sid: Organizations
+                        Effect: Allow
+                        Action:
+                          - organizations:DescribeOrganization
+                          - organizations:ListRoots
+                          - organizations:ListChildren
+                          - organizations:ListOrganizationalUnitsForParent
+                          - organizations:ListAccountsForParent
+                          - organizations:ListAccounts
+                          - organizations:ListPolicies
+                          - organizations:DescribePolicy
+                          - organizations:ListTargetsForPolicy
+                        Resource: "*"
+                      - Sid: EC2
+                        Effect: Allow
+                        Action: ec2:DescribeInstances
+                        Resource: "*"
+                      - Sid: S3
+                        Effect: Allow
+                        Action:
+                          - s3:ListAllMyBuckets
+                          - s3:GetBucketLocation
+                          - s3:GetBucketPolicy
+                          - s3:GetBucketPolicyStatus
+                          - s3:GetBucketAcl
+                          - s3:GetBucketPublicAccessBlock
+                          - s3:GetAccountPublicAccessBlock
+                          - s3:GetBucketOwnershipControls
+                          - s3:GetBucketTagging
+                          - s3:ListBucket
+                        Resource: "*"
+                      - Sid: KMS
+                        Effect: Allow
+                        Action:
+                          - kms:ListKeys
+                          - kms:DescribeKey
+                          - kms:GetKeyPolicy
+                          - kms:GetKeyRotationStatus
+                          - kms:ListGrants
+                          - kms:ListAliases
+                          - kms:ListResourceTags
+                        Resource: "*"
+                      - Sid: SSM
+                        Effect: Allow
+                        Action:
+                          - ssm:DescribeParameters
+                          - ssm:DescribeInstanceInformation
+                          - ssm:ListTagsForResource
+                        Resource: "*"
+                      - Sid: Lambda
+                        Effect: Allow
+                        Action:
+                          - lambda:ListFunctions
+                          - lambda:GetPolicy
+                          - lambda:GetFunctionUrlConfig
+                          - lambda:ListTags
+                        Resource: "*"
+                      - Sid: CloudFormation
+                        Effect: Allow
+                        Action:
+                          - cloudformation:DescribeStacks
+                          - cloudformation:ListStackResources
+                          - cloudformation:ListStacks
+                          - cloudformation:ListStackSets
+                          - cloudformation:DescribeStackSet
+                        Resource: "*"
+                      - Sid: EKS
+                        Effect: Allow
+                        Action:
+                          - eks:ListClusters
+                          - eks:DescribeCluster
+                          - eks:ListNodegroups
+                          - eks:DescribeNodegroup
+                          - eks:ListAccessEntries
+                          - eks:DescribeAccessEntry
+                          - eks:ListAssociatedAccessPolicies
+                          - eks:ListPodIdentityAssociations
+                          - eks:DescribePodIdentityAssociation
+                        Resource: "*"
+
+        Outputs:
+          OpenHoundCollectorRoleArn:
+            Description: ARN of the OpenHound collector role
+            Value: !GetAtt OpenHoundCollectorRole.Arn
+        ```
+      </Tab>
+      <Tab title="AWS-hosted workload">
+        Save the following template as `collector-role-stack.yaml`. Replace `<WORKLOAD_ROLE_NAME>` if you use a different workload role name.
+
+        ```yaml title="collector-role-stack.yaml"
+        AWSTemplateFormatVersion: "2010-09-09"
+        Description: OpenHound read-only collector role
+
+        Resources:
+          OpenHoundCollectorRole:
+            Type: AWS::IAM::Role
+            Properties:
+              RoleName: OpenHoundCollectorRole
+              MaxSessionDuration: 3600
+              AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                  - Effect: Allow
+                    Principal:
+                      AWS: "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/<WORKLOAD_ROLE_NAME>"
+                    Action: sts:AssumeRole
+              Policies:
+                - PolicyName: OpenHoundCollectorReadOnly
+                  PolicyDocument:
+                    Version: "2012-10-17"
+                    Statement:
+                      - Sid: BaseCallerAndRegions
+                        Effect: Allow
+                        Action:
+                          - sts:GetCallerIdentity
+                          - ec2:DescribeRegions
+                        Resource: "*"
+                      - Sid: IAM
+                        Effect: Allow
+                        Action:
+                          - iam:GetAccountAuthorizationDetails
+                          - iam:ListSAMLProviders
+                          - iam:ListOpenIDConnectProviders
+                          - iam:GetSAMLProvider
+                          - iam:GetOpenIDConnectProvider
+                        Resource: "*"
+                      - Sid: Organizations
+                        Effect: Allow
+                        Action:
+                          - organizations:DescribeOrganization
+                          - organizations:ListRoots
+                          - organizations:ListChildren
+                          - organizations:ListOrganizationalUnitsForParent
+                          - organizations:ListAccountsForParent
+                          - organizations:ListAccounts
+                          - organizations:ListPolicies
+                          - organizations:DescribePolicy
+                          - organizations:ListTargetsForPolicy
+                        Resource: "*"
+                      - Sid: EC2
+                        Effect: Allow
+                        Action: ec2:DescribeInstances
+                        Resource: "*"
+                      - Sid: S3
+                        Effect: Allow
+                        Action:
+                          - s3:ListAllMyBuckets
+                          - s3:GetBucketLocation
+                          - s3:GetBucketPolicy
+                          - s3:GetBucketPolicyStatus
+                          - s3:GetBucketAcl
+                          - s3:GetBucketPublicAccessBlock
+                          - s3:GetAccountPublicAccessBlock
+                          - s3:GetBucketOwnershipControls
+                          - s3:GetBucketTagging
+                          - s3:ListBucket
+                        Resource: "*"
+                      - Sid: KMS
+                        Effect: Allow
+                        Action:
+                          - kms:ListKeys
+                          - kms:DescribeKey
+                          - kms:GetKeyPolicy
+                          - kms:GetKeyRotationStatus
+                          - kms:ListGrants
+                          - kms:ListAliases
+                          - kms:ListResourceTags
+                        Resource: "*"
+                      - Sid: SSM
+                        Effect: Allow
+                        Action:
+                          - ssm:DescribeParameters
+                          - ssm:DescribeInstanceInformation
+                          - ssm:ListTagsForResource
+                        Resource: "*"
+                      - Sid: Lambda
+                        Effect: Allow
+                        Action:
+                          - lambda:ListFunctions
+                          - lambda:GetPolicy
+                          - lambda:GetFunctionUrlConfig
+                          - lambda:ListTags
+                        Resource: "*"
+                      - Sid: CloudFormation
+                        Effect: Allow
+                        Action:
+                          - cloudformation:DescribeStacks
+                          - cloudformation:ListStackResources
+                          - cloudformation:ListStacks
+                          - cloudformation:ListStackSets
+                          - cloudformation:DescribeStackSet
+                        Resource: "*"
+                      - Sid: EKS
+                        Effect: Allow
+                        Action:
+                          - eks:ListClusters
+                          - eks:DescribeCluster
+                          - eks:ListNodegroups
+                          - eks:DescribeNodegroup
+                          - eks:ListAccessEntries
+                          - eks:DescribeAccessEntry
+                          - eks:ListAssociatedAccessPolicies
+                          - eks:ListPodIdentityAssociations
+                          - eks:DescribePodIdentityAssociation
+                        Resource: "*"
+
+        Outputs:
+          OpenHoundCollectorRoleArn:
+            Description: ARN of the OpenHound collector role
+            Value: !GetAtt OpenHoundCollectorRole.Arn
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="Deploy the member-account role with StackSets">
+    Replace `<TARGET_OU_ID>` with the OU ID where you want to deploy the role. OU IDs use the format `ou-xxxx-xxxxxxxx`. To target the entire organization, use the organization root ID, which uses the format `r-xxxx`.
+
+    ```bash
+    aws cloudformation create-stack-set \
+      --stack-set-name OpenHoundCollectorRole \
+      --template-body file://collector-role-stack.yaml \
+      --capabilities CAPABILITY_NAMED_IAM \
+      --permission-model SERVICE_MANAGED \
+      --auto-deployment Enabled=true,RetainStacksOnAccountRemoval=false
+
+    aws cloudformation create-stack-instances \
+      --stack-set-name OpenHoundCollectorRole \
+      --deployment-targets OrganizationalUnitIds=<TARGET_OU_ID> \
+      --regions us-east-1
+    ```
+  </Step>
+  <Step title="Allow the collector principal to assume member-account roles">
+    Save the following document as `openhound-assume-role.json`.
+
+    To restrict role assumption to a specific organization path, replace `<ORG_PATH>` with the AWS Organizations path that contains the target accounts. For example, use `o-exampleorgid/*` for the whole organization, or `o-exampleorgid/r-exampleroot/ou-example-abcdefgh/*` for an OU and child OUs.
+
+    ```json title="openhound-assume-role.json"
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Sid": "AssumeOpenHoundTargetRoles",
+          "Effect": "Allow",
+          "Action": "sts:AssumeRole",
+          "Resource": "arn:aws:iam::*:role/OpenHoundCollectorRole",
+          "Condition": {
+            "ForAnyValue:StringLike": {
+              "aws:ResourceOrgPaths": [
+                "<ORG_PATH>"
+              ]
+            }
+          }
+        }
+      ]
+    }
+    ```
+
+    <Tabs>
+      <Tab title="Local or external workload">
+        Attach the policy to `OpenHoundCollectorUser`:
+
+        ```bash
+        aws iam put-user-policy \
+          --user-name OpenHoundCollectorUser \
+          --policy-name OpenHoundAssumeCollectorRole \
+          --policy-document file://openhound-assume-role.json
+        ```
+      </Tab>
+      <Tab title="AWS-hosted workload">
+        Attach the policy to the workload role:
+
+        ```bash
+        aws iam put-role-policy \
+          --role-name <WORKLOAD_ROLE_NAME> \
+          --policy-name OpenHoundAssumeCollectorRole \
+          --policy-document file://openhound-assume-role.json
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="Configure the management account profile">
+    Configure the AWS profile that the OpenHound AWS collector uses to collect AWS Organizations metadata and assume the member-account roles.
+
+    <Tabs>
+      <Tab title="Local or external workload">
+        Create a source profile with the access keys from the `OpenHoundCollectorUser` user:
+
+        ```bash
+        aws configure --profile openhound-source
+        ```
+
+        Then add a management account profile to `~/.aws/config`:
+
+        ```ini
+        [profile managementaccount]
+        role_arn = arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/OpenHoundCollectorRole
+        source_profile = openhound-source
+        role_session_name = OpenHoundCollector
+        region = us-east-2
+        ```
+      </Tab>
+      <Tab title="AWS-hosted workload">
+        For EC2, add a management account profile that uses the instance metadata credential source:
+
+        ```ini
+        [profile managementaccount]
+        role_arn = arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/OpenHoundCollectorRole
+        credential_source = Ec2InstanceMetadata
+        role_session_name = OpenHoundCollector
+        region = us-east-2
+        ```
+
+        For EKS, configure the pod service account role with your normal EKS IAM role workflow, then expose the profile or default AWS SDK credentials to the collector container.
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+</Tab>
+</Tabs>
+
+## Next steps
+
+Continue to [Configure the Collector](/openhound/collectors/aws/collect-data#choose-an-account-collection-strategy) and use `managementaccount` as the AWS organization profile name.
+  
