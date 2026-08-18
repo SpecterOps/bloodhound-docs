@@ -244,33 +244,30 @@ max_objects = 0
 
 Before continuing, ensure that a valid `secrets.toml` file is available and contains the BloodHound Enterprise credentials, AWS target profile(s), and optionally bucket collection policies. The Compose examples assume that the secrets file is stored in the user's home directory at `~/.dlt/secrets.toml`.
 
-### Internal SO step for BETA ONLY
+### BETA ONLY
 
 The openhound-aws container image is available via the following (private) ECR repository:
 
-708252512390.dkr.ecr.us-east-2.amazonaws.com/openhound/openhound-aws
+`ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws`
 
-To pull container images from this account, run the following command to configure the docker (or podman) cli to authenticate using your AWS IAM session/credentials.
+To pull container images from this account, run the following command to configure the docker (or podman) CLI to authenticate using your AWS IAM session/credentials.
 
 ```bash
-# Login to the account
-aws login --profile openhound-admin
-
-# Then create a valid, authenticated session for the Docker/Podman CLI
-aws ecr get-login-password --profile openhound-admin --region us-east-2 | docker login --username AWS --password-stdin 708252512390.dkr.ecr.us-east-2.amazonaws.com
+# Login to the private repository. When prompted for the password, enter the SpecterOps provided repository password
+docker login --username ecr-proxy ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws
 
 # Now test if you can succesfully pull the openhound-aws image. 
 # You can replace docker with podman if needed
-docker pull 708252512390.dkr.ecr.us-east-2.amazonaws.com/openhound/openhound-aws:main
+docker pull ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws/openhound/openhound-aws:main
 ```
 
 ### Docker compose
 
-Save the following Compose template as `docker-compose.yaml` , then run `docker compose up` to start the collector. You can
+Save the following Compose template as a `docker-compose.yaml` file, then run `docker compose up` to start the collector.
 
-```yaml
+```yaml title="docker-compose.yaml"
 x-scheduler: &scheduler
-  image: 708252512390.dkr.ecr.us-east-2.amazonaws.com/openhound/openhound-aws:main
+  image: ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws/openhound/openhound-aws:main
   restart: unless-stopped
   init: true
 
@@ -297,7 +294,7 @@ services:
 
       - source: credentials_aws
         target: /app/.aws/credentials
-        
+
 secrets:
   secrets_aws:
     file: ${HOME}/.dlt/secrets.toml
