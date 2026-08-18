@@ -63,7 +63,6 @@ const validateExtension = (extension, label) => {
   }
 
   validateRequiredString(extension.name, `${label} name`);
-  validateRequiredString(extension.vendor, `Extension "${extension.name}" vendor`);
   validateRequiredString(
     extension.description,
     `Extension "${extension.name}" description`,

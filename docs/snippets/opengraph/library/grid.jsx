@@ -104,7 +104,6 @@ const ExtensionCard = ({ extension, compact = false }) => {
       <div className="og-extension-card-top">
         <div>
           <h3>{extension.name}</h3>
-          <p className="og-extension-vendor">{extension.vendor}</p>
         </div>
         {extension.maintainer ? (
           <MaintainerBadge maintainer={extension.maintainer} />
@@ -379,7 +378,6 @@ const TechnologyGroup = ({ group }) => {
         .og-library-hero-copy p,
         .og-section-heading p,
         .og-category-heading p,
-        .og-extension-vendor,
         .og-extension-authors,
         .og-extension-description {
           color: var(--og-muted);
@@ -621,12 +619,6 @@ const TechnologyGroup = ({ group }) => {
           font-weight: 600;
           letter-spacing: 0;
           overflow-wrap: anywhere;
-        }
-
-        .og-extension-vendor {
-          margin: 0.25rem 0 0;
-          font-size: 0.875rem;
-          line-height: 1.25;
         }
 
         .og-extension-authors {

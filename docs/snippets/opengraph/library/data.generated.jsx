@@ -23,7 +23,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "1Password",
         "description": "Collects 1Password for Business access-control data and converts vault, item, group, and user relationships into OpenGraph data for BloodHound analysis.",
         "href": "https://github.com/SpecterOps/1PassHound"
       }
@@ -49,7 +48,6 @@ export const libraryCategories = [
             "organizationHref": "https://www.virtuesecurity.com/"
           }
         ],
-        "vendor": "AWS",
         "description": "Creates OpenGraph-compatible IAM-to-resource models for identifying privileged principals and second-order escalation opportunities in AWS environments.",
         "href": "https://github.com/VirtueSecurity/IAMhounddog"
       }
@@ -77,7 +75,6 @@ export const libraryCategories = [
             "href": "https://github.com/s-lck"
           }
         ],
-        "vendor": "Ansible",
         "description": "Maps Ansible AWX and Tower organization structure and permissions into a BloodHound-compatible attack-path graph.",
         "href": "https://github.com/TheSleekBoyCompany/AnsibleHound"
       }
@@ -103,7 +100,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Atlassian",
         "description": "Collects foundational Jira and Confluence access data and exports it to BloodHound OpenGraph format for Atlassian Cloud and tested deployment paths.",
         "href": "https://github.com/werdhaihai/AtlassianHound"
       }
@@ -129,7 +125,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Cisco",
         "description": "Extracts Duo Admin API data into OpenGraph so teams can analyze MFA relationships, application access, and enrollment coverage in BloodHound.",
         "href": "https://github.com/julian1j/DuoHound"
       }
@@ -155,7 +150,6 @@ export const libraryCategories = [
             "organizationHref": "https://www.netwrix.com/en/"
           }
         ],
-        "vendor": "Netwrix",
         "description": "Exports AI credential and secret scanning results as OpenGraph JSON so BloodHound can visualize attack paths across AI tools and datastores.",
         "href": "https://github.com/netwrix/AIHound"
       },
@@ -170,7 +164,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Secrets",
         "description": "Converts secret scanning results from tools like GitHub Secret Scanning, NoseyParker, TruffleHog, and Nemesis into BloodHound OpenGraph data.",
         "href": "https://github.com/C0KERNEL/SecretHound"
       }
@@ -196,7 +189,6 @@ export const libraryCategories = [
             "organizationHref": "https://armadin.com/"
           }
         ],
-        "vendor": "Cross-platform",
         "description": "Maps attack paths from DevOps to MLOps infrastructure across GitHub, Azure DevOps, Azure ML, and AWS SageMaker.",
         "href": "https://github.com/h4wkst3r/Dop2Mop"
       }
@@ -224,7 +216,6 @@ export const libraryCategories = [
             "organization": "Siemens Healthineers"
           }
         ],
-        "vendor": "CyberArk",
         "description": "Exports CyberArk PVWA users, groups, safes, accounts, and permissions into BloodHound-compatible OpenGraph JSON for attack-path analysis.",
         "href": "https://github.com/jazofra/CyberArkHound/tree/main"
       }
@@ -248,7 +239,6 @@ export const libraryCategories = [
             "href": "https://github.com/lvruibr"
           }
         ],
-        "vendor": "FreeIPA",
         "description": "Collects FreeIPA and Red Hat Identity Management users, groups, domains, computers, HBAC rules, sudoer rights, and group memberships.",
         "href": "https://github.com/lvruibr/idmhound"
       }
@@ -274,7 +264,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "GitHub",
         "description": "Collects GitHub organization structure and permissions into a navigable OpenGraph attack-path model compatible with the SpecterOps GitHub extension.",
         "href": "https://github.com/SpecterOps/GitHound"
       },
@@ -295,7 +284,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "GitHub",
         "description": "Collects resources from GitHub organizations and transforms them into usable nodes and edges for BloodHound through OpenHound.",
         "href": "https://github.com/SpecterOps/openhound-github"
       },
@@ -310,7 +298,6 @@ export const libraryCategories = [
             "organizationHref": "https://github.com/CorvraLabs"
           }
         ],
-        "vendor": "GitHub",
         "description": "Provides a Python implementation of GitHound that aims to stay in sync with the main PowerShell collector.",
         "href": "https://github.com/CorvraLabs/GitHoundPy"
       }
@@ -336,7 +323,6 @@ export const libraryCategories = [
             "organizationHref": "https://compass-security.com/"
           }
         ],
-        "vendor": "GitLab",
         "description": "Generates a GitLab attack-path graph covering users, groups, roles, repositories, CI/CD resources, SSO identities, OIDC trust paths, and leaked secrets.",
         "href": "https://github.com/CompassSecurity/GitLabHound"
       }
@@ -360,7 +346,6 @@ export const libraryCategories = [
             "href": "https://in.linkedin.com/in/faiz-karim-8421bb195"
           }
         ],
-        "vendor": "Google Cloud",
         "description": "Transforms Google Cloud IAM relationships into interactive BloodHound attack graphs for security enumeration and privilege escalation discovery.",
         "href": "https://github.com/F41zK4r1m/GCP-Hound"
       },
@@ -375,7 +360,6 @@ export const libraryCategories = [
             "organizationHref": "https://www.netspi.com/"
           }
         ],
-        "vendor": "Google Cloud",
         "description": "Collects Google Cloud data for credential handling, service enumeration, artifact collection, and OpenGraph attack-path analysis.",
         "href": "https://github.com/NetSPI/gcpwn"
       }
@@ -399,7 +383,6 @@ export const libraryCategories = [
             "href": "https://linkedin.com/in/alexhenriksson"
           }
         ],
-        "vendor": "IBM z/OS",
         "description": "Collects RACF database data over SSH for supported z/OS classes without requiring an IRRDBU00 dump.",
         "href": "https://github.com/4-L3X/racfhound"
       }
@@ -425,7 +408,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Jamf",
         "description": "Collects Jamf Pro tenant data and identifies attack paths based on object permissions, saved as JSON for BloodHound ingestion.",
         "href": "https://github.com/SpecterOps/jamfhound"
       },
@@ -452,7 +434,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Jamf",
         "description": "Collects Jamf Pro resources and transforms them into usable nodes and edges for BloodHound through OpenHound.",
         "href": "https://github.com/SpecterOps/openhound-jamf"
       }
@@ -478,7 +459,6 @@ export const libraryCategories = [
             "organizationHref": "https://www.ibm.com/x-force"
           }
         ],
-        "vendor": "Kubernetes",
         "description": "Collects Kubernetes and OpenShift topology, RBAC, and common custom resources to visualize multi-step attack paths through large-scale clusters.",
         "href": "https://github.com/HackinAhab/bloodhound-kube"
       },
@@ -499,7 +479,6 @@ export const libraryCategories = [
             "organizationHref": "https://kpmg.com/uk/en.html"
           }
         ],
-        "vendor": "Kubernetes",
         "description": "Collects cluster topology and RBAC configuration with kubectl and outputs OpenGraph JSON for Kubernetes attack-path analysis.",
         "href": "https://github.com/dovesec/ClusterHound"
       }
@@ -525,7 +504,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Exports selected Active Directory custom attributes as OpenGraph node properties so BloodHound can enrich or create nodes with additional directory context.",
         "href": "https://github.com/martinsohn/ADAttributeHound"
       },
@@ -540,7 +518,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Collects manager-subordinate relationships from Active Directory and exports them as custom ManagerOf edges for BloodHound ingestion.",
         "href": "https://github.com/martinsohn/ManagerOfHound"
       },
@@ -553,7 +530,6 @@ export const libraryCategories = [
             "href": "https://www.linkedin.com/in/joao-victor-botelho/"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Enumerates Active Directory tombstones and reanimation rights, then emits OpenGraph data that highlights deleted-object restoration attack paths.",
         "href": "https://github.com/JVBotelho/ghosthound"
       },
@@ -568,7 +544,6 @@ export const libraryCategories = [
             "organizationHref": "https://omadatechnologies.com/"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Finds user profiles on domain machines and creates HasUserProfile edges that help operators decide which systems to target for credential access.",
         "href": "https://github.com/m4lwhere/profilehound"
       },
@@ -583,7 +558,6 @@ export const libraryCategories = [
             "organizationHref": "https://www.prosec-networks.com/"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Maps lateral movement paths through misconfigured native and third-party SSH servers in Active Directory environments.",
         "href": "https://github.com/1r0BIT/WinSSHound"
       }
@@ -609,7 +583,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Demonstrates collection of Entra ID permissions related to Temporary Access Passes and passkeys, then exports the results as BloodHound OpenGraph data.",
         "href": "https://github.com/MichaelGrafnetter/EntraAuthPolicyHound"
       },
@@ -624,7 +597,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Models Entra ID Seamless SSO trust paths that can allow Active Directory computers to affect synced Entra ID users.",
         "href": "https://github.com/SpecterOps/EntraSSSOHound"
       }
@@ -648,7 +620,6 @@ export const libraryCategories = [
             "href": "https://github.com/FilipPwn"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Models Exchange on-premises objects and relationships, including mailbox delegation, folder access, transport rules, and Exchange RBAC assignments.",
         "href": "https://github.com/FilipPwn/exchangehound"
       }
@@ -674,7 +645,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Collects BloodHound OpenGraph-compatible data from one or more MSSQL servers and packages the output for ingestion.",
         "href": "https://github.com/SpecterOps/MSSQLHound"
       }
@@ -700,7 +670,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Adds Microsoft Configuration Manager and SCCM attack-path data to BloodHound through a PowerShell OpenGraph collector.",
         "href": "https://github.com/SpecterOps/ConfigManBearPig"
       },
@@ -713,7 +682,6 @@ export const libraryCategories = [
             "href": "https://x.com/G0ldenGunSec"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Collects SCCM attack paths from an SCCM site database using a proof-of-concept SQL collection workflow.",
         "href": "https://github.com/G0ldenGunSec/SCCM_SQL_Collector"
       },
@@ -728,7 +696,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Enumerates System Center Operations Manager infrastructure from Active Directory and emits BloodHound OpenGraph data.",
         "href": "https://github.com/SpecterOps/SCOMHound"
       }
@@ -752,7 +719,6 @@ export const libraryCategories = [
             "href": "https://x.com/dazzyddos"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Models Windows local privilege escalation vectors as multi-hop attack paths that can overlay existing SharpHound Active Directory data.",
         "href": "https://github.com/dazzyddos/PrivHound"
       },
@@ -767,7 +733,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Maps network shares, permissions, and paths at scale to help identify attack paths to network shares.",
         "href": "https://github.com/p0dalirius/sharehound"
       },
@@ -782,7 +747,6 @@ export const libraryCategories = [
             "organizationHref": "https://www.prosec-networks.com"
           }
         ],
-        "vendor": "Microsoft",
         "description": "Hunts for Windows scheduled tasks that run with privileged accounts and stored credentials, then exports findings for BloodHound.",
         "href": "https://github.com/1r0BIT/TaskHound"
       }
@@ -808,7 +772,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "MITRE ATT&CK",
         "description": "Aggregates threat intelligence from MITRE ATT&CK, Sigma rules, and Atomic Red Team into OpenGraph data for BloodHound visualization.",
         "href": "https://github.com/Scoubi/BloodSOCer"
       }
@@ -834,7 +797,6 @@ export const libraryCategories = [
             "organizationHref": "https://www.mordavid.com/"
           }
         ],
-        "vendor": "Network",
         "description": "Discovers computer objects, resolves hostnames, scans ports and HTTP services, identifies shadow IT, and builds OpenGraph network topology data.",
         "href": "https://github.com/mordavid/NetworkHound"
       }
@@ -860,7 +822,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Okta",
         "description": "Collects Okta users, groups, applications, roles, and related entities for analysis with the SpecterOps Okta OpenGraph extension.",
         "href": "https://github.com/SpecterOps/OktaHound"
       },
@@ -881,7 +842,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Okta",
         "description": "Collects Okta resources and transforms them into usable nodes and edges for BloodHound through OpenHound.",
         "href": "https://github.com/SpecterOps/openhound-okta"
       }
@@ -907,7 +867,6 @@ export const libraryCategories = [
             "organizationHref": "https://www.netspi.com/"
           }
         ],
-        "vendor": "Oracle",
         "description": "Collects OCI data for credential handling, service enumeration, artifact download, and OpenGraph privilege-escalation path analysis.",
         "href": "https://github.com/NetSPI/ocinferno"
       }
@@ -933,7 +892,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Ping Identity",
         "description": "Collects PingOne identity provider data needed to identify, analyze, execute, and audit PingOne attack paths and object-level permissions.",
         "href": "https://github.com/andyrobbins/PingOneHound"
       }
@@ -959,7 +917,6 @@ export const libraryCategories = [
             "organizationHref": "https://www.runzero.com/"
           }
         ],
-        "vendor": "runZero",
         "description": "Brings runZero Exposure Management data into BloodHound through OpenGraph.",
         "href": "https://github.com/runZeroInc/runZeroHound"
       }
@@ -985,7 +942,6 @@ export const libraryCategories = [
             "organizationHref": "https://www.netspi.com/"
           }
         ],
-        "vendor": "Salesforce",
         "description": "Maps Salesforce identity, permission, and access-control structures into an OpenGraph attack-path graph for BloodHound Community Edition.",
         "href": "https://github.com/NetSPI/ForceHound"
       },
@@ -998,7 +954,6 @@ export const libraryCategories = [
             "href": "https://www.linkedin.com/in/kaden-b-a428b9219/"
           }
         ],
-        "vendor": "Salesforce",
         "description": "Enumerates Salesforce users, profiles, permission sets, roles, groups, queues, connected apps, and object or field permissions.",
         "href": "https://github.com/Khadinxc/sfhound"
       }
@@ -1024,7 +979,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Snowflake",
         "description": "Maps Snowflake users, databases, roles, warehouses, integrations, and related permissions for BloodHound attack-path analysis.",
         "href": "https://github.com/SpecterOps/SnowHound"
       }
@@ -1048,7 +1002,6 @@ export const libraryCategories = [
             "href": "https://www.linkedin.com/in/klein-lukas/"
           }
         ],
-        "vendor": "SSH",
         "description": "Discovers SSH authentication and Linux-host attack paths, including local privilege escalation, SSH key and certificate authentication, and identity connections.",
         "href": "https://github.com/RantaSec/golinhound"
       }
@@ -1080,7 +1033,6 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "vendor": "Tailscale",
         "description": "Collects tailnet users, devices, groups, tags, ACLs, grants, SSH rules, routes, app connectors, services, invites, and webhooks.",
         "href": "https://github.com/KingOfTheNOPs/TailscaleHound"
       }
@@ -1106,7 +1058,6 @@ export const libraryCategories = [
             "organizationHref": "https://www.mordavid.com/"
           }
         ],
-        "vendor": "vCenter",
         "description": "Collects vCenter infrastructure entities, permissions, roles, users, groups, and assignments into a BloodHound-compatible JSON graph.",
         "href": "https://github.com/MorDavid/vCenterHound"
       }
@@ -1171,7 +1122,6 @@ export const openGraphTools = [
         "organizationHref": "https://specterops.io"
       }
     ],
-    "vendor": "OpenGraph",
     "description": "Provides a standardized collect-first, convert-later framework for building OpenGraph collectors and converters.",
     "href": "https://github.com/SpecterOps/OpenHound"
   },
@@ -1186,7 +1136,6 @@ export const openGraphTools = [
         "organizationHref": "https://specterops.io"
       }
     ],
-    "vendor": "Python",
     "description": "Provides Python classes for creating and managing graph structures that conform to BloodHound OpenGraph schema expectations.",
     "href": "https://github.com/p0dalirius/bhopengraph"
   },
@@ -1201,7 +1150,6 @@ export const openGraphTools = [
         "organizationHref": "https://specterops.io"
       }
     ],
-    "vendor": "PowerShell",
     "description": "Provides a PowerShell client for BloodHound Community Edition and BloodHound Enterprise.",
     "href": "https://github.com/SadProcessor/BloodHoundOperator"
   },
@@ -1214,7 +1162,6 @@ export const openGraphTools = [
         "href": "https://x.com/rookuu_"
       }
     ],
-    "vendor": "Python",
     "description": "Provides a Python library for creating BloodHound OpenGraph JSON data that conforms to the OpenGraph data payload schema.",
     "href": "https://github.com/rookuu/bloodhound-opengraph"
   },
@@ -1229,7 +1176,6 @@ export const openGraphTools = [
         "organizationHref": "https://specterops.io"
       }
     ],
-    "vendor": "Go",
     "description": "Provides Go types and helpers for creating and managing graph structures that are compatible with BloodHound OpenGraph.",
     "href": "https://github.com/TheManticoreProject/gopengraph"
   },
@@ -1242,7 +1188,6 @@ export const openGraphTools = [
         "href": "https://github.com/Macmod"
       }
     ],
-    "vendor": "Ingestion",
     "description": "Provides a fast, customizable, BloodHound CE-compatible data ingestor with a terminal user interface and progress tracking.",
     "href": "https://github.com/Macmod/flashingestor"
   },
@@ -1255,7 +1200,6 @@ export const openGraphTools = [
         "href": "https://github.com/toneillcodes"
       }
     ],
-    "vendor": "Management",
     "description": "Automates custom node type and Cypher query management in BloodHound through JSON schema handling and API interactions.",
     "href": "https://github.com/toneillcodes/HoundTrainer"
   },
@@ -1270,7 +1214,6 @@ export const openGraphTools = [
         "organizationHref": "https://specterops.io"
       }
     ],
-    "vendor": "Generator",
     "description": "Provides a self-hosted web app for generating BloodHound OpenGraph-compatible JSON.",
     "href": "https://github.com/c0rdyc3ps/ScrappyDoo"
   }
