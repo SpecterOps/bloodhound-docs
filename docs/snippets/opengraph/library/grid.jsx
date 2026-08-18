@@ -174,13 +174,13 @@ const LibraryGuide = () => {
         <div className="og-library-legend-item">
           <MaintainerBadge maintainer="community" />
           <p>
-            Community icons represent community extensions that leverage OpenGraph to extend BloodHound's coverage and capabilities.
+            Community icons represent extensions built and maintained by community members that leverage OpenGraph to extend BloodHound's coverage and capabilities.
           </p>
         </div>
         <div className="og-library-legend-item">
           <MaintainerBadge maintainer="specterops" />
           <p>
-            SpecterOps icons represent SpecterOps extensions that can be used as-is or serve as examples and inspiration for your own OpenGraph extensions.
+            SpecterOps icons represent extensions built and maintained by SpecterOps employees that can be used as-is or serve as examples and inspiration for your own OpenGraph extensions.
           </p>
         </div>
       </div>
