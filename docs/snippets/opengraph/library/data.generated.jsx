@@ -131,7 +131,32 @@ export const libraryCategories = [
     ]
   },
   {
-    "name": "Credentials",
+    "name": "Cross-platform DevOps",
+    "group": "software-delivery-automation",
+    "order": 10,
+    "icon": {
+      "type": "cross-platform",
+      "label": "Cross-platform"
+    },
+    "extensions": [
+      {
+        "name": "Dop2Mop",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Brett Hawkins",
+            "href": "https://x.com/h4wkst3r",
+            "organization": "Armadin",
+            "organizationHref": "https://armadin.com/"
+          }
+        ],
+        "description": "Maps attack paths from DevOps to MLOps infrastructure across GitHub, Azure DevOps, Azure ML, and AWS SageMaker.",
+        "href": "https://github.com/h4wkst3r/Dop2Mop"
+      }
+    ]
+  },
+  {
+    "name": "Cross-platform Secret Scanners",
     "group": "identity-authentication-secrets",
     "order": 10,
     "icon": {
@@ -166,31 +191,6 @@ export const libraryCategories = [
         ],
         "description": "Converts secret scanning results from tools like GitHub Secret Scanning, NoseyParker, TruffleHog, and Nemesis into BloodHound OpenGraph data.",
         "href": "https://github.com/C0KERNEL/SecretHound"
-      }
-    ]
-  },
-  {
-    "name": "Cross-platform DevOps",
-    "group": "software-delivery-automation",
-    "order": 10,
-    "icon": {
-      "type": "cross-platform",
-      "label": "Cross-platform"
-    },
-    "extensions": [
-      {
-        "name": "Dop2Mop",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Brett Hawkins",
-            "href": "https://x.com/h4wkst3r",
-            "organization": "Armadin",
-            "organizationHref": "https://armadin.com/"
-          }
-        ],
-        "description": "Maps attack paths from DevOps to MLOps infrastructure across GitHub, Azure DevOps, Azure ML, and AWS SageMaker.",
-        "href": "https://github.com/h4wkst3r/Dop2Mop"
       }
     ]
   },
