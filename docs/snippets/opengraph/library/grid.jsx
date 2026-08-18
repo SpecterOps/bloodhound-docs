@@ -195,8 +195,8 @@ const LibraryGuide = () => {
 
 const CategoryGroup = ({ category }) => {
   return (
-    <section className="og-category-group" id={category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}>
-      <div className="og-category-heading">
+    <details className="og-category-group" id={category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}>
+      <summary className="og-category-heading">
         <div>
           <h3>{category.name}</h3>
           <p>
@@ -204,13 +204,14 @@ const CategoryGroup = ({ category }) => {
             {category.extensions.length === 1 ? 'extension' : 'extensions'}
           </p>
         </div>
-      </div>
+        <span className="og-category-chevron" aria-hidden="true" />
+      </summary>
       <div className="og-card-grid">
         {category.extensions.map((extension) => (
           <ExtensionCard key={extension.name} extension={extension} />
         ))}
       </div>
-    </section>
+    </details>
   );
 };
 
@@ -758,6 +759,23 @@ const TechnologyGroup = ({ group }) => {
           background: var(--og-card-bg);
         }
 
+        .og-category-chevron {
+          display: inline-flex;
+          flex: 0 0 auto;
+          width: 0.72rem;
+          height: 0.72rem;
+          border-right: 2px solid var(--og-muted-soft);
+          border-bottom: 2px solid var(--og-muted-soft);
+          transform: rotate(45deg);
+          transition: transform 160ms ease;
+          margin-top: 0.35rem;
+        }
+
+        .og-category-group[open] .og-category-chevron {
+          transform: rotate(225deg);
+          margin-top: 0.35rem;
+        }
+
         .og-technology-group > .og-category-list {
           margin-top: 0;
           padding: 1.1rem;
@@ -769,11 +787,21 @@ const TechnologyGroup = ({ group }) => {
 
         .og-category-heading {
           display: flex;
+          justify-content: space-between;
           align-items: center;
           gap: 0.8rem;
-          margin-bottom: 0.75rem;
           padding: 0.7rem 0;
           border-bottom: 1px solid var(--og-border);
+          cursor: pointer;
+          list-style: none;
+        }
+
+        .og-category-group[open] > .og-category-heading {
+          margin-bottom: 0.75rem;
+        }
+
+        .og-category-heading::-webkit-details-marker {
+          display: none;
         }
 
         .og-category-heading h3 {
