@@ -44,7 +44,7 @@ Click the tab that matches your authentication setup for details and example con
     | `enterprise_name` | The slug of the GitHub enterprise to collect data from. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__ENTERPRISE_NAME` |
     | `install_id` | The GitHub App Installation ID for the enterprise installation. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__INSTALL_ID` |
     | `api_uri` | The GitHub API base URI. For GitHub.com, use `https://api.github.com`. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__API_URI` |
-    | `pat_token` | Optional classic PAT from an Enterprise Owner with the `read:enterprise` scope. OpenHound uses this token only to collect enterprise SAML SSO and SCIM data. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__PAT_TOKEN` |
+    | `pat_token` | Optional classic PAT from an Enterprise Owner. Grant `read:enterprise` to collect enterprise SAML SSO and SCIM data; add `manage_runners:enterprise` only if you also need enterprise self-hosted runner data. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__PAT_TOKEN` |
 
     **`secrets.toml`**
 
@@ -72,7 +72,9 @@ Click the tab that matches your authentication setup for details and example con
     ```
 
     <Note>
-      The `pat_token` field is optional for enterprise collection, but strongly recommended. If you omit it, the collector continues to collect GitHub App-supported enterprise and organization data, but enterprise SAML SSO and SCIM nodes and relationships are not collected.
+      The `pat_token` field is optional for enterprise collection, but strongly recommended. If you omit it, the collector continues to collect GitHub App-supported enterprise and organization data, but enterprise SAML SSO, SCIM, and self-hosted runner nodes and relationships are not collected.
+
+      The scopes you grant the PAT determine what it collects: `read:enterprise` for SAML SSO and SCIM data, and `manage_runners:enterprise` for self-hosted runner data. Grant only the scopes you need. The `manage_runners:enterprise` scope permits runner-management operations and is not read-only.
     </Note>
   </Tab>
   <Tab title="Organization GitHub App">
