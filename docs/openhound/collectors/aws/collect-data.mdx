@@ -242,66 +242,79 @@ max_objects = 0
 
 ## Deployment examples
 
-Before continuing, ensure that a valid `secrets.toml` file is available and contains the BloodHound Enterprise credentials, AWS target profile(s), and optionally bucket collection policies. The Compose examples assume that the secrets file is stored in the user's home directory at `~/.dlt/secrets.toml`.
+Before continuing, ensure that a valid `secrets.toml` file is available and contains the BloodHound Enterprise credentials, AWS target profile(s), and optionally bucket collection policies.
+
+<Note>
+  The Compose examples assume that the secrets file is stored in the user's home directory at `~/.dlt/secrets.toml`.
+</Note>
 
 ### BETA ONLY
 
-The openhound-aws container image is available via the following (private) ECR repository:
+The `openhound-aws` container image is available from the following private ECR repository:
 
-`ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws`
-
-To pull container images from this account, run the following command to configure the docker (or podman) CLI to authenticate using your AWS IAM session/credentials.
-
-```bash
-# Login to the private repository. When prompted for the password, enter the SpecterOps provided repository password
-docker login --username ecr-proxy ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws
-
-# Now test if you can succesfully pull the openhound-aws image. 
-# You can replace docker with podman if needed
-docker pull ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws/openhound/openhound-aws:main
+```text
+ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws
 ```
 
-### Docker compose
+<Steps>
+  <Step title="Log in to the private repository">
+    Configure the Docker CLI to authenticate to the private repository. When prompted for the password, enter the SpecterOps-provided repository password.
 
-Save the following Compose template as a `docker-compose.yaml` file, then run `docker compose up` to start the collector.
+    ```bash
+    docker login --username ecr-proxy ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws
+    ```
+  </Step>
 
-```yaml title="docker-compose.yaml"
-x-scheduler: &scheduler
-  image: ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws/openhound/openhound-aws:main
-  restart: unless-stopped
-  init: true
+  <Step title="Pull the OpenHound AWS image">
+    Test that you can pull the `openhound-aws` image. You can replace `docker` with `podman` if needed.
 
-  environment: &env
-    LOG_LEVEL: INFO
-    EXTRACT__WORKERS: 8
-    LOG_CONTAINER: true
+    ```bash
+    docker pull ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws/openhound/openhound-aws:main
+    ```
+  </Step>
 
-services:
-  scheduler-aws:
-    <<: *scheduler
-    environment:
-      <<: *env
-      DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME: aws
-      AWS_CONFIG_FILE: /app/.aws/config
-      AWS_SHARED_CREDENTIALS_FILE: /app/.aws/credentials
+  <Step title="Create the Docker Compose file">
+    Save the following Compose template as a `docker-compose.yaml` file, then run `docker compose up` to start the collector.
+
+    ```yaml title="docker-compose.yaml"
+    x-scheduler: &scheduler
+      image: ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws/openhound/openhound-aws:main
+      restart: unless-stopped
+      init: true
+
+      environment: &env
+        LOG_LEVEL: INFO
+        EXTRACT__WORKERS: 8
+        LOG_CONTAINER: true
+
+    services:
+      scheduler-aws:
+        <<: *scheduler
+        environment:
+          <<: *env
+          DESTINATION__BLOODHOUNDENTERPRISE__COLLECTOR_NAME: aws
+          AWS_CONFIG_FILE: /app/.aws/config
+          AWS_SHARED_CREDENTIALS_FILE: /app/.aws/credentials
+
+        secrets:
+          - source: secrets_aws
+            target: /app/.dlt/secrets.toml
+
+          - source: config_aws
+            target: /app/.aws/config
+
+          - source: credentials_aws
+            target: /app/.aws/credentials
 
     secrets:
-      - source: secrets_aws
-        target: /app/.dlt/secrets.toml
+      secrets_aws:
+        file: ${HOME}/.dlt/secrets.toml
 
-      - source: config_aws
-        target: /app/.aws/config
+      config_aws:
+        file: ${HOME}/.aws/config
 
-      - source: credentials_aws
-        target: /app/.aws/credentials
-
-secrets:
-  secrets_aws:
-    file: ${HOME}/.dlt/secrets.toml
-
-  config_aws:
-    file: ${HOME}/.aws/config
-
-  credentials_aws:
-    file: ${HOME}/.aws/credentials
-```
+      credentials_aws:
+        file: ${HOME}/.aws/credentials
+    ```
+  </Step>
+</Steps>
