@@ -810,7 +810,7 @@ export const communityExtensions = [
     },
     "extensions": [
       {
-        "name": "runZeroHound",
+        "name": "ZeroHound",
         "maintainer": "community",
         "authors": [
           {
@@ -820,7 +820,7 @@ export const communityExtensions = [
             "organizationHref": "https://www.runzero.com/"
           }
         ],
-        "description": "Brings runZero Exposure Management data into BloodHound through OpenGraph.",
+        "description": "Brings Exposure Management data into BloodHound through OpenGraph, including Nmap, runZero, Qualys, snmpwalk, Tenable (Nessus), OpenVAS/GVM, Masscan, Shodan, and NetBox.",
         "href": "https://github.com/runZeroInc/runZeroHound"
       }
     ]
