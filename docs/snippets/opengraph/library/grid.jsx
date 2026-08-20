@@ -227,8 +227,26 @@ const ExtensionCard = ({ extension }) => {
   );
 };
 
+const LibraryHero = () => {
+  return (
+    <header className="og-library-hero">
+      <div className="og-library-hero-copy">
+        <a className="og-library-breadcrumb" href="/opengraph">
+          OpenGraph
+        </a>
+        <h1>BloodHound Marketplace</h1>
+        <p>
+          Explore the BloodHound Marketplace, a curated collection of OpenGraph extensions, integrations, and tools.
+        </p>
+      </div>
+    </header>
+  );
+};
+
   return (
     <div className="og-library">
+      <LibraryHero />
+
       <section className="og-library-section">
         <div className="og-section-heading">
           <div>
@@ -258,9 +276,12 @@ const ExtensionCard = ({ extension }) => {
             </p>
           </div>
         </div>
-        <p className="og-section-note">
-          For security reasons, only Community Extensions created by SpecterOps employees are currently displayed in this section.
-        </p>
+        <Warning>
+          <strong>Use linked code at your own risk.</strong><br/><br/>
+          All code linked via this library is provided “as is,” without review, approval, or endorsement by SpecterOps, regardless of authorship. It has not been audited for accuracy, security, or fitness for any purpose.<br/><br/>
+
+          Use at your own risk. You are solely responsible for testing, validating, and ensuring the code meets your requirements before use in any environment. SpecterOps is not responsible for any damages, losses, or security issues arising from the use of any linked code.
+        </Warning>
         <div className="og-card-grid">
           {communityExtensions.map((extension) => (
             <ExtensionCard key={extension.name} extension={extension} />
@@ -308,10 +329,45 @@ const ExtensionCard = ({ extension }) => {
           text-decoration: none;
         }
 
+        .og-library-hero {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+          gap: 1rem;
+          align-items: end;
+          margin-bottom: 1.5rem;
+          padding-bottom: 1.5rem;
+        }
+
+        .og-library-hero-copy h1 {
+          margin: 0;
+          color: var(--og-title);
+          font-size: 36px;
+          line-height: 1.2;
+          font-weight: 700;
+          letter-spacing: 0;
+        }
+
+        .og-library-breadcrumb {
+          display: inline-flex;
+          margin-bottom: 0.5rem;
+          color: var(--og-accent-text);
+          font-size: 14px;
+          font-weight: 700;
+          line-height: 1.4;
+        }
+
+        .og-library-hero-copy p,
         .og-section-heading p,
         .og-extension-title p,
         .og-extension-description {
           color: var(--og-muted);
+        }
+
+        .og-library-hero-copy p {
+          max-width: 48rem;
+          margin: 0.55rem 0 0;
+          font-size: 18px;
+          line-height: 1.55;
         }
 
         .og-extension-action {
