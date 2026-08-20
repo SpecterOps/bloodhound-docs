@@ -14,8 +14,7 @@ const readCategoryDirectory = (directory) =>
     .filter((fileName) => fileName.endsWith('.json'))
     .map((fileName) => readJson(join(directory, fileName)));
 
-const compareByOrderThenName = (left, right) =>
-  left.order - right.order || left.name.localeCompare(right.name);
+const compareByName = (left, right) => left.name.localeCompare(right.name);
 
 const fail = (message) => {
   throw new Error(`OpenGraph library data generation failed: ${message}`);
@@ -74,10 +73,6 @@ const validateCategory = (category) => {
 
   validateRequiredString(category.name, 'Each library category name');
 
-  if (!Number.isInteger(category.order)) {
-    fail(`Category "${category.name}" must define an integer order.`);
-  }
-
   validateExtensionList(
     category.extensions,
     `Category "${category.name}"`,
@@ -107,8 +102,8 @@ assertUnique(libraryCategories, (category) => category.name, 'library category n
 validateExtensionList(integrations, 'Integrations');
 validateExtensionList(openGraphTools, 'OpenGraph tools');
 
-libraryCategories.sort(compareByOrderThenName);
-integrations.sort((left, right) => left.name.localeCompare(right.name));
+libraryCategories.sort(compareByName);
+integrations.sort(compareByName);
 
 const generatedFile = join(libraryDataDir, 'data.generated.jsx');
 const generatedContent = `// Generated from the OpenGraph library JSON files. Do not edit directly.

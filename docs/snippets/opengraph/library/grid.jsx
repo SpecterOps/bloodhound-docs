@@ -20,14 +20,9 @@ const flattenExtensions = (categories) =>
     [],
   );
 
-const compareByOrderThenName = (left, right) =>
-  left.order - right.order || left.name.localeCompare(right.name);
-
-const sortedLibraryCategories = [...libraryCategories].sort(compareByOrderThenName);
-
 const compareByName = (left, right) => left.name.localeCompare(right.name);
 
-const communityExtensions = flattenExtensions(sortedLibraryCategories)
+const communityExtensions = flattenExtensions(libraryCategories)
   .filter((extension) => extension.maintainer === 'specterops')
   .sort(compareByName);
 
