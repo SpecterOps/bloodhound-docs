@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = fileURLToPath(new URL('../', import.meta.url));
 const opengraphSnippetDir = join(repoRoot, 'docs/snippets/opengraph');
 const librarySnippetDir = join(opengraphSnippetDir, 'library');
+const libraryDataDir = join(librarySnippetDir, 'data');
 
 const readJson = (filePath) => JSON.parse(readFileSync(filePath, 'utf8'));
 
@@ -84,10 +85,10 @@ const validateCategory = (category) => {
 };
 
 const libraryCategories = readCategoryDirectory(
-  join(librarySnippetDir, 'categories'),
+  join(libraryDataDir, 'extensions'),
 );
-const integrations = readJson(join(librarySnippetDir, 'integrations.json'));
-const openGraphTools = readJson(join(librarySnippetDir, 'tools.json'));
+const integrations = readJson(join(libraryDataDir, 'integrations.json'));
+const openGraphTools = readJson(join(libraryDataDir, 'tools.json'));
 
 if (!Array.isArray(integrations)) {
   fail('Integrations must be an array.');
@@ -109,7 +110,7 @@ validateExtensionList(openGraphTools, 'OpenGraph tools');
 libraryCategories.sort(compareByOrderThenName);
 integrations.sort((left, right) => left.name.localeCompare(right.name));
 
-const generatedFile = join(librarySnippetDir, 'data.generated.jsx');
+const generatedFile = join(libraryDataDir, 'data.generated.jsx');
 const generatedContent = `// Generated from the OpenGraph library JSON files. Do not edit directly.
 // Edit the JSON source files, then run:
 // node scripts/generate-opengraph-library-data.mjs

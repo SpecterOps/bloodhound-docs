@@ -29,7 +29,7 @@ For instructions on how to specifically contribute to our docs, check out the [C
 
 ## Generate OpenGraph library data
 
-The OpenGraph library page uses JSON source files for easier maintenance. To add or update a library entry, edit the files in `docs/snippets/opengraph/library/categories/` or `docs/snippets/opengraph/library/tools.json`.
+The OpenGraph library page uses JSON source files for easier maintenance. To add or update a library entry, edit the files in `docs/snippets/opengraph/library/data/extensions/`, `docs/snippets/opengraph/library/data/integrations.json`, or `docs/snippets/opengraph/library/data/tools.json`.
 
 Each category JSON file must include an integer `order` value that controls the category's position on the page.
 
@@ -39,7 +39,7 @@ After editing the JSON files, regenerate the JSX data bridge that Mintlify impor
 just generate-opengraph-library
 ```
 
-This updates `docs/snippets/opengraph/library/data.generated.jsx`. Do not edit that generated file directly.
+This updates `docs/snippets/opengraph/library/data/data.generated.jsx`. Do not edit that generated file directly.
 
 ## Contact
 
