@@ -82,8 +82,13 @@ const validateCategory = (category) => {
 const libraryCategories = readCategoryDirectory(
   join(libraryDataDir, 'extensions'),
 );
+const enterpriseExtensions = readJson(join(libraryDataDir, 'enterprise.json'));
 const integrations = readJson(join(libraryDataDir, 'integrations.json'));
 const openGraphTools = readJson(join(libraryDataDir, 'tools.json'));
+
+if (!Array.isArray(enterpriseExtensions)) {
+  fail('Enterprise extensions must be an array.');
+}
 
 if (!Array.isArray(integrations)) {
   fail('Integrations must be an array.');
@@ -99,10 +104,12 @@ for (const category of libraryCategories) {
 
 assertUnique(libraryCategories, (category) => category.name, 'library category name');
 
+validateExtensionList(enterpriseExtensions, 'Enterprise extensions');
 validateExtensionList(integrations, 'Integrations');
 validateExtensionList(openGraphTools, 'OpenGraph tools');
 
 libraryCategories.sort(compareByName);
+enterpriseExtensions.sort(compareByName);
 integrations.sort(compareByName);
 
 const generatedFile = join(libraryDataDir, 'data.generated.jsx');
@@ -111,6 +118,8 @@ const generatedContent = `// Generated from the OpenGraph library JSON files. Do
 // node scripts/generate-opengraph-library-data.mjs
 
 export const libraryCategories = ${JSON.stringify(libraryCategories, null, 2)};
+
+export const enterpriseExtensions = ${JSON.stringify(enterpriseExtensions, null, 2)};
 
 export const integrations = ${JSON.stringify(integrations, null, 2)};
 

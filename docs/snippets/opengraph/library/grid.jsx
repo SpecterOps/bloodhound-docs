@@ -3,6 +3,7 @@
 // Must use arrow function syntax in Mintlify snippets
 
 export const OpenGraphLibrary = ({
+  enterpriseExtensions = [],
   integrations = [],
   libraryCategories = [],
   openGraphTools = [],
@@ -33,45 +34,6 @@ const tools = openGraphTools
     vendorName: tool.vendorName || 'OpenGraph tool',
   }))
   .sort(compareByName);
-
-const enterpriseExtensions = [
-  {
-    name: 'GitHub Extension',
-    vendorName: 'GitHub',
-    icon: { type: 'github', label: 'GH' },
-    description:
-      'Models GitHub organizations, identities, repositories, workflows, secrets, roles, and related relationships as structured OpenGraph data.',
-    href: '/opengraph/extensions/github/getting-started',
-    action: 'Setup via OpenHound',
-  },
-  {
-    name: 'Jamf Extension',
-    vendorName: 'Jamf',
-    icon: { type: 'jamf', label: 'J' },
-    description:
-      'Models Jamf Pro devices, users, groups, sites, policies, API integrations, and related relationships as BloodHound OpenGraph data.',
-    href: '/opengraph/extensions/jamf/getting-started',
-    action: 'Setup via OpenHound',
-  },
-  {
-    name: 'Okta Extension',
-    vendorName: 'Okta',
-    icon: { type: 'okta', label: 'O' },
-    description:
-      'Models Okta users, groups, applications, roles, policies, and related relationships as structured graph data in BloodHound.',
-    href: '/opengraph/extensions/okta/getting-started',
-    action: 'Setup via OpenHound',
-  },
-  {
-    name: 'SCIM Extension',
-    vendorName: 'SCIM',
-    icon: { type: 'scim', label: 'SCIM' },
-    description:
-      'Provides a technology-neutral schema for SCIM-provisioned users, groups, and roles so identities can connect across supported OpenGraph extensions.',
-    href: '/opengraph/extensions/scim/overview',
-    action: 'Setup via OpenHound',
-  },
-];
 
 const vendorIconMap = {
   onepassword: { src: '/assets/icons/vendor/onepassword.svg', wide: false },
@@ -461,17 +423,6 @@ const LibraryHero = () => {
           max-width: 58rem;
           margin: 0.35rem 0 0;
           font-size: 1rem;
-          line-height: 1.5;
-        }
-
-        .og-section-note {
-          margin: 0 0 1rem;
-          border: 1px solid var(--og-callout-border);
-          border-radius: 0.25rem;
-          padding: 0.85rem 1rem;
-          background: var(--og-callout-bg);
-          color: var(--og-callout-text);
-          font-size: 0.875rem;
           line-height: 1.5;
         }
 
