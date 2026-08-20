@@ -4,7 +4,6 @@
 
 export const OpenGraphLibrary = ({
   libraryCategories = [],
-  libraryGroups = [],
   openGraphTools = [],
 }) => {
 const flattenExtensions = (categories) =>
@@ -13,14 +12,7 @@ const flattenExtensions = (categories) =>
 const compareByOrderThenName = (left, right) =>
   left.order - right.order || left.name.localeCompare(right.name);
 
-const technologyGroups = libraryGroups
-  .map((group) => ({
-    ...group,
-    categories: libraryCategories
-      .filter((category) => category.group === group.id)
-      .sort(compareByOrderThenName),
-  }))
-  .filter((group) => group.categories.length > 0);
+const sortedLibraryCategories = [...libraryCategories].sort(compareByOrderThenName);
 
 const categoryExtensionCount = (categories) =>
   flattenExtensions(categories).length;
@@ -316,9 +308,9 @@ const LibraryGuide = () => {
   );
 };
 
-const CategoryGroup = ({ category }) => {
+const CategorySection = ({ category }) => {
   return (
-    <section className="og-category-group" id={category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}>
+    <section className="og-category-section" id={category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}>
       <div className="og-category-heading">
         <CategoryIcon icon={category.icon} />
         <div>
@@ -338,71 +330,7 @@ const CategoryGroup = ({ category }) => {
   );
 };
 
-const LibraryFilters = ({ activeGroupId, filters, onFilterChange }) => {
-  return (
-    <div className="og-library-filters" aria-label="Filter OpenGraph extensions">
-      {filters.map((filter) => {
-        const isActive = activeGroupId === filter.id;
-
-        return (
-          <button
-            key={filter.id}
-            className={`og-filter-button ${isActive ? 'og-filter-button-active' : ''}`}
-            type="button"
-            aria-pressed={isActive}
-            onClick={() => onFilterChange(filter.id)}
-          >
-            <span>{filter.name}</span>
-            <span>{filter.count}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-};
-
-const TechnologyGroup = ({ group }) => {
-  const count = categoryExtensionCount(group.categories);
-
-  return (
-    <section className="og-technology-group">
-      <div className="og-technology-heading">
-        <div>
-          <h3>{group.name}</h3>
-          <p>{group.description}</p>
-        </div>
-        <span className="og-technology-heading-meta">
-          <span className="og-technology-count">
-            {count} {count === 1 ? 'extension' : 'extensions'}
-          </span>
-        </span>
-      </div>
-      <div className="og-category-list">
-        {group.categories.map((category) => (
-          <CategoryGroup key={category.name} category={category} />
-        ))}
-      </div>
-    </section>
-  );
-};
-
-  const [activeGroupId, setActiveGroupId] = useState('all');
   const fullLibraryCount = categoryExtensionCount(libraryCategories);
-  const visibleTechnologyGroups = activeGroupId === 'all'
-    ? technologyGroups
-    : technologyGroups.filter((group) => group.id === activeGroupId);
-  const filterOptions = [
-    {
-      id: 'all',
-      name: 'All',
-      count: fullLibraryCount,
-    },
-    ...technologyGroups.map((group) => ({
-      id: group.id,
-      name: group.name,
-      count: categoryExtensionCount(group.categories),
-    })),
-  ];
 
   return (
     <div className="og-library">
@@ -413,17 +341,12 @@ const TechnologyGroup = ({ group }) => {
       <LibrarySection
         eyebrow="Collect, model, and enrich"
         title="OpenGraph Extensions"
-        description="Filter extensions by the technologies they collect from, model, or use to enrich BloodHound. Use the card badge to identify whether the listed project is SpecterOps-attributed or community-maintained."
+        description="Explore extensions by the technologies they collect from, model, or use to enrich BloodHound. Use the card badge to identify whether the listed project is SpecterOps-attributed or community-maintained."
         count={`${fullLibraryCount} extensions`}
       >
-        <LibraryFilters
-          activeGroupId={activeGroupId}
-          filters={filterOptions}
-          onFilterChange={setActiveGroupId}
-        />
-        <div className="og-technology-list">
-          {visibleTechnologyGroups.map((group) => (
-            <TechnologyGroup key={group.id} group={group} />
+        <div className="og-category-list">
+          {sortedLibraryCategories.map((category) => (
+            <CategorySection key={category.name} category={category} />
           ))}
         </div>
       </LibrarySection>
@@ -452,7 +375,6 @@ const TechnologyGroup = ({ group }) => {
           --og-muted: #57534e;
           --og-muted-soft: #78716c;
           --og-card-bg: #fff;
-          --og-group-heading-bg: rgba(44, 38, 119, 0.04);
           --og-border: rgba(12, 10, 9, 0.1);
           --og-callout-bg: #fff7ed;
           --og-callout-border: #fed7aa;
@@ -535,8 +457,7 @@ const TechnologyGroup = ({ group }) => {
 
         .og-submit-link:focus-visible,
         .og-extension-action:focus-visible,
-        .og-extension-author-link:focus-visible,
-        .og-filter-button:focus-visible {
+        .og-extension-author-link:focus-visible {
           outline: 2px solid var(--og-focus-ring);
           outline-offset: 2px;
         }
@@ -631,63 +552,6 @@ const TechnologyGroup = ({ group }) => {
           font-size: 0.875rem;
           font-weight: 500;
           background: var(--og-card-bg);
-        }
-
-        .og-library-filters {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.6rem;
-          margin: 0 0 1rem;
-        }
-
-        .og-filter-button {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          min-height: 2.25rem;
-          border: 1px solid var(--og-border);
-          border-radius: 999px;
-          padding: 0 0.75rem;
-          background: var(--og-card-bg);
-          color: var(--og-muted);
-          font: inherit;
-          font-size: 0.875rem;
-          font-weight: 600;
-          line-height: 1.2;
-          cursor: pointer;
-          transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
-        }
-
-        .og-filter-button:hover {
-          border-color: var(--og-primary);
-          color: var(--og-accent-text);
-        }
-
-        .og-filter-button-active {
-          border-color: var(--og-primary);
-          background: var(--og-primary);
-          color: #fff;
-        }
-
-        .og-filter-button-active:hover {
-          color: #fff;
-        }
-
-        .og-filter-button span:last-child {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          min-width: 1.45rem;
-          height: 1.45rem;
-          border-radius: 999px;
-          padding: 0 0.4rem;
-          background: rgba(120, 113, 108, 0.12);
-          color: inherit;
-          font-size: 0.75rem;
-        }
-
-        .og-filter-button-active span:last-child {
-          background: rgba(255, 255, 255, 0.18);
         }
 
         .og-card-grid {
@@ -825,69 +689,7 @@ const TechnologyGroup = ({ group }) => {
           gap: 1.2rem;
         }
 
-        .og-technology-list {
-          display: grid;
-          gap: 1rem;
-        }
-
-        .og-technology-group {
-          scroll-margin-top: 6rem;
-          overflow: hidden;
-          border: 1px solid var(--og-border);
-          border-radius: 0.75rem;
-          background: var(--og-card-bg);
-        }
-
-        .og-technology-heading {
-          display: flex;
-          justify-content: space-between;
-          gap: 1.2rem;
-          align-items: center;
-          padding: 1rem 1.1rem;
-          background: var(--og-group-heading-bg);
-          border-bottom: 1px solid var(--og-border);
-        }
-
-        .og-technology-heading h3 {
-          margin: 0;
-          color: var(--og-title);
-          font-size: 1.1rem;
-          line-height: 1.35;
-          font-weight: 700;
-          letter-spacing: 0;
-        }
-
-        .og-technology-heading p {
-          max-width: 48rem;
-          margin: 0.25rem 0 0;
-          color: var(--og-muted);
-          font-size: 0.95rem;
-          line-height: 1.45;
-        }
-
-        .og-technology-heading-meta {
-          display: inline-flex;
-          flex: 0 0 auto;
-          align-items: center;
-          gap: 0.65rem;
-        }
-
-        .og-technology-count {
-          border: 1px solid var(--og-border);
-          border-radius: 0.5rem;
-          padding: 0.35rem 0.6rem;
-          color: var(--og-muted-soft);
-          font-size: 0.875rem;
-          font-weight: 500;
-          background: var(--og-card-bg);
-        }
-
-        .og-technology-group > .og-category-list {
-          margin-top: 0;
-          padding: 1.1rem;
-        }
-
-        .og-category-group {
+        .og-category-section {
           scroll-margin-top: 6rem;
         }
 
@@ -1065,7 +867,6 @@ const TechnologyGroup = ({ group }) => {
           --og-muted: #a8a29e;
           --og-muted-soft: #78716c;
           --og-card-bg: var(--color-background-dark, rgb(14, 14, 15));
-          --og-group-heading-bg: rgba(165, 180, 252, 0.07);
           --og-border: rgba(255, 255, 255, 0.1);
           --og-callout-bg: rgba(154, 52, 18, 0.18);
           --og-callout-border: rgba(251, 146, 60, 0.35);
@@ -1081,8 +882,7 @@ const TechnologyGroup = ({ group }) => {
         .dark .og-extension-card,
         .dark .og-maintainer-badge,
         .dark .og-category-icon,
-        .dark .og-section-count,
-        .dark .og-filter-button {
+        .dark .og-section-count {
           background: var(--og-card-bg);
         }
 
@@ -1090,17 +890,12 @@ const TechnologyGroup = ({ group }) => {
           background: #fff;
         }
 
-        .dark .og-filter-button-active {
-          background: var(--og-primary);
-        }
-
         .dark .og-library-legend-item {
           background: rgba(214, 211, 209, 0.05);
         }
 
         .dark .og-extension-card h3,
-        .dark .og-category-heading h3,
-        .dark .og-technology-heading h3 {
+        .dark .og-category-heading h3 {
           color: var(--og-title);
         }
 
@@ -1114,23 +909,16 @@ const TechnologyGroup = ({ group }) => {
           }
 
           .og-library-hero,
-          .og-section-heading,
-          .og-technology-heading {
+          .og-section-heading {
             align-items: start;
           }
         }
 
         @media (max-width: 640px) {
           .og-library-hero,
-          .og-section-heading,
-          .og-technology-heading {
+          .og-section-heading {
             display: grid;
             grid-template-columns: 1fr;
-          }
-
-          .og-technology-heading-meta {
-            justify-content: space-between;
-            width: 100%;
           }
 
           .og-card-grid {

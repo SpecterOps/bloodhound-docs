@@ -4,160 +4,7 @@
 
 export const libraryCategories = [
   {
-    "name": "1Password",
-    "group": "identity-authentication-secrets",
-    "order": 20,
-    "icon": {
-      "type": "onepassword",
-      "label": "1P"
-    },
-    "extensions": [
-      {
-        "name": "1PassHound",
-        "maintainer": "specterops",
-        "authors": [
-          {
-            "name": "Jared Atkinson",
-            "href": "https://x.com/jaredcatkinson",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          }
-        ],
-        "description": "Collects 1Password for Business access-control data and converts vault, item, group, and user relationships into OpenGraph data for BloodHound analysis.",
-        "href": "https://github.com/SpecterOps/1PassHound"
-      }
-    ]
-  },
-  {
-    "name": "Amazon Web Services",
-    "group": "cloud-cluster-control-planes",
-    "order": 10,
-    "icon": {
-      "type": "aws",
-      "label": "AWS"
-    },
-    "extensions": [
-      {
-        "name": "IAMhounddog",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Nathan Tucker",
-            "href": "https://github.com/vntucker",
-            "organization": "Virtue Security",
-            "organizationHref": "https://www.virtuesecurity.com/"
-          }
-        ],
-        "description": "Creates OpenGraph-compatible IAM-to-resource models for identifying privileged principals and second-order escalation opportunities in AWS environments.",
-        "href": "https://github.com/VirtueSecurity/IAMhounddog"
-      }
-    ]
-  },
-  {
-    "name": "Ansible",
-    "group": "software-delivery-automation",
-    "order": 20,
-    "icon": {
-      "type": "ansible",
-      "label": "A"
-    },
-    "extensions": [
-      {
-        "name": "AnsibleHound",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Ramoreik",
-            "href": "https://github.com/Ramoreik"
-          },
-          {
-            "name": "s-lck",
-            "href": "https://github.com/s-lck"
-          }
-        ],
-        "description": "Maps Ansible AWX and Tower organization structure and permissions into a BloodHound-compatible attack-path graph.",
-        "href": "https://github.com/TheSleekBoyCompany/AnsibleHound"
-      }
-    ]
-  },
-  {
-    "name": "Atlassian Cloud",
-    "group": "application-data-access",
-    "order": 10,
-    "icon": {
-      "type": "atlassian",
-      "label": "A"
-    },
-    "extensions": [
-      {
-        "name": "AtlassianHound",
-        "maintainer": "specterops",
-        "authors": [
-          {
-            "name": "Craig Wright",
-            "href": "https://x.com/werdhaihai",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          }
-        ],
-        "description": "Collects foundational Jira and Confluence access data and exports it to BloodHound OpenGraph format for Atlassian Cloud and tested deployment paths.",
-        "href": "https://github.com/werdhaihai/AtlassianHound"
-      }
-    ]
-  },
-  {
-    "name": "Cisco Duo Security",
-    "group": "identity-authentication-secrets",
-    "order": 30,
-    "icon": {
-      "type": "cisco",
-      "label": "DUO"
-    },
-    "extensions": [
-      {
-        "name": "DuoHound",
-        "maintainer": "specterops",
-        "authors": [
-          {
-            "name": "Jacob Julian",
-            "href": "https://www.linkedin.com/in/jacobjulian/",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          }
-        ],
-        "description": "Extracts Duo Admin API data into OpenGraph so teams can analyze MFA relationships, application access, and enrollment coverage in BloodHound.",
-        "href": "https://github.com/julian1j/DuoHound"
-      }
-    ]
-  },
-  {
-    "name": "Cross-platform DevOps",
-    "group": "software-delivery-automation",
-    "order": 10,
-    "icon": {
-      "type": "cross-platform",
-      "label": "Cross-platform"
-    },
-    "extensions": [
-      {
-        "name": "Dop2Mop",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Brett Hawkins",
-            "href": "https://x.com/h4wkst3r",
-            "organization": "Armadin",
-            "organizationHref": "https://armadin.com/"
-          }
-        ],
-        "description": "Maps attack paths from DevOps to MLOps infrastructure across GitHub, Azure DevOps, Azure ML, and AWS SageMaker.",
-        "href": "https://github.com/h4wkst3r/Dop2Mop"
-      }
-    ]
-  },
-  {
     "name": "Cross-platform Secret Scanners",
-    "group": "identity-authentication-secrets",
     "order": 10,
     "icon": {
       "type": "key",
@@ -195,8 +42,55 @@ export const libraryCategories = [
     ]
   },
   {
+    "name": "1Password",
+    "order": 20,
+    "icon": {
+      "type": "onepassword",
+      "label": "1P"
+    },
+    "extensions": [
+      {
+        "name": "1PassHound",
+        "maintainer": "specterops",
+        "authors": [
+          {
+            "name": "Jared Atkinson",
+            "href": "https://x.com/jaredcatkinson",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          }
+        ],
+        "description": "Collects 1Password for Business access-control data and converts vault, item, group, and user relationships into OpenGraph data for BloodHound analysis.",
+        "href": "https://github.com/SpecterOps/1PassHound"
+      }
+    ]
+  },
+  {
+    "name": "Cisco Duo Security",
+    "order": 30,
+    "icon": {
+      "type": "cisco",
+      "label": "DUO"
+    },
+    "extensions": [
+      {
+        "name": "DuoHound",
+        "maintainer": "specterops",
+        "authors": [
+          {
+            "name": "Jacob Julian",
+            "href": "https://www.linkedin.com/in/jacobjulian/",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          }
+        ],
+        "description": "Extracts Duo Admin API data into OpenGraph so teams can analyze MFA relationships, application access, and enrollment coverage in BloodHound.",
+        "href": "https://github.com/julian1j/DuoHound"
+      }
+    ]
+  },
+  {
     "name": "CyberArk",
-    "group": "identity-authentication-secrets",
     "order": 40,
     "icon": {
       "type": "cyberark",
@@ -227,7 +121,6 @@ export const libraryCategories = [
   },
   {
     "name": "FreeIPA",
-    "group": "identity-authentication-secrets",
     "order": 50,
     "icon": {
       "type": "freeipa",
@@ -249,248 +142,7 @@ export const libraryCategories = [
     ]
   },
   {
-    "name": "GitHub",
-    "group": "software-delivery-automation",
-    "order": 30,
-    "icon": {
-      "type": "github",
-      "label": "GH"
-    },
-    "extensions": [
-      {
-        "name": "GitHound",
-        "maintainer": "specterops",
-        "authors": [
-          {
-            "name": "Jared Atkinson",
-            "href": "https://x.com/jaredcatkinson",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          }
-        ],
-        "description": "Collects GitHub organization structure and permissions into a navigable OpenGraph attack-path model compatible with the SpecterOps GitHub extension.",
-        "href": "https://github.com/SpecterOps/GitHound"
-      },
-      {
-        "name": "openhound-github",
-        "maintainer": "specterops",
-        "authors": [
-          {
-            "name": "Joey Dreijer",
-            "href": "https://github.com/d3vzer0",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          },
-          {
-            "name": "Jonas Bülow Knudsen",
-            "href": "https://github.com/JonasBK",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          }
-        ],
-        "description": "Collects resources from GitHub organizations and transforms them into usable nodes and edges for BloodHound through OpenHound.",
-        "href": "https://github.com/SpecterOps/openhound-github"
-      },
-      {
-        "name": "GitHoundPy",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Derrick Polakoff",
-            "href": "https://www.linkedin.com/in/derrick-polakoff-54a34a237",
-            "organization": "CorvraLabs",
-            "organizationHref": "https://github.com/CorvraLabs"
-          }
-        ],
-        "description": "Provides a Python implementation of GitHound that aims to stay in sync with the main PowerShell collector.",
-        "href": "https://github.com/CorvraLabs/GitHoundPy"
-      }
-    ]
-  },
-  {
-    "name": "GitLab",
-    "group": "software-delivery-automation",
-    "order": 40,
-    "icon": {
-      "type": "gitlab",
-      "label": "GL"
-    },
-    "extensions": [
-      {
-        "name": "GitLabHound",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Marc André Tanner",
-            "href": "https://x.com/marcandretanner",
-            "organization": "Compass Security",
-            "organizationHref": "https://compass-security.com/"
-          }
-        ],
-        "description": "Generates a GitLab attack-path graph covering users, groups, roles, repositories, CI/CD resources, SSO identities, OIDC trust paths, and leaked secrets.",
-        "href": "https://github.com/CompassSecurity/GitLabHound"
-      }
-    ]
-  },
-  {
-    "name": "Google Cloud Platform",
-    "group": "cloud-cluster-control-planes",
-    "order": 20,
-    "icon": {
-      "type": "gcp",
-      "label": "GCP"
-    },
-    "extensions": [
-      {
-        "name": "GCP-Hound",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Faiz Karim",
-            "href": "https://in.linkedin.com/in/faiz-karim-8421bb195"
-          }
-        ],
-        "description": "Transforms Google Cloud IAM relationships into interactive BloodHound attack graphs for security enumeration and privilege escalation discovery.",
-        "href": "https://github.com/F41zK4r1m/GCP-Hound"
-      },
-      {
-        "name": "GCPwn",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "WebbinRoot",
-            "href": "https://www.linkedin.com/in/webbinroot/",
-            "organization": "NetSPI",
-            "organizationHref": "https://www.netspi.com/"
-          }
-        ],
-        "description": "Collects Google Cloud data for credential handling, service enumeration, artifact collection, and OpenGraph attack-path analysis.",
-        "href": "https://github.com/NetSPI/gcpwn"
-      }
-    ]
-  },
-  {
-    "name": "IBM Resource Access Control Facility (RACF)",
-    "group": "endpoint-network-infrastructure-control",
-    "order": 20,
-    "icon": {
-      "type": "mainframe",
-      "label": "RACF"
-    },
-    "extensions": [
-      {
-        "name": "RacfHound",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Alexander Henriksson",
-            "href": "https://linkedin.com/in/alexhenriksson"
-          }
-        ],
-        "description": "Collects RACF database data over SSH for supported z/OS classes without requiring an IRRDBU00 dump.",
-        "href": "https://github.com/4-L3X/racfhound"
-      }
-    ]
-  },
-  {
-    "name": "Jamf Pro",
-    "group": "endpoint-network-infrastructure-control",
-    "order": 30,
-    "icon": {
-      "type": "jamf",
-      "label": "J"
-    },
-    "extensions": [
-      {
-        "name": "JamfHound",
-        "maintainer": "specterops",
-        "authors": [
-          {
-            "name": "Lance Cain",
-            "href": "https://www.linkedin.com/in/lance-cain-3ab262184",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          }
-        ],
-        "description": "Collects Jamf Pro tenant data and identifies attack paths based on object permissions, saved as JSON for BloodHound ingestion.",
-        "href": "https://github.com/SpecterOps/jamfhound"
-      },
-      {
-        "name": "openhound-jamf",
-        "maintainer": "specterops",
-        "authors": [
-          {
-            "name": "Joey Dreijer",
-            "href": "https://github.com/d3vzer0",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          },
-          {
-            "name": "Jonas Bülow Knudsen",
-            "href": "https://github.com/JonasBK",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          },
-          {
-            "name": "Lance Cain",
-            "href": "https://www.linkedin.com/in/lance-cain-3ab262184",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          }
-        ],
-        "description": "Collects Jamf Pro resources and transforms them into usable nodes and edges for BloodHound through OpenHound.",
-        "href": "https://github.com/SpecterOps/openhound-jamf"
-      }
-    ]
-  },
-  {
-    "name": "Kubernetes",
-    "group": "cloud-cluster-control-planes",
-    "order": 30,
-    "icon": {
-      "type": "kubernetes",
-      "label": "K8S"
-    },
-    "extensions": [
-      {
-        "name": "Bloodhound-Kube",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Don Cowan",
-            "href": "https://www.linkedin.com/in/don-cowan/",
-            "organization": "IBM X-Force Red",
-            "organizationHref": "https://www.ibm.com/x-force"
-          }
-        ],
-        "description": "Collects Kubernetes and OpenShift topology, RBAC, and common custom resources to visualize multi-step attack paths through large-scale clusters.",
-        "href": "https://github.com/HackinAhab/bloodhound-kube"
-      },
-      {
-        "name": "ClusterHound",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Nathan Dove",
-            "href": "https://www.linkedin.com/in/nathan-dove/",
-            "organization": "KPMG UK",
-            "organizationHref": "https://kpmg.com/uk/en.html"
-          },
-          {
-            "name": "Josh Hickling",
-            "href": "https://www.linkedin.com/in/joshua-hickling/",
-            "organization": "KPMG UK",
-            "organizationHref": "https://kpmg.com/uk/en.html"
-          }
-        ],
-        "description": "Collects cluster topology and RBAC configuration with kubectl and outputs OpenGraph JSON for Kubernetes attack-path analysis.",
-        "href": "https://github.com/dovesec/ClusterHound"
-      }
-    ]
-  },
-  {
     "name": "Microsoft Active Directory",
-    "group": "identity-authentication-secrets",
     "order": 60,
     "icon": {
       "type": "microsoft",
@@ -569,7 +221,6 @@ export const libraryCategories = [
   },
   {
     "name": "Microsoft Entra ID",
-    "group": "identity-authentication-secrets",
     "order": 70,
     "icon": {
       "type": "microsoft",
@@ -607,57 +258,298 @@ export const libraryCategories = [
     ]
   },
   {
-    "name": "Microsoft Exchange",
-    "group": "application-data-access",
-    "order": 20,
+    "name": "Okta",
+    "order": 80,
     "icon": {
-      "type": "microsoft",
-      "label": "EX"
+      "type": "okta",
+      "label": "O"
     },
     "extensions": [
       {
-        "name": "ExchangeHound",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Filip Wozniak",
-            "href": "https://github.com/FilipPwn"
-          }
-        ],
-        "description": "Models Exchange on-premises objects and relationships, including mailbox delegation, folder access, transport rules, and Exchange RBAC assignments.",
-        "href": "https://github.com/FilipPwn/exchangehound"
-      }
-    ]
-  },
-  {
-    "name": "Microsoft SQL Server",
-    "group": "application-data-access",
-    "order": 30,
-    "icon": {
-      "type": "microsoft",
-      "label": "SQL"
-    },
-    "extensions": [
-      {
-        "name": "MSSQLHound",
+        "name": "OktaHound",
         "maintainer": "specterops",
         "authors": [
           {
-            "name": "Chris Thompson",
-            "href": "https://x.com/_Mayyhem",
+            "name": "Michael Grafnetter",
+            "href": "https://www.linkedin.com/in/grafnetter/",
             "organization": "SpecterOps",
             "organizationHref": "https://specterops.io"
           }
         ],
-        "description": "Collects BloodHound OpenGraph-compatible data from one or more MSSQL servers and packages the output for ingestion.",
-        "href": "https://github.com/SpecterOps/MSSQLHound"
+        "description": "Collects Okta users, groups, applications, roles, and related entities for analysis with the SpecterOps Okta OpenGraph extension.",
+        "href": "https://github.com/SpecterOps/OktaHound"
+      },
+      {
+        "name": "openhound-okta",
+        "maintainer": "specterops",
+        "authors": [
+          {
+            "name": "Joey Dreijer",
+            "href": "https://github.com/d3vzer0",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          },
+          {
+            "name": "Jonas Bülow Knudsen",
+            "href": "https://github.com/JonasBK",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          }
+        ],
+        "description": "Collects Okta resources and transforms them into usable nodes and edges for BloodHound through OpenHound.",
+        "href": "https://github.com/SpecterOps/openhound-okta"
+      }
+    ]
+  },
+  {
+    "name": "PingOne",
+    "order": 90,
+    "icon": {
+      "type": "ping",
+      "label": "P"
+    },
+    "extensions": [
+      {
+        "name": "PingOneHound",
+        "maintainer": "specterops",
+        "authors": [
+          {
+            "name": "Andy Robbins",
+            "href": "https://www.linkedin.com/in/robbinsandy/",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          }
+        ],
+        "description": "Collects PingOne identity provider data needed to identify, analyze, execute, and audit PingOne attack paths and object-level permissions.",
+        "href": "https://github.com/andyrobbins/PingOneHound"
+      }
+    ]
+  },
+  {
+    "name": "Amazon Web Services",
+    "order": 100,
+    "icon": {
+      "type": "aws",
+      "label": "AWS"
+    },
+    "extensions": [
+      {
+        "name": "IAMhounddog",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Nathan Tucker",
+            "href": "https://github.com/vntucker",
+            "organization": "Virtue Security",
+            "organizationHref": "https://www.virtuesecurity.com/"
+          }
+        ],
+        "description": "Creates OpenGraph-compatible IAM-to-resource models for identifying privileged principals and second-order escalation opportunities in AWS environments.",
+        "href": "https://github.com/VirtueSecurity/IAMhounddog"
+      }
+    ]
+  },
+  {
+    "name": "Google Cloud Platform",
+    "order": 110,
+    "icon": {
+      "type": "gcp",
+      "label": "GCP"
+    },
+    "extensions": [
+      {
+        "name": "GCP-Hound",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Faiz Karim",
+            "href": "https://in.linkedin.com/in/faiz-karim-8421bb195"
+          }
+        ],
+        "description": "Transforms Google Cloud IAM relationships into interactive BloodHound attack graphs for security enumeration and privilege escalation discovery.",
+        "href": "https://github.com/F41zK4r1m/GCP-Hound"
+      },
+      {
+        "name": "GCPwn",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "WebbinRoot",
+            "href": "https://www.linkedin.com/in/webbinroot/",
+            "organization": "NetSPI",
+            "organizationHref": "https://www.netspi.com/"
+          }
+        ],
+        "description": "Collects Google Cloud data for credential handling, service enumeration, artifact collection, and OpenGraph attack-path analysis.",
+        "href": "https://github.com/NetSPI/gcpwn"
+      }
+    ]
+  },
+  {
+    "name": "Kubernetes",
+    "order": 120,
+    "icon": {
+      "type": "kubernetes",
+      "label": "K8S"
+    },
+    "extensions": [
+      {
+        "name": "Bloodhound-Kube",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Don Cowan",
+            "href": "https://www.linkedin.com/in/don-cowan/",
+            "organization": "IBM X-Force Red",
+            "organizationHref": "https://www.ibm.com/x-force"
+          }
+        ],
+        "description": "Collects Kubernetes and OpenShift topology, RBAC, and common custom resources to visualize multi-step attack paths through large-scale clusters.",
+        "href": "https://github.com/HackinAhab/bloodhound-kube"
+      },
+      {
+        "name": "ClusterHound",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Nathan Dove",
+            "href": "https://www.linkedin.com/in/nathan-dove/",
+            "organization": "KPMG UK",
+            "organizationHref": "https://kpmg.com/uk/en.html"
+          },
+          {
+            "name": "Josh Hickling",
+            "href": "https://www.linkedin.com/in/joshua-hickling/",
+            "organization": "KPMG UK",
+            "organizationHref": "https://kpmg.com/uk/en.html"
+          }
+        ],
+        "description": "Collects cluster topology and RBAC configuration with kubectl and outputs OpenGraph JSON for Kubernetes attack-path analysis.",
+        "href": "https://github.com/dovesec/ClusterHound"
+      }
+    ]
+  },
+  {
+    "name": "Oracle Cloud Infrastructure",
+    "order": 130,
+    "icon": {
+      "type": "oracle",
+      "label": "OCI"
+    },
+    "extensions": [
+      {
+        "name": "OCInferno",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "WebbinRoot",
+            "href": "https://www.linkedin.com/in/webbinroot/",
+            "organization": "NetSPI",
+            "organizationHref": "https://www.netspi.com/"
+          }
+        ],
+        "description": "Collects OCI data for credential handling, service enumeration, artifact download, and OpenGraph privilege-escalation path analysis.",
+        "href": "https://github.com/NetSPI/ocinferno"
+      }
+    ]
+  },
+  {
+    "name": "SSH",
+    "order": 140,
+    "icon": {
+      "type": "terminal",
+      "label": "SSH"
+    },
+    "extensions": [
+      {
+        "name": "GoLinHound",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Lukas Klein",
+            "href": "https://www.linkedin.com/in/klein-lukas/"
+          }
+        ],
+        "description": "Discovers SSH authentication and Linux-host attack paths, including local privilege escalation, SSH key and certificate authentication, and identity connections.",
+        "href": "https://github.com/RantaSec/golinhound"
+      }
+    ]
+  },
+  {
+    "name": "IBM Resource Access Control Facility (RACF)",
+    "order": 150,
+    "icon": {
+      "type": "mainframe",
+      "label": "RACF"
+    },
+    "extensions": [
+      {
+        "name": "RacfHound",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Alexander Henriksson",
+            "href": "https://linkedin.com/in/alexhenriksson"
+          }
+        ],
+        "description": "Collects RACF database data over SSH for supported z/OS classes without requiring an IRRDBU00 dump.",
+        "href": "https://github.com/4-L3X/racfhound"
+      }
+    ]
+  },
+  {
+    "name": "Jamf Pro",
+    "order": 160,
+    "icon": {
+      "type": "jamf",
+      "label": "J"
+    },
+    "extensions": [
+      {
+        "name": "JamfHound",
+        "maintainer": "specterops",
+        "authors": [
+          {
+            "name": "Lance Cain",
+            "href": "https://www.linkedin.com/in/lance-cain-3ab262184",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          }
+        ],
+        "description": "Collects Jamf Pro tenant data and identifies attack paths based on object permissions, saved as JSON for BloodHound ingestion.",
+        "href": "https://github.com/SpecterOps/jamfhound"
+      },
+      {
+        "name": "openhound-jamf",
+        "maintainer": "specterops",
+        "authors": [
+          {
+            "name": "Joey Dreijer",
+            "href": "https://github.com/d3vzer0",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          },
+          {
+            "name": "Jonas Bülow Knudsen",
+            "href": "https://github.com/JonasBK",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          },
+          {
+            "name": "Lance Cain",
+            "href": "https://www.linkedin.com/in/lance-cain-3ab262184",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          }
+        ],
+        "description": "Collects Jamf Pro resources and transforms them into usable nodes and edges for BloodHound through OpenHound.",
+        "href": "https://github.com/SpecterOps/openhound-jamf"
       }
     ]
   },
   {
     "name": "Microsoft System Center",
-    "group": "endpoint-network-infrastructure-control",
-    "order": 40,
+    "order": 170,
     "icon": {
       "type": "microsoft",
       "label": "SC"
@@ -707,8 +599,7 @@ export const libraryCategories = [
   },
   {
     "name": "Microsoft Windows",
-    "group": "endpoint-network-infrastructure-control",
-    "order": 50,
+    "order": 180,
     "icon": {
       "type": "windows",
       "label": "WIN"
@@ -757,41 +648,45 @@ export const libraryCategories = [
     ]
   },
   {
-    "name": "MITRE ATT&CK",
-    "group": "exposure-threat-context",
-    "order": 20,
+    "name": "Tailscale",
+    "order": 190,
     "icon": {
-      "type": "mitre",
-      "label": "ATT&CK"
+      "type": "tailscale",
+      "label": "TS"
     },
     "extensions": [
       {
-        "name": "BloodSOCer",
+        "name": "TailscaleHound",
         "maintainer": "specterops",
         "authors": [
           {
-            "name": "Mat Saulnier",
-            "href": "https://x.com/ScoubiMtl",
+            "name": "Andrew Gomez",
+            "href": "https://github.com/KingOfTheNOPs",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          },
+          {
+            "name": "Andrew Luke",
+            "href": "https://github.com/Sw4mpf0x",
             "organization": "SpecterOps",
             "organizationHref": "https://specterops.io"
           }
         ],
-        "description": "Aggregates threat intelligence from MITRE ATT&CK, Sigma rules, and Atomic Red Team into OpenGraph data for BloodHound visualization.",
-        "href": "https://github.com/Scoubi/BloodSOCer"
+        "description": "Collects tailnet users, devices, groups, tags, ACLs, grants, SSH rules, routes, app connectors, services, invites, and webhooks.",
+        "href": "https://github.com/KingOfTheNOPs/TailscaleHound"
       }
     ]
   },
   {
-    "name": "Network",
-    "group": "exposure-threat-context",
-    "order": 10,
+    "name": "VMware vCenter Server",
+    "order": 200,
     "icon": {
-      "type": "network",
-      "label": "NET"
+      "type": "vmware",
+      "label": "vC"
     },
     "extensions": [
       {
-        "name": "NetworkHound",
+        "name": "vCenterHound",
         "maintainer": "community",
         "authors": [
           {
@@ -801,36 +696,85 @@ export const libraryCategories = [
             "organizationHref": "https://www.mordavid.com/"
           }
         ],
-        "description": "Discovers computer objects, resolves hostnames, scans ports and HTTP services, identifies shadow IT, and builds OpenGraph network topology data.",
-        "href": "https://github.com/mordavid/NetworkHound"
+        "description": "Collects vCenter infrastructure entities, permissions, roles, users, groups, and assignments into a BloodHound-compatible JSON graph.",
+        "href": "https://github.com/MorDavid/vCenterHound"
       }
     ]
   },
   {
-    "name": "Okta",
-    "group": "identity-authentication-secrets",
-    "order": 80,
+    "name": "Cross-platform DevOps",
+    "order": 210,
     "icon": {
-      "type": "okta",
-      "label": "O"
+      "type": "cross-platform",
+      "label": "Cross-platform"
     },
     "extensions": [
       {
-        "name": "OktaHound",
+        "name": "Dop2Mop",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Brett Hawkins",
+            "href": "https://x.com/h4wkst3r",
+            "organization": "Armadin",
+            "organizationHref": "https://armadin.com/"
+          }
+        ],
+        "description": "Maps attack paths from DevOps to MLOps infrastructure across GitHub, Azure DevOps, Azure ML, and AWS SageMaker.",
+        "href": "https://github.com/h4wkst3r/Dop2Mop"
+      }
+    ]
+  },
+  {
+    "name": "Ansible",
+    "order": 220,
+    "icon": {
+      "type": "ansible",
+      "label": "A"
+    },
+    "extensions": [
+      {
+        "name": "AnsibleHound",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Ramoreik",
+            "href": "https://github.com/Ramoreik"
+          },
+          {
+            "name": "s-lck",
+            "href": "https://github.com/s-lck"
+          }
+        ],
+        "description": "Maps Ansible AWX and Tower organization structure and permissions into a BloodHound-compatible attack-path graph.",
+        "href": "https://github.com/TheSleekBoyCompany/AnsibleHound"
+      }
+    ]
+  },
+  {
+    "name": "GitHub",
+    "order": 230,
+    "icon": {
+      "type": "github",
+      "label": "GH"
+    },
+    "extensions": [
+      {
+        "name": "GitHound",
         "maintainer": "specterops",
         "authors": [
           {
-            "name": "Michael Grafnetter",
-            "href": "https://www.linkedin.com/in/grafnetter/",
+            "name": "Jared Atkinson",
+            "href": "https://x.com/jaredcatkinson",
             "organization": "SpecterOps",
             "organizationHref": "https://specterops.io"
           }
         ],
-        "description": "Collects Okta users, groups, applications, roles, and related entities for analysis with the SpecterOps Okta OpenGraph extension.",
-        "href": "https://github.com/SpecterOps/OktaHound"
+        "description": "Collects GitHub organization structure and permissions into a navigable OpenGraph attack-path model compatible with the SpecterOps GitHub extension.",
+        "href": "https://github.com/SpecterOps/GitHound"
       },
       {
-        "name": "openhound-okta",
+        "name": "openhound-github",
         "maintainer": "specterops",
         "authors": [
           {
@@ -846,90 +790,122 @@ export const libraryCategories = [
             "organizationHref": "https://specterops.io"
           }
         ],
-        "description": "Collects Okta resources and transforms them into usable nodes and edges for BloodHound through OpenHound.",
-        "href": "https://github.com/SpecterOps/openhound-okta"
-      }
-    ]
-  },
-  {
-    "name": "Oracle Cloud Infrastructure",
-    "group": "cloud-cluster-control-planes",
-    "order": 40,
-    "icon": {
-      "type": "oracle",
-      "label": "OCI"
-    },
-    "extensions": [
+        "description": "Collects resources from GitHub organizations and transforms them into usable nodes and edges for BloodHound through OpenHound.",
+        "href": "https://github.com/SpecterOps/openhound-github"
+      },
       {
-        "name": "OCInferno",
+        "name": "GitHoundPy",
         "maintainer": "community",
         "authors": [
           {
-            "name": "WebbinRoot",
-            "href": "https://www.linkedin.com/in/webbinroot/",
-            "organization": "NetSPI",
-            "organizationHref": "https://www.netspi.com/"
+            "name": "Derrick Polakoff",
+            "href": "https://www.linkedin.com/in/derrick-polakoff-54a34a237",
+            "organization": "CorvraLabs",
+            "organizationHref": "https://github.com/CorvraLabs"
           }
         ],
-        "description": "Collects OCI data for credential handling, service enumeration, artifact download, and OpenGraph privilege-escalation path analysis.",
-        "href": "https://github.com/NetSPI/ocinferno"
+        "description": "Provides a Python implementation of GitHound that aims to stay in sync with the main PowerShell collector.",
+        "href": "https://github.com/CorvraLabs/GitHoundPy"
       }
     ]
   },
   {
-    "name": "PingOne",
-    "group": "identity-authentication-secrets",
-    "order": 90,
+    "name": "GitLab",
+    "order": 240,
     "icon": {
-      "type": "ping",
-      "label": "P"
+      "type": "gitlab",
+      "label": "GL"
     },
     "extensions": [
       {
-        "name": "PingOneHound",
+        "name": "GitLabHound",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Marc André Tanner",
+            "href": "https://x.com/marcandretanner",
+            "organization": "Compass Security",
+            "organizationHref": "https://compass-security.com/"
+          }
+        ],
+        "description": "Generates a GitLab attack-path graph covering users, groups, roles, repositories, CI/CD resources, SSO identities, OIDC trust paths, and leaked secrets.",
+        "href": "https://github.com/CompassSecurity/GitLabHound"
+      }
+    ]
+  },
+  {
+    "name": "Atlassian Cloud",
+    "order": 250,
+    "icon": {
+      "type": "atlassian",
+      "label": "A"
+    },
+    "extensions": [
+      {
+        "name": "AtlassianHound",
         "maintainer": "specterops",
         "authors": [
           {
-            "name": "Andy Robbins",
-            "href": "https://www.linkedin.com/in/robbinsandy/",
+            "name": "Craig Wright",
+            "href": "https://x.com/werdhaihai",
             "organization": "SpecterOps",
             "organizationHref": "https://specterops.io"
           }
         ],
-        "description": "Collects PingOne identity provider data needed to identify, analyze, execute, and audit PingOne attack paths and object-level permissions.",
-        "href": "https://github.com/andyrobbins/PingOneHound"
+        "description": "Collects foundational Jira and Confluence access data and exports it to BloodHound OpenGraph format for Atlassian Cloud and tested deployment paths.",
+        "href": "https://github.com/werdhaihai/AtlassianHound"
       }
     ]
   },
   {
-    "name": "runZero",
-    "group": "exposure-threat-context",
-    "order": 30,
+    "name": "Microsoft Exchange",
+    "order": 260,
     "icon": {
-      "type": "runzero",
-      "label": "rZ"
+      "type": "microsoft",
+      "label": "EX"
     },
     "extensions": [
       {
-        "name": "runZeroHound",
+        "name": "ExchangeHound",
         "maintainer": "community",
         "authors": [
           {
-            "name": "HD Moore",
-            "href": "https://infosec.exchange/@hdm",
-            "organization": "runZero",
-            "organizationHref": "https://www.runzero.com/"
+            "name": "Filip Wozniak",
+            "href": "https://github.com/FilipPwn"
           }
         ],
-        "description": "Brings runZero Exposure Management data into BloodHound through OpenGraph.",
-        "href": "https://github.com/runZeroInc/runZeroHound"
+        "description": "Models Exchange on-premises objects and relationships, including mailbox delegation, folder access, transport rules, and Exchange RBAC assignments.",
+        "href": "https://github.com/FilipPwn/exchangehound"
+      }
+    ]
+  },
+  {
+    "name": "Microsoft SQL Server",
+    "order": 270,
+    "icon": {
+      "type": "microsoft",
+      "label": "SQL"
+    },
+    "extensions": [
+      {
+        "name": "MSSQLHound",
+        "maintainer": "specterops",
+        "authors": [
+          {
+            "name": "Chris Thompson",
+            "href": "https://x.com/_Mayyhem",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          }
+        ],
+        "description": "Collects BloodHound OpenGraph-compatible data from one or more MSSQL servers and packages the output for ingestion.",
+        "href": "https://github.com/SpecterOps/MSSQLHound"
       }
     ]
   },
   {
     "name": "Salesforce",
-    "group": "application-data-access",
-    "order": 40,
+    "order": 280,
     "icon": {
       "type": "salesforce",
       "label": "SF"
@@ -965,8 +941,7 @@ export const libraryCategories = [
   },
   {
     "name": "Snowflake",
-    "group": "application-data-access",
-    "order": 50,
+    "order": 290,
     "icon": {
       "type": "snowflake",
       "label": "SN"
@@ -989,70 +964,15 @@ export const libraryCategories = [
     ]
   },
   {
-    "name": "SSH",
-    "group": "endpoint-network-infrastructure-control",
-    "order": 10,
+    "name": "Network",
+    "order": 300,
     "icon": {
-      "type": "terminal",
-      "label": "SSH"
+      "type": "network",
+      "label": "NET"
     },
     "extensions": [
       {
-        "name": "GoLinHound",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Lukas Klein",
-            "href": "https://www.linkedin.com/in/klein-lukas/"
-          }
-        ],
-        "description": "Discovers SSH authentication and Linux-host attack paths, including local privilege escalation, SSH key and certificate authentication, and identity connections.",
-        "href": "https://github.com/RantaSec/golinhound"
-      }
-    ]
-  },
-  {
-    "name": "Tailscale",
-    "group": "endpoint-network-infrastructure-control",
-    "order": 60,
-    "icon": {
-      "type": "tailscale",
-      "label": "TS"
-    },
-    "extensions": [
-      {
-        "name": "TailscaleHound",
-        "maintainer": "specterops",
-        "authors": [
-          {
-            "name": "Andrew Gomez",
-            "href": "https://github.com/KingOfTheNOPs",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          },
-          {
-            "name": "Andrew Luke",
-            "href": "https://github.com/Sw4mpf0x",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          }
-        ],
-        "description": "Collects tailnet users, devices, groups, tags, ACLs, grants, SSH rules, routes, app connectors, services, invites, and webhooks.",
-        "href": "https://github.com/KingOfTheNOPs/TailscaleHound"
-      }
-    ]
-  },
-  {
-    "name": "VMware vCenter Server",
-    "group": "endpoint-network-infrastructure-control",
-    "order": 70,
-    "icon": {
-      "type": "vmware",
-      "label": "vC"
-    },
-    "extensions": [
-      {
-        "name": "vCenterHound",
+        "name": "NetworkHound",
         "maintainer": "community",
         "authors": [
           {
@@ -1062,49 +982,58 @@ export const libraryCategories = [
             "organizationHref": "https://www.mordavid.com/"
           }
         ],
-        "description": "Collects vCenter infrastructure entities, permissions, roles, users, groups, and assignments into a BloodHound-compatible JSON graph.",
-        "href": "https://github.com/MorDavid/vCenterHound"
+        "description": "Discovers computer objects, resolves hostnames, scans ports and HTTP services, identifies shadow IT, and builds OpenGraph network topology data.",
+        "href": "https://github.com/mordavid/NetworkHound"
       }
     ]
-  }
-];
-
-export const libraryGroups = [
-  {
-    "id": "identity-authentication-secrets",
-    "name": "Identity, Authentication, and Secrets",
-    "description": "Identity, authentication, impersonation, credential, and authentication-control paths.",
-    "order": 10
   },
   {
-    "id": "cloud-cluster-control-planes",
-    "name": "Cloud and Cluster Control Planes",
-    "description": "IAM, RBAC, privilege-escalation, and resource-control paths across clouds and clusters.",
-    "order": 20
+    "name": "MITRE ATT&CK",
+    "order": 310,
+    "icon": {
+      "type": "mitre",
+      "label": "ATT&CK"
+    },
+    "extensions": [
+      {
+        "name": "BloodSOCer",
+        "maintainer": "specterops",
+        "authors": [
+          {
+            "name": "Mat Saulnier",
+            "href": "https://x.com/ScoubiMtl",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          }
+        ],
+        "description": "Aggregates threat intelligence from MITRE ATT&CK, Sigma rules, and Atomic Red Team into OpenGraph data for BloodHound visualization.",
+        "href": "https://github.com/Scoubi/BloodSOCer"
+      }
+    ]
   },
   {
-    "id": "endpoint-network-infrastructure-control",
-    "name": "Endpoint, Network, and Infrastructure Control",
-    "description": "Administrative, remote-access, configuration, and lateral-movement paths through infrastructure.",
-    "order": 30
-  },
-  {
-    "id": "software-delivery-automation",
-    "name": "Software Delivery and Automation",
-    "description": "Source-code, pipeline, automation, and deployment paths that affect downstream workloads.",
-    "order": 40
-  },
-  {
-    "id": "application-data-access",
-    "name": "Application and Data Access",
-    "description": "Access and delegated-control paths through business applications, mail systems, and data platforms.",
-    "order": 50
-  },
-  {
-    "id": "exposure-threat-context",
-    "name": "Exposure and Threat Context",
-    "description": "Reachability, asset-exposure, and threat-intelligence context for identifying and prioritizing paths.",
-    "order": 60
+    "name": "runZero",
+    "order": 320,
+    "icon": {
+      "type": "runzero",
+      "label": "rZ"
+    },
+    "extensions": [
+      {
+        "name": "runZeroHound",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "HD Moore",
+            "href": "https://infosec.exchange/@hdm",
+            "organization": "runZero",
+            "organizationHref": "https://www.runzero.com/"
+          }
+        ],
+        "description": "Brings runZero Exposure Management data into BloodHound through OpenGraph.",
+        "href": "https://github.com/runZeroInc/runZeroHound"
+      }
+    ]
   }
 ];
 
