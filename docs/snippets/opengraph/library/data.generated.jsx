@@ -988,30 +988,6 @@ export const libraryCategories = [
     ]
   },
   {
-    "name": "MITRE ATT&CK",
-    "order": 310,
-    "icon": {
-      "type": "mitre",
-      "label": "ATT&CK"
-    },
-    "extensions": [
-      {
-        "name": "BloodSOCer",
-        "maintainer": "specterops",
-        "authors": [
-          {
-            "name": "Mat Saulnier",
-            "href": "https://x.com/ScoubiMtl",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          }
-        ],
-        "description": "Aggregates threat intelligence from MITRE ATT&CK, Sigma rules, and Atomic Red Team into OpenGraph data for BloodHound visualization.",
-        "href": "https://github.com/Scoubi/BloodSOCer"
-      }
-    ]
-  },
-  {
     "name": "runZero",
     "order": 320,
     "icon": {
@@ -1038,17 +1014,6 @@ export const libraryCategories = [
 ];
 
 export const integrations = [
-  {
-    "name": "BloodHound API",
-    "vendorName": "BloodHound",
-    "icon": {
-      "type": "api",
-      "label": "API"
-    },
-    "description": "Programmatically interact with BloodHound data, automate workflows, and build custom integrations with signed API requests.",
-    "href": "/integrations/bloodhound-api/working-with-api",
-    "action": "Use the API"
-  },
   {
     "name": "Google SecOps",
     "vendorName": "Google SecOps",
