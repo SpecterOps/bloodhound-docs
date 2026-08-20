@@ -8,6 +8,8 @@ export const OpenGraphLibrary = ({
   communityExtensions = [],
   openGraphTools = [],
 }) => {
+const ALL_FILTER_VALUE = 'all';
+
 const flattenExtensions = (categories) =>
   categories.reduce(
     (items, category) =>
@@ -22,6 +24,46 @@ const flattenExtensions = (categories) =>
   );
 
 const compareByName = (left, right) => left.name.localeCompare(right.name);
+
+const formatMaintainer = (maintainer) => {
+  if (maintainer === 'specterops') {
+    return 'SpecterOps';
+  }
+
+  if (maintainer === 'community') {
+    return 'Community';
+  }
+
+  return maintainer;
+};
+
+const getAuthorNames = (extension) =>
+  (extension.authors || [])
+    .map((author) => author.name)
+    .filter(Boolean);
+
+const getSearchContent = (extension) =>
+  [
+    extension.name,
+    extension.vendorName,
+    extension.description,
+    extension.maintainer,
+    formatMaintainer(extension.maintainer),
+    extension.action,
+    ...getAuthorNames(extension),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+const getFilterOptions = (extensions, getValue) =>
+  Array.from(
+    new Set(
+      extensions
+        .flatMap((extension) => getValue(extension))
+        .filter(Boolean),
+    ),
+  ).sort((left, right) => left.localeCompare(right));
 
 const communityExtensionCards = flattenExtensions(communityExtensions)
   .sort(compareByName);
@@ -189,85 +231,207 @@ const LibraryHero = () => {
   );
 };
 
+const LibrarySection = ({
+  title,
+  description,
+  countLabel,
+  extensions,
+  totalCount,
+  hasActiveItemFilters,
+  children,
+}) => {
+  return (
+    <section className="og-library-section">
+      <div className="og-section-heading">
+        <div>
+          <h2>{title}</h2>
+          <p>{description}</p>
+          <p>
+            {hasActiveItemFilters
+              ? `${extensions.length} of ${totalCount} ${countLabel}`
+              : `${totalCount} ${countLabel}`}
+          </p>
+        </div>
+      </div>
+
+      {children}
+
+      {extensions.length > 0 ? (
+        <div className="og-card-grid">
+          {extensions.map((extension) => (
+            <ExtensionCard key={extension.name} extension={extension} />
+          ))}
+        </div>
+      ) : (
+        <p className="og-empty-state">No matches. Clear the filters and try another search.</p>
+      )}
+    </section>
+  );
+};
+
+const [searchQuery, setSearchQuery] = useState('');
+const [selectedSection, setSelectedSection] = useState(ALL_FILTER_VALUE);
+const [selectedTechnology, setSelectedTechnology] = useState(ALL_FILTER_VALUE);
+
+const sectionGroups = [
+  {
+    id: 'enterprise-extensions',
+    title: 'Enterprise Extensions',
+    description: 'Enterprise extensions are maintained by SpecterOps and managed through BloodHound Enterprise.',
+    countLabel: 'enterprise extensions',
+    optionLabel: 'enterprise extensions',
+    extensions: enterpriseExtensions,
+  },
+  {
+    id: 'integrations',
+    title: 'Integrations',
+    description: 'Connect BloodHound Enterprise findings and graph data to security operations, ticketing, and automation platforms.',
+    countLabel: 'integrations',
+    optionLabel: 'integrations',
+    extensions: integrations,
+  },
+  {
+    id: 'community-extensions',
+    title: 'Community Extensions',
+    description: 'Extensions add node and edge types to the BloodHound graph.',
+    countLabel: 'community extensions',
+    optionLabel: 'community extensions',
+    extensions: communityExtensionCards,
+    hasWarning: true,
+  },
+  {
+    id: 'tools',
+    title: 'Tools',
+    description: 'Use these libraries and utilities to generate, validate, ingest, or manage OpenGraph data for BloodHound.',
+    countLabel: 'tools',
+    optionLabel: 'tools',
+    extensions: tools,
+  },
+];
+
+const technologyOptions = getFilterOptions(
+  sectionGroups.flatMap((section) => section.extensions),
+  (extension) => extension.vendorName,
+);
+
+const normalizedQuery = searchQuery.trim().toLowerCase();
+const hasActiveItemFilters =
+  normalizedQuery.length > 0 || selectedTechnology !== ALL_FILTER_VALUE;
+const hasActiveControls =
+  hasActiveItemFilters || selectedSection !== ALL_FILTER_VALUE;
+
+const filteredSections = sectionGroups
+  .filter(
+    (section) =>
+      selectedSection === ALL_FILTER_VALUE || section.id === selectedSection,
+  )
+  .map((section) => ({
+    ...section,
+    filteredExtensions: section.extensions.filter((extension) => {
+      const matchesSearch =
+        normalizedQuery.length === 0 ||
+        getSearchContent(extension).includes(normalizedQuery);
+      const matchesTechnology =
+        selectedTechnology === ALL_FILTER_VALUE ||
+        extension.vendorName === selectedTechnology;
+
+      return matchesSearch && matchesTechnology;
+    }),
+  }));
+
+const visibleSections = filteredSections.filter(
+  (section) =>
+    selectedSection !== ALL_FILTER_VALUE ||
+    !hasActiveItemFilters ||
+    section.filteredExtensions.length > 0,
+);
+
+const clearFilters = () => {
+  setSearchQuery('');
+  setSelectedSection(ALL_FILTER_VALUE);
+  setSelectedTechnology(ALL_FILTER_VALUE);
+};
+
   return (
     <div className="og-library">
       <LibraryHero />
 
-      <section className="og-library-section">
-        <div className="og-section-heading">
-          <div>
-            <h2>Enterprise Extensions</h2>
-            <p>
-              Enterprise extensions are maintained by SpecterOps and managed through BloodHound Enterprise.
-            </p>
-            <p>{enterpriseExtensions.length} enterprise extensions</p>
-          </div>
-        </div>
-        <div className="og-card-grid">
-          {enterpriseExtensions.map((extension) => (
-            <ExtensionCard key={extension.name} extension={extension} />
-          ))}
-        </div>
-      </section>
+      <div className="og-section-controls" aria-label="Marketplace filters">
+        <label className="og-search-field">
+          <span className="og-control-label">Search</span>
+          <span className="og-search-input-wrap">
+            <Icon icon="magnifying-glass" iconType="solid" color="currentColor" size={16} />
+            <input
+              type="search"
+              value={searchQuery}
+              placeholder="Search marketplace"
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+          </span>
+        </label>
 
-      <section className="og-library-section">
-        <div className="og-section-heading">
-          <div>
-            <h2>Integrations</h2>
-            <p>
-              Connect BloodHound Enterprise findings and graph data to security operations, ticketing, and automation platforms.
-            </p>
-            <p>{integrations.length} integrations</p>
-          </div>
-        </div>
-        <div className="og-card-grid">
-          {integrations.map((extension) => (
-            <ExtensionCard key={extension.name} extension={extension} />
-          ))}
-        </div>
-      </section>
+        <label className="og-filter-field">
+          <span className="og-control-label">Section</span>
+          <select
+            value={selectedSection}
+            onChange={(event) => setSelectedSection(event.target.value)}
+          >
+            <option value={ALL_FILTER_VALUE}>All sections</option>
+            {sectionGroups.map((section) => (
+              <option value={section.id} key={section.id}>
+                {section.optionLabel}
+              </option>
+            ))}
+          </select>
+        </label>
 
-      <section className="og-library-section">
-        <div className="og-section-heading">
-          <div>
-            <h2>Community Extensions</h2>
-            <p>
-              Extensions add node and edge types to the BloodHound graph.
-            </p>
-            <p>
-              {communityExtensionCards.length} community extensions
-            </p>
-          </div>
-        </div>
-        <Warning>
-          <strong>Use linked code at your own risk.</strong><br/><br/>
-          All code linked via this library is provided “as is,” without review, approval, or endorsement by SpecterOps, regardless of authorship. It has not been audited for accuracy, security, or fitness for any purpose.<br/><br/>
+        <label className="og-filter-field">
+          <span className="og-control-label">Technology</span>
+          <select
+            value={selectedTechnology}
+            onChange={(event) => setSelectedTechnology(event.target.value)}
+          >
+            <option value={ALL_FILTER_VALUE}>All technologies</option>
+            {technologyOptions.map((technology) => (
+              <option value={technology} key={technology}>
+                {technology}
+              </option>
+            ))}
+          </select>
+        </label>
 
-          Use at your own risk. You are solely responsible for testing, validating, and ensuring the code meets your requirements before use in any environment. SpecterOps is not responsible for any damages, losses, or security issues arising from the use of any linked code.
-        </Warning>
-        <div className="og-card-grid">
-          {communityExtensionCards.map((extension) => (
-            <ExtensionCard key={extension.name} extension={extension} />
-          ))}
-        </div>
-      </section>
+        {hasActiveControls ? (
+          <button className="og-clear-filters" type="button" onClick={clearFilters}>
+            <Icon icon="xmark" iconType="solid" color="currentColor" size={14} />
+            Clear
+          </button>
+        ) : null}
+      </div>
 
-      <section className="og-library-section">
-        <div className="og-section-heading">
-          <div>
-            <h2>Tools</h2>
-            <p>
-              Use these libraries and utilities to generate, validate, ingest, or manage OpenGraph data for BloodHound.
-            </p>
-            <p>{tools.length} tools</p>
-          </div>
-        </div>
-        <div className="og-card-grid">
-          {tools.map((extension) => (
-            <ExtensionCard key={extension.name} extension={extension} />
-          ))}
-        </div>
-      </section>
+      {visibleSections.length > 0 ? (
+        visibleSections.map((section) => (
+          <LibrarySection
+            key={section.id}
+            title={section.title}
+            description={section.description}
+            countLabel={section.countLabel}
+            extensions={section.filteredExtensions}
+            totalCount={section.extensions.length}
+            hasActiveItemFilters={hasActiveItemFilters}
+          >
+            {section.hasWarning ? (
+              <Warning>
+                <strong>Use linked code at your own risk.</strong><br/><br/>
+                All code linked via this library is provided “as is,” without review, approval, or endorsement by SpecterOps, regardless of authorship. It has not been audited for accuracy, security, or fitness for any purpose.<br/><br/>
+
+                Use at your own risk. You are solely responsible for testing, validating, and ensuring the code meets your requirements before use in any environment. SpecterOps is not responsible for any damages, losses, or security issues arising from the use of any linked code.
+              </Warning>
+            ) : null}
+          </LibrarySection>
+        ))
+      ) : (
+        <p className="og-empty-state">No matches. Clear the filters and try another search.</p>
+      )}
 
       <style jsx>{`
         .og-library {
@@ -381,10 +545,123 @@ const LibraryHero = () => {
           line-height: 1.5;
         }
 
+        .og-section-controls {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.75rem;
+          align-items: end;
+          margin: 0 0 1rem;
+        }
+
+        .og-search-field,
+        .og-filter-field {
+          display: grid;
+          gap: 0.35rem;
+          min-width: 0;
+        }
+
+        .og-search-field {
+          flex: 1 1 18rem;
+        }
+
+        .og-filter-field {
+          flex: 0 1 14rem;
+        }
+
+        .og-control-label {
+          color: var(--og-title);
+          font-size: 0.8125rem;
+          line-height: 1.3;
+          font-weight: 700;
+        }
+
+        .og-search-input-wrap {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          height: 2.5rem;
+          min-width: 0;
+          border: 1px solid var(--og-border);
+          border-radius: 0.5rem;
+          padding: 0 0.75rem;
+          background: var(--og-card-bg);
+          color: var(--og-muted-soft);
+        }
+
+        .og-search-input-wrap:focus-within,
+        .og-filter-field select:focus {
+          border-color: var(--og-primary);
+          box-shadow: 0 0 0 3px var(--og-focus-ring);
+        }
+
+        .og-search-input-wrap input,
+        .og-filter-field select {
+          width: 100%;
+          border: 0;
+          background: transparent;
+          color: var(--og-text);
+          font-size: 0.9375rem;
+          line-height: 1.4;
+          outline: 0;
+        }
+
+        .og-search-input-wrap input {
+          min-width: 0;
+        }
+
+        .og-search-input-wrap input::placeholder {
+          color: var(--og-muted-soft);
+          opacity: 1;
+        }
+
+        .og-filter-field select {
+          height: 2.5rem;
+          border: 1px solid var(--og-border);
+          border-radius: 0.5rem;
+          padding: 0 0.65rem;
+          background: var(--og-card-bg);
+        }
+
+        .og-clear-filters {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.4rem;
+          height: 2.5rem;
+          border: 1px solid var(--og-border);
+          border-radius: 0.5rem;
+          padding: 0 0.85rem;
+          background: var(--og-card-bg);
+          color: var(--og-accent-text);
+          font-size: 0.875rem;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .og-clear-filters:hover {
+          border-color: var(--og-primary);
+        }
+
+        .og-clear-filters:focus-visible {
+          outline: 2px solid var(--og-focus-ring);
+          outline-offset: 2px;
+        }
+
         .og-card-grid {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 1rem;
+        }
+
+        .og-empty-state {
+          margin: 0;
+          border: 1px solid var(--og-border);
+          border-radius: 0.5rem;
+          padding: 1rem;
+          background: var(--og-card-bg);
+          color: var(--og-muted);
+          font-size: 0.9375rem;
+          line-height: 1.5;
         }
 
         .og-extension-card {
@@ -597,7 +874,11 @@ const LibraryHero = () => {
         }
 
         .dark .og-extension-card,
-        .dark .og-vendor-icon {
+        .dark .og-vendor-icon,
+        .dark .og-search-input-wrap,
+        .dark .og-filter-field select,
+        .dark .og-clear-filters,
+        .dark .og-empty-state {
           background: var(--og-card-bg);
         }
 
@@ -625,6 +906,17 @@ const LibraryHero = () => {
           .og-section-heading {
             display: grid;
             grid-template-columns: 1fr;
+          }
+
+          .og-section-controls {
+            display: grid;
+            grid-template-columns: 1fr;
+          }
+
+          .og-search-field,
+          .og-filter-field,
+          .og-clear-filters {
+            width: 100%;
           }
 
           .og-card-grid {
