@@ -81,27 +81,6 @@ const VendorIcon = ({ icon }) => {
     );
   }
 
-  if (icon.type === 'microsoft') {
-    return (
-      <span className="og-vendor-icon og-vendor-icon-microsoft" aria-label={`${icon.label} icon`}>
-        <span />
-        <span />
-        <span />
-        <span />
-      </span>
-    );
-  }
-
-  if (icon.type === 'github') {
-    return (
-      <span className="og-vendor-icon og-vendor-icon-github" aria-label="GitHub icon">
-        <svg viewBox="0 0 16 16" role="img" aria-hidden="true">
-          <path d="M8 .2a8 8 0 0 0-2.5 15.6c.4.1.5-.2.5-.4v-1.4c-2.2.5-2.7-.9-2.7-.9-.3-.8-.9-1-.9-1-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.2 1.9.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-3.9 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.5 7.5 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.5 1.1.2 1.9.1 2.1.5.5.8 1.2.8 2.1 0 3-1.8 3.7-3.6 3.9.3.3.6.8.6 1.6v2.3c0 .2.1.5.6.4A8 8 0 0 0 8 .2Z" />
-        </svg>
-      </span>
-    );
-  }
-
   if (icon.type === 'key') {
     return (
       <span className="og-vendor-icon og-vendor-icon-key" aria-label="Credentials icon">
@@ -124,23 +103,6 @@ const VendorIcon = ({ icon }) => {
     return (
       <span className="og-vendor-icon" aria-label={`${icon.label} icon`}>
         <Icon icon="terminal" iconType="solid" color="currentColor" size={24} />
-      </span>
-    );
-  }
-
-  if (icon.type === 'jamf') {
-    return (
-      <span className="og-vendor-icon og-vendor-icon-jamf" aria-label="Jamf icon">
-        <span />
-        <span />
-      </span>
-    );
-  }
-
-  if (icon.type === 'okta') {
-    return (
-      <span className="og-vendor-icon og-vendor-icon-okta" aria-label="Okta icon">
-        <span />
       </span>
     );
   }
@@ -582,68 +544,6 @@ const LibraryHero = () => {
           width: 4.6rem;
         }
 
-        .og-vendor-icon-microsoft {
-          display: grid;
-          grid-template-columns: repeat(2, 0.8rem);
-          grid-template-rows: repeat(2, 0.8rem);
-          gap: 0.12rem;
-          padding: 0;
-        }
-
-        .og-vendor-icon-microsoft span:nth-child(1) {
-          background: #f25022;
-        }
-
-        .og-vendor-icon-microsoft span:nth-child(2) {
-          background: #7fba00;
-        }
-
-        .og-vendor-icon-microsoft span:nth-child(3) {
-          background: #00a4ef;
-        }
-
-        .og-vendor-icon-microsoft span:nth-child(4) {
-          background: #ffb900;
-        }
-
-        .og-vendor-icon-github {
-          color: #24292f;
-        }
-
-        .og-vendor-icon-jamf {
-          position: relative;
-          background: #f8fbff;
-        }
-
-        .og-vendor-icon-jamf span {
-          position: absolute;
-          width: 1rem;
-          height: 1rem;
-          border-radius: 2px;
-          background: #0b65d8;
-        }
-
-        .og-vendor-icon-jamf span:first-child {
-          transform: translate(-0.25rem, -0.15rem);
-        }
-
-        .og-vendor-icon-jamf span:last-child {
-          transform: translate(0.25rem, 0.2rem);
-          opacity: 0.82;
-        }
-
-        .og-vendor-icon-okta {
-          background: #14161a;
-        }
-
-        .og-vendor-icon-okta span {
-          width: 1.55rem;
-          height: 1.55rem;
-          border-radius: 50%;
-          border: 0.22rem solid #fff;
-          box-shadow: 0 0 0 0.18rem rgba(255, 255, 255, 0.42) inset;
-        }
-
         .og-vendor-icon-scim {
           color: #008b78;
         }
@@ -725,10 +625,6 @@ const LibraryHero = () => {
 
         .dark .og-extension-card h3 {
           color: var(--og-title);
-        }
-
-        .dark .og-vendor-icon-okta {
-          background: #030712;
         }
 
         @media (max-width: 1100px) {
