@@ -668,7 +668,7 @@ export const communityExtensions = [
   {
     "name": "Microsoft Windows",
     "icon": {
-      "type": "windows",
+      "type": "microsoft",
       "label": "WIN"
     },
     "extensions": [

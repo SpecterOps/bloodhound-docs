@@ -11,13 +11,13 @@ const generatedFile = join(libraryDataDir, 'data.generated.jsx');
 const checkOnly = process.argv.includes('--check');
 
 const maintainerValues = new Set(['specterops', 'community']);
-const builtInIconTypes = new Set(['cross-platform', 'key', 'terminal']);
-const textTileIconTypes = new Set([
+const builtInIconTypes = new Set([
+  'cross-platform',
+  'key',
   'network',
   'scim',
-  'servicenow',
-  'splunk',
-  'xsoar',
+  'terminal',
+  'tools',
 ]);
 
 const readJson = (filePath) => JSON.parse(readFileSync(filePath, 'utf8'));
@@ -155,8 +155,7 @@ const validateIcon = (icon, label) => {
 
   if (
     vendorIconMap.has(icon.type) ||
-    builtInIconTypes.has(icon.type) ||
-    textTileIconTypes.has(icon.type)
+    builtInIconTypes.has(icon.type)
   ) {
     return;
   }

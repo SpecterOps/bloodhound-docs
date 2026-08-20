@@ -29,13 +29,13 @@ const communityExtensionCards = flattenExtensions(communityExtensions)
 const tools = openGraphTools
   .map((tool) => ({
     ...tool,
-    icon: tool.icon || { type: 'terminal', label: 'Tool' },
+    icon: tool.icon || { type: 'tools', label: 'Tool' },
     vendorName: tool.vendorName || 'OpenGraph tool',
   }))
   .sort(compareByName);
 
 const vendorIconMap = {
-  onepassword: { src: '/assets/icons/vendor/onepassword.svg', wide: false },
+  onepassword: { src: '/assets/icons/vendor/1password.svg', wide: false },
   ansible: { src: '/assets/icons/vendor/ansible.svg', wide: false },
   microsoft: { src: '/assets/icons/vendor/microsoft.svg', wide: false },
   aws: { src: '/assets/icons/vendor/aws.svg', wide: true },
@@ -54,10 +54,19 @@ const vendorIconMap = {
   mainframe: { src: '/assets/icons/vendor/ibm.svg', wide: true },
   runzero: { src: '/assets/icons/vendor/runzero.svg', wide: true },
   salesforce: { src: '/assets/icons/vendor/salesforce.svg', wide: false },
+  servicenow: { src: '/assets/icons/vendor/servicenow.svg', wide: true },
   snowflake: { src: '/assets/icons/vendor/snowflake.svg', wide: false },
-  tailscale: { src: '/assets/icons/vendor/tailscale.svg', wide: false },
+  splunk: { src: '/assets/icons/vendor/splunk.svg', wide: true },
+  tailscale: { src: '/assets/icons/vendor/tailscale.svg', wide: true },
   vmware: { src: '/assets/icons/vendor/vmware.svg', wide: true },
-  windows: { src: '/assets/icons/vendor/windows.svg', wide: false },
+  xsoar: { src: '/assets/icons/vendor/paloalto.svg', wide: true },
+};
+
+const builtInIconTypes = new Set(['cross-platform', 'key', 'terminal']);
+const builtInIconMap = {
+  network: 'network-wired',
+  scim: 'arrows-rotate',
+  tools: 'tools',
 };
 
 const VendorIcon = ({ icon }) => {
@@ -80,28 +89,14 @@ const VendorIcon = ({ icon }) => {
     );
   }
 
-  if (icon.type === 'key') {
-    return (
-      <span className="og-vendor-icon og-vendor-icon-key" aria-label="Credentials icon">
-        <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
-          <path d="M8.2 14.4a5.4 5.4 0 1 1 4.1-4.1l8.7 8.7v3h-3v-2h-2v-2h-2l-5.8-5.6Zm-.8-3.1a2.7 2.7 0 1 0 0-5.4 2.7 2.7 0 0 0 0 5.4Z" />
-        </svg>
-      </span>
-    );
-  }
+  const builtInIcon = builtInIconTypes.has(icon.type)
+    ? 'plug-circle-plus'
+    : builtInIconMap[icon.type];
 
-  if (icon.type === 'cross-platform') {
+  if (builtInIcon) {
     return (
       <span className="og-vendor-icon" aria-label={`${icon.label} icon`}>
-        <Icon icon="diagram-project" iconType="solid" color="currentColor" size={24} />
-      </span>
-    );
-  }
-
-  if (icon.type === 'terminal') {
-    return (
-      <span className="og-vendor-icon" aria-label={`${icon.label} icon`}>
-        <Icon icon="terminal" iconType="solid" color="currentColor" size={24} />
+        <Icon icon={builtInIcon} iconType="solid" color="currentColor" size={24} />
       </span>
     );
   }
@@ -543,10 +538,6 @@ const LibraryHero = () => {
           width: 4.6rem;
         }
 
-        .og-vendor-icon-scim {
-          color: #008b78;
-        }
-
         .og-vendor-icon-cyberark {
           width: 4.6rem;
           color: #047a3d;
@@ -587,14 +578,6 @@ const LibraryHero = () => {
 
         .og-vendor-icon-servicenow {
           color: #00a94f;
-        }
-
-        .og-vendor-icon-splunk {
-          color: #4c1d95;
-        }
-
-        .og-vendor-icon-xsoar {
-          color: #0f766e;
         }
 
         .dark .og-library {

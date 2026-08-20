@@ -27,8 +27,7 @@ The BloodHound Marketplace page is rendered from JSON source files in this direc
 1. If the entry uses a new vendor icon type, add the SVG asset to `docs/assets/icons/vendor/`.
     - Set `wide: true` for horizontal or wordmark-style logos.
 1. Add the icon type to `vendorIconMap` in `grid.jsx`.
-    - If you do not add a vendor image, the renderer displays a text tile using `icon.label`.
-    - Add only intentional text-tile icon types to the generator allowlist.
+    - If the entry uses a shared FontAwesome icon, add the icon type to the built-in icon map in `grid.jsx`.
 1. Regenerate the JSX data bridge:
 
     ```bash
@@ -61,6 +60,5 @@ Validation checks include:
 - External `href` URL syntax. The generator does not check whether external URLs are reachable.
 - Icon `type` and `label` values.
 - SVG assets referenced by `vendorIconMap` in `grid.jsx`.
-- Intentional text-tile icon types: `network`, `scim`, `servicenow`, `splunk`, and `xsoar`.
 - Duplicate category names, entry names, and entry `href` values.
 - Stale generated data when you run `just check-opengraph-library`.
