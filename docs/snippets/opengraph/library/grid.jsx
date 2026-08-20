@@ -199,6 +199,37 @@ const VendorIcon = ({ icon }) => {
   );
 };
 
+const AuthorAttribution = ({ authors = [] }) => {
+  if (authors.length === 0) {
+    return null;
+  }
+
+  return (
+    <p className="og-extension-authors">
+      <span className="og-extension-authors-label">
+        {authors.length === 1 ? 'Author' : 'Authors'}:
+      </span>{' '}
+      {authors.map((author, index) => (
+        <span key={`${author.name}-${index}`}>
+          {index > 0 ? ', ' : null}
+          {author.href ? (
+            <a
+              className="og-extension-author-link"
+              href={author.href}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {author.name}
+            </a>
+          ) : (
+            author.name
+          )}
+        </span>
+      ))}
+    </p>
+  );
+};
+
 const ExtensionCard = ({ extension }) => {
   const external = extension.href.startsWith('http');
 
@@ -212,6 +243,7 @@ const ExtensionCard = ({ extension }) => {
             {extension.vendorName ? (
               <p>{extension.vendorName}</p>
             ) : null}
+            <AuthorAttribution authors={extension.authors} />
           </div>
         </div>
       </div>
@@ -378,6 +410,7 @@ const LibraryHero = () => {
         .og-library-hero-copy p,
         .og-section-heading p,
         .og-extension-title p,
+        .og-extension-authors,
         .og-extension-description {
           color: var(--og-muted);
         }
@@ -402,7 +435,8 @@ const LibraryHero = () => {
           transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
         }
 
-        .og-extension-action:focus-visible {
+        .og-extension-action:focus-visible,
+        .og-extension-author-link:focus-visible {
           outline: 2px solid var(--og-focus-ring);
           outline-offset: 2px;
         }
@@ -448,7 +482,7 @@ const LibraryHero = () => {
 
         .og-card-grid {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 1rem;
         }
 
@@ -488,7 +522,7 @@ const LibraryHero = () => {
 
         .og-extension-title {
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           gap: 0.65rem;
         }
 
@@ -526,6 +560,27 @@ const LibraryHero = () => {
           font-size: 0.875rem;
           line-height: 1.4;
           overflow-wrap: anywhere;
+        }
+
+        .og-extension-authors {
+          margin: 0.15rem 0 0;
+          font-size: 0.8125rem;
+          line-height: 1.4;
+          overflow-wrap: anywhere;
+        }
+
+        .og-extension-authors-label {
+          color: var(--og-title);
+          font-weight: 600;
+        }
+
+        .og-extension-author-link {
+          color: var(--og-accent-text);
+          text-decoration: none;
+        }
+
+        .og-extension-author-link:hover {
+          text-decoration: underline;
         }
 
         .og-extension-description {
@@ -733,15 +788,11 @@ const LibraryHero = () => {
 
         @media (max-width: 1100px) {
           .og-card-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
         }
 
         @media (max-width: 900px) {
-          .og-card-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-
           .og-section-heading {
             align-items: start;
           }
