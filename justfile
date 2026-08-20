@@ -27,6 +27,12 @@ generate-opengraph-library:
   set -euo pipefail
   node scripts/generate-opengraph-library-data.mjs
 
+# Refresh cached vendor favicons used by the OpenGraph library
+fetch-opengraph-library-favicons:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  node scripts/fetch-opengraph-vendor-favicons.mjs
+
 # Validate OpenGraph library data and fail if generated data is stale
 check-opengraph-library:
   #!/usr/bin/env bash

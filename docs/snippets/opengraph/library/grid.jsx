@@ -77,31 +77,31 @@ const tools = openGraphTools
   .sort(compareByName);
 
 const vendorIconMap = {
-  onepassword: { src: '/assets/icons/vendor/1password.svg', wide: false },
-  ansible: { src: '/assets/icons/vendor/ansible.svg', wide: false },
-  microsoft: { src: '/assets/icons/vendor/microsoft.svg', wide: false },
-  aws: { src: '/assets/icons/vendor/aws.svg', wide: true },
-  atlassian: { src: '/assets/icons/vendor/atlassian.svg', wide: false },
-  cisco: { src: '/assets/icons/vendor/cisco.svg', wide: false },
-  cyberark: { src: '/assets/icons/vendor/cyberark.svg', wide: true },
-  freeipa: { src: '/assets/icons/vendor/freeipa.svg', wide: false },
-  github: { src: '/assets/icons/vendor/github.svg', wide: false },
-  gitlab: { src: '/assets/icons/vendor/gitlab.svg', wide: true },
-  gcp: { src: '/assets/icons/vendor/gcp.svg', wide: false },
-  jamf: { src: '/assets/icons/vendor/jamf.svg', wide: false },
-  kubernetes: { src: '/assets/icons/vendor/kubernetes.svg', wide: false },
-  okta: { src: '/assets/icons/vendor/okta.svg', wide: false },
-  oracle: { src: '/assets/icons/vendor/oracle.svg', wide: true },
-  ping: { src: '/assets/icons/vendor/ping.svg', wide: true },
-  mainframe: { src: '/assets/icons/vendor/ibm.svg', wide: true },
-  runzero: { src: '/assets/icons/vendor/runzero.svg', wide: true },
-  salesforce: { src: '/assets/icons/vendor/salesforce.svg', wide: false },
-  servicenow: { src: '/assets/icons/vendor/servicenow.svg', wide: true },
-  snowflake: { src: '/assets/icons/vendor/snowflake.svg', wide: false },
-  splunk: { src: '/assets/icons/vendor/splunk.svg', wide: true },
-  tailscale: { src: '/assets/icons/vendor/tailscale.svg', wide: true },
-  vmware: { src: '/assets/icons/vendor/vmware.svg', wide: true },
-  xsoar: { src: '/assets/icons/vendor/paloalto.svg', wide: true },
+  onepassword: { src: '/assets/icons/vendor-favicons/onepassword.ico' },
+  ansible: { src: '/assets/icons/vendor-favicons/ansible.ico' },
+  microsoft: { src: '/assets/icons/vendor-favicons/microsoft.ico' },
+  aws: { src: '/assets/icons/vendor-favicons/aws.ico' },
+  atlassian: { src: '/assets/icons/vendor-favicons/atlassian.ico' },
+  cisco: { src: '/assets/icons/vendor-favicons/cisco.png' },
+  cyberark: { src: '/assets/icons/vendor-favicons/cyberark.ico' },
+  freeipa: { src: '/assets/icons/vendor-favicons/freeipa.png' },
+  github: { src: '/assets/icons/vendor-favicons/github.ico' },
+  gitlab: { src: '/assets/icons/vendor-favicons/gitlab.png' },
+  gcp: { src: '/assets/icons/vendor-favicons/gcp.ico' },
+  jamf: { src: '/assets/icons/vendor-favicons/jamf.ico' },
+  kubernetes: { src: '/assets/icons/vendor-favicons/kubernetes.png' },
+  okta: { src: '/assets/icons/vendor-favicons/okta.ico' },
+  oracle: { src: '/assets/icons/vendor-favicons/oracle.ico' },
+  ping: { src: '/assets/icons/vendor-favicons/ping.ico' },
+  mainframe: { src: '/assets/icons/vendor-favicons/mainframe.ico' },
+  runzero: { src: '/assets/icons/vendor-favicons/runzero.ico' },
+  salesforce: { src: '/assets/icons/vendor-favicons/salesforce.ico' },
+  servicenow: { src: '/assets/icons/vendor-favicons/servicenow.ico' },
+  snowflake: { src: '/assets/icons/vendor-favicons/snowflake.png' },
+  splunk: { src: '/assets/icons/vendor-favicons/splunk.ico' },
+  tailscale: { src: '/assets/icons/vendor-favicons/tailscale.png' },
+  vmware: { src: '/assets/icons/vendor-favicons/vmware.png' },
+  xsoar: { src: '/assets/icons/vendor-favicons/xsoar.ico' },
 };
 
 const builtInIconTypes = new Set(['cross-platform', 'key', 'terminal']);
@@ -121,9 +121,7 @@ const VendorIcon = ({ icon }) => {
   if (vendorIcon) {
     return (
       <span
-        className={`og-vendor-icon og-vendor-icon-image ${
-          vendorIcon.wide ? 'og-vendor-icon-image-wide' : ''
-        }`}
+        className="og-vendor-icon og-vendor-icon-image"
         aria-label={`${icon.label} icon`}
       >
         <img src={vendorIcon.src} alt="" loading="lazy" />
@@ -710,10 +708,6 @@ const clearFilters = () => {
           border-radius: 0.45rem;
         }
 
-        .og-extension-title .og-vendor-icon-image-wide {
-          width: 3.35rem;
-        }
-
         .og-extension-title .og-vendor-icon svg {
           width: 1.15rem;
           height: 1.15rem;
@@ -811,12 +805,7 @@ const clearFilters = () => {
           object-fit: contain;
         }
 
-        .og-vendor-icon-image-wide {
-          width: 4.6rem;
-        }
-
         .og-vendor-icon-cyberark {
-          width: 4.6rem;
           color: #047a3d;
           font-size: 0.75rem;
         }

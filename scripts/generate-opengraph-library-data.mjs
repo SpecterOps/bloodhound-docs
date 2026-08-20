@@ -116,12 +116,11 @@ const readVendorIconMap = () => {
   const gridContent = readFileSync(gridFile, 'utf8');
   const entries = new Map();
   const iconEntryPattern =
-    /^\s+([a-zA-Z0-9_-]+): \{ src: '([^']+)', wide: (true|false) \},$/gm;
+    /^\s+([a-zA-Z0-9_-]+): \{ src: '([^']+)' \},$/gm;
 
   for (const match of gridContent.matchAll(iconEntryPattern)) {
     entries.set(match[1], {
       src: match[2],
-      wide: match[3] === 'true',
     });
   }
 
@@ -136,8 +135,8 @@ const vendorIconMap = readVendorIconMap();
 
 const validateMappedIconAssets = () => {
   for (const [type, icon] of vendorIconMap.entries()) {
-    if (!icon.src.startsWith('/assets/icons/vendor/')) {
-      fail(`Mapped icon "${type}" must point to /assets/icons/vendor/.`);
+    if (!icon.src.startsWith('/assets/icons/vendor-favicons/')) {
+      fail(`Mapped icon "${type}" must point to /assets/icons/vendor-favicons/.`);
     }
 
     const assetPath = join(repoRoot, 'docs', icon.src);
