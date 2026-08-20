@@ -27,6 +27,12 @@ generate-opengraph-library:
   set -euo pipefail
   node scripts/generate-opengraph-library-data.mjs
 
+# Validate OpenGraph library data and fail if generated data is stale
+check-opengraph-library:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  node scripts/generate-opengraph-library-data.mjs --check
+
 # Check docs coverage for edge help texts vs code registry
 check-edges bh_root="../BloodHound":
   #!/usr/bin/env bash

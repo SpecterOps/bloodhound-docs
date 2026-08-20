@@ -252,6 +252,20 @@ export const communityExtensions = [
         "href": "https://github.com/SpecterOps/GitHound"
       },
       {
+        "name": "GitHoundPy",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Derrick Polakoff",
+            "href": "https://www.linkedin.com/in/derrick-polakoff-54a34a237",
+            "organization": "CorvraLabs",
+            "organizationHref": "https://github.com/CorvraLabs"
+          }
+        ],
+        "description": "Provides a Python implementation of GitHound that aims to stay in sync with the main PowerShell collector.",
+        "href": "https://github.com/CorvraLabs/GitHoundPy"
+      },
+      {
         "name": "openhound-github",
         "maintainer": "specterops",
         "authors": [
@@ -270,20 +284,6 @@ export const communityExtensions = [
         ],
         "description": "Collects resources from GitHub organizations and transforms them into usable nodes and edges for BloodHound through OpenHound.",
         "href": "https://github.com/SpecterOps/openhound-github"
-      },
-      {
-        "name": "GitHoundPy",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Derrick Polakoff",
-            "href": "https://www.linkedin.com/in/derrick-polakoff-54a34a237",
-            "organization": "CorvraLabs",
-            "organizationHref": "https://github.com/CorvraLabs"
-          }
-        ],
-        "description": "Provides a Python implementation of GitHound that aims to stay in sync with the main PowerShell collector.",
-        "href": "https://github.com/CorvraLabs/GitHoundPy"
       }
     ]
   },
@@ -480,6 +480,18 @@ export const communityExtensions = [
         "href": "https://github.com/martinsohn/ADAttributeHound"
       },
       {
+        "name": "GhostHound",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "João Victor Botelho Gonçalves",
+            "href": "https://www.linkedin.com/in/joao-victor-botelho/"
+          }
+        ],
+        "description": "Enumerates Active Directory tombstones and reanimation rights, then emits OpenGraph data that highlights deleted-object restoration attack paths.",
+        "href": "https://github.com/JVBotelho/ghosthound"
+      },
+      {
         "name": "ManagerOfHound",
         "maintainer": "specterops",
         "authors": [
@@ -492,18 +504,6 @@ export const communityExtensions = [
         ],
         "description": "Collects manager-subordinate relationships from Active Directory and exports them as custom ManagerOf edges for BloodHound ingestion.",
         "href": "https://github.com/martinsohn/ManagerOfHound"
-      },
-      {
-        "name": "GhostHound",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "João Victor Botelho Gonçalves",
-            "href": "https://www.linkedin.com/in/joao-victor-botelho/"
-          }
-        ],
-        "description": "Enumerates Active Directory tombstones and reanimation rights, then emits OpenGraph data that highlights deleted-object restoration attack paths.",
-        "href": "https://github.com/JVBotelho/ghosthound"
       },
       {
         "name": "ProfileHound",
@@ -1111,6 +1111,84 @@ export const integrations = [
 
 export const openGraphTools = [
   {
+    "name": "bhopengraph",
+    "maintainer": "specterops",
+    "authors": [
+      {
+        "name": "Remi Gascou",
+        "href": "https://x.com/podalirius_",
+        "organization": "SpecterOps",
+        "organizationHref": "https://specterops.io"
+      }
+    ],
+    "description": "Provides Python classes for creating and managing graph structures that conform to BloodHound OpenGraph schema expectations.",
+    "href": "https://github.com/p0dalirius/bhopengraph"
+  },
+  {
+    "name": "BloodHound OpenGraph Helper Library",
+    "maintainer": "community",
+    "authors": [
+      {
+        "name": "Luke Roberts",
+        "href": "https://x.com/rookuu_"
+      }
+    ],
+    "description": "Provides a Python library for creating BloodHound OpenGraph JSON data that conforms to the OpenGraph data payload schema.",
+    "href": "https://github.com/rookuu/bloodhound-opengraph"
+  },
+  {
+    "name": "BloodHoundOperator",
+    "maintainer": "specterops",
+    "authors": [
+      {
+        "name": "SadProcessor",
+        "href": "https://x.com/sadprocessor",
+        "organization": "SpecterOps",
+        "organizationHref": "https://specterops.io"
+      }
+    ],
+    "description": "Provides a PowerShell client for BloodHound Community Edition and BloodHound Enterprise.",
+    "href": "https://github.com/SadProcessor/BloodHoundOperator"
+  },
+  {
+    "name": "flashingestor",
+    "maintainer": "community",
+    "authors": [
+      {
+        "name": "Artur Marzano",
+        "href": "https://github.com/Macmod"
+      }
+    ],
+    "description": "Provides a fast, customizable, BloodHound CE-compatible data ingestor with a terminal user interface and progress tracking.",
+    "href": "https://github.com/Macmod/flashingestor"
+  },
+  {
+    "name": "gopengraph",
+    "maintainer": "specterops",
+    "authors": [
+      {
+        "name": "Remi Gascou",
+        "href": "https://x.com/podalirius_",
+        "organization": "SpecterOps",
+        "organizationHref": "https://specterops.io"
+      }
+    ],
+    "description": "Provides Go types and helpers for creating and managing graph structures that are compatible with BloodHound OpenGraph.",
+    "href": "https://github.com/TheManticoreProject/gopengraph"
+  },
+  {
+    "name": "HoundTrainer",
+    "maintainer": "community",
+    "authors": [
+      {
+        "name": "Tom O'Neill",
+        "href": "https://github.com/toneillcodes"
+      }
+    ],
+    "description": "Automates custom node type and Cypher query management in BloodHound through JSON schema handling and API interactions.",
+    "href": "https://github.com/toneillcodes/HoundTrainer"
+  },
+  {
     "name": "OpenHound",
     "maintainer": "specterops",
     "authors": [
@@ -1129,84 +1207,6 @@ export const openGraphTools = [
     ],
     "description": "Provides a standardized collect-first, convert-later framework for building OpenGraph collectors and converters.",
     "href": "https://github.com/SpecterOps/OpenHound"
-  },
-  {
-    "name": "bhopengraph",
-    "maintainer": "specterops",
-    "authors": [
-      {
-        "name": "Remi Gascou",
-        "href": "https://x.com/podalirius_",
-        "organization": "SpecterOps",
-        "organizationHref": "https://specterops.io"
-      }
-    ],
-    "description": "Provides Python classes for creating and managing graph structures that conform to BloodHound OpenGraph schema expectations.",
-    "href": "https://github.com/p0dalirius/bhopengraph"
-  },
-  {
-    "name": "BloodHoundOperator",
-    "maintainer": "specterops",
-    "authors": [
-      {
-        "name": "SadProcessor",
-        "href": "https://x.com/sadprocessor",
-        "organization": "SpecterOps",
-        "organizationHref": "https://specterops.io"
-      }
-    ],
-    "description": "Provides a PowerShell client for BloodHound Community Edition and BloodHound Enterprise.",
-    "href": "https://github.com/SadProcessor/BloodHoundOperator"
-  },
-  {
-    "name": "BloodHound OpenGraph Helper Library",
-    "maintainer": "community",
-    "authors": [
-      {
-        "name": "Luke Roberts",
-        "href": "https://x.com/rookuu_"
-      }
-    ],
-    "description": "Provides a Python library for creating BloodHound OpenGraph JSON data that conforms to the OpenGraph data payload schema.",
-    "href": "https://github.com/rookuu/bloodhound-opengraph"
-  },
-  {
-    "name": "gopengraph",
-    "maintainer": "specterops",
-    "authors": [
-      {
-        "name": "Remi Gascou",
-        "href": "https://x.com/podalirius_",
-        "organization": "SpecterOps",
-        "organizationHref": "https://specterops.io"
-      }
-    ],
-    "description": "Provides Go types and helpers for creating and managing graph structures that are compatible with BloodHound OpenGraph.",
-    "href": "https://github.com/TheManticoreProject/gopengraph"
-  },
-  {
-    "name": "flashingestor",
-    "maintainer": "community",
-    "authors": [
-      {
-        "name": "Artur Marzano",
-        "href": "https://github.com/Macmod"
-      }
-    ],
-    "description": "Provides a fast, customizable, BloodHound CE-compatible data ingestor with a terminal user interface and progress tracking.",
-    "href": "https://github.com/Macmod/flashingestor"
-  },
-  {
-    "name": "HoundTrainer",
-    "maintainer": "community",
-    "authors": [
-      {
-        "name": "Tom O'Neill",
-        "href": "https://github.com/toneillcodes"
-      }
-    ],
-    "description": "Automates custom node type and Cypher query management in BloodHound through JSON schema handling and API interactions.",
-    "href": "https://github.com/toneillcodes/HoundTrainer"
   },
   {
     "name": "ScrappyDoo",

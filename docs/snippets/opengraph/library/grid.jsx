@@ -24,7 +24,6 @@ const flattenExtensions = (categories) =>
 const compareByName = (left, right) => left.name.localeCompare(right.name);
 
 const communityExtensionCards = flattenExtensions(communityExtensions)
-  .filter((extension) => extension.maintainer === 'specterops')
   .sort(compareByName);
 
 const tools = openGraphTools
@@ -241,7 +240,7 @@ const LibraryHero = () => {
               Extensions add node and edge types to the BloodHound graph.
             </p>
             <p>
-              {communityExtensionCards.length} extensions from SpecterOps-attributed maintainers
+              {communityExtensionCards.length} community extensions
             </p>
           </div>
         </div>
