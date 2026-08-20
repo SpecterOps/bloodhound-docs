@@ -2,7 +2,7 @@
 // Edit the JSON source files, then run:
 // node scripts/generate-opengraph-library-data.mjs
 
-export const libraryCategories = [
+export const communityExtensions = [
   {
     "name": "1Password",
     "icon": {

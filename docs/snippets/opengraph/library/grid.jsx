@@ -5,7 +5,7 @@
 export const OpenGraphLibrary = ({
   enterpriseExtensions = [],
   integrations = [],
-  libraryCategories = [],
+  communityExtensions = [],
   openGraphTools = [],
 }) => {
 const flattenExtensions = (categories) =>
@@ -23,7 +23,7 @@ const flattenExtensions = (categories) =>
 
 const compareByName = (left, right) => left.name.localeCompare(right.name);
 
-const communityExtensions = flattenExtensions(libraryCategories)
+const communityExtensionCards = flattenExtensions(communityExtensions)
   .filter((extension) => extension.maintainer === 'specterops')
   .sort(compareByName);
 
@@ -280,7 +280,7 @@ const LibraryHero = () => {
               Extensions add node and edge types to the BloodHound graph.
             </p>
             <p>
-              {communityExtensions.length} extensions from SpecterOps-attributed maintainers
+              {communityExtensionCards.length} extensions from SpecterOps-attributed maintainers
             </p>
           </div>
         </div>
@@ -291,7 +291,7 @@ const LibraryHero = () => {
           Use at your own risk. You are solely responsible for testing, validating, and ensuring the code meets your requirements before use in any environment. SpecterOps is not responsible for any damages, losses, or security issues arising from the use of any linked code.
         </Warning>
         <div className="og-card-grid">
-          {communityExtensions.map((extension) => (
+          {communityExtensionCards.map((extension) => (
             <ExtensionCard key={extension.name} extension={extension} />
           ))}
         </div>
