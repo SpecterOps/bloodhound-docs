@@ -7,36 +7,75 @@ export const OpenGraphLibrary = ({
   openGraphTools = [],
 }) => {
 const flattenExtensions = (categories) =>
-  categories.reduce((items, category) => items.concat(category.extensions), []);
+  categories.reduce(
+    (items, category) =>
+      items.concat(
+        category.extensions.map((extension) => ({
+          ...extension,
+          icon: category.icon,
+          vendorName: category.shortName || category.name,
+        })),
+      ),
+    [],
+  );
 
 const compareByOrderThenName = (left, right) =>
   left.order - right.order || left.name.localeCompare(right.name);
 
 const sortedLibraryCategories = [...libraryCategories].sort(compareByOrderThenName);
 
-const categoryExtensionCount = (categories) =>
-  flattenExtensions(categories).length;
+const compareByName = (left, right) => left.name.localeCompare(right.name);
 
-const MaintainerBadge = ({ maintainer }) => {
-  const isSpecterOps = maintainer === 'specterops';
+const communityExtensions = flattenExtensions(sortedLibraryCategories)
+  .filter((extension) => extension.maintainer === 'specterops')
+  .sort(compareByName);
 
-  return (
-    <span
-      className={`og-maintainer-badge ${
-        isSpecterOps ? 'og-maintainer-so' : 'og-maintainer-community'
-      }`}
-      title={isSpecterOps ? 'SpecterOps-maintained community extension' : 'Community maintainer'}
-    >
-      <span aria-hidden="true">
-        {isSpecterOps ? (
-          <SO_Icon size={36} />
-        ) : (
-          <Icon icon="people-group" iconType="solid" color="currentColor" size={36} />
-        )}
-      </span>
-    </span>
-  );
-};
+const tools = openGraphTools
+  .map((tool) => ({
+    ...tool,
+    icon: tool.icon || { type: 'terminal', label: 'Tool' },
+    vendorName: tool.vendorName || 'OpenGraph tool',
+  }))
+  .sort(compareByName);
+
+const enterpriseExtensions = [
+  {
+    name: 'GitHub Extension',
+    vendorName: 'GitHub',
+    icon: { type: 'github', label: 'GH' },
+    description:
+      'Models GitHub organizations, identities, repositories, workflows, secrets, roles, and related relationships as structured OpenGraph data.',
+    href: '/opengraph/extensions/github/getting-started',
+    action: 'Setup via OpenHound',
+  },
+  {
+    name: 'Jamf Extension',
+    vendorName: 'Jamf',
+    icon: { type: 'jamf', label: 'J' },
+    description:
+      'Models Jamf Pro devices, users, groups, sites, policies, API integrations, and related relationships as BloodHound OpenGraph data.',
+    href: '/opengraph/extensions/jamf/getting-started',
+    action: 'Setup via OpenHound',
+  },
+  {
+    name: 'Okta Extension',
+    vendorName: 'Okta',
+    icon: { type: 'okta', label: 'O' },
+    description:
+      'Models Okta users, groups, applications, roles, policies, and related relationships as structured graph data in BloodHound.',
+    href: '/opengraph/extensions/okta/getting-started',
+    action: 'Setup via OpenHound',
+  },
+  {
+    name: 'SCIM Extension',
+    vendorName: 'SCIM',
+    icon: { type: 'scim', label: 'SCIM' },
+    description:
+      'Provides a technology-neutral schema for SCIM-provisioned users, groups, and roles so identities can connect across supported OpenGraph extensions.',
+    href: '/opengraph/extensions/scim/overview',
+    action: 'Setup via OpenHound',
+  },
+];
 
 const vendorIconMap = {
   onepassword: { src: '/assets/icons/vendor/onepassword.svg', wide: false },
@@ -65,7 +104,7 @@ const vendorIconMap = {
   mitre: { src: '/assets/icons/vendor/mitre.svg', wide: true },
 };
 
-const CategoryIcon = ({ icon }) => {
+const VendorIcon = ({ icon }) => {
   if (!icon) {
     return null;
   }
@@ -75,10 +114,10 @@ const CategoryIcon = ({ icon }) => {
   if (vendorIcon) {
     return (
       <span
-        className={`og-category-icon og-category-icon-image ${
-          vendorIcon.wide ? 'og-category-icon-image-wide' : ''
+        className={`og-vendor-icon og-vendor-icon-image ${
+          vendorIcon.wide ? 'og-vendor-icon-image-wide' : ''
         }`}
-        aria-label={`${icon.label} category`}
+        aria-label={`${icon.label} icon`}
       >
         <img src={vendorIcon.src} alt="" loading="lazy" />
       </span>
@@ -87,7 +126,7 @@ const CategoryIcon = ({ icon }) => {
 
   if (icon.type === 'microsoft') {
     return (
-      <span className="og-category-icon og-category-icon-microsoft" aria-label={`${icon.label} category`}>
+      <span className="og-vendor-icon og-vendor-icon-microsoft" aria-label={`${icon.label} icon`}>
         <span />
         <span />
         <span />
@@ -98,7 +137,7 @@ const CategoryIcon = ({ icon }) => {
 
   if (icon.type === 'github') {
     return (
-      <span className="og-category-icon og-category-icon-github" aria-label="GitHub category">
+      <span className="og-vendor-icon og-vendor-icon-github" aria-label="GitHub icon">
         <svg viewBox="0 0 16 16" role="img" aria-hidden="true">
           <path d="M8 .2a8 8 0 0 0-2.5 15.6c.4.1.5-.2.5-.4v-1.4c-2.2.5-2.7-.9-2.7-.9-.3-.8-.9-1-.9-1-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.2 1.9.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-3.9 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.5 7.5 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.5 1.1.2 1.9.1 2.1.5.5.8 1.2.8 2.1 0 3-1.8 3.7-3.6 3.9.3.3.6.8.6 1.6v2.3c0 .2.1.5.6.4A8 8 0 0 0 8 .2Z" />
         </svg>
@@ -108,7 +147,7 @@ const CategoryIcon = ({ icon }) => {
 
   if (icon.type === 'key') {
     return (
-      <span className="og-category-icon og-category-icon-key" aria-label="Credentials category">
+      <span className="og-vendor-icon og-vendor-icon-key" aria-label="Credentials icon">
         <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
           <path d="M8.2 14.4a5.4 5.4 0 1 1 4.1-4.1l8.7 8.7v3h-3v-2h-2v-2h-2l-5.8-5.6Zm-.8-3.1a2.7 2.7 0 1 0 0-5.4 2.7 2.7 0 0 0 0 5.4Z" />
         </svg>
@@ -118,7 +157,7 @@ const CategoryIcon = ({ icon }) => {
 
   if (icon.type === 'cross-platform') {
     return (
-      <span className="og-category-icon" aria-label={`${icon.label} category`}>
+      <span className="og-vendor-icon" aria-label={`${icon.label} icon`}>
         <Icon icon="diagram-project" iconType="solid" color="currentColor" size={24} />
       </span>
     );
@@ -126,7 +165,7 @@ const CategoryIcon = ({ icon }) => {
 
   if (icon.type === 'terminal') {
     return (
-      <span className="og-category-icon" aria-label={`${icon.label} category`}>
+      <span className="og-vendor-icon" aria-label={`${icon.label} icon`}>
         <Icon icon="terminal" iconType="solid" color="currentColor" size={24} />
       </span>
     );
@@ -134,7 +173,7 @@ const CategoryIcon = ({ icon }) => {
 
   if (icon.type === 'jamf') {
     return (
-      <span className="og-category-icon og-category-icon-jamf" aria-label="Jamf category">
+      <span className="og-vendor-icon og-vendor-icon-jamf" aria-label="Jamf icon">
         <span />
         <span />
       </span>
@@ -143,7 +182,7 @@ const CategoryIcon = ({ icon }) => {
 
   if (icon.type === 'okta') {
     return (
-      <span className="og-category-icon og-category-icon-okta" aria-label="Okta category">
+      <span className="og-vendor-icon og-vendor-icon-okta" aria-label="Okta icon">
         <span />
       </span>
     );
@@ -151,80 +190,30 @@ const CategoryIcon = ({ icon }) => {
 
   return (
     <span
-      className={`og-category-icon og-category-icon-${icon.type}`}
-      aria-label={`${icon.label} category`}
+      className={`og-vendor-icon og-vendor-icon-${icon.type}`}
+      aria-label={`${icon.label} icon`}
     >
       <span>{icon.label}</span>
     </span>
   );
 };
 
-const AuthorAttribution = ({ authors = [] }) => {
-  if (authors.length === 0) {
-    return null;
-  }
-
-  return (
-    <p className="og-extension-authors">
-      <span className="og-extension-authors-label">
-        {authors.length === 1 ? 'Author' : 'Authors'}:
-      </span>{' '}
-      {authors.map((author, index) => (
-        <span key={`${author.name}-${index}`}>
-          {index > 0 ? ', ' : null}
-          {author.href ? (
-            <a
-              className="og-extension-author-link"
-              href={author.href}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {author.name}
-            </a>
-          ) : (
-            author.name
-          )}
-          {author.organization ? (
-            <>
-              {' @'}
-              {author.organizationHref ? (
-                <a
-                  className="og-extension-author-link"
-                  href={author.organizationHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {author.organization}
-                </a>
-              ) : (
-                author.organization
-              )}
-            </>
-          ) : null}
-        </span>
-      ))}
-    </p>
-  );
-};
-
-const ExtensionCard = ({ extension, compact = false }) => {
+const ExtensionCard = ({ extension }) => {
   const external = extension.href.startsWith('http');
 
   return (
-    <article
-      className={`og-extension-card ${compact ? 'og-extension-card-compact' : ''}`}
-    >
+    <article className="og-extension-card">
       <div className="og-extension-card-top">
-        <div>
-          <h3>{extension.name}</h3>
+        <div className="og-extension-title">
+          <VendorIcon icon={extension.icon} />
+          <div>
+            <h3>{extension.name}</h3>
+            {extension.vendorName ? (
+              <p>{extension.vendorName}</p>
+            ) : null}
+          </div>
         </div>
-        {extension.maintainer ? (
-          <MaintainerBadge maintainer={extension.maintainer} />
-        ) : (
-          <CategoryIcon icon={extension.icon} />
-        )}
       </div>
-      <AuthorAttribution authors={extension.authors} />
       <p className="og-extension-description">{extension.description}</p>
       <a
         className="og-extension-action"
@@ -238,131 +227,63 @@ const ExtensionCard = ({ extension, compact = false }) => {
   );
 };
 
-const LibrarySection = ({ title, eyebrow, description, count, children }) => {
-  return (
-    <section className="og-library-section">
-      <div className="og-section-heading">
-        <div>
-          <p className="og-section-eyebrow">{eyebrow}</p>
-          <h2>{title}</h2>
-          <p>{description}</p>
-        </div>
-        <span className="og-section-count">{count}</span>
-      </div>
-      {children}
-    </section>
-  );
-};
-
-const LibraryHero = () => {
-  return (
-    <header className="og-library-hero">
-      <div className="og-library-hero-copy">
-        <a className="og-library-breadcrumb" href="/opengraph">
-          OpenGraph
-        </a>
-        <h1>BloodHound Community Extensions</h1>
-        <p>
-          Explore extensions created by the community and SpecterOps that extend the coverage of BloodHound with OpenGraph.
-        </p>
-      </div>
-    </header>
-  );
-};
-
-const LibraryGuide = () => {
-  return (
-    <section className="og-library-guide" aria-label="OpenGraph Library contribution and icon guide">
-      <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE" />
-      <p>
-        Have you built a cool extension using OpenGraph and want to feature it on this page? Is your extension already in the list and you need to update something?
-      </p>
-      <p>
-        Click the button below to open an issue in the BloodHound Docs repository on GitHub and someone from the team will review it and get back to you!
-      </p>
-      <div className="og-library-guide-actions">
-        <a className="og-submit-link" href="https://github.com/SpecterOps/bloodhound-docs/issues/new?template=opengraph-library-change.md" target="_blank" rel="noopener noreferrer">
-          Submit a library change
-        </a>
-      </div>
-      <div className="og-library-legend" aria-label="Maintainer icon legend">
-        <div className="og-library-legend-item">
-          <MaintainerBadge maintainer="community" />
-          <p>
-            Community icons represent extensions built and maintained by community members that leverage OpenGraph to extend BloodHound's coverage and capabilities.
-          </p>
-        </div>
-        <div className="og-library-legend-item">
-          <MaintainerBadge maintainer="specterops" />
-          <p>
-            SpecterOps icons represent extensions built and maintained by SpecterOps employees that can be used as-is or serve as examples and inspiration for your own OpenGraph extensions.
-          </p>
-        </div>
-      </div>
-      <Warning>
-        <strong>Use linked code at your own risk.</strong><br/><br/>
-        All code linked via this library is provided “as is,” without review, approval, or endorsement by SpecterOps, regardless of authorship. It has not been audited for accuracy, security, or fitness for any purpose.<br/><br/>
-        Use at your own risk. You are solely responsible for testing, validating, and ensuring the code meets your requirements before use in any environment. SpecterOps is not responsible for any damages, losses, or security issues arising from the use of any linked code.
-      </Warning>
-    </section>
-  );
-};
-
-const CategorySection = ({ category }) => {
-  return (
-    <section className="og-category-section" id={category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}>
-      <div className="og-category-heading">
-        <CategoryIcon icon={category.icon} />
-        <div>
-          <h3>{category.name}</h3>
-          <p>
-            {category.extensions.length}{' '}
-            {category.extensions.length === 1 ? 'extension' : 'extensions'}
-          </p>
-        </div>
-      </div>
-      <div className="og-card-grid">
-        {category.extensions.map((extension) => (
-          <ExtensionCard key={extension.name} extension={extension} />
-        ))}
-      </div>
-    </section>
-  );
-};
-
-  const fullLibraryCount = categoryExtensionCount(libraryCategories);
-
   return (
     <div className="og-library">
-      <LibraryHero />
-
-      <LibraryGuide />
-
-      <LibrarySection
-        eyebrow="Collect, model, and enrich"
-        title="OpenGraph Extensions"
-        description="Explore extensions by the technologies they collect from, model, or use to enrich BloodHound. Use the card badge to identify whether the listed project is SpecterOps-attributed or community-maintained."
-        count={`${fullLibraryCount} extensions`}
-      >
-        <div className="og-category-list">
-          {sortedLibraryCategories.map((category) => (
-            <CategorySection key={category.name} category={category} />
-          ))}
+      <section className="og-library-section">
+        <div className="og-section-heading">
+          <div>
+            <h2>Enterprise Extensions</h2>
+            <p>
+              Enterprise extensions are maintained by SpecterOps and managed through BloodHound Enterprise.
+            </p>
+            <p>{enterpriseExtensions.length} enterprise extensions</p>
+          </div>
         </div>
-      </LibrarySection>
-
-      <LibrarySection
-        eyebrow="Build and manage OpenGraph"
-        title="OpenGraph Tools"
-        description="Use these libraries and utilities to generate, validate, ingest, or manage OpenGraph data for BloodHound."
-        count={`${openGraphTools.length} tools`}
-      >
         <div className="og-card-grid">
-          {openGraphTools.map((extension) => (
-            <ExtensionCard key={extension.name} extension={extension} compact />
+          {enterpriseExtensions.map((extension) => (
+            <ExtensionCard key={extension.name} extension={extension} />
           ))}
         </div>
-      </LibrarySection>
+      </section>
+
+      <section className="og-library-section">
+        <div className="og-section-heading">
+          <div>
+            <h2>Community Extensions</h2>
+            <p>
+              Extensions add node and edge types to the BloodHound graph.
+            </p>
+            <p>
+              {communityExtensions.length} extensions from SpecterOps-attributed maintainers
+            </p>
+          </div>
+        </div>
+        <p className="og-section-note">
+          For security reasons, only Community Extensions created by SpecterOps employees are currently displayed in this section.
+        </p>
+        <div className="og-card-grid">
+          {communityExtensions.map((extension) => (
+            <ExtensionCard key={extension.name} extension={extension} />
+          ))}
+        </div>
+      </section>
+
+      <section className="og-library-section">
+        <div className="og-section-heading">
+          <div>
+            <h2>Tools</h2>
+            <p>
+              Use these libraries and utilities to generate, validate, ingest, or manage OpenGraph data for BloodHound.
+            </p>
+            <p>{tools.length} tools</p>
+          </div>
+        </div>
+        <div className="og-card-grid">
+          {tools.map((extension) => (
+            <ExtensionCard key={extension.name} extension={extension} />
+          ))}
+        </div>
+      </section>
 
       <style jsx>{`
         .og-library {
@@ -387,56 +308,12 @@ const CategorySection = ({ category }) => {
           text-decoration: none;
         }
 
-        .og-library-hero {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr);
-          gap: 1rem;
-          align-items: end;
-          margin-bottom: 1.5rem;
-          padding-bottom: 1.5rem;
-        }
-
-        .og-library-hero img {
-          grid-column: 1 / -1;
-          width: 204px;
-          height: auto;
-          margin: 0 0 0.25rem;
-        }
-
-        .og-library-hero-copy h1 {
-          margin: 0;
-          color: var(--og-title);
-          font-size: 36px;
-          line-height: 1.2;
-          font-weight: 700;
-          letter-spacing: 0;
-        }
-
-        .og-library-breadcrumb {
-          display: inline-flex;
-          margin-bottom: 0.5rem;
-          color: var(--og-accent-text);
-          font-size: 14px;
-          font-weight: 700;
-          line-height: 1.4;
-        }
-
-        .og-library-hero-copy p,
         .og-section-heading p,
-        .og-category-heading p,
-        .og-extension-authors,
+        .og-extension-title p,
         .og-extension-description {
           color: var(--og-muted);
         }
 
-        .og-library-hero-copy p {
-          max-width: 48rem;
-          margin: 0.55rem 0 0;
-          font-size: 18px;
-          line-height: 1.55;
-        }
-
-        .og-submit-link,
         .og-extension-action {
           display: inline-flex;
           align-items: center;
@@ -450,64 +327,13 @@ const CategorySection = ({ category }) => {
           transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
         }
 
-        .og-submit-link {
-          padding: 0 1.1rem;
-          white-space: nowrap;
-        }
-
-        .og-submit-link:focus-visible,
-        .og-extension-action:focus-visible,
-        .og-extension-author-link:focus-visible {
+        .og-extension-action:focus-visible {
           outline: 2px solid var(--og-focus-ring);
           outline-offset: 2px;
         }
 
         .og-library-section {
           margin: 0 0 2.4rem;
-        }
-
-        .og-library-guide {
-          display: grid;
-          gap: 1rem;
-          margin: 1.5rem 0 2.4rem;
-        }
-
-        .og-library-guide > p {
-          max-width: 58rem;
-          margin: 0;
-          color: var(--og-muted);
-          font-size: 1rem;
-          line-height: 1.55;
-        }
-
-        .og-library-guide-actions {
-          display: flex;
-          align-items: center;
-          justify-content: flex-start;
-        }
-
-        .og-library-legend {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 0.8rem;
-        }
-
-        .og-library-legend-item {
-          display: grid;
-          grid-template-columns: auto minmax(0, 1fr);
-          gap: 0.75rem;
-          align-items: start;
-          border: 1px solid var(--og-border);
-          border-radius: 0.5rem;
-          padding: 0.85rem;
-          background: rgba(120, 113, 108, 0.06);
-        }
-
-        .og-library-legend-item p {
-          margin: 0;
-          color: var(--og-muted);
-          font-size: 0.925rem;
-          line-height: 1.45;
         }
 
         .og-section-heading {
@@ -534,29 +360,20 @@ const CategorySection = ({ category }) => {
           line-height: 1.5;
         }
 
-        .og-section-eyebrow {
-          margin: 0 0 0.25rem;
-          color: var(--og-accent-text);
-          font-size: 0.75rem;
-          font-weight: 600;
-          letter-spacing: 0;
-          text-transform: uppercase;
-        }
-
-        .og-section-count {
-          flex: 0 0 auto;
-          border: 1px solid var(--og-border);
-          border-radius: 0.5rem;
-          padding: 0.35rem 0.6rem;
-          color: var(--og-muted-soft);
+        .og-section-note {
+          margin: 0 0 1rem;
+          border: 1px solid var(--og-callout-border);
+          border-radius: 0.25rem;
+          padding: 0.85rem 1rem;
+          background: var(--og-callout-bg);
+          color: var(--og-callout-text);
           font-size: 0.875rem;
-          font-weight: 500;
-          background: var(--og-card-bg);
+          line-height: 1.5;
         }
 
         .og-card-grid {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 1rem;
         }
 
@@ -574,16 +391,11 @@ const CategorySection = ({ category }) => {
           transition: border-color 160ms ease;
         }
 
-        .og-extension-card-compact {
-          min-height: 14.25rem;
-        }
-
         .og-extension-card:hover {
           border-color: var(--og-primary);
         }
 
-        .og-extension-card:hover .og-extension-action,
-        .og-submit-link:hover {
+        .og-extension-card:hover .og-extension-action {
           background: var(--og-primary-hover);
           color: #fff;
         }
@@ -599,6 +411,31 @@ const CategorySection = ({ category }) => {
           min-width: 0;
         }
 
+        .og-extension-title {
+          display: flex;
+          align-items: center;
+          gap: 0.65rem;
+        }
+
+        .og-extension-title .og-vendor-icon {
+          width: 2rem;
+          height: 2rem;
+          border-radius: 0.45rem;
+        }
+
+        .og-extension-title .og-vendor-icon-image-wide {
+          width: 3.35rem;
+        }
+
+        .og-extension-title .og-vendor-icon svg {
+          width: 1.15rem;
+          height: 1.15rem;
+        }
+
+        .og-extension-title .og-vendor-icon > span {
+          font-size: 0.625rem;
+        }
+
         .og-extension-card h3 {
           margin: 0;
           color: var(--og-title);
@@ -609,25 +446,11 @@ const CategorySection = ({ category }) => {
           overflow-wrap: anywhere;
         }
 
-        .og-extension-authors {
+        .og-extension-title p {
           margin: 0;
           font-size: 0.875rem;
-          line-height: 1.45;
+          line-height: 1.4;
           overflow-wrap: anywhere;
-        }
-
-        .og-extension-authors-label {
-          color: var(--og-title);
-          font-weight: 600;
-        }
-
-        .og-extension-author-link {
-          color: var(--og-accent-text);
-          text-decoration: none;
-        }
-
-        .og-extension-author-link:hover {
-          text-decoration: underline;
         }
 
         .og-extension-description {
@@ -642,81 +465,7 @@ const CategorySection = ({ category }) => {
           padding: 0 1rem;
         }
 
-        .og-maintainer-badge {
-          display: inline-flex;
-          flex: 0 0 auto;
-          align-items: center;
-          gap: 0.4rem;
-          min-height: 2.75rem;
-          border: 1px solid var(--og-border);
-          border-radius: 0.5rem;
-          padding: 0.35rem 0.55rem;
-          background: var(--og-card-bg);
-          color: var(--og-muted-soft);
-          font-size: 0.75rem;
-          font-weight: 500;
-        }
-
-        .og-maintainer-badge > span:first-child {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 1.55rem;
-          height: 1.55rem;
-          border-radius: 50%;
-          color: var(--og-title);
-          font-size: 0.68rem;
-          line-height: 1;
-        }
-
-        .og-maintainer-so > span:first-child {
-          --brand-green: #02b36c;
-          --brand-light: var(--og-text);
-        }
-
-        .og-maintainer-so svg {
-          width: 1.45rem;
-          height: 1.45rem;
-        }
-
-        .og-maintainer-community svg {
-          width: 0.95rem;
-          height: 0.95rem;
-        }
-
-        .og-category-list {
-          display: grid;
-          gap: 1.2rem;
-        }
-
-        .og-category-section {
-          scroll-margin-top: 6rem;
-        }
-
-        .og-category-heading {
-          display: flex;
-          align-items: center;
-          gap: 0.8rem;
-          margin-bottom: 0.75rem;
-          padding: 0.7rem 0;
-          border-bottom: 1px solid var(--og-border);
-        }
-
-        .og-category-heading h3 {
-          margin: 0;
-          color: var(--og-title);
-          font-size: 1rem;
-          line-height: 1.5;
-          font-weight: 600;
-          letter-spacing: 0;
-        }
-
-        .og-category-heading p {
-          margin: 0.15rem 0 0;
-          font-size: 0.875rem;
-        }
-
-        .og-category-icon {
+        .og-vendor-icon {
           display: inline-flex;
           flex: 0 0 auto;
           align-items: center;
@@ -730,35 +479,35 @@ const CategorySection = ({ category }) => {
           overflow: hidden;
         }
 
-        .og-category-icon > span {
+        .og-vendor-icon > span {
           font-size: 0.75rem;
           font-weight: 900;
           letter-spacing: 0;
         }
 
-        .og-category-icon svg {
+        .og-vendor-icon svg {
           width: 1.55rem;
           height: 1.55rem;
           fill: currentColor;
         }
 
-        .og-category-icon-image {
+        .og-vendor-icon-image {
           padding: 0.45rem;
           background: #fff;
         }
 
-        .og-category-icon-image img {
+        .og-vendor-icon-image img {
           display: block;
           width: 100%;
           height: 100%;
           object-fit: contain;
         }
 
-        .og-category-icon-image-wide {
+        .og-vendor-icon-image-wide {
           width: 4.6rem;
         }
 
-        .og-category-icon-microsoft {
+        .og-vendor-icon-microsoft {
           display: grid;
           grid-template-columns: repeat(2, 0.8rem);
           grid-template-rows: repeat(2, 0.8rem);
@@ -766,32 +515,32 @@ const CategorySection = ({ category }) => {
           padding: 0;
         }
 
-        .og-category-icon-microsoft span:nth-child(1) {
+        .og-vendor-icon-microsoft span:nth-child(1) {
           background: #f25022;
         }
 
-        .og-category-icon-microsoft span:nth-child(2) {
+        .og-vendor-icon-microsoft span:nth-child(2) {
           background: #7fba00;
         }
 
-        .og-category-icon-microsoft span:nth-child(3) {
+        .og-vendor-icon-microsoft span:nth-child(3) {
           background: #00a4ef;
         }
 
-        .og-category-icon-microsoft span:nth-child(4) {
+        .og-vendor-icon-microsoft span:nth-child(4) {
           background: #ffb900;
         }
 
-        .og-category-icon-github {
+        .og-vendor-icon-github {
           color: #24292f;
         }
 
-        .og-category-icon-jamf {
+        .og-vendor-icon-jamf {
           position: relative;
           background: #f8fbff;
         }
 
-        .og-category-icon-jamf span {
+        .og-vendor-icon-jamf span {
           position: absolute;
           width: 1rem;
           height: 1rem;
@@ -799,20 +548,20 @@ const CategorySection = ({ category }) => {
           background: #0b65d8;
         }
 
-        .og-category-icon-jamf span:first-child {
+        .og-vendor-icon-jamf span:first-child {
           transform: translate(-0.25rem, -0.15rem);
         }
 
-        .og-category-icon-jamf span:last-child {
+        .og-vendor-icon-jamf span:last-child {
           transform: translate(0.25rem, 0.2rem);
           opacity: 0.82;
         }
 
-        .og-category-icon-okta {
+        .og-vendor-icon-okta {
           background: #14161a;
         }
 
-        .og-category-icon-okta span {
+        .og-vendor-icon-okta span {
           width: 1.55rem;
           height: 1.55rem;
           border-radius: 50%;
@@ -820,41 +569,41 @@ const CategorySection = ({ category }) => {
           box-shadow: 0 0 0 0.18rem rgba(255, 255, 255, 0.42) inset;
         }
 
-        .og-category-icon-scim {
+        .og-vendor-icon-scim {
           color: #008b78;
         }
 
-        .og-category-icon-cyberark {
+        .og-vendor-icon-cyberark {
           width: 4.6rem;
           color: #047a3d;
           font-size: 0.75rem;
         }
 
-        .og-category-icon-atlassian {
+        .og-vendor-icon-atlassian {
           color: #0052cc;
         }
 
-        .og-category-icon-aws {
+        .og-vendor-icon-aws {
           color: #ff9900;
         }
 
-        .og-category-icon-gcp {
+        .og-vendor-icon-gcp {
           color: #1a73e8;
         }
 
-        .og-category-icon-kubernetes {
+        .og-vendor-icon-kubernetes {
           color: #326ce5;
         }
 
-        .og-category-icon-salesforce {
+        .og-vendor-icon-salesforce {
           color: #00a1e0;
         }
 
-        .og-category-icon-snowflake {
+        .og-vendor-icon-snowflake {
           color: #29b5e8;
         }
 
-        .og-category-icon-tailscale {
+        .og-vendor-icon-tailscale {
           color: #111827;
         }
 
@@ -874,33 +623,27 @@ const CategorySection = ({ category }) => {
           --og-focus-ring: rgba(165, 180, 252, 0.28);
         }
 
-        .dark .og-library-hero,
-        .dark .og-category-heading {
-          border-color: var(--og-border);
-        }
-
         .dark .og-extension-card,
-        .dark .og-maintainer-badge,
-        .dark .og-category-icon,
-        .dark .og-section-count {
+        .dark .og-vendor-icon {
           background: var(--og-card-bg);
         }
 
-        .dark .og-category-icon-image {
+        .dark .og-vendor-icon-image {
           background: #fff;
         }
 
-        .dark .og-library-legend-item {
-          background: rgba(214, 211, 209, 0.05);
-        }
-
-        .dark .og-extension-card h3,
-        .dark .og-category-heading h3 {
+        .dark .og-extension-card h3 {
           color: var(--og-title);
         }
 
-        .dark .og-category-icon-okta {
+        .dark .og-vendor-icon-okta {
           background: #030712;
+        }
+
+        @media (max-width: 1100px) {
+          .og-card-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
         }
 
         @media (max-width: 900px) {
@@ -908,14 +651,12 @@ const CategorySection = ({ category }) => {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
-          .og-library-hero,
           .og-section-heading {
             align-items: start;
           }
         }
 
         @media (max-width: 640px) {
-          .og-library-hero,
           .og-section-heading {
             display: grid;
             grid-template-columns: 1fr;
@@ -925,24 +666,8 @@ const CategorySection = ({ category }) => {
             grid-template-columns: 1fr;
           }
 
-          .og-library-hero-copy h1 {
-            font-size: 1.8rem;
-          }
-
-          .og-submit-link {
-            width: 100%;
-          }
-
-          .og-library-legend {
-            grid-template-columns: 1fr;
-          }
-
           .og-extension-card {
             min-height: 0;
-          }
-
-          .og-maintainer-badge > span:last-child {
-            display: none;
           }
         }
       `}</style>
