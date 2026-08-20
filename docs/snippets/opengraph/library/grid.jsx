@@ -3,6 +3,7 @@
 // Must use arrow function syntax in Mintlify snippets
 
 export const OpenGraphLibrary = ({
+  integrations = [],
   libraryCategories = [],
   openGraphTools = [],
 }) => {
@@ -239,6 +240,7 @@ const LibraryHero = () => {
           Explore the BloodHound Marketplace, a curated collection of OpenGraph extensions, integrations, and tools.
         </p>
       </div>
+        <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
     </header>
   );
 };
@@ -259,6 +261,23 @@ const LibraryHero = () => {
         </div>
         <div className="og-card-grid">
           {enterpriseExtensions.map((extension) => (
+            <ExtensionCard key={extension.name} extension={extension} />
+          ))}
+        </div>
+      </section>
+
+      <section className="og-library-section">
+        <div className="og-section-heading">
+          <div>
+            <h2>Integrations</h2>
+            <p>
+              Connect BloodHound Enterprise findings and graph data to security operations, ticketing, and automation platforms.
+            </p>
+            <p>{integrations.length} integrations</p>
+          </div>
+        </div>
+        <div className="og-card-grid">
+          {integrations.map((extension) => (
             <ExtensionCard key={extension.name} extension={extension} />
           ))}
         </div>
@@ -661,6 +680,22 @@ const LibraryHero = () => {
 
         .og-vendor-icon-tailscale {
           color: #111827;
+        }
+
+        .og-vendor-icon-api {
+          color: var(--og-primary);
+        }
+
+        .og-vendor-icon-servicenow {
+          color: #00a94f;
+        }
+
+        .og-vendor-icon-splunk {
+          color: #4c1d95;
+        }
+
+        .og-vendor-icon-xsoar {
+          color: #0f766e;
         }
 
         .dark .og-library {

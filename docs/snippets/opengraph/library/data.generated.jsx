@@ -1037,6 +1037,97 @@ export const libraryCategories = [
   }
 ];
 
+export const integrations = [
+  {
+    "name": "BloodHound API",
+    "vendorName": "BloodHound",
+    "icon": {
+      "type": "api",
+      "label": "API"
+    },
+    "description": "Programmatically interact with BloodHound data, automate workflows, and build custom integrations with signed API requests.",
+    "href": "/integrations/bloodhound-api/working-with-api",
+    "action": "Use the API"
+  },
+  {
+    "name": "Google SecOps",
+    "vendorName": "Google SecOps",
+    "icon": {
+      "type": "gcp",
+      "label": "GCP"
+    },
+    "description": "Synchronize BloodHound Enterprise Attack Path findings to Google Security Operations cases for remediation tracking.",
+    "href": "/integrations/google-secops/configure",
+    "action": "Configure integration"
+  },
+  {
+    "name": "Jira",
+    "vendorName": "Atlassian",
+    "icon": {
+      "type": "atlassian",
+      "label": "A"
+    },
+    "description": "Synchronize BloodHound Enterprise Attack Path findings to Jira issues and route remediation through existing workflows.",
+    "href": "/integrations/atlassian/jira/configure",
+    "action": "Configure integration"
+  },
+  {
+    "name": "Palo Alto XSOAR",
+    "vendorName": "Palo Alto Networks",
+    "icon": {
+      "type": "xsoar",
+      "label": "XSOAR"
+    },
+    "description": "Ingest BloodHound Enterprise Attack Path findings into Cortex XSOAR incidents with remediation guidance and posture context.",
+    "href": "/integrations/cortex-xsoar/configure",
+    "action": "Configure integration"
+  },
+  {
+    "name": "ServiceNow SIR",
+    "vendorName": "ServiceNow",
+    "icon": {
+      "type": "servicenow",
+      "label": "SIR"
+    },
+    "description": "Create Security Incident Response tickets from BloodHound Enterprise findings to track and monitor remediation work.",
+    "href": "/integrations/service-now/security-incident-response/configure",
+    "action": "Configure integration"
+  },
+  {
+    "name": "ServiceNow VR",
+    "vendorName": "ServiceNow",
+    "icon": {
+      "type": "servicenow",
+      "label": "VR"
+    },
+    "description": "Import Attack Path findings into ServiceNow Vulnerability Response as vulnerable items for centralized remediation.",
+    "href": "/integrations/service-now/vulnerability-response/configure",
+    "action": "Configure integration"
+  },
+  {
+    "name": "Splunk SIEM",
+    "vendorName": "Splunk",
+    "icon": {
+      "type": "splunk",
+      "label": "SIEM"
+    },
+    "description": "Ingest BloodHound Enterprise Path, Posture, and Impacted Principals data into Splunk dashboards and alerts.",
+    "href": "/integrations/splunk/siem/install",
+    "action": "Install integration"
+  },
+  {
+    "name": "Splunk SOAR",
+    "vendorName": "Splunk",
+    "icon": {
+      "type": "splunk",
+      "label": "SOAR"
+    },
+    "description": "Pull BloodHound Enterprise findings into Splunk SOAR and enrich alerts with Attack Path context during automation.",
+    "href": "/integrations/splunk/soar/configure",
+    "action": "Configure integration"
+  }
+];
+
 export const openGraphTools = [
   {
     "name": "OpenHound",
