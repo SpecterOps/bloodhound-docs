@@ -59,7 +59,6 @@ const vendorIconMap = {
   tailscale: { src: '/assets/icons/vendor/tailscale.svg', wide: false },
   vmware: { src: '/assets/icons/vendor/vmware.svg', wide: true },
   windows: { src: '/assets/icons/vendor/windows.svg', wide: false },
-  mitre: { src: '/assets/icons/vendor/mitre.svg', wide: true },
 };
 
 const VendorIcon = ({ icon }) => {
