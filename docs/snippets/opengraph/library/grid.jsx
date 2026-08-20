@@ -46,6 +46,127 @@ const MaintainerBadge = ({ maintainer }) => {
   );
 };
 
+const vendorIconMap = {
+  onepassword: { src: '/assets/icons/vendor/onepassword.svg', wide: false },
+  ansible: { src: '/assets/icons/vendor/ansible.svg', wide: false },
+  microsoft: { src: '/assets/icons/vendor/microsoft.svg', wide: false },
+  aws: { src: '/assets/icons/vendor/aws.svg', wide: true },
+  atlassian: { src: '/assets/icons/vendor/atlassian.svg', wide: false },
+  cisco: { src: '/assets/icons/vendor/cisco.svg', wide: false },
+  cyberark: { src: '/assets/icons/vendor/cyberark.svg', wide: true },
+  freeipa: { src: '/assets/icons/vendor/freeipa.svg', wide: false },
+  github: { src: '/assets/icons/vendor/github.svg', wide: false },
+  gitlab: { src: '/assets/icons/vendor/gitlab.svg', wide: true },
+  gcp: { src: '/assets/icons/vendor/gcp.svg', wide: false },
+  jamf: { src: '/assets/icons/vendor/jamf.svg', wide: false },
+  kubernetes: { src: '/assets/icons/vendor/kubernetes.svg', wide: false },
+  okta: { src: '/assets/icons/vendor/okta.svg', wide: false },
+  oracle: { src: '/assets/icons/vendor/oracle.svg', wide: true },
+  ping: { src: '/assets/icons/vendor/ping.svg', wide: true },
+  mainframe: { src: '/assets/icons/vendor/ibm.svg', wide: true },
+  runzero: { src: '/assets/icons/vendor/runzero.svg', wide: true },
+  salesforce: { src: '/assets/icons/vendor/salesforce.svg', wide: false },
+  snowflake: { src: '/assets/icons/vendor/snowflake.svg', wide: false },
+  tailscale: { src: '/assets/icons/vendor/tailscale.svg', wide: false },
+  vmware: { src: '/assets/icons/vendor/vmware.svg', wide: true },
+  windows: { src: '/assets/icons/vendor/windows.svg', wide: false },
+  mitre: { src: '/assets/icons/vendor/mitre.svg', wide: true },
+};
+
+const CategoryIcon = ({ icon }) => {
+  if (!icon) {
+    return null;
+  }
+
+  const vendorIcon = vendorIconMap[icon.type];
+
+  if (vendorIcon) {
+    return (
+      <span
+        className={`og-category-icon og-category-icon-image ${
+          vendorIcon.wide ? 'og-category-icon-image-wide' : ''
+        }`}
+        aria-label={`${icon.label} category`}
+      >
+        <img src={vendorIcon.src} alt="" loading="lazy" />
+      </span>
+    );
+  }
+
+  if (icon.type === 'microsoft') {
+    return (
+      <span className="og-category-icon og-category-icon-microsoft" aria-label={`${icon.label} category`}>
+        <span />
+        <span />
+        <span />
+        <span />
+      </span>
+    );
+  }
+
+  if (icon.type === 'github') {
+    return (
+      <span className="og-category-icon og-category-icon-github" aria-label="GitHub category">
+        <svg viewBox="0 0 16 16" role="img" aria-hidden="true">
+          <path d="M8 .2a8 8 0 0 0-2.5 15.6c.4.1.5-.2.5-.4v-1.4c-2.2.5-2.7-.9-2.7-.9-.3-.8-.9-1-.9-1-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.2 1.9.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-3.9 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.5 7.5 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.5 1.1.2 1.9.1 2.1.5.5.8 1.2.8 2.1 0 3-1.8 3.7-3.6 3.9.3.3.6.8.6 1.6v2.3c0 .2.1.5.6.4A8 8 0 0 0 8 .2Z" />
+        </svg>
+      </span>
+    );
+  }
+
+  if (icon.type === 'key') {
+    return (
+      <span className="og-category-icon og-category-icon-key" aria-label="Credentials category">
+        <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+          <path d="M8.2 14.4a5.4 5.4 0 1 1 4.1-4.1l8.7 8.7v3h-3v-2h-2v-2h-2l-5.8-5.6Zm-.8-3.1a2.7 2.7 0 1 0 0-5.4 2.7 2.7 0 0 0 0 5.4Z" />
+        </svg>
+      </span>
+    );
+  }
+
+  if (icon.type === 'cross-platform') {
+    return (
+      <span className="og-category-icon" aria-label={`${icon.label} category`}>
+        <Icon icon="diagram-project" iconType="solid" color="currentColor" size={24} />
+      </span>
+    );
+  }
+
+  if (icon.type === 'terminal') {
+    return (
+      <span className="og-category-icon" aria-label={`${icon.label} category`}>
+        <Icon icon="terminal" iconType="solid" color="currentColor" size={24} />
+      </span>
+    );
+  }
+
+  if (icon.type === 'jamf') {
+    return (
+      <span className="og-category-icon og-category-icon-jamf" aria-label="Jamf category">
+        <span />
+        <span />
+      </span>
+    );
+  }
+
+  if (icon.type === 'okta') {
+    return (
+      <span className="og-category-icon og-category-icon-okta" aria-label="Okta category">
+        <span />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`og-category-icon og-category-icon-${icon.type}`}
+      aria-label={`${icon.label} category`}
+    >
+      <span>{icon.label}</span>
+    </span>
+  );
+};
+
 const AuthorAttribution = ({ authors = [] }) => {
   if (authors.length === 0) {
     return null;
@@ -107,7 +228,9 @@ const ExtensionCard = ({ extension, compact = false }) => {
         </div>
         {extension.maintainer ? (
           <MaintainerBadge maintainer={extension.maintainer} />
-        ) : null}
+        ) : (
+          <CategoryIcon icon={extension.icon} />
+        )}
       </div>
       <AuthorAttribution authors={extension.authors} />
       <p className="og-extension-description">{extension.description}</p>
@@ -197,6 +320,7 @@ const CategoryGroup = ({ category }) => {
   return (
     <section className="og-category-group" id={category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}>
       <div className="og-category-heading">
+        <CategoryIcon icon={category.icon} />
         <div>
           <h3>{category.name}</h3>
           <p>
@@ -790,6 +914,148 @@ const TechnologyGroup = ({ group }) => {
           font-size: 0.875rem;
         }
 
+        .og-category-icon {
+          display: inline-flex;
+          flex: 0 0 auto;
+          align-items: center;
+          justify-content: center;
+          width: 2.75rem;
+          height: 2.75rem;
+          border: 1px solid var(--og-border);
+          border-radius: 0.5rem;
+          background: var(--og-card-bg);
+          color: var(--og-title);
+          overflow: hidden;
+        }
+
+        .og-category-icon > span {
+          font-size: 0.75rem;
+          font-weight: 900;
+          letter-spacing: 0;
+        }
+
+        .og-category-icon svg {
+          width: 1.55rem;
+          height: 1.55rem;
+          fill: currentColor;
+        }
+
+        .og-category-icon-image {
+          padding: 0.45rem;
+          background: #fff;
+        }
+
+        .og-category-icon-image img {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+
+        .og-category-icon-image-wide {
+          width: 4.6rem;
+        }
+
+        .og-category-icon-microsoft {
+          display: grid;
+          grid-template-columns: repeat(2, 0.8rem);
+          grid-template-rows: repeat(2, 0.8rem);
+          gap: 0.12rem;
+          padding: 0;
+        }
+
+        .og-category-icon-microsoft span:nth-child(1) {
+          background: #f25022;
+        }
+
+        .og-category-icon-microsoft span:nth-child(2) {
+          background: #7fba00;
+        }
+
+        .og-category-icon-microsoft span:nth-child(3) {
+          background: #00a4ef;
+        }
+
+        .og-category-icon-microsoft span:nth-child(4) {
+          background: #ffb900;
+        }
+
+        .og-category-icon-github {
+          color: #24292f;
+        }
+
+        .og-category-icon-jamf {
+          position: relative;
+          background: #f8fbff;
+        }
+
+        .og-category-icon-jamf span {
+          position: absolute;
+          width: 1rem;
+          height: 1rem;
+          border-radius: 2px;
+          background: #0b65d8;
+        }
+
+        .og-category-icon-jamf span:first-child {
+          transform: translate(-0.25rem, -0.15rem);
+        }
+
+        .og-category-icon-jamf span:last-child {
+          transform: translate(0.25rem, 0.2rem);
+          opacity: 0.82;
+        }
+
+        .og-category-icon-okta {
+          background: #14161a;
+        }
+
+        .og-category-icon-okta span {
+          width: 1.55rem;
+          height: 1.55rem;
+          border-radius: 50%;
+          border: 0.22rem solid #fff;
+          box-shadow: 0 0 0 0.18rem rgba(255, 255, 255, 0.42) inset;
+        }
+
+        .og-category-icon-scim {
+          color: #008b78;
+        }
+
+        .og-category-icon-cyberark {
+          width: 4.6rem;
+          color: #047a3d;
+          font-size: 0.75rem;
+        }
+
+        .og-category-icon-atlassian {
+          color: #0052cc;
+        }
+
+        .og-category-icon-aws {
+          color: #ff9900;
+        }
+
+        .og-category-icon-gcp {
+          color: #1a73e8;
+        }
+
+        .og-category-icon-kubernetes {
+          color: #326ce5;
+        }
+
+        .og-category-icon-salesforce {
+          color: #00a1e0;
+        }
+
+        .og-category-icon-snowflake {
+          color: #29b5e8;
+        }
+
+        .og-category-icon-tailscale {
+          color: #111827;
+        }
+
         .dark .og-library {
           --og-primary: var(--color-primary, #2c2677);
           --og-primary-hover: #3b32a0;
@@ -814,9 +1080,14 @@ const TechnologyGroup = ({ group }) => {
 
         .dark .og-extension-card,
         .dark .og-maintainer-badge,
+        .dark .og-category-icon,
         .dark .og-section-count,
         .dark .og-filter-button {
           background: var(--og-card-bg);
+        }
+
+        .dark .og-category-icon-image {
+          background: #fff;
         }
 
         .dark .og-filter-button-active {
@@ -831,6 +1102,10 @@ const TechnologyGroup = ({ group }) => {
         .dark .og-category-heading h3,
         .dark .og-technology-heading h3 {
           color: var(--og-title);
+        }
+
+        .dark .og-category-icon-okta {
+          background: #030712;
         }
 
         @media (max-width: 900px) {
