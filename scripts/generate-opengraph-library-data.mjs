@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = fileURLToPath(new URL('../', import.meta.url));
@@ -21,6 +21,9 @@ const builtInIconTypes = new Set([
 ]);
 
 const readJson = (filePath) => JSON.parse(readFileSync(filePath, 'utf8'));
+const log = (message) => console.log(`[opengraph-library] ${message}`);
+const formatCount = (count, singular, plural = `${singular}s`) =>
+  `${count} ${count === 1 ? singular : plural}`;
 
 const readCategoryDirectory = (directory) =>
   readdirSync(directory)
@@ -343,6 +346,19 @@ const allEntries = [
 
 assertUnique(allEntries, (entry) => entry.href, 'library entry href');
 
+const communityExtensionCount = communityExtensions.reduce(
+  (total, category) => total + category.extensions.length,
+  0,
+);
+const validationSummary = [
+  formatCount(communityExtensions.length, 'community category', 'community categories'),
+  formatCount(communityExtensionCount, 'community extension'),
+  formatCount(enterpriseExtensions.length, 'enterprise extension'),
+  formatCount(integrations.length, 'integration'),
+  formatCount(openGraphTools.length, 'OpenGraph tool'),
+  formatCount(vendorIconMap.size, 'mapped vendor icon'),
+].join(', ');
+
 communityExtensions.sort(compareByName);
 communityExtensions.forEach((category) => category.extensions.sort(compareByName));
 enterpriseExtensions.sort(compareByName);
@@ -369,7 +385,11 @@ if (checkOnly) {
     fail('Generated data is stale. Run `just generate-opengraph-library`.');
   }
 
+  log(`Validation passed: ${validationSummary}.`);
+  log(`${relative(repoRoot, generatedFile)} is up to date.`);
   process.exit(0);
 }
 
 writeFileSync(generatedFile, generatedContent);
+log(`Validation passed: ${validationSummary}.`);
+log(`Generated ${relative(repoRoot, generatedFile)} from OpenGraph library JSON.`);
