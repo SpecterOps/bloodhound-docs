@@ -10,6 +10,8 @@ The BloodHound Marketplace page is rendered from JSON source files in this direc
 - `data/enterprise.json`: BloodHound Enterprise extension cards.
 - `data/integrations.json`: Integration cards.
 - `data/tools.json`: OpenGraph tool cards.
+- `../../../assets/icons/vendor-favicons/`: Cached vendor favicon assets used by `vendorIconMap`.
+- `../../../../scripts/fetch-opengraph-vendor-favicons.mjs`: Fetches and refreshes cached vendor favicon assets.
 
 ## Add or update an entry
 
@@ -35,17 +37,29 @@ The BloodHound Marketplace page is rendered from JSON source files in this direc
     ```
 
 1. Review the generated changes in `data/data.generated.jsx`.
-1. Refresh cached vendor favicons when a vendor site changes:
-
-    ```bash
-    just fetch-opengraph-library-favicons
-    ```
-
 1. Validate the source files and generated bridge:
 
     ```bash
     just check-opengraph-library
     ```
+
+## Refresh vendor favicons
+
+Use `just fetch-opengraph-library-favicons` when you add a new vendor icon source or when a vendor changes its favicon.
+
+```bash
+just fetch-opengraph-library-favicons
+```
+
+The recipe runs `scripts/fetch-opengraph-vendor-favicons.mjs`. The script fetches favicon assets for the vendor list defined in the script, writes the files to `docs/assets/icons/vendor-favicons/`, and prints the source URL used for each saved asset.
+
+The script first tries an explicit `faviconUrl` when one is configured for a vendor, otherwise it tries `/favicon.ico` for the vendor site. If that request fails, it checks the site HTML for icon links and uses the best available icon candidate. When the image format changes, the script removes older cached files for the same vendor type so `vendorIconMap` only points to the current asset.
+
+After refreshing favicons, review the icon changes and run:
+
+```bash
+just check-opengraph-library
+```
 
 ## Sorting and visibility
 
