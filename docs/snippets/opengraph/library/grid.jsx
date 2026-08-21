@@ -130,7 +130,7 @@ const VendorIcon = ({ icon }) => {
   }
 
   const builtInIcon = builtInIconTypes.has(icon.type)
-    ? 'plug-circle-plus'
+    ? 'plug'
     : builtInIconMap[icon.type];
 
   if (builtInIcon) {
@@ -794,7 +794,7 @@ const clearFilters = () => {
         }
 
         .og-vendor-icon-image {
-          padding: 0.45rem;
+          padding: 0.2rem;
           background: #fff;
         }
 
