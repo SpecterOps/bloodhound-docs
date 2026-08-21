@@ -67,6 +67,12 @@ const getFilterOptions = (extensions, getValue) =>
 
 const communityExtensionCards = flattenExtensions(communityExtensions)
   .sort(compareByName);
+const specterOpsCreatedExtensionCards = communityExtensionCards.filter(
+  (extension) => extension.maintainer === 'specterops',
+);
+const communityCreatedExtensionCards = communityExtensionCards.filter(
+  (extension) => extension.maintainer !== 'specterops',
+);
 
 const tools = openGraphTools
   .map((tool) => ({
@@ -277,7 +283,7 @@ const sectionGroups = [
     title: 'Enterprise Extensions',
     description: 'Enterprise extensions are maintained by SpecterOps and managed through BloodHound Enterprise.',
     countLabel: 'enterprise extensions',
-    optionLabel: 'enterprise extensions',
+    optionLabel: 'Enterprise extensions',
     extensions: enterpriseExtensions,
   },
   {
@@ -285,16 +291,25 @@ const sectionGroups = [
     title: 'Integrations',
     description: 'Connect BloodHound Enterprise findings and graph data to security operations, ticketing, and automation platforms.',
     countLabel: 'integrations',
-    optionLabel: 'integrations',
+    optionLabel: 'Integrations',
     extensions: integrations,
   },
   {
-    id: 'community-extensions',
-    title: 'Community Extensions',
-    description: 'Extensions add node and edge types to the BloodHound graph.',
-    countLabel: 'community extensions',
-    optionLabel: 'community extensions',
-    extensions: communityExtensionCards,
+    id: 'specterops-created-extensions',
+    title: 'SpecterOps employee-created Extensions',
+    description: 'Extensions created by SpecterOps employees and published outside the managed Enterprise extension catalog.',
+    countLabel: 'SpecterOps employee-created extensions',
+    optionLabel: 'SpecterOps employee-created extensions',
+    extensions: specterOpsCreatedExtensionCards,
+    hasWarning: true,
+  },
+  {
+    id: 'community-created-extensions',
+    title: 'Community-Created Extensions',
+    description: 'Extensions created by the broader BloodHound and OpenGraph community.',
+    countLabel: 'community-created extensions',
+    optionLabel: 'Community-created extensions',
+    extensions: communityCreatedExtensionCards,
     hasWarning: true,
   },
   {
@@ -302,7 +317,7 @@ const sectionGroups = [
     title: 'Tools',
     description: 'Use these libraries and utilities to generate, validate, ingest, or manage OpenGraph data for BloodHound.',
     countLabel: 'tools',
-    optionLabel: 'tools',
+    optionLabel: 'Tools',
     extensions: tools,
   },
 ];
