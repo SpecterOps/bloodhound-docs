@@ -27,6 +27,19 @@ Expectations for overall contribution to our codebase are covered in the [Contri
 
 For instructions on how to specifically contribute to our docs, check out the [Contributing to Docs](./Contributing-To-Docs.md) document.
 
+## Generate OpenGraph library data
+
+The OpenGraph library page uses JSON source files for easier maintenance. To add or update a library entry, follow the instructions in [`docs/snippets/opengraph/library/README.md`](./docs/snippets/opengraph/library/README.md).
+
+After editing the JSON files, regenerate the JSX data bridge that Mintlify imports:
+
+```bash
+just generate-opengraph-library
+```
+
+>[!NOTE]
+>This updates `docs/snippets/opengraph/library/data/data.generated.jsx`. Do not edit that generated file directly.
+
 ## Contact
 
 Please check out the [Contact page](https://github.com/SpecterOps/BloodHound/wiki/Contact) in our wiki for details on how to reach out with questions and suggestions.
