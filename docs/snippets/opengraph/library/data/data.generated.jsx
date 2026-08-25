@@ -693,6 +693,27 @@ export const communityExtensions = [
     ]
   },
   {
+    "name": "npm",
+    "icon": {
+      "type": "npm",
+      "label": "npm"
+    },
+    "extensions": [
+      {
+        "name": "npmHound",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Rahil Hassan",
+            "href": "https://www.linkedin.com/in/rk67890"
+          }
+        ],
+        "description": "Maps npm maintainers, package publish rights, and downstream package dependencies into BloodHound through OpenGraph.",
+        "href": "https://github.com/Dracaryzs/npmhound/"
+      }
+    ]
+  },
+  {
     "name": "Okta",
     "icon": {
       "type": "okta",
@@ -1218,6 +1239,9 @@ export const vendorIconMap = {
   },
   "microsoft": {
     "src": "/assets/icons/vendor-favicons/microsoft.ico"
+  },
+  "npm": {
+    "src": "/assets/icons/vendor-favicons/npm.png"
   },
   "okta": {
     "src": "/assets/icons/vendor-favicons/okta.ico"
