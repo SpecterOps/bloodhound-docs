@@ -459,10 +459,10 @@ export const communityExtensions = [
     ]
   },
   {
-    "name": "Microsoft Active Directory",
+    "name": "Microsoft",
     "icon": {
       "type": "microsoft",
-      "label": "AD"
+      "label": "Microsoft"
     },
     "extensions": [
       {
@@ -478,6 +478,60 @@ export const communityExtensions = [
         ],
         "description": "Exports selected Active Directory custom attributes as OpenGraph node properties so BloodHound can enrich or create nodes with additional directory context.",
         "href": "https://github.com/martinsohn/ADAttributeHound"
+      },
+      {
+        "name": "ConfigManBearPig",
+        "maintainer": "specterops",
+        "authors": [
+          {
+            "name": "Chris Thompson",
+            "href": "https://x.com/_Mayyhem",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          }
+        ],
+        "description": "Adds Microsoft Configuration Manager and SCCM attack-path data to BloodHound through a PowerShell OpenGraph collector.",
+        "href": "https://github.com/SpecterOps/ConfigManBearPig"
+      },
+      {
+        "name": "EntraAuthPolicyHound",
+        "maintainer": "specterops",
+        "authors": [
+          {
+            "name": "Michael Grafnetter",
+            "href": "https://x.com/mgrafnetter",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          }
+        ],
+        "description": "Demonstrates collection of Entra ID permissions related to Temporary Access Passes and passkeys, then exports the results as BloodHound OpenGraph data.",
+        "href": "https://github.com/MichaelGrafnetter/EntraAuthPolicyHound"
+      },
+      {
+        "name": "EntraSSSOHound",
+        "maintainer": "specterops",
+        "authors": [
+          {
+            "name": "Daniel Heinsen",
+            "href": "https://x.com/hotnops",
+            "organization": "SpecterOps",
+            "organizationHref": "https://specterops.io"
+          }
+        ],
+        "description": "Models Entra ID Seamless SSO trust paths that can allow Active Directory computers to affect synced Entra ID users.",
+        "href": "https://github.com/SpecterOps/EntraSSSOHound"
+      },
+      {
+        "name": "ExchangeHound",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Filip Wozniak",
+            "href": "https://github.com/FilipPwn"
+          }
+        ],
+        "description": "Models Exchange on-premises objects and relationships, including mailbox delegation, folder access, transport rules, and Exchange RBAC assignments.",
+        "href": "https://github.com/FilipPwn/exchangehound"
       },
       {
         "name": "GhostHound",
@@ -506,101 +560,6 @@ export const communityExtensions = [
         "href": "https://github.com/martinsohn/ManagerOfHound"
       },
       {
-        "name": "ProfileHound",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Chris Haller",
-            "href": "https://www.linkedin.com/in/christopher-haller/",
-            "organization": "Omada Technologies",
-            "organizationHref": "https://omadatechnologies.com/"
-          }
-        ],
-        "description": "Finds user profiles on domain machines and creates HasUserProfile edges that help operators decide which systems to target for credential access.",
-        "href": "https://github.com/m4lwhere/profilehound"
-      },
-      {
-        "name": "WinSSHound",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Robin Unglaub",
-            "href": "https://www.linkedin.com/in/robin-unglaub/",
-            "organization": "ProSec GmbH",
-            "organizationHref": "https://www.prosec-networks.com/"
-          }
-        ],
-        "description": "Maps lateral movement paths through misconfigured native and third-party SSH servers in Active Directory environments.",
-        "href": "https://github.com/1r0BIT/WinSSHound"
-      }
-    ]
-  },
-  {
-    "name": "Microsoft Entra ID",
-    "icon": {
-      "type": "microsoft",
-      "label": "ID"
-    },
-    "extensions": [
-      {
-        "name": "EntraAuthPolicyHound",
-        "maintainer": "specterops",
-        "authors": [
-          {
-            "name": "Michael Grafnetter",
-            "href": "https://x.com/mgrafnetter",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          }
-        ],
-        "description": "Demonstrates collection of Entra ID permissions related to Temporary Access Passes and passkeys, then exports the results as BloodHound OpenGraph data.",
-        "href": "https://github.com/MichaelGrafnetter/EntraAuthPolicyHound"
-      },
-      {
-        "name": "EntraSSSOHound",
-        "maintainer": "specterops",
-        "authors": [
-          {
-            "name": "Daniel Heinsen",
-            "href": "https://x.com/hotnops",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
-          }
-        ],
-        "description": "Models Entra ID Seamless SSO trust paths that can allow Active Directory computers to affect synced Entra ID users.",
-        "href": "https://github.com/SpecterOps/EntraSSSOHound"
-      }
-    ]
-  },
-  {
-    "name": "Microsoft Exchange",
-    "icon": {
-      "type": "microsoft",
-      "label": "EX"
-    },
-    "extensions": [
-      {
-        "name": "ExchangeHound",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Filip Wozniak",
-            "href": "https://github.com/FilipPwn"
-          }
-        ],
-        "description": "Models Exchange on-premises objects and relationships, including mailbox delegation, folder access, transport rules, and Exchange RBAC assignments.",
-        "href": "https://github.com/FilipPwn/exchangehound"
-      }
-    ]
-  },
-  {
-    "name": "Microsoft SQL Server",
-    "icon": {
-      "type": "microsoft",
-      "label": "SQL"
-    },
-    "extensions": [
-      {
         "name": "MSSQLHound",
         "maintainer": "specterops",
         "authors": [
@@ -613,29 +572,32 @@ export const communityExtensions = [
         ],
         "description": "Collects BloodHound OpenGraph-compatible data from one or more MSSQL servers and packages the output for ingestion.",
         "href": "https://github.com/SpecterOps/MSSQLHound"
-      }
-    ]
-  },
-  {
-    "name": "Microsoft System Center",
-    "icon": {
-      "type": "microsoft",
-      "label": "SC"
-    },
-    "extensions": [
+      },
       {
-        "name": "ConfigManBearPig",
-        "maintainer": "specterops",
+        "name": "PrivHound",
+        "maintainer": "community",
         "authors": [
           {
-            "name": "Chris Thompson",
-            "href": "https://x.com/_Mayyhem",
-            "organization": "SpecterOps",
-            "organizationHref": "https://specterops.io"
+            "name": "Arun Nair",
+            "href": "https://x.com/dazzyddos"
           }
         ],
-        "description": "Adds Microsoft Configuration Manager and SCCM attack-path data to BloodHound through a PowerShell OpenGraph collector.",
-        "href": "https://github.com/SpecterOps/ConfigManBearPig"
+        "description": "Models Windows local privilege escalation vectors as multi-hop attack paths that can overlay existing SharpHound Active Directory data.",
+        "href": "https://github.com/dazzyddos/PrivHound"
+      },
+      {
+        "name": "ProfileHound",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Chris Haller",
+            "href": "https://www.linkedin.com/in/christopher-haller/",
+            "organization": "Omada Technologies",
+            "organizationHref": "https://omadatechnologies.com/"
+          }
+        ],
+        "description": "Finds user profiles on domain machines and creates HasUserProfile edges that help operators decide which systems to target for credential access.",
+        "href": "https://github.com/m4lwhere/profilehound"
       },
       {
         "name": "SCCM_SQL_Collector",
@@ -662,27 +624,6 @@ export const communityExtensions = [
         ],
         "description": "Enumerates System Center Operations Manager infrastructure from Active Directory and emits BloodHound OpenGraph data.",
         "href": "https://github.com/SpecterOps/SCOMHound"
-      }
-    ]
-  },
-  {
-    "name": "Microsoft Windows",
-    "icon": {
-      "type": "microsoft",
-      "label": "WIN"
-    },
-    "extensions": [
-      {
-        "name": "PrivHound",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "Arun Nair",
-            "href": "https://x.com/dazzyddos"
-          }
-        ],
-        "description": "Models Windows local privilege escalation vectors as multi-hop attack paths that can overlay existing SharpHound Active Directory data.",
-        "href": "https://github.com/dazzyddos/PrivHound"
       },
       {
         "name": "ShareHound",
@@ -711,6 +652,20 @@ export const communityExtensions = [
         ],
         "description": "Hunts for Windows scheduled tasks that run with privileged accounts and stored credentials, then exports findings for BloodHound.",
         "href": "https://github.com/1r0BIT/TaskHound"
+      },
+      {
+        "name": "WinSSHound",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "Robin Unglaub",
+            "href": "https://www.linkedin.com/in/robin-unglaub/",
+            "organization": "ProSec GmbH",
+            "organizationHref": "https://www.prosec-networks.com/"
+          }
+        ],
+        "description": "Maps lateral movement paths through misconfigured native and third-party SSH servers in Active Directory environments.",
+        "href": "https://github.com/1r0BIT/WinSSHound"
       }
     ]
   },
@@ -996,7 +951,7 @@ export const enterpriseExtensions = [
   },
   {
     "name": "Jamf Extension",
-    "vendorName": "Jamf",
+    "vendorName": "Jamf Pro",
     "icon": {
       "type": "jamf",
       "label": "J"
@@ -1031,8 +986,19 @@ export const enterpriseExtensions = [
 
 export const integrations = [
   {
+    "name": "Cortex XSOAR",
+    "vendorName": "Palo Alto Networks",
+    "icon": {
+      "type": "xsoar",
+      "label": "XSOAR"
+    },
+    "description": "Ingest BloodHound Enterprise Attack Path findings into Cortex XSOAR incidents with remediation guidance and posture context.",
+    "href": "/integrations/cortex-xsoar/configure",
+    "action": "Configure integration"
+  },
+  {
     "name": "Google SecOps",
-    "vendorName": "Google SecOps",
+    "vendorName": "Google Cloud Platform",
     "icon": {
       "type": "gcp",
       "label": "GCP"
@@ -1050,17 +1016,6 @@ export const integrations = [
     },
     "description": "Synchronize BloodHound Enterprise Attack Path findings to Jira issues and route remediation through existing workflows.",
     "href": "/integrations/atlassian/jira/configure",
-    "action": "Configure integration"
-  },
-  {
-    "name": "Palo Alto XSOAR",
-    "vendorName": "Palo Alto Networks",
-    "icon": {
-      "type": "xsoar",
-      "label": "XSOAR"
-    },
-    "description": "Ingest BloodHound Enterprise Attack Path findings into Cortex XSOAR incidents with remediation guidance and posture context.",
-    "href": "/integrations/cortex-xsoar/configure",
     "action": "Configure integration"
   },
   {
