@@ -38,6 +38,11 @@ const vendors = [
   { type: 'gcp', siteUrl: 'https://cloud.google.com' },
   { type: 'jamf', siteUrl: 'https://www.jamf.com' },
   { type: 'kubernetes', siteUrl: 'https://kubernetes.io' },
+  {
+    type: 'npm',
+    siteUrl: 'https://www.npmjs.com',
+    faviconUrl: 'https://raw.githubusercontent.com/npm/logos/master/npm%20square/n-large.png',
+  },
   { type: 'okta', siteUrl: 'https://www.okta.com' },
   { type: 'oracle', siteUrl: 'https://www.oracle.com' },
   { type: 'ping', siteUrl: 'https://www.pingidentity.com' },
