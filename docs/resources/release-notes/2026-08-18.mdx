@@ -1,0 +1,173 @@
+---
+title: 2026-08-18 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-08-18"
+---
+
+import CollectorDeprecationNotice from '/snippets/resources/collector-deprecation-notice.mdx';
+import BetaAccessNote from '/snippets/feature-flag-user-managed.mdx';
+
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-08-18 | v9.6.0 | v0.3.0 | v2.15.0 | v3.1.0 |
+
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+<Update label="BloodHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9096, BED-8973, BED-8968, BED-8944, BED-9100*/}
+  {/* TODO: BED-9096 is Unrefined in Jira; follow up before publishing. */}
+  ## Collector Compatibility for Case-Sensitive Object IDs
+
+  BloodHound introduced [case-sensitive OpenGraph object IDs](/resources/release-notes/2026-07-29#case-sensitive-opengraph-object-ids) (a SpecterOps-managed feature) in the 2026-07-29 release. This feature is not enabled by default.
+  
+  This release updates collector compatibility as BloodHound moves property-value normalization out of ingest and into collectors. BloodHound will ingest object IDs, names, and other properties exactly as collector output supplies them.
+
+  This change lets BloodHound preserve case-sensitive OpenGraph object IDs while keeping existing Active Directory, Microsoft Entra ID, Okta, and Jamf graph identities stable. AzureHound and the OpenHound Okta and Jamf collectors now uppercase the object ID and related identifier values they own before output. GitHub object IDs remain case-sensitive to prevent collisions between distinct GitHub objects.
+
+  <Warning>
+    BloodHound treats node object IDs as case-sensitive. After this ingest change is enabled, submitting the same object ID with different casing creates a separate node.
+  </Warning>
+
+  These updates prepare BloodHound to enable case-sensitive OpenGraph object IDs by default in a future release.
+
+  See the following table for a summary of collector compatibility changes:
+
+  | Component | Change |
+  | --- | --- |
+  | BloodHound Enterprise | Rejects client and file ingest uploads from deprecated AzureHound and OpenHound versions after the ingest change is enabled.<br/><br/>This prevents collector output that depends on server-side normalization from creating duplicate nodes or identity mismatches. |
+  | OpenHound Okta and Jamf collectors | Uppercase the object ID values before output. |
+  | OpenHound GitHub collector | Preserves case-sensitive GitHub object IDs before output. |
+  | AzureHound | Uppercases object IDs and additional related identifier fields before output while preserving case-sensitive application ID values where required. |
+  | SharpHound | No change. SharpHound already normalizes Active Directory object identifiers to uppercase before output. |
+
+  <CollectorDeprecationNotice />
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  {/*BED-9051*/}
+  ## Extension Management Enabled by Default
+  
+  The [OpenGraph Management](/opengraph/extensions/manage) page is now enabled by default so you can manage OpenGraph extensions without enabling the feature on the **Early Access Features** page first.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  {/*BED-8964*/}
+  ## OpenGraph Markdown Validation
+
+  Upload extension definition schemas with more confidence that custom Markdown content can render safely in BloodHound.
+
+  BloodHound now [validates Markdown](/opengraph/developer/graph-definition#markdown-validation) used for custom Entity Panel sections and BloodHound Enterprise remediation guidance when you upload an extension definition schema. Supported Markdown continues to work, and BloodHound rejects uploads that include unsafe HTML or links before the content appears in the product.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["API"]}>
+  {/*BED-8756, BED-8757*/}
+  ## Kind Metadata APIs
+
+  Retrieve node and relationship kind metadata by graph-assigned kind ID.
+
+  BloodHound now exposes experimental APIs for looking up [node kind](/reference/opengraph-experimental/get-node-kind) and [relationship kind](/reference/opengraph-experimental/get-relationship-kind) details.
+  
+  Use these endpoints to retrieve kind names, descriptions, extension metadata, display properties, and markdown-backed Entity Panel information for OpenGraph automation and integrations.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["PostgreSQL"]}>
+  {/*BED-8341, BED-9170, BED-9161*/}
+  ## PostgreSQL Graph Storage Optimization
+
+  Get more reliable PostgreSQL graph database performance with storage optimization.
+
+  BloodHound now runs graph storage optimization automatically after key ingest and analysis workflows and records timing details in the logs. These changes help large PostgreSQL-backed environments stay responsive as graph data changes over time.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Database Management"]}>
+  {/*BED-8787, BED-8832*/}
+  ## Faster Graph Data Deletion
+
+  Delete graph data from PostgreSQL-backed environments more quickly with **Database Management**.
+
+  BloodHound now uses optimized deletion paths for full graph wipes and targeted deletions by source kind or relationship type. These changes reduce the time it takes to delete large datasets.
+</Update>
+
+<Update label="BloodHound" description="New Feature" tags={["Attack Paths"]}>
+  {/*BED-9191, BED-9151, BED-8921, BED-8920, BED-8626, BED-8621, BED-8619, BED-8673, BED-8567, BED-8602*/}
+  ## Findings Table <Badge color="yellow">Beta</Badge>
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Try the new [Findings Table](/analyze-data/findings/table-view) view on the **Attack Paths** page.
+
+  Use it to review a list of findings, compare finding state across environments and Privilege Zones, and focus high-volume result sets with multi-select filters for severity, platform, environment, zone, and status.
+
+  <Note>
+    **Known issue:** Filtering environments with special characters in the Findings Table may not work as expected. This issue affects customers participating in the AWS beta.
+  </Note>
+  
+  <BetaAccessNote feature="Findings Table" />
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["GitHub"]}>
+  {/*BED-9185*/}
+  ## GitHub Self-Hosted Runner Modeling
+
+  Added collection and graph modeling for enterprise and organization-scoped GitHub Actions self-hosted runners and runner groups.
+
+  New relationships expose membership, delegation, inheritance, organization visibility, and repository access.
+</Update>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## Cypher
+
+  - {/*BED-8967*/} Resolved an issue where backtick-escaped Cypher property accessors did not work correctly for property names that included special characters.
+  - {/*BED-8321*/} Resolved an issue where directed multi-hop pattern predicates could lose row correlation on PostgreSQL graph databases when an outer-bound node appeared after the root traversal step.
+
+  ## Database Management
+
+  - {/*BED-8799*/} Resolved an issue where selecting **All graph data** on the **Database Management** page did not call the correct full-graph deletion path.
+
+  ## OpenGraph
+
+  - {/*BED-9076*/} Resolved an issue where OpenGraph nodes with a `ref` property could crash the Entity Panel.
+  - {/*BED-9059*/} Resolved an issue where findings for OpenGraph objects were not correctly displaying schema-defined object icons.
+
+  ## UI
+
+  - {/*BED-9057*/} Resolved an issue where the table layout on the **Explore** page could become difficult to read or scroll correctly at smaller window sizes.
+  - {/*BED-8997*/} Resolved an issue where hovering over environment or zone selector options could invert inline icon colors.
+  - {/*BED-7910*/} Resolved an issue where the **Download Collectors** page could show redundant scrollbars.
+  - {/*BED-9062*/} Resolved an issue where the table on the **Manage Clients** page in BloodHound Enterprise could show a horizontal scrollbar when column content became too wide.
+
+  ## Zone Builder
+
+  - {/*BED-8284*/} Resolved an issue where Cypher-based rules could fail to tag all expected objects.
+  - {/*BED-8926*/} Resolved an issue where the **Certification** page did not preserve `environmentId` in the URL when navigating back from another Zone Builder page.
+  - {/*BED-8922*/} Improved the **Privilege Zone History** display for non-system records with empty notes.
+</Update>
+
+<Update label="OpenHound" tags={["Fixed Issues"]}>
+  ## GitHub
+
+  - {/*BED-9166*/} Resolved an issue where GitHub App authentication compatibility could be limited.
+  
+    The collector now accepts either `client_id` or `app_id` as the installation JWT issuer, preferring `client_id` when available while continuing to support older GitHub Enterprise Server responses.
+
+  ## Okta
+
+  - {/*BED-9253*/} Resolved an issue where SAML issuer identifiers could be inaccurate.
+  
+    BloodHound now prefers runtime metadata over configured issuer templates, no longer emits unresolved Okta expressions as issuer identifiers, and retains diagnostics when issuer evidence is missing, unresolved, or superseded.
+  
+  - {/*BED-9222*/} Resolved an issue where long-running Okta collections using OAuth application credentials could fail after bearer tokens expired.
+  
+    Access tokens now refresh before expiration, eligible authentication failures retry once, and transient refresh failures can reuse a still-valid token. SSWS authentication is unchanged.
+  
+  - {/*BED-9238*/} Resolved an issue where Okta org-to-org group synchronization relationships could fail to resolve.
+  
+    Group names now match using normalized uppercase values, and application group matching uses the correct `okta_domain` property.
+  
+  - {/*BED-9242*/} Resolved an issue where relationships between Active Directory computers and their Okta AD Agents could be missing.
+  
+    `Okta_HostsAgent` now matches the complete computer `sAMAccountName` and AD domain, preserving valid hostname prefixes and correctly targeting Computer nodes.
+</Update>
