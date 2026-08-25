@@ -174,10 +174,10 @@ const ExtensionCard = ({ extension }) => {
             {extension.vendorName ? (
               <p>{extension.vendorName}</p>
             ) : null}
-            <AuthorAttribution authors={extension.authors} />
           </div>
         </div>
       </div>
+      <AuthorAttribution authors={extension.authors} />
       <p className="og-extension-description">{extension.description}</p>
       <a
         className="og-extension-action"
@@ -408,7 +408,7 @@ const clearFilters = () => {
             {section.hasWarning ? (
               <Warning>
                 <strong>Use linked code at your own risk.</strong><br/><br/>
-                All code linked via this library is provided “as is,” without review, approval, or endorsement by SpecterOps, regardless of authorship. It has not been audited for accuracy, security, or fitness for any purpose.<br/><br/>
+                All code linked in this section is provided “as is,” without review, approval, or endorsement by SpecterOps, regardless of authorship. It has not been audited for accuracy, security, or fitness for any purpose.<br/><br/>
 
                 Use at your own risk. You are solely responsible for testing, validating, and ensuring the code meets your requirements before use in any environment. SpecterOps is not responsible for any damages, losses, or security issues arising from the use of any linked code.
               </Warning>
