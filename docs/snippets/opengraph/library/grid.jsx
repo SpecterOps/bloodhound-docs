@@ -7,6 +7,7 @@ export const OpenGraphLibrary = ({
   integrations = [],
   communityExtensions = [],
   openGraphTools = [],
+  vendorIconMap = {},
 }) => {
 const ALL_FILTER_VALUE = 'all';
 
@@ -81,34 +82,6 @@ const tools = openGraphTools
     vendorName: tool.vendorName || 'OpenGraph tool',
   }))
   .sort(compareByName);
-
-const vendorIconMap = {
-  onepassword: { src: '/assets/icons/vendor-favicons/onepassword.ico' },
-  ansible: { src: '/assets/icons/vendor-favicons/ansible.ico' },
-  microsoft: { src: '/assets/icons/vendor-favicons/microsoft.ico' },
-  aws: { src: '/assets/icons/vendor-favicons/aws.ico' },
-  atlassian: { src: '/assets/icons/vendor-favicons/atlassian.ico' },
-  cisco: { src: '/assets/icons/vendor-favicons/cisco.png' },
-  cyberark: { src: '/assets/icons/vendor-favicons/cyberark.ico' },
-  freeipa: { src: '/assets/icons/vendor-favicons/freeipa.png' },
-  github: { src: '/assets/icons/vendor-favicons/github.ico' },
-  gitlab: { src: '/assets/icons/vendor-favicons/gitlab.png' },
-  gcp: { src: '/assets/icons/vendor-favicons/gcp.ico' },
-  jamf: { src: '/assets/icons/vendor-favicons/jamf.ico' },
-  kubernetes: { src: '/assets/icons/vendor-favicons/kubernetes.png' },
-  okta: { src: '/assets/icons/vendor-favicons/okta.ico' },
-  oracle: { src: '/assets/icons/vendor-favicons/oracle.ico' },
-  ping: { src: '/assets/icons/vendor-favicons/ping.ico' },
-  mainframe: { src: '/assets/icons/vendor-favicons/mainframe.ico' },
-  runzero: { src: '/assets/icons/vendor-favicons/runzero.ico' },
-  salesforce: { src: '/assets/icons/vendor-favicons/salesforce.ico' },
-  servicenow: { src: '/assets/icons/vendor-favicons/servicenow.ico' },
-  snowflake: { src: '/assets/icons/vendor-favicons/snowflake.png' },
-  splunk: { src: '/assets/icons/vendor-favicons/splunk.ico' },
-  tailscale: { src: '/assets/icons/vendor-favicons/tailscale.png' },
-  vmware: { src: '/assets/icons/vendor-favicons/vmware.png' },
-  xsoar: { src: '/assets/icons/vendor-favicons/xsoar.ico' },
-};
 
 const builtInIconTypes = new Set(['cross-platform', 'key', 'terminal']);
 const builtInIconMap = {
@@ -369,7 +342,7 @@ const clearFilters = () => {
     <div className="og-library">
       <LibraryHero />
 
-      <div className="og-section-controls" aria-label="Marketplace filters">
+      <div className="og-section-controls" role="search" aria-label="Marketplace filters">
         <label className="og-search-field">
           <span className="og-control-label">Search</span>
           <span className="og-search-input-wrap">

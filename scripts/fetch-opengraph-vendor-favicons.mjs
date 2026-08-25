@@ -1,9 +1,20 @@
-import { mkdirSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = fileURLToPath(new URL('../', import.meta.url));
 const faviconDir = join(repoRoot, 'docs/assets/icons/vendor-favicons');
+const vendorIconFile = join(
+  repoRoot,
+  'docs/snippets/opengraph/library/data/vendor-icons.json',
+);
 
 const vendors = [
   { type: 'onepassword', siteUrl: 'https://1password.com' },
@@ -64,21 +75,40 @@ const fetchBuffer = async (url) => {
     throw new Error('empty response body');
   }
 
-  const looksLikeImage =
-    contentType.includes('image') ||
-    contentType.includes('octet-stream') ||
-    url.endsWith('.ico') ||
-    url.endsWith('.png') ||
-    url.endsWith('.svg') ||
+  const hasImageSignature =
     buffer.subarray(0, 4).equals(Buffer.from([0x00, 0x00, 0x01, 0x00])) ||
     buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) ||
+    buffer.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])) ||
+    buffer.toString('ascii', 8, 12) === 'WEBP' ||
     buffer.toString('utf8', 0, 128).includes('<svg');
+  const looksLikeImage = contentType.includes('image') || hasImageSignature;
 
   if (!looksLikeImage) {
     throw new Error(`unexpected content type: ${contentType || 'none'}`);
   }
 
   return { buffer, contentType };
+};
+
+const readVendorIconMap = () => {
+  if (!existsSync(vendorIconFile)) {
+    throw new Error('Vendor icon map is missing. Add data/vendor-icons.json.');
+  }
+
+  const data = JSON.parse(readFileSync(vendorIconFile, 'utf8'));
+  const entries = Object.entries(data);
+
+  if (entries.length === 0) {
+    throw new Error('Vendor icon map must include at least one entry.');
+  }
+
+  for (const [type, icon] of entries) {
+    if (!icon?.src) {
+      throw new Error(`Vendor icon "${type}" must include a src.`);
+    }
+  }
+
+  return new Map(entries.map(([type, icon]) => [type, icon.src]));
 };
 
 const getImageExtension = ({ buffer, contentType }) => {
@@ -180,12 +210,27 @@ const fetchFavicon = async ({ type, siteUrl, faviconUrl: explicitFaviconUrl }) =
 
 mkdirSync(faviconDir, { recursive: true });
 
+const vendorIconMap = readVendorIconMap();
 const failures = [];
 
 for (const vendor of vendors) {
   try {
     const { type, sourceUrl, favicon } = await fetchFavicon(vendor);
     const extension = getImageExtension(favicon);
+    const mappedIcon = vendorIconMap.get(type);
+
+    if (!mappedIcon) {
+      throw new Error(`No vendorIconMap entry found for "${type}".`);
+    }
+
+    const mappedFileName = basename(mappedIcon);
+
+    if (mappedFileName !== `${type}.${extension}`) {
+      throw new Error(
+        `Fetched ${extension} asset for "${type}", but vendorIconMap points to ${mappedFileName}. Update vendorIconMap before replacing cached assets.`,
+      );
+    }
+
     const outputPath = join(faviconDir, `${type}.${extension}`);
 
     for (const fileName of readdirSync(faviconDir)) {

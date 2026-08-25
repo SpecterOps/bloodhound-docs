@@ -4,13 +4,15 @@ The BloodHound Marketplace page is rendered from JSON source files in this direc
 
 ## Files
 
-- `grid.jsx`: Renders the Marketplace page and maps icon types to cached vendor favicon assets.
+- `grid.jsx`: Renders the Marketplace page.
 - `data/data.generated.jsx`: Generated data bridge imported by `docs/opengraph/library.mdx`.
 - `data/extensions/*.json`: Community extension categories grouped by vendor or technology.
 - `data/enterprise.json`: BloodHound Enterprise extension cards.
 - `data/integrations.json`: Integration cards.
 - `data/tools.json`: OpenGraph tool cards.
-- `../../../assets/icons/vendor-favicons/`: Cached vendor favicon assets used by `vendorIconMap`.
+- `data/vendor-icons.json`: Vendor icon type mappings for cached favicon assets.
+- `../../../assets/icons/vendor-favicons/`: Cached vendor favicon assets used by `data/vendor-icons.json`.
+- `../../../../scripts/generate-opengraph-library-data.mjs`: Validates source data and regenerates `data/data.generated.jsx`.
 - `../../../../scripts/fetch-opengraph-vendor-favicons.mjs`: Fetches and refreshes cached vendor favicon assets.
 
 ## Add or update an entry
@@ -28,8 +30,9 @@ The BloodHound Marketplace page is rendered from JSON source files in this direc
     - `action`: Optional button text. The renderer defaults to `View on GitHub`.
 1. If the entry uses a new vendor icon type, add the favicon asset to `docs/assets/icons/vendor-favicons/`.
     - Use square favicon assets. The Marketplace renders all vendor icons with the same dimensions.
-1. Add the icon type to `vendorIconMap` in `grid.jsx`.
-    - If the entry uses a shared FontAwesome icon, add the icon type to the built-in icon map in `grid.jsx`.
+1. Add the icon type to `data/vendor-icons.json`.
+    - If the entry uses a shared FontAwesome icon, add the icon type to the built-in icon map in `grid.jsx` and to `builtInIconTypes` in `scripts/generate-opengraph-library-data.mjs`.
+    - The generator validates icon types before writing `data/data.generated.jsx`. If you update only `grid.jsx`, `validateIcon` fails because the generator does not recognize the built-in icon type.
 1. Regenerate the JSX data bridge:
 
     ```bash
@@ -51,9 +54,9 @@ Use `just fetch-opengraph-library-favicons` when you add a new vendor icon sourc
 just fetch-opengraph-library-favicons
 ```
 
-The recipe runs `scripts/fetch-opengraph-vendor-favicons.mjs`. The script fetches favicon assets for the vendor list defined in the script, writes the files to `docs/assets/icons/vendor-favicons/`, and prints the source URL used for each saved asset.
+The recipe runs `scripts/fetch-opengraph-vendor-favicons.mjs`. The script fetches favicon assets for the vendor list defined in the script, verifies each fetched file against `data/vendor-icons.json`, writes the files to `docs/assets/icons/vendor-favicons/`, and prints the source URL used for each saved asset.
 
-The script first tries an explicit `faviconUrl` when one is configured for a vendor, otherwise it tries `/favicon.ico` for the vendor site. If that request fails, it checks the site HTML for icon links and uses the best available icon candidate. When the image format changes, the script removes older cached files for the same vendor type so `vendorIconMap` only points to the current asset.
+The script first tries an explicit `faviconUrl` when one is configured for a vendor, otherwise it tries `/favicon.ico` for the vendor site. If that request fails, it checks the site HTML for icon links and uses the best available icon candidate. When the image format changes, update `data/vendor-icons.json` before replacing cached assets.
 
 After refreshing favicons, review the icon changes and run:
 
@@ -65,7 +68,7 @@ just check-opengraph-library
 
 The generator sorts community categories, community entries within each category, enterprise extensions, integrations, and tools alphabetically by `name`.
 
-The Community Extensions section renders all entries in `data/extensions/`, regardless of `maintainer` value.
+Every entry in `data/extensions/` is rendered. The `maintainer` value selects the section: `specterops` entries appear under "SpecterOps employee-created Extensions", and all other entries appear under "Community-Created Extensions".
 
 ## Validation
 
@@ -79,6 +82,7 @@ Validation checks include:
 - Internal `href` values that resolve to local docs pages.
 - External `href` URL syntax. The generator does not check whether external URLs are reachable.
 - Icon `type` and `label` values.
-- Favicon assets referenced by `vendorIconMap` in `grid.jsx`.
+- Built-in icon types listed in `scripts/generate-opengraph-library-data.mjs`.
+- Favicon assets referenced by `data/vendor-icons.json`.
 - Duplicate category names, entry names, and entry `href` values.
 - Stale generated data when you run `just check-opengraph-library`.

@@ -6,8 +6,8 @@ const repoRoot = fileURLToPath(new URL('../', import.meta.url));
 const opengraphSnippetDir = join(repoRoot, 'docs/snippets/opengraph');
 const librarySnippetDir = join(opengraphSnippetDir, 'library');
 const libraryDataDir = join(librarySnippetDir, 'data');
-const gridFile = join(librarySnippetDir, 'grid.jsx');
 const generatedFile = join(libraryDataDir, 'data.generated.jsx');
+const vendorIconFile = join(libraryDataDir, 'vendor-icons.json');
 const checkOnly = process.argv.includes('--check');
 
 const maintainerValues = new Set(['specterops', 'community']);
@@ -116,22 +116,33 @@ const validateHref = (href, label) => {
 };
 
 const readVendorIconMap = () => {
-  const gridContent = readFileSync(gridFile, 'utf8');
-  const entries = new Map();
-  const iconEntryPattern =
-    /^\s+([a-zA-Z0-9_-]+): \{ src: '([^']+)' \},$/gm;
-
-  for (const match of gridContent.matchAll(iconEntryPattern)) {
-    entries.set(match[1], {
-      src: match[2],
-    });
+  if (!existsSync(vendorIconFile)) {
+    fail('Vendor icon map is missing. Add data/vendor-icons.json.');
   }
 
-  if (entries.size === 0) {
-    fail('No vendorIconMap entries were found in grid.jsx.');
+  const data = readJson(vendorIconFile);
+  assertPlainObject(data, 'Vendor icon map');
+
+  const entries = Object.entries(data).sort(([left], [right]) =>
+    left.localeCompare(right),
+  );
+
+  if (entries.length === 0) {
+    fail('Vendor icon map must include at least one entry.');
   }
 
-  return entries;
+  for (const [type, icon] of entries) {
+    if (!/^[a-z0-9_-]+$/.test(type)) {
+      fail(
+        `Vendor icon type "${type}" must use lowercase letters, numbers, hyphens, or underscores.`,
+      );
+    }
+
+    assertPlainObject(icon, `Vendor icon "${type}"`);
+    validateRequiredString(icon.src, `Vendor icon "${type}" src`);
+  }
+
+  return new Map(entries);
 };
 
 const vendorIconMap = readVendorIconMap();
@@ -365,6 +376,7 @@ enterpriseExtensions.sort(compareByName);
 integrations.sort(compareByName);
 openGraphTools.sort(compareByName);
 
+const generatedVendorIconMap = Object.fromEntries(vendorIconMap);
 const generatedContent = `// Generated from the OpenGraph library JSON files. Do not edit directly.
 // Edit the JSON source files, then run:
 // node scripts/generate-opengraph-library-data.mjs
@@ -376,9 +388,15 @@ export const enterpriseExtensions = ${JSON.stringify(enterpriseExtensions, null,
 export const integrations = ${JSON.stringify(integrations, null, 2)};
 
 export const openGraphTools = ${JSON.stringify(openGraphTools, null, 2)};
+
+export const vendorIconMap = ${JSON.stringify(generatedVendorIconMap, null, 2)};
 `;
 
 if (checkOnly) {
+  if (!existsSync(generatedFile)) {
+    fail('Generated data is missing. Run `just generate-opengraph-library`.');
+  }
+
   const existingContent = readFileSync(generatedFile, 'utf8');
 
   if (existingContent !== generatedContent) {

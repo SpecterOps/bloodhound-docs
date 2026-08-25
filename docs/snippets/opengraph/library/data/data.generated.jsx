@@ -1223,3 +1223,81 @@ export const openGraphTools = [
     "href": "https://github.com/c0rdyc3ps/ScrappyDoo"
   }
 ];
+
+export const vendorIconMap = {
+  "ansible": {
+    "src": "/assets/icons/vendor-favicons/ansible.ico"
+  },
+  "atlassian": {
+    "src": "/assets/icons/vendor-favicons/atlassian.ico"
+  },
+  "aws": {
+    "src": "/assets/icons/vendor-favicons/aws.ico"
+  },
+  "cisco": {
+    "src": "/assets/icons/vendor-favicons/cisco.png"
+  },
+  "cyberark": {
+    "src": "/assets/icons/vendor-favicons/cyberark.ico"
+  },
+  "freeipa": {
+    "src": "/assets/icons/vendor-favicons/freeipa.png"
+  },
+  "gcp": {
+    "src": "/assets/icons/vendor-favicons/gcp.ico"
+  },
+  "github": {
+    "src": "/assets/icons/vendor-favicons/github.ico"
+  },
+  "gitlab": {
+    "src": "/assets/icons/vendor-favicons/gitlab.png"
+  },
+  "jamf": {
+    "src": "/assets/icons/vendor-favicons/jamf.ico"
+  },
+  "kubernetes": {
+    "src": "/assets/icons/vendor-favicons/kubernetes.png"
+  },
+  "mainframe": {
+    "src": "/assets/icons/vendor-favicons/mainframe.ico"
+  },
+  "microsoft": {
+    "src": "/assets/icons/vendor-favicons/microsoft.ico"
+  },
+  "okta": {
+    "src": "/assets/icons/vendor-favicons/okta.ico"
+  },
+  "onepassword": {
+    "src": "/assets/icons/vendor-favicons/onepassword.ico"
+  },
+  "oracle": {
+    "src": "/assets/icons/vendor-favicons/oracle.ico"
+  },
+  "ping": {
+    "src": "/assets/icons/vendor-favicons/ping.ico"
+  },
+  "runzero": {
+    "src": "/assets/icons/vendor-favicons/runzero.ico"
+  },
+  "salesforce": {
+    "src": "/assets/icons/vendor-favicons/salesforce.ico"
+  },
+  "servicenow": {
+    "src": "/assets/icons/vendor-favicons/servicenow.ico"
+  },
+  "snowflake": {
+    "src": "/assets/icons/vendor-favicons/snowflake.png"
+  },
+  "splunk": {
+    "src": "/assets/icons/vendor-favicons/splunk.ico"
+  },
+  "tailscale": {
+    "src": "/assets/icons/vendor-favicons/tailscale.png"
+  },
+  "vmware": {
+    "src": "/assets/icons/vendor-favicons/vmware.png"
+  },
+  "xsoar": {
+    "src": "/assets/icons/vendor-favicons/xsoar.ico"
+  }
+};
