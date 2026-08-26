@@ -47,7 +47,6 @@ const vendors = [
   { type: 'oracle', siteUrl: 'https://www.oracle.com' },
   { type: 'ping', siteUrl: 'https://www.pingidentity.com' },
   { type: 'mainframe', siteUrl: 'https://www.ibm.com' },
-  { type: 'runzero', siteUrl: 'https://www.runzero.com' },
   { type: 'salesforce', siteUrl: 'https://www.salesforce.com' },
   { type: 'servicenow', siteUrl: 'https://www.servicenow.com' },
   { type: 'snowflake', siteUrl: 'https://www.snowflake.com' },

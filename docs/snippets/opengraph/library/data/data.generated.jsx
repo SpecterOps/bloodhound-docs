@@ -144,6 +144,29 @@ export const communityExtensions = [
     ]
   },
   {
+    "name": "Cross-platform Exposure Management",
+    "icon": {
+      "type": "cross-platform",
+      "label": "Cross-platform"
+    },
+    "extensions": [
+      {
+        "name": "ZeroHound",
+        "maintainer": "community",
+        "authors": [
+          {
+            "name": "HD Moore",
+            "href": "https://infosec.exchange/@hdm",
+            "organization": "runZero",
+            "organizationHref": "https://www.runzero.com/"
+          }
+        ],
+        "description": "Brings Exposure Management data into BloodHound through OpenGraph, including Nmap, runZero, Qualys, snmpwalk, Tenable (Nessus), OpenVAS/GVM, Masscan, Shodan, and NetBox.",
+        "href": "https://github.com/runZeroInc/runZeroHound"
+      }
+    ]
+  },
+  {
     "name": "Cross-platform Secret Scanners",
     "icon": {
       "type": "key",
@@ -803,29 +826,6 @@ export const communityExtensions = [
     ]
   },
   {
-    "name": "runZero",
-    "icon": {
-      "type": "runzero",
-      "label": "rZ"
-    },
-    "extensions": [
-      {
-        "name": "ZeroHound",
-        "maintainer": "community",
-        "authors": [
-          {
-            "name": "HD Moore",
-            "href": "https://infosec.exchange/@hdm",
-            "organization": "runZero",
-            "organizationHref": "https://www.runzero.com/"
-          }
-        ],
-        "description": "Brings Exposure Management data into BloodHound through OpenGraph, including Nmap, runZero, Qualys, snmpwalk, Tenable (Nessus), OpenVAS/GVM, Masscan, Shodan, and NetBox.",
-        "href": "https://github.com/runZeroInc/runZeroHound"
-      }
-    ]
-  },
-  {
     "name": "Salesforce",
     "icon": {
       "type": "salesforce",
@@ -1254,9 +1254,6 @@ export const vendorIconMap = {
   },
   "ping": {
     "src": "/assets/icons/vendor-favicons/ping.ico"
-  },
-  "runzero": {
-    "src": "/assets/icons/vendor-favicons/runzero.ico"
   },
   "salesforce": {
     "src": "/assets/icons/vendor-favicons/salesforce.ico"
