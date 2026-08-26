@@ -8,11 +8,17 @@ import AzureGenericAbuseLogOpsec from '/snippets/edges/azure-generic-abuse-log-o
 
 <ResourceEditionPill />
 
+AZContributor targets resources in Azure Resource Manager (for example [AZResourceGroup](/resources/nodes/az-resource-group), [AZSubscription](/resources/nodes/az-subscription), and [AZVM](/resources/nodes/az-vm)) through a role assignment called "Contributor".
+
+The edge terminates at the role assignment's scope. A role assignment scoped to an [AZManagementGroup](/resources/nodes/az-management-group), [AZSubscription](/resources/nodes/az-subscription), or [AZResourceGroup](/resources/nodes/az-resource-group) is inherited by all child resources. In BloodHound, that inheritance is traversable through the Azure Resource Manager hierarchy via [AZContains](/resources/edges/az-contains) edges. One scoped to a specific resource applies only to that resource.
+
 
 
 ## Abuse Info
 
-This depends on what the target object is:
+The Contributor role grants broad management access to Azure Resource Manager resources, but it cannot assign Azure RBAC roles or perform the operations excluded by its `NotActions` list.
+
+Abuse depends on the target object:
 
 * **Key Vault:**
     You can read secrets and alter access policies (grant yourself access to read secrets)
