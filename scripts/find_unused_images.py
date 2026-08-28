@@ -4,8 +4,9 @@ Find image files under docs/assets and docs/images that are no longer
 referenced anywhere in the repo.
 
 References are looked for by filename (e.g. "foo.png") across .mdx, .md,
-.json, .jsx, .tsx, .ts, .js, and .css files, since Mintlify docs reference
-images by absolute path (e.g. "/assets/foo.svg").
+.json, .jsx, .tsx, .ts, .js, .css, and .svg files, since Mintlify docs
+reference images by absolute path (e.g. "/assets/foo.svg") and SVGs can
+themselves reference other images (e.g. via <image> or <use>).
 
 Usage:
   python3 scripts/find_unused_images.py [--repo-root PATH] [--image-dirs DIR [DIR ...]] [--ext EXT [EXT ...]]
@@ -24,7 +25,7 @@ DEFAULT_IMAGE_DIRS = ["docs/assets", "docs/images"]
 DEFAULT_IMAGE_EXTS = {
     ".gif", ".ico", ".jpg", ".jpeg", ".png", ".svg", ".webp", ".avif", ".bmp", ".tiff",
 }
-SEARCH_EXTS = {".mdx", ".md", ".json", ".jsx", ".tsx", ".ts", ".js", ".mjs", ".cjs", ".css"}
+SEARCH_EXTS = {".mdx", ".md", ".json", ".jsx", ".tsx", ".ts", ".js", ".mjs", ".cjs", ".css", ".svg"}
 EXCLUDED_DIR_NAMES = {".git", "node_modules", "__pycache__", "output", ".next", "dist", "build"}
 
 
@@ -52,12 +53,8 @@ def iter_searchable_files(repo_root: Path) -> List[Path]:
     return files
 
 
-def read_text_safe(path: Path) -> str:
-    try:
-        return path.read_text(encoding="utf-8", errors="ignore")
-    except OSError as exc:
-        print(f"WARN: could not read {path}: {exc}", file=sys.stderr)
-        return ""
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8", errors="ignore")
 
 
 def find_unused_images(repo_root: Path, image_dirs: Iterable[str], exts: Set[str]) -> List[Path]:
@@ -69,7 +66,7 @@ def find_unused_images(repo_root: Path, image_dirs: Iterable[str], exts: Set[str
         file=sys.stderr,
     )
 
-    contents = [read_text_safe(f) for f in searchable_files]
+    contents = [read_text(f) for f in searchable_files]
 
     unused: List[Path] = []
     for image_path in image_files:
@@ -100,7 +97,11 @@ def main() -> int:
     raw_exts = args.ext or DEFAULT_IMAGE_EXTS
     exts = {(e if e.startswith(".") else f".{e}").lower() for e in raw_exts}
 
-    unused = find_unused_images(repo_root, args.image_dirs, exts)
+    try:
+        unused = find_unused_images(repo_root, args.image_dirs, exts)
+    except OSError as exc:
+        print(f"ERROR: could not read a searchable file, aborting scan: {exc}", file=sys.stderr)
+        return 2
 
     if not unused:
         print("No unused images found.")
