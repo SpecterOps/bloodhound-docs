@@ -10,12 +10,14 @@ import { Checklist} from '/snippets/components/checklist.jsx';
 The embedded cluster installer upgrades the BloodHound Enterprise application and the cluster infrastructure together. Depending on the release, this can include Kubernetes, embedded cluster components, and application workloads. Run the upgrade from the Linux host where BloodHound Enterprise is installed.
 
 <Warning>
-  Do not stop the BloodHound Enterprise application deployment or other embedded cluster services before running the upgrade unless SpecterOps Support instructs you to do so. The `upgrade` command coordinates the required application and cluster changes, including any service or pod restarts needed during the process.
+  Do not stop the BloodHound Enterprise application deployment or other embedded cluster services before running the upgrade unless SpecterOps Support instructs you to do so.
+
+  The `upgrade` command coordinates the required application and cluster changes, including any service or pod restarts needed during the process.
 </Warning>
 
 ## Pre-upgrade checklist
 
-The following checklist summarizes the upgrade-blocking gates and pre-deployment work that must be completed before running the installer.
+The following checklist summarizes the upgrade-blocking gates and pre-deployment work that must be completed before upgrading.
 
 <Note>
   For detailed host sizing, collector specifications, supported filesystems, and kernel versions, see the full [system requirements](/on-premises/system-requirements).
@@ -25,14 +27,15 @@ The following checklist summarizes the upgrade-blocking gates and pre-deployment
 - Confirm that a new BloodHound Enterprise version is available in **SpecterOps - BloodHound Enterprise Portal** > **Release History**
 - Schedule a maintenance window for the upgrade
 - Confirm that you have SSH access to the Linux host with `sudo` privileges
-- Confirm that the installer binary and `license.yaml` file are available on the Linux host
+- Confirm that the `license.yaml` file is available on the Linux host
 - Confirm that the host can reach `replicated.app`, `proxy.replicated.com`, and `registry.replicated.com` for online upgrades
-- For air-gapped upgrades, download the new release archive and transfer it to the Linux host before starting
 </Checklist>
 
-## CLI-based upgrade
+## Web-based upgrade
 
-Use the `bloodhound-enterprise` installer binary to verify the current installation, generate a support bundle, and run the upgrade from the command line.
+Use the `bloodhound-enterprise` installer binary to verify the current installation, generate a support bundle, and start the upgrade from the command line. 
+
+The upgrade process involves downloading the new release archive, extracting it, and starting a web-based upgrade wizard to complete the upgrade.
 
 ### Before you begin
 
@@ -47,7 +50,9 @@ This guide uses the following example values. Replace these values with the path
 | Deployment | `bloodhound` |
 
 <Tip>
-  Run all host-level commands from the BloodHound Enterprise installation directory. Run Kubernetes inspection commands from the embedded cluster shell so the correct `kubeconfig` and binaries are available.
+  Run all host-level commands from the BloodHound Enterprise installation directory.
+
+  Run Kubernetes inspection commands from the embedded cluster shell so the correct `kubeconfig` and binaries are available.
 </Tip>
 
 ### Verify the current state
@@ -94,7 +99,7 @@ Verify the current installation before you generate a support bundle or run the 
 
     ```text
     Embedded Cluster: 3.0.0-alpha-9 (commit 181fed8, built 2026-01-28_18:35:09)
-    Application: bloodhound-enterprise 0.0.1 (revision 1, channel sequence 9)
+    Application: bloodhound-enterprise 0.0.1 (revision 2, channel sequence 9)
     ```
   </Step>
   <Step title="Load the kubectl shell environment">
@@ -111,7 +116,9 @@ Verify the current installation before you generate a support bundle or run the 
   <Step title="Check cluster health">
     Confirm that the cluster node, BloodHound Enterprise namespace, pods, and persistent volume claims are healthy.
 
-    The `kubectl get pods` and `kubectl get persistentvolumeclaims` commands use the `--all-namespaces` option to show resources across the whole cluster. The `kubectl get all` command uses the `--namespace` option to show resources only in the BloodHound Enterprise namespace.
+    The `kubectl get pods` and `kubectl get persistentvolumeclaims` commands use the `--all-namespaces` option to show resources across the whole cluster.
+
+    The `kubectl get all` command uses the `--namespace` option to show resources only in the BloodHound Enterprise namespace.
 
     ```bash
     kubectl get nodes
@@ -138,7 +145,9 @@ A support bundle captures diagnostic information from the host, cluster, Replica
 For embedded cluster deployments, support bundles include host-level information that helps troubleshoot DNS, networking, and storage problems. They also include cluster-level information about the embedded cluster components that manage install and upgrade operations.
 
 <Note>
-  Generating a support bundle is optional, but it is strongly recommended before running the upgrade. If the upgrade fails, provide the pre-upgrade support bundle to SpecterOps Support along with a post-failure support bundle and the `upgrade` command output.
+  Generating a support bundle is optional, but it is strongly recommended before running the upgrade.
+
+  If the upgrade fails, provide the pre-upgrade support bundle to SpecterOps Support along with a post-failure support bundle and the `upgrade` command output.
 </Note>
 
 <Steps>
@@ -152,12 +161,12 @@ For embedded cluster deployments, support bundles include host-level information
     Expected output looks similar to the following:
 
     ```text
-    ✓ Metadata loaded
-    ✓ Architecture detected: amd64
-    2026/08/03 20:20:50 INFO support-bundle binary already exists path=/var/lib/bloodhound-enterprise/bin/support-bundle
-    ✓ Support-bundle tool ready
-    ✓ Support bundle saved: /home/bhe-admin/support-bundle-2026-08-03T20_20_50.tar.gz
-    Bundle size: 1.05 MB
+    ✓ Metadata loaded                                                                                                                                   
+    ✓ Architecture detected: amd64                                                                                                                      
+    2026/08/28 15:46:12 INFO support-bundle binary already exists path=/var/lib/bloodhound-enterprise/bin/support-bundle
+    ✓ Support-bundle tool ready                                                                                                                         
+    ✓ Support bundle saved: /home/bhe-admin/support-bundle-2026-08-28T15_46_12.tar.gz                                                                   
+    Bundle size: 1.21 MB
     ```
   </Step>
   <Step title="Store the bundle">
@@ -169,9 +178,25 @@ For embedded cluster deployments, support bundles include host-level information
 
 ### Upgrade BloodHound Enterprise
 
-Use the BloodHound Enterprise installer binary for the version you want to install. Each embedded cluster binary targets a specific BloodHound Enterprise release.
+Use the installer binary for the version of BloodHound Enterprise that you want to install.
 
 <Steps>
+  <Step title="Download the installer binary">
+    Download the installer binary for the upgrade version from **SpecterOps - BloodHound Enterprise Portal** > **Update**.
+
+    Click **details** for the instance you want to upgrade.
+
+    <Frame>
+      <img src="/images/on-premises/upgrade-instance-details.png" alt="BloodHound Enterprise Update tab" />
+    </Frame>
+
+    Follow the instructions to download the installer binary for the upgrade version to the Linux host where BloodHound Enterprise is installed.
+
+    <Frame>
+      <img src="/images/on-premises/upgrade-download-update-package.png" alt="BloodHound Enterprise Download Update Package" />
+    </Frame>
+  </Step>
+
   <Step title="Run the upgrade command">
     Run the `upgrade` command from the BloodHound Enterprise installation directory to upgrade to the latest available version.
 
@@ -197,19 +222,62 @@ Use the BloodHound Enterprise installer binary for the version you want to insta
 
     System upgraded. Daemon service restarted.
     Downloading new release...
-    Downloaded release version: 0.0.1
-    2026/08/03 20:34:24 WARN revision directory already exists, removing revision=pending
+    Downloaded release version: 9.6.0
+    2026/08/28 15:55:03 WARN revision directory already exists, removing revision=pending
     Found EC bundle: ec-3.0.0-alpha-9+k8s-1.34.online
-    2026/08/03 20:34:24 INFO Extracting bundle bundle=/home/bhe-admin/ec-3.0.0-alpha-9+k8s-1.34.online dest=/var/lib/bloodhound-enterprise/bundles/ec
-    2026/08/03 20:34:28 INFO Bundle extracted successfully dest=/var/lib/bloodhound-enterprise/bundles/ec
+    2026/08/28 15:55:03 INFO Extracting bundle bundle=/home/bhe-admin/ec-3.0.0-alpha-9+k8s-1.34.online dest=/var/lib/bloodhound-enterprise/bundles/ec
+    2026/08/28 15:55:09 INFO Bundle extracted successfully dest=/var/lib/bloodhound-enterprise/bundles/ec
 
     Upgrade package loaded successfully.
-    ✓ K0s upgraded
-    ✓ Addons upgraded
-    ✓ Application upgraded
 
-    Upgrade complete.
+    Starting web interface with TLS...
+    Embedded Cluster Web: 3.0.0-alpha-9 (commit 181fed8, built 2026-01-28_18:35:53)
+    2026/08/28 15:55:09 Using internal HTTP port: 38845, public TLS port: 30080
+    2026/08/28 15:55:09 Next.js server started on http://127.0.0.1:38845 (PID: 20690)
+    2026/08/28 15:55:09 Starting TLS proxy on port 30080
+    2026/08/28 15:55:09 TLS proxy started on https://0.0.0.0:30080
+      ▲ Next.js 16.0.10
+      - Local:         http://127.0.0.1:38845
+      - Network:       http://127.0.0.1:38845
+
+    ✓ Starting...
+    ✓ Ready in 93ms
+
+    Installation started. Connect to the web interface to continue the installation.
+
+    Open the following URL in your browser:
+
+        https://<ip-address>:30080
+
+    Note: You may see a browser warning for the self-signed certificate.
+    Click "Advanced" > "Proceed" to continue.
+
+    Press Ctrl+C when the installation is complete to stop the web interface.
     ```
+  </Step>
+  <Step title="Log in to the Upgrade Wizard">
+    Open the URL provided in the upgrade command output in a web browser and use the password that was set during the [initial installation](/on-premises/install#install-on-the-linux-host) to log in to the Upgrade Wizard.
+
+    <Note>
+      You may see a browser warning for the self-signed certificate. Click **Advanced** > **Proceed** to continue.
+    </Note>
+
+  </Step>
+  <Step title="Configure the upgrade">
+    Follow the prompts in the upgrade wizard to complete the upgrade configuration.
+
+    These are the same [environment configuration](/on-premises/install#configure-the-environment) screens you see when installing BloodHound Enterprise for the first time.
+
+    The upgrade process preserves your existing configuration, so you can accept the default values for each screen or make changes as needed.
+  </Step>
+  <Step title="Prepare for the upgrade">
+    After you complete the configuration steps, review the information on the **Prepare for Upgrade** screen.
+
+    Click **Continue to Upgrade** to start the upgrade process.
+
+    <Frame>
+      <img src="/images/on-premises/upgrade-prepare.png" alt="BloodHound Enterprise Prepare for Upgrade screen" />
+    </Frame>
   </Step>
 </Steps>
 
