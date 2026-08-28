@@ -10,7 +10,8 @@ images by absolute path (e.g. "/assets/foo.svg").
 Usage:
   python3 scripts/find_unused_images.py [--repo-root PATH] [--image-dirs DIR [DIR ...]] [--ext EXT [EXT ...]]
 
-Exits with status 1 if any unused images are found, 0 otherwise.
+Exits with status 1 if any unused images are found (0 otherwise), unless
+--delete is passed, in which case a successful deletion exits 0.
 """
 from __future__ import annotations
 
@@ -113,6 +114,7 @@ def main() -> int:
         for path in unused:
             path.unlink()
         print(f"Deleted {len(unused)} unused image(s).")
+        return 0
 
     return 1
 
