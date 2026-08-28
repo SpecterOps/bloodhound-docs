@@ -25,7 +25,7 @@ DEFAULT_IMAGE_DIRS = ["docs/assets", "docs/images"]
 DEFAULT_IMAGE_EXTS = {
     ".gif", ".ico", ".jpg", ".jpeg", ".png", ".svg", ".webp", ".avif", ".bmp", ".tiff",
 }
-SEARCH_EXTS = {".mdx", ".md", ".json", ".jsx", ".tsx", ".ts", ".js", ".mjs", ".cjs", ".css", ".svg"}
+SEARCH_EXTS = {".mdx", ".md", ".json", ".jsx", ".tsx", ".ts", ".js", ".mjs", ".cjs", ".css"}
 EXCLUDED_DIR_NAMES = {".git", "node_modules", "__pycache__", "output", ".next", "dist", "build"}
 
 
