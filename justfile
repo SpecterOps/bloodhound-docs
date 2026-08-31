@@ -1,28 +1,40 @@
 _default:
-	@just --list --unsorted
+    @just --list --unsorted
 
 set positional-arguments
 
-# run git pruning on merged branches to clean up local workspace (run with `nuclear` to clean up orphaned branches)
+# Run git pruning on merged branches to clean up local workspace (run with `nuclear` to clean up orphaned branches)
 prune-my-branches nuclear='no':
-  #!/usr/bin/env bash
-  git branch --merged| egrep -v "(^\*|master|main|dev)" | xargs git branch -d
-  git remote prune origin
-  if [ "{{nuclear}}" == 'nuclear' ]; then
-    echo Switching to main to remove orphans
-    git switch main
-    git branch -vv | grep ': gone]' | grep -v "\*" | awk '{ print $1; }' | xargs -r git branch -D
-    git switch -
-  fi
-  echo "Remaining Git Branches:"
-  git --no-pager branch
+    #!/usr/bin/env bash
+    git branch --merged| egrep -v "(^\*|master|main|dev)" | xargs git branch -d
+    git remote prune origin
+    if [ "{{ nuclear }}" == 'nuclear' ]; then
+      echo Switching to main to remove orphans
+      git switch main
+      git branch -vv | grep ': gone]' | grep -v "\*" | awk '{ print $1; }' | xargs -r git branch -D
+      git switch -
+    fi
+    echo "Remaining Git Branches:"
+    git --no-pager branch
 
+# Download openapi.json from BloodHound's stage branch
 update-openapi VERSION:
-    # Download openapi.json from BloodHound's stage branch
-    curl -L --fail "https://raw.githubusercontent.com/SpecterOps/BloodHound/stage/{{VERSION}}/packages/go/openapi/doc/openapi.json" -o docs/openapi.json || (echo "Failed to download OpenAPI spec for version {{VERSION}}" && exit 1)
+    curl -L --fail "https://raw.githubusercontent.com/SpecterOps/BloodHound/stage/{{ VERSION }}/packages/go/openapi/doc/openapi.json" -o docs/openapi.json || (echo "Failed to download OpenAPI spec for version {{ VERSION }}" && exit 1)
 
 # Check docs coverage for edge help texts vs code registry
 check-edges bh_root="../BloodHound":
-  #!/usr/bin/env bash
-  set -euo pipefail
-  python3 scripts/check_edge_docs.py --bh-root "{{bh_root}}"
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/check_edge_docs.py --bh-root "{{ bh_root }}"
+
+# Find images in docs/assets and docs/images no longer referenced anywhere in the repo
+find-unused-images:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/find_unused_images.py
+
+# Delete images in docs/assets and docs/images no longer referenced anywhere in the repo
+delete-unused-images:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/find_unused_images.py --delete
