@@ -1,17 +1,17 @@
 ---
 title: Manage Collector Support Bundles
-description: "Request, download, and delete SharpHound Enterprise support bundles in BloodHound Enterprise."
+description: Request, download, and delete collector support bundles in BloodHound Enterprise.
 ---
 
 import FeatureFlagNote from '/snippets/feature-flag-so-managed.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-A collector support bundle is a ZIP file that contains diagnostic information from a collector client. Support bundles help you troubleshoot collection issues faster, reduce the need for direct access to the system where the collector runs, and give your team or SpecterOps support a consistent package of collector logs and diagnostics.
+A **collector support bundle** is a `.zip` file that contains diagnostic information from a <Tooltip tip="A configuration object in your BloodHound Enterprise tenant that links your tenant to a collector application. It stores authentication and configuration details used by the collector application to upload data" cta="Learn more" href="/collect-data/enterprise-collection/create-collector">collector client</Tooltip>. Support bundles help you troubleshoot collection issues faster, reduce the need for direct access to the system where the collector runs, and give your team or SpecterOps support a consistent package of collector logs and diagnostics.
 
 <FeatureFlagNote />
 
-This page explains how to request, download, delete, and troubleshoot SharpHound Enterprise support bundles from **Administration** > **Manage Clients**. After the collector processes the request and uploads the file, BloodHound Enterprise shows download and delete actions for that client.
+This page explains how to request, download, delete, and troubleshoot collector support bundles from **Administration** > **Manage Clients**. After the collector processes the request and uploads the file, BloodHound Enterprise shows download and delete actions for that client.
 
 <Warning>
   Support bundles can contain diagnostic data from your environment. Handle downloaded bundles according to your organization's data handling process and share them only through approved support channels.
@@ -29,12 +29,12 @@ Use support bundles when you need to shorten the path from a collector issue to 
 
 Before you can request, download, or delete a support bundle, you must have the following:
 
-- BloodHound Enterprise with the collector support bundle feature enabled.
-- A SharpHound Enterprise collector client that appears on the **Manage Clients** page.
+- BloodHound Enterprise with the collector support bundle feature enabled by your account team.
+- A SharpHound Enterprise or OpenHound collector client that appears on the **Manage Clients** page.
 - A user assigned the **Administrator** role. The support-bundle controls require permission to manage users and access client-management actions.
 
   <Note>
-    Support bundles are currently available for SharpHound Enterprise clients. AzureHound Enterprise and OpenHound clients do not show support-bundle actions.
+    Support bundles are currently available for SharpHound Enterprise and OpenHound clients. AzureHound Enterprise clients are not supported.
   </Note>
 
 ## Support bundle lifecycle
@@ -64,7 +64,7 @@ To request a support bundle, you must have the **Administrator** role. The reque
   </Step>
 
   <Step title="Open the client action menu">
-    Find the SharpHound Enterprise client you want to troubleshoot, then click the action menu in that client's row.
+    Find the SharpHound Enterprise or OpenHound client you want to troubleshoot, then click the action menu in that client's row.
   </Step>
 
   <Step title="Request the bundle">
@@ -80,11 +80,11 @@ To request a support bundle, you must have the **Administrator** role. The reque
 
 ## Download a support bundle
 
-Provide your SpecterOps support representative with the ZIP file through the approved support workflow, or inspect it locally if you are troubleshooting without SpecterOps support.
+Provide your SpecterOps support representative with the `.zip` file through the approved support workflow, or inspect it locally if you are troubleshooting without SpecterOps support.
 
 <Steps>
   <Step title="Open the client action menu">
-    In **Administration** > **Manage Clients**, open the action menu for the SharpHound Enterprise client.
+    In **Administration** > **Manage Clients**, open the action menu for the SharpHound Enterprise or OpenHound client.
   </Step>
 
   <Step title="Download the bundle">
@@ -94,23 +94,37 @@ Provide your SpecterOps support representative with the ZIP file through the app
   </Step>
 
   <Step title="Confirm the download">
-    Your browser downloads the bundle as a `.zip` file named `sharphound_enterprise_support_bundle_<timestamp>.zip` with the following files:
+    Your browser downloads the bundle as a `.zip` file. The bundle contents depend on the collector type:
 
-    | **File** | **Description** |
-    | --- | --- |
-    | `log_archive/*.zip` | Archived SharpHound Enterprise logs. These files can include previous service logs, collection job logs, management operation logs, computer status CSVs, and archived collection output files. |
-    | `service.log` | The active SharpHound Enterprise service log. This file records service startup, configuration, API communication, tasking, and operational events. |
-    | `settings.json` | The SharpHound Enterprise service configuration file. This file includes connection, collection, and logging settings used by the collector. |
+    <Tabs>
+      <Tab title="SharpHound Enterprise">
+        The file is named `sharphound_enterprise_support_bundle_<timestamp>.zip` and contains the following files:
 
-    <Note>
-      Support bundles do not include `auth.json` files.
-    </Note>
+        | **File** | **Description** |
+        | --- | --- |
+        | `log_archive/*.zip` | Archived SharpHound Enterprise logs. These files can include previous service logs, collection job logs, management operation logs, computer status CSVs, and archived collection output files. |
+        | `service.log` | The active SharpHound Enterprise service log. This file records service startup, configuration, API communication, tasking, and operational events. |
+        | `settings.json` | The SharpHound Enterprise service configuration file. This file includes connection, collection, and logging settings used by the collector. |
+
+        <Note>
+          SharpHound Enterprise support bundles do not include `auth.json` files.
+        </Note>
+      </Tab>
+
+      <Tab title="OpenHound">
+        The file is named `<client_name>_support_bundle_<timestamp>.zip` and contains the following files:
+
+        | **File** | **Description** |
+        | --- | --- |
+        | `openhound.log` | The current OpenHound platform and service log. |
+        | `openhound.log.*` | Rotated OpenHound platform and service logs. |
+        | `ext_*.log` | Current logs for OpenHound collector extensions and pipeline components. |
+        | `ext_*.log.*` | Rotated logs for OpenHound collector extensions and pipeline components. |
+      </Tab>
+    </Tabs>
+
   </Step>
 </Steps>
-
-<Note>
-  If **Download Support Bundle** is disabled and a tooltip says the file is too large to download, contact SpecterOps support to request the bundle on your behalf.
-</Note>
 
 ## Delete a support bundle
 
@@ -118,7 +132,7 @@ Delete a support bundle when you no longer need it or when you need to request a
 
 <Steps>
   <Step title="Open the client action menu">
-    In **Administration** > **Manage Clients**, open the action menu for the SharpHound Enterprise client.
+    In **Administration** > **Manage Clients**, open the action menu for the SharpHound Enterprise or OpenHound client.
   </Step>
 
   <Step title="Start deletion">
@@ -138,9 +152,9 @@ Use the following issues to troubleshoot support-bundle requests, downloads, and
 
 <AccordionGroup>
   <Accordion title="Request Support Bundle is missing">
-    **Likely cause:** The feature is not enabled, the client is not SharpHound Enterprise, or your role cannot use support-bundle controls.
+    **Likely cause:** The feature is not enabled, the client is not SharpHound Enterprise or OpenHound, or your role cannot use support-bundle controls.
 
-    **Action:** Confirm that the client type is **SharpHound Enterprise** and that you are assigned the **Administrator** role. Contact SpecterOps if the feature is not available in your tenant.
+    **Action:** Confirm that the client type is **SharpHound Enterprise** or **OpenHound** and that you are assigned the **Administrator** role. Contact SpecterOps if the feature is not available in your tenant.
   </Accordion>
 
   <Accordion title="The action menu is missing">
@@ -177,12 +191,6 @@ Use the following issues to troubleshoot support-bundle requests, downloads, and
     **Likely cause:** The browser, network path, permissions, or stored artifact is unavailable.
 
     **Action:** Try again. If it still fails, confirm that the bundle has not been deleted and contact support with the visible error.
-  </Accordion>
-
-  <Accordion title="Download Support Bundle is disabled with a file size tooltip">
-    **Likely cause:** The support bundle exceeds the size BloodHound Enterprise allows for browser download.
-
-    **Action:** Contact SpecterOps support and provide the client name so support can retrieve the large bundle for you.
   </Accordion>
 
   <Accordion title="You need a newer bundle">
