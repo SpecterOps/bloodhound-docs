@@ -49,12 +49,12 @@ Version 1 includes these fields in `data`:
 | `name` | Collector name. |
 | `hostname` | Collector host name. |
 | `ip_address` | Collector IP address. |
-| `type` | Collector type. |
+| `type` | Collector type: `azurehound`, `sharphound`, or `openhound`. |
 | `version` | Collector software version. |
 | `last_checkin` | Collector's last check-in time in RFC 3339 UTC format. |
 | `created_at` | Time the collector record was created. |
 | `updated_at` | Time the collector record was last updated. |
-| `auth_type` | Collector authentication type. |
+| `auth_type` | Collector authentication type: `bloodhound` or `windows`. |
 | `issuer_address` | Collector issuer address. |
 | `issuer_address_override` | Collector issuer address override. |
 
@@ -74,12 +74,12 @@ The payload can include infrastructure and collector metadata. Protect the recei
     "name": "example-collector",
     "hostname": "collector01.example.test",
     "ip_address": "192.0.2.10",
-    "type": "sharpHound",
+    "type": "sharphound",
     "version": "2.15.0",
     "last_checkin": "2026-08-28T13:55:00Z",
     "created_at": "2026-05-02T09:00:00Z",
     "updated_at": "2026-08-28T13:55:00Z",
-    "auth_type": "token",
+    "auth_type": "bloodhound",
     "issuer_address": "https://bloodhound.example.test",
     "issuer_address_override": ""
   }
@@ -125,6 +125,34 @@ def verify_bloodhound_webhook(raw_body, signature_header, secret):
     return hmac.compare_digest(expected_signature, supplied_signature)
 ```
 
+**Node.js**
+
+```javascript
+import crypto from "node:crypto";
+
+function verifyBloodHoundWebhook(rawBody, signatureHeader, secret) {
+  const parts = Object.fromEntries(
+    signatureHeader.split(",").map((part) => part.split("=", 2))
+  );
+  const timestamp = parts.t;
+  const suppliedSignature = parts.v1;
+
+  if (!timestamp || !suppliedSignature) return false;
+  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false;
+
+  const expectedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(timestamp)
+    .update(".")
+    .update(rawBody)
+    .digest("hex");
+
+  const expected = Buffer.from(expectedSignature, "hex");
+  const supplied = Buffer.from(suppliedSignature, "hex");
+  return supplied.length === expected.length && crypto.timingSafeEqual(expected, supplied);
+}
+```
+
 Also use `event_id` to make processing idempotent. A retry preserves the event ID and payload timestamp but has a new signature timestamp.
 
 ## Delivery behavior
@@ -137,6 +165,15 @@ Also use `event_id` to make processing idempotent. A retry preserves the event I
 | TLS requirement | TLS 1.2 or later |
 | Redirects | Not followed; treated as failed delivery |
 | Automatic retries | Up to seven total attempts: the initial delivery and up to six retries |
-| Retry timing | Exponential backoff beginning at about six minutes; processing runs about every six minutes |
+| Retry timing | The first retry is scheduled after up to about six minutes. Each later retry uses a 4x backoff with up to 20% subtract-only jitter. The retry worker runs about every six minutes. |
+| Retry processing | The retry worker processes up to 30 due deliveries per run. A backlog can delay a retry beyond its scheduled time. |
+| Failed final delivery | The delivery is dead-lettered and receives no further automatic retries. |
+| Event History retention | Events and their delivery attempts are retained for 90 days. |
 
-After the final failed attempt, BloodHound stops automatic retries for that delivery. Use Event History or the [retry attempt API](/reference/alerts/retry-alert-attempt) to investigate and requeue a failed delivery.
+After the final failed attempt, use Event History or the [retry attempt API](/reference/alerts/retry-alert-attempt) to investigate and requeue a failed delivery. Manually requeuing a dead-lettered delivery gives it one additional send attempt; if that attempt fails, BloodHound dead-letters it again.
+
+## Webhook health
+
+BloodHound starts each webhook with a health score of `1.0` and calculates the score as an exponentially weighted moving average of dispatch results. Each result has a weight of `0.1`: successful dispatches increase the score and failed dispatches decrease it.
+
+BloodHound automatically disables a webhook when its health falls below `0.5`, which occurs after roughly seven consecutive failed dispatches. Re-enabling the webhook resets its health score to `1.0`.

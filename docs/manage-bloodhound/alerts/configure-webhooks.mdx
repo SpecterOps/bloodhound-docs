@@ -22,7 +22,7 @@ Configure a webhook destination and then create a rule that sends Collector Offl
   </Step>
 
   <Step title="Create the webhook">
-    Select **Create Webhook**. Enter a name, optional description, and your HTTPS endpoint URL. The only supported type is **Generic**.
+    Select **Create**. In **Create New Webhook**, enter a name, optional description, and your HTTPS endpoint URL. The only supported type is **Generic**.
   </Step>
 
   <Step title="Store the HMAC secret">
@@ -39,9 +39,11 @@ Use **Run Test** from the webhook's actions menu before you create a production 
 1. Select **Run Test** for the webhook.
 1. Select **Collector Offline** and version **1**.
 1. Select **Run**.
-1. Confirm that your receiver accepted the signed request and that BloodHound reports a successful test.
+1. Confirm that your receiver accepted the signed request and that BloodHound reports a successful test. If the receiver rejects or cannot receive the request, use the reported status code and error to diagnose the receiver.
 
 The test sends a representative event to the destination. Use the [webhook reference](/integrations/webhooks/collector-offline) to validate the headers, payload, and signature.
+
+A test does not create an Event History record, increase a delivery attempt count, or affect webhook health. BloodHound returns the test result even when the receiver returns a non-2xx response.
 
 ## Create a Collector Offline rule
 
@@ -51,7 +53,7 @@ The test sends a representative event to the destination. Use the [webhook refer
   </Step>
 
   <Step title="Create a notification">
-    Select **Create Notification**. Enter a name and, if useful, a description.
+    Select **Create**. In **Create New Notification**, enter a name and, if useful, a description.
   </Step>
 
   <Step title="Select the destination and event">
@@ -68,10 +70,12 @@ The test sends a representative event to the destination. Use the [webhook refer
 Use a webhook's actions menu in **Delivery** to manage it.
 
 - **Edit** changes the name, description, or endpoint URL.
-- **Disable Webhook** stops deliveries without deleting its configuration. Select **Enable Webhook** to resume delivery.
+- **Disable Webhook** stops deliveries without deleting its configuration. Select **Enable Webhook** to resume delivery. Re-enabling a webhook resets its delivery health.
 - **Regenerate Secret** replaces the current HMAC secret. Update your receiver before you resume normal delivery.
 - **Delete** permanently removes the destination and its associated delivery history.
 - **View Event History** opens delivery attempts for that webhook.
+
+BloodHound calculates delivery health from webhook dispatch outcomes. It automatically disables a webhook when its health falls below `0.5`. Review and correct the receiver before you re-enable the webhook.
 
 <Warning>
 Treat the endpoint URL and payload as sensitive operational data. Limit access to the destination, use a dedicated secret for each webhook, and never include the HMAC secret in a ticket, log, or support request.

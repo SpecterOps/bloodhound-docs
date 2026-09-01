@@ -24,10 +24,16 @@ Use the delivery information to identify where the failure occurred:
 | No event | Confirm Alerts is enabled, the rule uses **Collector Offline**, and the collector has exceeded the offline threshold. |
 | Last error | Check the receiver address, its TLS certificate, network reachability, and application logs. |
 | Next attempt | BloodHound has scheduled another delivery attempt. |
-| Attempts | A count that increases after failed delivery attempts. |
+| Attempts | A count of every dispatch, including the initial delivery, retries, and successful deliveries. |
 | Successful time | The receiver returned a 2xx response. |
 
-The [delivery attempt API reference](/reference/alerts/list-alert-attempts) includes additional fields, such as the last HTTP status code and a manual retry endpoint.
+The [delivery attempt API reference](/reference/alerts/list-alert-attempts) includes a manual retry endpoint. BloodHound does not currently store the receiver's HTTP status code for production deliveries; use the last error and receiver logs instead.
+
+## Interpret test results
+
+Use **Run Test** from the webhook actions menu to send a representative event without waiting for a collector to become offline. A test failure reports the receiver status code and error, even though the test request itself completes successfully in BloodHound.
+
+Tests do not create Event History records, increment delivery attempts, or affect webhook health. Correct the receiver configuration, then run the test again.
 
 ## Resolve common failures
 
@@ -38,7 +44,8 @@ The [delivery attempt API reference](/reference/alerts/list-alert-attempts) incl
 | Signature verification fails | Verify the receiver uses the current secret, the raw request body, and the timestamp from `X-Bloodhound-Signature`. See [verify webhook signatures](/integrations/webhooks/collector-offline#verify-the-signature). |
 | The secret is lost or exposed | Regenerate the secret in **Delivery**, update the receiver, and disable the webhook until the new secret is active. |
 | A receiver processes the same event more than once | Deduplicate by `X-Bloodhound-Event-ID` or the payload `event_id`. BloodHound can retry a failed delivery. |
+| The webhook is disabled | Review the receiver and Event History. BloodHound automatically disables a webhook when its delivery health falls below `0.5`; re-enabling it resets its health. |
 
 ## Collect safe escalation details
 
-When you contact support, provide the webhook name, event ID, timestamp, HTTP status code, and sanitized receiver error. Do not provide the HMAC secret or a payload containing sensitive environment data unless your support process explicitly authorizes it.
+When you contact support, provide the webhook name, event ID, timestamp, and sanitized receiver error. Include the HTTP status code only when you obtained it from a test result or receiver log. Do not provide the HMAC secret or a payload containing sensitive environment data unless your support process explicitly authorizes it.
