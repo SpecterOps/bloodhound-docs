@@ -1,0 +1,142 @@
+---
+title: Receive Collector Offline Webhooks
+description: Validate and process signed Collector Offline events from BloodHound Enterprise.
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+BloodHound sends a signed HTTPS POST request to a generic webhook destination when a collector remains offline. Use this reference to validate the request, route the event, and process it safely. For setup instructions, see [Configure webhook alerts](/manage-bloodhound/alerts/configure-webhooks).
+
+## Supported event
+
+| Event | Identifier | Data version | Trigger |
+| --- | --- | --- | --- |
+| Collector Offline | `collector.status.offline` | `1` | A collector has not checked in for at least 20 minutes. |
+
+BloodHound evaluates the condition about every seven minutes. It suppresses another event for the same collector for seven days and does not issue a recovery event.
+
+## Receive the request
+
+BloodHound sends a JSON request with these headers:
+
+| Header | Purpose |
+| --- | --- |
+| `Content-Type: application/json` | Identifies the request body format. |
+| `X-Bloodhound-Signature` | Carries the signature timestamp and HMAC-SHA256 signature. |
+| `X-Bloodhound-Event-Type` | Lets your receiver route the event without parsing the body. |
+| `X-Bloodhound-Event-ID` | Identifies the event for idempotent processing. |
+
+Return a 2xx response after your receiver accepts the event. BloodHound treats every other HTTP status, including redirects, as a failed delivery.
+
+## Payload schema
+
+The envelope stays stable across event versions. The `version` field identifies the shape of `data`.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `event_id` | UUID | Stable event identifier. It matches `X-Bloodhound-Event-ID`. |
+| `event_type` | string | `collector.status.offline`. |
+| `version` | integer | Payload data version. This event uses `1`. |
+| `timestamp` | RFC 3339 timestamp | Time BloodHound created the event. |
+| `message` | string | Human-readable summary. |
+| `data` | object | Collector details for the event. |
+
+Version 1 includes these fields in `data`:
+
+| Field | Description |
+| --- | --- |
+| `collector_id` | Stable collector identifier. |
+| `name` | Collector name. |
+| `hostname` | Collector host name. |
+| `ip_address` | Collector IP address. |
+| `type` | Collector type. |
+| `version` | Collector software version. |
+| `last_checkin` | Collector's last check-in time in RFC 3339 UTC format. |
+| `created_at` | Time the collector record was created. |
+| `updated_at` | Time the collector record was last updated. |
+| `auth_type` | Collector authentication type. |
+| `issuer_address` | Collector issuer address. |
+| `issuer_address_override` | Collector issuer address override. |
+
+<Warning>
+The payload can include infrastructure and collector metadata. Protect the receiving endpoint, restrict who can access stored payloads, and do not send the payload to an unapproved third party.
+</Warning>
+
+```json
+{
+  "event_id": "018f0e7b-60d6-7b9d-8f4a-2b8f68eb4aa0",
+  "event_type": "collector.status.offline",
+  "version": 1,
+  "timestamp": "2026-08-28T14:17:00Z",
+  "message": "Collector example-collector may be offline. Last checkin time: 2026-08-28T13:55:00Z",
+  "data": {
+    "collector_id": "07165367-2977-4fdf-8b4f-6bff3bfe62f3",
+    "name": "example-collector",
+    "hostname": "collector01.example.test",
+    "ip_address": "192.0.2.10",
+    "type": "sharpHound",
+    "version": "2.15.0",
+    "last_checkin": "2026-08-28T13:55:00Z",
+    "created_at": "2026-05-02T09:00:00Z",
+    "updated_at": "2026-08-28T13:55:00Z",
+    "auth_type": "token",
+    "issuer_address": "https://bloodhound.example.test",
+    "issuer_address_override": ""
+  }
+}
+```
+
+## Verify the signature
+
+BloodHound signs the exact raw request body with your webhook's HMAC secret. The signature header has this format:
+
+```text
+t=<unix-timestamp>,v1=<hex-hmac-sha256>
+```
+
+The signed value is the timestamp, a period, and the unmodified request body:
+
+```text
+HMAC-SHA256(secret, "{t}.{raw body}")
+```
+
+Do not parse and reserialize JSON before verification. That changes the body and invalidates the signature.
+
+```python
+import hashlib
+import hmac
+import time
+
+
+def verify_bloodhound_webhook(raw_body, signature_header, secret):
+    parts = dict(part.split("=", 1) for part in signature_header.split(","))
+    timestamp = parts["t"]
+    supplied_signature = parts["v1"]
+
+    # Reject stale requests to reduce replay risk. Choose a window that suits
+    # your receiver; this example allows five minutes.
+    if abs(time.time() - int(timestamp)) > 300:
+        return False
+
+    signed_payload = timestamp.encode() + b"." + raw_body
+    expected_signature = hmac.new(
+        secret.encode(), signed_payload, hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected_signature, supplied_signature)
+```
+
+Also use `event_id` to make processing idempotent. A retry preserves the event ID and payload timestamp but has a new signature timestamp.
+
+## Delivery behavior
+
+| Behavior | Value |
+| --- | --- |
+| Request method | HTTPS POST |
+| Success response | Any 2xx HTTP response |
+| Request timeout | 7 seconds |
+| TLS requirement | TLS 1.2 or later |
+| Redirects | Not followed; treated as failed delivery |
+| Automatic retries | Up to seven total attempts: the initial delivery and up to six retries |
+| Retry timing | Exponential backoff beginning at about six minutes; processing runs about every six minutes |
+
+After the final failed attempt, BloodHound stops automatic retries for that delivery. Use Event History or the [retry attempt API](/reference/alerts/retry-alert-attempt) to investigate and requeue a failed delivery.
