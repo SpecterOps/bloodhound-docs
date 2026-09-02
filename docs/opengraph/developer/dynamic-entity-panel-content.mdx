@@ -1,0 +1,144 @@
+---
+title: Create dynamic Entity Panel content
+sidebarTitle: Dynamic Entity Panel Content
+description: Use Go templates to render Entity Panel Markdown with data from the selected node or relationship.
+---
+
+<img
+  noZoom
+  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise and Community Edition"
+/>
+
+Dynamic Entity Panel content lets you tailor a custom Entity Panel section to the node or relationship that a user selects in Explore. Add template expressions to the section's Markdown to display entity properties, relationship endpoints, or conditional guidance.
+
+Templates are supported only in `info.<section>.markdown.content` within an [extension definition schema](/opengraph/developer/graph-definition). The section key, title, and position remain static. A template changes only the Markdown rendered inside the section.
+
+## Add dynamic content to a section
+
+Define an `info` section for a node kind or relationship kind, then add Go template expressions to `markdown.content`.
+
+<Steps>
+  <Step title="Define the Entity Panel section">
+    Set a stable section key, title, and position as you would for static Entity Panel content.
+  </Step>
+  <Step title="Insert entity values in the Markdown">
+    Wrap each expression in `{{` and `}}`. The following node-kind example displays the selected node's name and object ID.
+
+    ```json
+    "info": {
+      "overview": {
+        "title": "Overview",
+        "position": 1,
+        "markdown": {
+          "content": "## {{ .Properties.name | default \"Unknown\" }}\n\n**Object ID:** `{{ .Properties.objectid | default \"Unavailable\" }}`"
+        }
+      }
+    }
+    ```
+  </Step>
+  <Step title="Upload and test the extension">
+    BloodHound validates the template syntax when you upload the extension. Then select representative entities in Explore to confirm the rendered Markdown is useful for every expected value and condition.
+  </Step>
+</Steps>
+
+Use `default` for properties that might be missing or empty. Do not assume every entity contains the same set of properties.
+
+## Access entity data
+
+Templates use Go `text/template` syntax. The root context (`.`) contains only the selected entity data described below. A template cannot fetch additional nodes, traverse the graph, or access the complete internal graph object.
+
+### Node context
+
+Use the following values in a section defined for a node kind:
+
+| Expression | Description |
+| --- | --- |
+| `.NodeID` | Graph-assigned ID of the selected node. |
+| `.Kinds` | Kinds assigned to the node. Each kind exposes `.Name` and `.KindID`. |
+| `.Properties` | Map of node properties. |
+| `.Properties.<property>` | A property with an identifier-safe key, such as `.Properties.name`. |
+
+For property keys that contain punctuation or spaces, use `get` instead of a direct reference:
+
+```markdown
+Display name: {{ get .Properties "display-name" | default "Unknown" }}
+```
+
+### Relationship context
+
+Use the following values in a section defined for a relationship kind:
+
+| Expression | Description |
+| --- | --- |
+| `.RelationshipID` | Graph-assigned ID of the selected relationship. |
+| `.Kind.Name` | Name of the relationship kind. |
+| `.Properties` | Map of relationship properties. |
+| `.Source` | Node context for the relationship source. |
+| `.Target` | Node context for the relationship target. |
+| `.Source.Properties.<property>` | Property on the source node. |
+| `.Target.Properties.<property>` | Property on the target node. |
+
+For example, this relationship section displays both endpoint names and the relationship kind:
+
+```markdown
+## {{ .Source.Properties.name | default "Unknown source" }} → {{ .Target.Properties.name | default "Unknown target" }}
+
+This is a **{{ .Kind.Name }}** relationship.
+```
+
+## Format and reuse values
+
+Use a pipeline (`|`) to pass a value through one or more functions. Create a variable with `:=` when you use the same value more than once.
+
+```markdown
+{{- $name := .Properties.name | default "Unknown" | upper -}}
+## {{ $name }}
+
+The selected object is {{ $name }}.
+```
+
+The hyphens in `{{-` and `-}}` trim adjacent whitespace. Use them around control-flow actions when omitted content would otherwise leave unwanted blank lines. Do not use them when the surrounding space is meaningful.
+
+## Render optional content
+
+Use `if`, `else`, and `end` to render content only when an entity meets a condition. Use `with` to render a block only when a value is present, and use `range` to render a collection.
+
+```markdown
+{{- if .Properties.isServiceAccount }}
+This account is a service account. Test dependent services before you change its configuration.
+{{- else }}
+This account is not marked as a service account.
+{{- end }}
+```
+
+The conditional changes the content inside the Entity Panel section. It does not remove the section or its accordion header.
+
+## Use supported helpers
+
+BloodHound provides a restricted set of Sprig helper functions for Entity Panel templates. The following helpers cover common authoring tasks:
+
+| Goal | Helpers |
+| --- | --- |
+| Provide fallbacks and test values | `default`, `coalesce`, `empty`, `ternary` |
+| Format text | `trim`, `trimPrefix`, `trimSuffix`, `upper`, `lower`, `title`, `replace`, `trunc`, `substr` |
+| Work with lists | `list`, `join`, `first`, `last`, `has`, `compact`, `sortAlpha`, `len` |
+| Look up map values | `get`, `hasKey`, `keys`, `values` |
+| Compare values | `eq`, `ne`, `lt`, `gt`, `and`, `or`, `not` |
+| Encode or inspect data | `toJson`, `toPrettyJson`, `b64enc`, `b64dec` |
+
+Use only helpers that you have tested with the target BloodHound release. BloodHound rejects a schema upload when a template uses an unavailable helper.
+
+## Validate and test templates
+
+BloodHound parses every Entity Panel template when you upload an extension definition schema. A syntax error, such as an unmatched `end`, or an unavailable helper function causes the entire upload to fail.
+
+Some errors depend on the selected entity and occur only when BloodHound renders the template. In that case, the node or relationship API response retains the unrendered template content and includes a `template_error` value for the affected section. Correct the template and upload the updated extension definition schema.
+
+Before you publish an extension, test each template with the following cases:
+
+- An entity with every expected property
+- An entity missing each optional property
+- Every `if` and `else` branch
+- Each item in a `range` block
+- The final rendered Markdown, including its whitespace
