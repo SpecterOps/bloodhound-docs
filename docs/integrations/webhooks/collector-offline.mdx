@@ -3,9 +3,13 @@ title: Receive Collector Offline Webhooks
 description: Validate and process signed Collector Offline events from BloodHound Enterprise.
 ---
 
+import BetaAccessNote from '/snippets/feature-flag-user-managed.mdx';
+
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-BloodHound sends a signed HTTPS POST request to a generic webhook destination when a collector remains offline. Use this reference to validate the request, route the event, and process it safely. For setup instructions, see [Configure webhook alerts](/manage-bloodhound/alerts/configure-webhooks).
+BloodHound sends a signed HTTPS POST request to a generic webhook destination when a collector remains offline. Use this reference to validate the request, route the event, and process it safely. For setup instructions, see [Configure webhook alerts](/manage-bloodhound/alerts/configure).
+
+<BetaAccessNote feature="Alerts" />
 
 ## Supported event
 
@@ -174,6 +178,10 @@ After the final failed attempt, use Event History or the [retry attempt API](/re
 
 ## Webhook health
 
-BloodHound starts each webhook with a health score of `1.0` and calculates the score as an exponentially weighted moving average of dispatch results. Each result has a weight of `0.1`: successful dispatches increase the score and failed dispatches decrease it.
+BloodHound Enterprise represents webhook health as a rolling score from `0` to `1`, where `1.0` is fully healthy. The API returns this value in the webhook's `health` field. Each webhook starts with a health score of `1.0`.
 
-BloodHound automatically disables a webhook when its health falls below `0.5`, which occurs after roughly seven consecutive failed dispatches. Re-enabling the webhook resets its health score to `1.0`.
+BloodHound Enterprise calculates the score as an exponentially weighted moving average of dispatch results. Each result has a weight of `0.1`: successful dispatches increase the score and failed dispatches decrease it.
+
+The **Delivery** page displays the score as a color-coded percentage badge in the **Health** column. The **Webhook Details** view displays the same badge. A score of `0.9` or higher is green, a score from `0.7` to less than `0.9` is yellow, and a score below `0.7` is red.
+
+BloodHound Enterprise automatically disables a webhook when its health falls below `0.5`, which occurs after roughly seven consecutive failed dispatches. Health changes only after production dispatches; test requests do not affect the score. Review and correct the receiver before you re-enable the webhook. Re-enabling the webhook resets its health score to `1.0`.

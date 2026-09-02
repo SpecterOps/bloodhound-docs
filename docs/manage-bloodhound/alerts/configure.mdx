@@ -1,0 +1,185 @@
+---
+title: Configure
+description: Create a generic HTTPS webhook and receive collector offline events from BloodHound Enterprise.
+---
+
+import BetaAccessNote from '/snippets/feature-flag-user-managed.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+Use this procedure to create a generic HTTPS webhook destination, test it, and create a rule that sends **Collector Offline** events to it. You can then use the **Event History** page to review delivery attempts and diagnose failures.
+
+<BetaAccessNote feature="Alerts" />
+
+A webhook is a reusable destination. Multiple rules can send notifications to the same webhook. If you are new to **Alerts** in BloodHounde Enterprise, start with the [Alerts overview](/manage-bloodhound/alerts/overview) to learn how destinations, rules, and event history fit together. Then return here when you are ready to configure a webhook.
+
+## Before you begin
+
+Ensure you have the necessary permissions and prerequisites in place before configuring webhooks:
+
+- You have a BloodHound Enterprise account with the Administrator role.
+- You have prepared a receiver that accepts HTTPS POST requests and validates BloodHound Enterprise HMAC signatures.
+- Your receiver returns a 2xx response after it accepts an event.
+- You have a secure location to store the HMAC secret. BloodHound Enterprise displays it only when you create or rotate a webhook.
+
+## Create a webhook
+
+A webhook is a configuration that specifies where BloodHound Enterprise should send events.
+
+<Note>
+  We'll cover how to configure rules that connect events to webhook destinations later in this procedure. For now, focus on creating a webhook  and verifying that your receiver can accept it.
+</Note>
+
+<Steps>
+  <Step title="Open Delivery">
+    Go to **Administration** > **Alerts** > **Delivery**.
+  </Step>
+
+  <Step title="Create the webhook">
+    Click **Create** and enter the following configuration details:
+
+    | Field        | Description | Required? |
+    | ------------ | ----------- | --------- |
+    | Webhook type | Accept the default value. **Generic** is currently the only available type. | Yes |
+    | Name         | Enter a unique name of 2-319 characters using ASCII letters, numbers, and spaces. Leading and trailing spaces are not allowed. | Yes |
+    | Description  | Optionally describe the webhook's purpose or receiver. Use no more than 500 characters and do not include leading or trailing spaces. | No |
+    | URL          | Enter the unique HTTPS endpoint that receives signed alert requests. The URL must be valid, 319 characters or fewer, and must not include leading or trailing spaces. | Yes |
+
+    <Warning>
+      Treat the webhook URL and payload as sensitive operational data.
+
+      Limit access to the destination, use a dedicated secret for each webhook, and never include the HMAC secret in a ticket, log, or support request.
+    </Warning>
+  </Step>
+  <Step title="Store the HMAC secret">
+    Click **Create** and copy the HMAC secret from the confirmation dialog.
+    
+    BloodHound Enterprise uses the secret to sign alert requests sent to your receiver. Store the secret in your secret manager before you close the dialog.
+
+    <Note>
+      BloodHound Enterprise does not display this secret again. If you lose it, regenerate the secret and update your receiver.
+    </Note>
+  </Step>
+  <Step title="Complete webhook configuration">
+    Click **Close** to return to the **Delivery** page or click **View Webhook** to see the webhook's details.
+  </Step>
+</Steps>
+
+## Test the webhook
+
+Use **Run Test** from the webhook's actions menu before you create a production rule.
+
+The test sends a representative event to the destination.
+
+<Note>
+  Use the [webhook reference](/integrations/webhooks/collector-offline) to validate the headers, payload, and signature.
+</Note>
+
+A test does not create a record on the **Event History** page, increase a delivery attempt count, or affect webhook health.
+
+<Steps>
+  <Step title="Open Run Test">
+    On the **Delivery** page, click the ellipsis menu in the Action column and select **Run Test** for the webhook.
+  </Step>
+  <Step title="Select the event">
+    In the **Run Test** dialog, select the **Collector Offline** event trigger and version **1**.
+  </Step>
+  <Step title="Run the test">
+    Click **Run**.
+  </Step>
+  <Step title="Confirm delivery">
+    Confirm that your receiver accepted the signed request and proceed to the next section to create a rule.
+
+    <Note>
+      If your receiver rejects or cannot receive the request, use the reported status code and error to diagnose the receiver.
+    </Note>
+  </Step>
+</Steps>
+
+## Create a rule
+
+Rules allow you to connect events to webhook destinations. When an event matches the conditions specified in a rule, BloodHound Enterprise sends an event to the selected webhook.
+
+<Steps>
+  <Step title="Open Rules">
+    Go to **Administration** > **Alerts** > **Rules**.
+  </Step>
+
+  <Step title="Create a rule">
+    Click **Create** and enter the following configuration details:
+
+    | Field                      | Description | Required? |
+    | -------------------------- | ----------- | --------- |
+    | Name                       | Enter a unique name of 2-319 characters using ASCII letters, numbers, and spaces. Leading and trailing spaces are not allowed. | Yes |
+    | Description                | Optionally describe the rule's purpose. Use no more than 500 characters and do not include leading or trailing spaces. | No |
+    | Alert channel              | Accept the default **Webhook** channel. This is currently the only supported channel type. | Yes |
+    | Select an existing webhook | Select a webhook from the list. If you have not created one, click **Create new webhook**. | Yes |
+    | Event trigger              | Select the event that triggers the rule. **Collector Offline** is currently the only available trigger. | Yes |
+    | Version                    | Select a version for the event trigger. The dropdown becomes active after you select an event trigger. | Yes |
+
+  </Step>
+  <Step title="Complete rule configuration">
+    Click **Create** to save the rule and return to the **Rules** page.
+
+    BloodHound Enterprise sends an event to the selected webhook when a collector meets the offline condition.
+  </Step>
+</Steps>
+
+## Manage webhooks and rules
+
+The **Actions** column on the **Delivery** and **Rules** pages provides options for managing existing configurations. The column includes **Edit** and **Delete** buttons. Select the ellipsis (<Icon icon="ellipsis-vertical" />) to access more actions.
+
+Choose the action that matches the scope of the pause:
+
+| To pause | Select |
+| --- | --- |
+| One rule without affecting other rules that use the same destination | **Disable Notification** |
+| Every rule that sends to one destination | **Disable Webhook** |
+
+<Note>
+  Disabled rules and webhooks are excluded from new deliveries and scheduled retries. Disabling does not cancel a request that is already in progress.
+
+  Failed delivery attempts remain in Event History and can resume retrying after you re-enable the associated rule or webhook. BloodHound Enterprise does not automatically deliver events that occur while the rule or webhook is disabled.
+</Note>
+
+### Manage a webhook
+
+You can perform the following actions on a webhook:
+
+| Action | Behavior |
+| --- | --- |
+| **Edit** | Opens the webhook configuration. Update its settings, then click **Save**. |
+| **Delete** | Permanently removes the webhook, its secret, connected subscription associations, and delivery-attempt history. It does not delete the associated rule. |
+| **View Details** | Displays the webhook's configuration and status. |
+| **Run Test** | Sends a representative event to the destination. |
+| **Regenerate Secret** | Replaces the current HMAC secret. Update your receiver before you resume normal delivery. |
+| **Disable Webhook** | Temporarily stops every rule from sending to this destination without deleting its configuration.<br/><br/>Use it while you repair, reconfigure, or review the receiving system. Select **Enable Webhook** to resume delivery. Re-enabling a webhook resets its delivery health. |
+| **View Event History** | Opens delivery attempts for that webhook. |
+
+<Note>
+  See [Webhook health](/integrations/webhooks/collector-offline#webhook-health) for how BloodHound Enterprise calculates and displays health and when it automatically disables a webhook.
+</Note>
+
+### Manage a rule
+
+You can perform the following actions on a rule:
+
+| Action | Behavior |
+| --- | --- |
+| **Edit** | Opens the rule configuration. Update its settings, then click **Save**. |
+| **Delete** | Permanently removes the rule. If no rules reference a webhook, it remains configured and can be reused; delete it separately when you no longer need the destination.<br/><br/>It does not delete the associated webhooks. Confirm the deletion when prompted. |
+| **Disable Notification** | Temporarily stops this rule from sending notifications without affecting other rules that use the same webhook.<br/><br/>Use it to suppress expected events, such as collector maintenance. Select **Enable Notification** to resume notifications. |
+| **View Event History** | Opens delivery attempts for that rule. |
+
+## Automate configuration
+
+Use the Alerts API in BloodHound Enterprise to manage webhooks, rules, event types, and attempts programmatically.
+
+- [Webhook API endpoints](/reference/alerts/create-alert-webhook)
+- [Alert rule API endpoints](/reference/alerts/create-alert)
+- [Event type API endpoint](/reference/alerts/list-alert-event-types)
+- [Delivery attempt API endpoints](/reference/alerts/list-alert-attempts)
+
+<Note>
+  The create and rotate responses return the HMAC secret once; subsequent reads do not return it.
+</Note>

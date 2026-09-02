@@ -1,0 +1,63 @@
+---
+title: Troubleshoot
+description: Diagnose Collector Offline webhook configuration, delivery, and signature validation failures.
+---
+
+import BetaAccessNote from '/snippets/feature-flag-user-managed.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+Use **Event History** and your webhook receiver logs to diagnose delivery failures. Do not share the HMAC secret while troubleshooting.
+
+<BetaAccessNote feature="Alerts" />
+
+## Confirm that an event is expected
+
+BloodHound Enterprise triggers **Collector Offline** only after a collector has not checked in for at least 20 minutes. It evaluates collector status about every seven minutes, so delivery normally begins about 20 to 27 minutes after the last check-in.
+
+BloodHound Enterprise sends at most one Collector Offline event for each collector during a seven-day cooldown. It does not send a recovery event when that collector checks in again.
+
+## Review Event History
+
+Go to **Administration** > **Alerts** > **Event History**, then search for the event ID or open **View Event History** from the webhook actions menu.
+
+Use the delivery information to identify where the failure occurred:
+
+| Signal | What to check |
+| --- | --- |
+| No event | Confirm Alerts is enabled, the rule uses **Collector Offline**, and the collector has exceeded the offline threshold. |
+| Last error | Check the receiver address, its TLS certificate, network reachability, and application logs. |
+| Next attempt | BloodHound Enterprise has scheduled another delivery attempt. |
+| Attempts | A count of every dispatch, including the initial delivery, retries, and successful deliveries. |
+| Successful time | The receiver returned a 2xx response. |
+
+Use the [delivery attempt API](/reference/alerts/list-alert-attempts) to locate an attempt, then use the [retry attempt API](/reference/alerts/retry-alert-attempt) to requeue a failed delivery. BloodHound Enterprise does not currently store the receiver's HTTP status code for production deliveries; use the last error and receiver logs instead.
+
+## Interpret test results
+
+Use **Run Test** from the webhook actions menu to send a representative event without waiting for a collector to become offline.
+
+A test failure reports a delivery error. When the receiver returns an HTTP response, the [test webhook API](/reference/alerts/test-alert-webhook) also returns its status code. Network and TLS failures do not have a receiver status code.
+
+<Note>
+  Tests do not create Event History records, increment delivery attempts, or affect webhook health. Correct the receiver configuration, then run the test again.
+</Note>
+
+## Resolve common failures
+
+| Problem | Resolution |
+| --- | --- |
+| The webhook is unavailable | Confirm the endpoint is reachable from BloodHound Enterprise and has a valid TLS 1.2 or later certificate. |
+| The receiver returns a non-2xx response | Review the receiver error and return a 2xx response only after the event is accepted. BloodHound Enterprise treats redirects as failures. |
+| Signature verification fails | Verify the receiver uses the current secret, the raw request body, and the timestamp from `X-Bloodhound-Signature`. See [verify webhook signatures](/integrations/webhooks/collector-offline#verify-the-signature). |
+| The secret is lost or exposed | Regenerate the secret in **Delivery**, update the receiver, and disable the webhook until the new secret is active. |
+| A receiver processes the same event more than once | Deduplicate by `X-Bloodhound-Event-ID` or the payload `event_id`. BloodHound Enterprise can retry a failed delivery. |
+| The webhook is disabled | Review the receiver and Event History. BloodHound Enterprise automatically disables a webhook when its delivery health falls below `0.5`; re-enabling it resets its health. |
+
+## Collect safe escalation details
+
+If you contact support, provide the webhook name, event ID, event timestamp, and sanitized receiver error. Include the HTTP status code only if it appears in the test webhook API response or your receiver logs.
+
+<Warning>
+  Do not provide the HMAC secret or a payload containing sensitive environment data unless your support process explicitly authorizes it.
+</Warning>

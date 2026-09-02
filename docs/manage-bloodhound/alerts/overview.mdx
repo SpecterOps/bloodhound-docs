@@ -1,62 +1,83 @@
 ---
 title: Overview
-description: Configure alerts that send collector offline events to a secure webhook endpoint.
+description: Monitor collector availability with secure webhook alerts in BloodHound Enterprise.
 ---
 
 import BetaAccessNote from '/snippets/feature-flag-user-managed.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-Alerts send a webhook when a collector stops checking in. This Early Access feature helps your operations team investigate collection interruptions without first opening BloodHound. Alerts currently support the **Collector Offline** event and generic HTTPS webhooks only.
+Alerts help you detect interruptions in data collection and send that information to the operational tools your team already monitors. When BloodHound Enterprise detects that a collector is offline, it can send a signed event to a generic HTTPS webhook so your team can begin investigating without first opening BloodHound Enterprise.
 
 <BetaAccessNote feature="Alerts" />
 
-## Enable Alerts
+Alerts currently support one event: **Collector Offline**. You configure where BloodHound Enterprise sends the event in **Delivery**, configure when it sends the event in **Rules**, and review the result in **Event History**.
 
-An administrator enables this Early Access feature before you can use it.
+## Use cases
 
-1. Go to **Administration** > **Early Access Features**.
-1. Read and accept the Early Access warning.
-1. Enable **Alerts**.
+Use Alerts to keep collection interruptions visible to the people and systems responsible for resolving them:
 
-If you cannot change the setting, contact an administrator who can manage Early Access features. Early Access features are available for testing and may be incomplete.
+- **Detect collection interruptions sooner:** Send a Collector Offline event to a monitored endpoint so an operations team can investigate an unavailable collector promptly.
+- **Connect collector health to existing workflows:** Route signed events through a generic webhook receiver that creates an incident, posts a message to an approved internal system, or starts an automation workflow.
+- **Investigate delivery problems:** Review Event History alongside receiver logs to distinguish a collector outage from a webhook configuration or delivery failure.
 
-## Understand the alert flow
+## Key concepts
+
+Alerts separate events (rules) from destinations (delivery). This lets you manage webhook endpoints and the rules that use them independently.
+
+Treat webhooks as reusable destinations, not as children of a rule. For example, multiple rules can send notifications to the same webhook.
+
+| Page | Purpose | What you configure or review |
+| --- | --- | --- |
+| **Delivery** | Defines where BloodHound Enterprise sends events. | Create and manage generic HTTPS webhook destinations, including their HMAC secrets. |
+| **Rules** | Connects an event type to a delivery destination. | Create a rule that sends **Collector Offline** events to a selected webhook. |
+| **Event History** | Records webhook delivery activity. | Review attempts, delivery state, and errors when you investigate an event or a receiver. |
+
+Each webhook destination has a [delivery-health signal](/integrations/webhooks/collector-offline#webhook-health). BloodHound Enterprise updates this signal from dispatch outcomes so you can identify destinations that may not receive alerts. Health belongs to the delivery destination; it does not describe the event type or rule.
+
+<Note>
+  Your BloodHound Enterprise user role determines permissions on the **Alerts** pages.
+
+  - Administrators can create and manage delivery destinations, rules, and view event history.
+  - Auditors have view-only access to all pages.
+</Note>
+
+An example **Alerts** workflow involves the following high-level steps:
+
+1. Create a webhook on the **Delivery** page.
+1. Create a rule that links the webhook to the **Collector Offline** event (`collector.status.offline`) on the **Rules** page.
+1. When BloodHound Enterprise publishes that event, it finds enabled matching rules, queues a delivery attempt for each configured webhook, sends the signed event, and records the outcome on the **Event History** page.
+
+<Tip>
+  See [Configure webhooks](/manage-bloodhound/alerts/configure) for detailed instructions.
+</Tip>
+
+## How alerts work
+
+BloodHound Enterprise evaluates collector check-in status approximately every seven minutes. A collector that remains offline normally triggers an event about 20 to 27 minutes after its last check-in.
 
 ```mermaid
 sequenceDiagram
     participant C as Collector
-    participant B as BloodHound
-    participant W as Webhook endpoint
+    participant B as BloodHound Enterprise
+    participant R as Alert rule
+    participant W as Destination
     participant H as Event History
 
     C->>B: Stops checking in
     B->>B: Detects a 20-minute missed check-in
+    B->>R: Evaluates Collector Offline event
+    R->>B: Matches configured destination
     B->>W: Sends a signed Collector Offline event
     B->>H: Records the delivery result
 ```
 
-BloodHound evaluates collector check-in status about every seven minutes. A collector that remains offline normally triggers an event about 20 to 27 minutes after its last check-in. BloodHound suppresses another Collector Offline event for the same collector for seven days. It does not send a recovery event when the collector checks in again.
-
-## Know the current scope
-
-| Capability | Current behavior |
-| --- | --- |
-| Event trigger | **Collector Offline** (`collector.status.offline`) |
-| Delivery type | Generic HTTPS webhook |
-| Event payload version | 1 |
-| Email and in-app notifications | Not available |
-| Slack and Microsoft Teams formatting | Not available |
-
-## Check permissions
-
-| Permission | Allows you to |
-| --- | --- |
-| `AlertsRead` | View Delivery, Rules, and Event History. |
-| `AlertsManage` | Create, edit, enable, disable, delete, test, and rotate secrets for webhooks; create and change alert rules. |
+<Note>
+  BloodHound Enterprise suppresses repeated `collector.status.offline` events when a matching event for the same `collector_id` was created within the seven-day cooldown. The collector-offline event has no corresponding recovery event when the collector checks in again.
+</Note>
 
 ## Next steps
 
-- [Configure webhook notifications](/manage-bloodhound/alerts/configure-webhooks) to create a destination and a Collector Offline rule.
+- [Configure webhook notifications](/manage-bloodhound/alerts/configure) to create a destination and a Collector Offline rule.
 - [Review the Collector Offline webhook contract](/integrations/webhooks/collector-offline) before you connect a receiver.
-- [Troubleshoot webhook delivery](/manage-bloodhound/alerts/troubleshoot-webhooks) when Event History shows delivery failures.
+- [Troubleshoot webhook delivery](/manage-bloodhound/alerts/troubleshoot) when Event History shows delivery failures.
