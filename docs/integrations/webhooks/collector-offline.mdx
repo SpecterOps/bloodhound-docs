@@ -142,61 +142,6 @@ HMAC-SHA256(secret, "{t}.{raw body}")
 
 Do not parse and reserialize JSON before verification. That changes the body and invalidates the signature.
 
-See the following code snippets for example implementations:
-
-<CodeGroup dropdown>
-
-```python verify_bloodhound_webhook.py
-import hashlib
-import hmac
-import time
-
-
-def verify_bloodhound_webhook(raw_body, signature_header, secret):
-    parts = dict(part.split("=", 1) for part in signature_header.split(","))
-    timestamp = parts["t"]
-    supplied_signature = parts["v1"]
-
-    # Reject stale requests to reduce replay risk. Choose a window that suits
-    # your receiver; this example allows five minutes.
-    if abs(time.time() - int(timestamp)) > 300:
-        return False
-
-    signed_payload = timestamp.encode() + b"." + raw_body
-    expected_signature = hmac.new(
-        secret.encode(), signed_payload, hashlib.sha256
-    ).hexdigest()
-    return hmac.compare_digest(expected_signature, supplied_signature)
-```
-
-  ```javascript verifyBloodHoundWebhook.js
-import crypto from "node:crypto";
-
-function verifyBloodHoundWebhook(rawBody, signatureHeader, secret) {
-  const parts = Object.fromEntries(
-    signatureHeader.split(",").map((part) => part.split("=", 2))
-  );
-  const timestamp = parts.t;
-  const suppliedSignature = parts.v1;
-
-  if (!timestamp || !suppliedSignature) return false;
-  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false;
-
-  const expectedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(timestamp)
-    .update(".")
-    .update(rawBody)
-    .digest("hex");
-
-  const expected = Buffer.from(expectedSignature, "hex");
-  const supplied = Buffer.from(suppliedSignature, "hex");
-  return supplied.length === expected.length && crypto.timingSafeEqual(expected, supplied);
-}
-```
-
-</CodeGroup>
-
 Use `event_id` to make processing idempotent. Retries retain the event ID and payload timestamp but receive a new signature timestamp.
 
 Failed deliveries can arrive more than once, including after a manual retry. Delivery is not strictly at least once: if BloodHound Enterprise sends an event but cannot record the success, it does not automatically retry that attempt.
