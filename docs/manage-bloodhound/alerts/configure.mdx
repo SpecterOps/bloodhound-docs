@@ -1,17 +1,17 @@
 ---
 title: Configure
-description: Create a generic HTTPS webhook and receive collector offline events from BloodHound Enterprise.
+description: Create a generic HTTPS webhook and receive Collector Offline events from BloodHound Enterprise.
 ---
 
 import BetaAccessNote from '/snippets/feature-flag-user-managed.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-Use this procedure to create a generic HTTPS webhook destination, test it, and create a rule that sends **Collector Offline** events to it. You can then use the **Event History** page to review delivery attempts and diagnose failures.
+Use the procedures on this page to create a generic HTTPS webhook destination, test it, and create a rule that sends **Collector Offline** events to it. You can then use the **Event History** page to review delivery attempts and diagnose failures.
 
 <BetaAccessNote feature="Alerts" />
 
-A webhook is a reusable destination. Multiple rules can send notifications to the same webhook. If you are new to **Alerts** in BloodHounde Enterprise, start with the [Alerts overview](/manage-bloodhound/alerts/overview) to learn how destinations, rules, and event history fit together. Then return here when you are ready to configure a webhook.
+If you are new to **Alerts** in BloodHound Enterprise, start with the [Alerts overview](/manage-bloodhound/alerts/overview) to learn how destinations, rules, and events fit together. Then return here when you are ready to configure a webhook.
 
 ## Before you begin
 
@@ -24,7 +24,7 @@ Ensure you have the necessary permissions and prerequisites in place before conf
 
 ## Create a webhook
 
-A webhook is a configuration that specifies where BloodHound Enterprise should send events.
+Webhooks in BloodHound Enterprise are reusable destinations. Multiple rules can send notifications to the same webhook.
 
 <Note>
   We'll cover how to configure rules that connect events to webhook destinations later in this procedure. For now, focus on creating a webhook  and verifying that your receiver can accept it.
@@ -67,9 +67,7 @@ A webhook is a configuration that specifies where BloodHound Enterprise should s
 
 ## Test the webhook
 
-Use **Run Test** from the webhook's actions menu before you create a production rule.
-
-The test sends a representative event to the destination.
+Use **Run Test** from the webhook's actions menu before you create a production rule. The test sends a representative event to the destination.
 
 <Note>
   Use the [webhook reference](/integrations/webhooks/collector-offline) to validate the headers, payload, and signature.
@@ -79,7 +77,7 @@ A test does not create a record on the **Event History** page, increase a delive
 
 <Steps>
   <Step title="Open Run Test">
-    On the **Delivery** page, click the ellipsis menu in the Action column and select **Run Test** for the webhook.
+    On the **Delivery** page, click the ellipsis menu (<Icon icon="ellipsis-vertical" />) for the webhook in the Action column and select **Run Test**.
   </Step>
   <Step title="Select the event">
     In the **Run Test** dialog, select the **Collector Offline** event trigger and version **1**.
@@ -98,7 +96,7 @@ A test does not create a record on the **Event History** page, increase a delive
 
 ## Create a rule
 
-Rules allow you to connect events to webhook destinations. When an event matches the conditions specified in a rule, BloodHound Enterprise sends an event to the selected webhook.
+Rules allow you to define which events BloodHound Enterprise sends to which webhook destinations. When an event is triggered, BloodHound Enterprise sends an event to the selected webhook.
 
 <Steps>
   <Step title="Open Rules">
@@ -121,26 +119,13 @@ Rules allow you to connect events to webhook destinations. When an event matches
   <Step title="Complete rule configuration">
     Click **Create** to save the rule and return to the **Rules** page.
 
-    BloodHound Enterprise sends an event to the selected webhook when a collector meets the offline condition.
+    BloodHound Enterprise sends an event to the selected webhook when the selected event is triggered.
   </Step>
 </Steps>
 
 ## Manage webhooks and rules
 
-The **Actions** column on the **Delivery** and **Rules** pages provides options for managing existing configurations. The column includes **Edit** and **Delete** buttons. Select the ellipsis (<Icon icon="ellipsis-vertical" />) to access more actions.
-
-Choose the action that matches the scope of the pause:
-
-| To pause | Select |
-| --- | --- |
-| One rule without affecting other rules that use the same destination | **Disable Notification** |
-| Every rule that sends to one destination | **Disable Webhook** |
-
-<Note>
-  Disabled rules and webhooks are excluded from new deliveries and scheduled retries. Disabling does not cancel a request that is already in progress.
-
-  Failed delivery attempts remain in Event History and can resume retrying after you re-enable the associated rule or webhook. BloodHound Enterprise does not automatically deliver events that occur while the rule or webhook is disabled.
-</Note>
+The **Actions** column on the **Delivery** and **Rules** pages provides options for managing existing webhook and rule configurations. The column includes **Edit** and **Delete** options. Click the ellipsis (<Icon icon="ellipsis-vertical" />) to access more actions.
 
 ### Manage a webhook
 
@@ -170,6 +155,23 @@ You can perform the following actions on a rule:
 | **Delete** | Permanently removes the rule. If no rules reference a webhook, it remains configured and can be reused; delete it separately when you no longer need the destination.<br/><br/>It does not delete the associated webhooks. Confirm the deletion when prompted. |
 | **Disable Notification** | Temporarily stops this rule from sending notifications without affecting other rules that use the same webhook.<br/><br/>Use it to suppress expected events, such as collector maintenance. Select **Enable Notification** to resume notifications. |
 | **View Event History** | Opens delivery attempts for that rule. |
+
+### Disable a webhook or rule
+
+You may need to temporarily disable a webhook or rule to pause deliveries while you perform maintenance, troubleshoot issues, or review configurations.
+
+Choose the action that matches the scope of the pause:
+
+| To pause | Select |
+| --- | --- |
+| One rule without affecting other rules that use the same destination | **Disable Notification** |
+| Every rule that sends to one destination | **Disable Webhook** |
+
+<Note>
+  Disabled rules and webhooks are excluded from new deliveries and scheduled retries. Disabling does not cancel a request that is already in progress.
+
+  Failed delivery attempts remain in Event History and can resume retrying after you re-enable the associated rule or webhook. BloodHound Enterprise does not automatically deliver events that occur while the rule or webhook is disabled.
+</Note>
 
 ## Automate configuration
 
