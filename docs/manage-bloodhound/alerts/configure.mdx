@@ -73,7 +73,7 @@ Use **Run Test** from the webhook's actions menu before you create a production 
   Use the [webhook reference](/integrations/webhooks/collector-offline) to validate the headers, payload, and signature.
 </Note>
 
-A test does not create a record on the **Event History** page, increase a delivery attempt count, or affect webhook health.
+A test does not create a record on the **Event History** page, increase a delivery attempt count, or affect [webhook health](/manage-bloodhound/alerts/configure#webhook-health).
 
 <Steps>
   <Step title="Open Run Test">
@@ -142,7 +142,7 @@ You can perform the following actions on a webhook:
 | **View Event History** | Opens delivery attempts for that webhook. |
 
 <Note>
-  See [Webhook health](/integrations/webhooks/collector-offline#webhook-health) for how BloodHound Enterprise calculates and displays health and when it automatically disables a webhook.
+  See [Webhook health](/manage-bloodhound/alerts/configure#webhook-health) for how BloodHound Enterprise calculates and displays health and when it automatically disables a webhook.
 </Note>
 
 ### Manage a rule
@@ -172,6 +172,20 @@ Choose the action that matches the scope of the pause:
 
   Failed delivery attempts remain in Event History and can resume retrying after you re-enable the associated rule or webhook. BloodHound Enterprise does not automatically deliver events that occur while the rule or webhook is disabled.
 </Note>
+
+## Webhook health
+
+BloodHound Enterprise represents webhook health as a rolling score from `0` to `1`, where `1.0` is fully healthy. The API returns this value in the webhook's `health` field. Each webhook starts with a health score of `1.0`.
+
+BloodHound Enterprise calculates the score as an exponentially weighted moving average of dispatch results. Each result has a weight of `0.1`: successful dispatches increase the score and failed dispatches decrease it.
+
+The **Delivery** page displays the score as a color-coded percentage badge in the **Health** column. The **Webhook Details** view displays the same badge. A score of `0.9` or higher is green, a score from `0.7` to less than `0.9` is yellow, and a score below `0.7` is red. For example:
+
+- <Badge color="green">90%</Badge> indicates a healthy webhook.
+- <Badge color="yellow">80%</Badge> indicates a webhook that has experienced some failed deliveries.
+- <Badge color="red">60%</Badge> indicates a webhook that has experienced many failed deliveries.
+
+BloodHound Enterprise automatically disables a webhook when its health falls below `0.5`, which occurs after roughly seven consecutive failed dispatches. Health changes only after production dispatches; test requests do not affect the score. Review and correct the receiver before you re-enable the webhook. Re-enabling the webhook resets its health score to `1.0`.
 
 ## Automate configuration
 

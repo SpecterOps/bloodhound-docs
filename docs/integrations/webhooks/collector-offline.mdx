@@ -1,5 +1,5 @@
 ---
-title: Receive Collector Offline Webhooks
+title: Collector Offline
 description: Validate and process signed Collector Offline events from BloodHound Enterprise.
 ---
 
@@ -7,7 +7,7 @@ import BetaAccessNote from '/snippets/feature-flag-user-managed.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-BloodHound sends a signed HTTPS POST request to a generic webhook destination when a collector remains offline. Use this reference to validate the request, route the event, and process it safely. For setup instructions, see [Configure webhook alerts](/manage-bloodhound/alerts/configure).
+BloodHound Enterprise sends a signed HTTPS POST request to a generic webhook destination when a collector remains offline. Use this reference to validate the request, route the event, and process it safely. See [Configure](/manage-bloodhound/alerts/configure) for setup instructions.
 
 <BetaAccessNote feature="Alerts" />
 
@@ -17,11 +17,11 @@ BloodHound sends a signed HTTPS POST request to a generic webhook destination wh
 | --- | --- | --- | --- |
 | Collector Offline | `collector.status.offline` | `1` | A collector has not checked in for at least 20 minutes. |
 
-BloodHound evaluates the condition about every seven minutes. It suppresses another event for the same collector for seven days and does not issue a recovery event.
+BloodHound Enterprise evaluates collector status about every seven minutes. It suppresses another event for the same collector for seven days and does not issue a recovery event.
 
 ## Receive the request
 
-BloodHound sends a JSON request with these headers:
+BloodHound Enterprise sends a JSON request with the following headers:
 
 | Header | Purpose |
 | --- | --- |
@@ -30,22 +30,22 @@ BloodHound sends a JSON request with these headers:
 | `X-Bloodhound-Event-Type` | Lets your receiver route the event without parsing the body. |
 | `X-Bloodhound-Event-ID` | Identifies the event for idempotent processing. |
 
-Return a 2xx response after your receiver accepts the event. BloodHound treats every other HTTP status, including redirects, as a failed delivery.
+Return a 2xx response after your receiver accepts the event. BloodHound Enterprise treats every other HTTP status, including redirects, as a failed delivery.
 
 ## Payload schema
 
-The envelope stays stable across event versions. The `version` field identifies the shape of `data`.
+The envelope stays stable across event versions. The `version` field identifies the shape of the `data` object.
 
 | Field | Type | Description |
 | --- | --- | --- |
 | `event_id` | UUID | Stable event identifier. It matches `X-Bloodhound-Event-ID`. |
 | `event_type` | string | `collector.status.offline`. |
 | `version` | integer | Payload data version. This event uses `1`. |
-| `timestamp` | RFC 3339 timestamp | Time BloodHound created the event. |
+| `timestamp` | RFC 3339 timestamp | Time BloodHound Enterprise created the event. |
 | `message` | string | Human-readable summary. |
 | `data` | object | Collector details for the event. |
 
-Version 1 includes these fields in `data`:
+Version 1 includes the following fields in the `data` object:
 
 | Field | Description |
 | --- | --- |
@@ -63,7 +63,7 @@ Version 1 includes these fields in `data`:
 | `issuer_address_override` | Collector issuer address override. |
 
 <Warning>
-The payload can include infrastructure and collector metadata. Protect the receiving endpoint, restrict who can access stored payloads, and do not send the payload to an unapproved third party.
+  The payload an include infrastructure and collector metadata. Protect the receiving endpoint, restrict who can access stored payloads, and do not send the payload to an unapproved third party.
 </Warning>
 
 ```json
@@ -92,7 +92,7 @@ The payload can include infrastructure and collector metadata. Protect the recei
 
 ## Verify the signature
 
-BloodHound signs the exact raw request body with your webhook's HMAC secret. The signature header has this format:
+BloodHound Enterprise signs the exact raw request body with your webhook's HMAC secret. The signature header uses the following format:
 
 ```text
 t=<unix-timestamp>,v1=<hex-hmac-sha256>
@@ -106,7 +106,11 @@ HMAC-SHA256(secret, "{t}.{raw body}")
 
 Do not parse and reserialize JSON before verification. That changes the body and invalidates the signature.
 
-```python
+See the following code snippets for example implementations:
+
+<CodeGroup dropdown>
+
+```python verify_bloodhound_webhook.py
 import hashlib
 import hmac
 import time
@@ -129,9 +133,7 @@ def verify_bloodhound_webhook(raw_body, signature_header, secret):
     return hmac.compare_digest(expected_signature, supplied_signature)
 ```
 
-**Node.js**
-
-```javascript
+  ```javascript verifyBloodHoundWebhook.js
 import crypto from "node:crypto";
 
 function verifyBloodHoundWebhook(rawBody, signatureHeader, secret) {
@@ -157,6 +159,8 @@ function verifyBloodHoundWebhook(rawBody, signatureHeader, secret) {
 }
 ```
 
+</CodeGroup>
+
 Also use `event_id` to make processing idempotent. A retry preserves the event ID and payload timestamp but has a new signature timestamp.
 
 ## Delivery behavior
@@ -174,14 +178,4 @@ Also use `event_id` to make processing idempotent. A retry preserves the event I
 | Failed final delivery | The delivery is dead-lettered and receives no further automatic retries. |
 | Event History retention | Events and their delivery attempts are retained for 90 days. |
 
-After the final failed attempt, use Event History or the [retry attempt API](/reference/alerts/retry-alert-attempt) to investigate and requeue a failed delivery. Manually requeuing a dead-lettered delivery gives it one additional send attempt; if that attempt fails, BloodHound dead-letters it again.
-
-## Webhook health
-
-BloodHound Enterprise represents webhook health as a rolling score from `0` to `1`, where `1.0` is fully healthy. The API returns this value in the webhook's `health` field. Each webhook starts with a health score of `1.0`.
-
-BloodHound Enterprise calculates the score as an exponentially weighted moving average of dispatch results. Each result has a weight of `0.1`: successful dispatches increase the score and failed dispatches decrease it.
-
-The **Delivery** page displays the score as a color-coded percentage badge in the **Health** column. The **Webhook Details** view displays the same badge. A score of `0.9` or higher is green, a score from `0.7` to less than `0.9` is yellow, and a score below `0.7` is red.
-
-BloodHound Enterprise automatically disables a webhook when its health falls below `0.5`, which occurs after roughly seven consecutive failed dispatches. Health changes only after production dispatches; test requests do not affect the score. Review and correct the receiver before you re-enable the webhook. Re-enabling the webhook resets its health score to `1.0`.
+After the final failed attempt, use the **Event History** page or the [retry attempt API](/reference/alerts/retry-alert-attempt) to investigate and requeue a failed delivery. Manually requeuing a dead-lettered delivery gives it one additional send attempt; if that attempt fails, BloodHound Enterprise dead-letters it again.
