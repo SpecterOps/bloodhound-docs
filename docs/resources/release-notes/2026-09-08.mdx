@@ -38,6 +38,8 @@ import FeatureFlagNote from '/snippets/feature-flag-so-managed.mdx';
 
   You can test a destination before using it, enable or disable individual rules and destinations, and retry failed delivery attempts. BloodHound Enterprise signs webhook requests with an HMAC secret so your receiver can verify their origin.
 
+  To automate alert configuration and delivery workflows, see the [alert APIs](#alerts).
+
   <BetaAccessNote feature="Alerts" />
 </Update>
 
@@ -50,6 +52,8 @@ import FeatureFlagNote from '/snippets/feature-flag-so-managed.mdx';
   Request, download, and delete diagnostic [support bundles](/collect-data/enterprise-collection/collector-support-bundles) from the **Manage Clients** page for SharpHound Enterprise and OpenHound collector clients.
 
   SharpHound Enterprise v2.16.0 or OpenHound v0.4.0 are prerequisites for this feature.
+
+  To automate collector management and artifact workflows, see the [collector management and artifact APIs](#collector-management-and-artifacts).
   <FeatureFlagNote />
 </Update>
 
@@ -60,6 +64,58 @@ import FeatureFlagNote from '/snippets/feature-flag-so-managed.mdx';
   <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
 
   Discover supported OpenGraph extensions, community extensions, and integrations from the new **Marketplace** page. This initial release includes search, filtering, and links to learn more, with expanded Marketplace capabilities planned for future releases.
+</Update>
+
+<Update label="BloodHound" description="New Feature" tags={["API"]}>
+  ## New API Endpoints
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Automate alerting, collector management, artifact transfers, and Protected Asset Score workflows with new BloodHound API v2 endpoints.
+
+  ### Alerts
+
+  Manage alert webhooks and alert rules, inspect event types, events, and delivery attempts, test webhook destinations, rotate webhook secrets, and retry failed deliveries:
+
+  | Method | Endpoint |
+  | --- | --- |
+  | [`GET`](/reference/alerts/list-alert-webhooks), [`POST`](/reference/alerts/create-alert-webhook) | `/api/v2/alert-webhooks` |
+  | [`GET`](/reference/alerts/get-alert-webhook), [`PATCH`](/reference/alerts/update-alert-webhook), [`DELETE`](/reference/alerts/delete-alert-webhook) | `/api/v2/alert-webhooks/{alert_webhook_id}` |
+  | [`POST`](/reference/alerts/rotate-alert-webhook-secret) | `/api/v2/alert-webhooks/{alert_webhook_id}/rotate-secret` |
+  | [`POST`](/reference/alerts/test-alert-webhook) | `/api/v2/alert-webhooks/{alert_webhook_id}/test` |
+  | [`GET`](/reference/alerts/list-alert-event-types) | `/api/v2/alert-event-types` |
+  | [`GET`](/reference/alerts/list-alert-events) | `/api/v2/alert-events` |
+  | [`GET`](/reference/alerts/get-alert-event) | `/api/v2/alert-events/{alert_event_id}` |
+  | [`GET`](/reference/alerts/list-alerts), [`POST`](/reference/alerts/create-alert) | `/api/v2/alerts` |
+  | [`GET`](/reference/alerts/get-alert), [`PATCH`](/reference/alerts/update-alert), [`DELETE`](/reference/alerts/delete-alert) | `/api/v2/alerts/{alert_id}` |
+  | [`GET`](/reference/alerts/list-alert-attempts) | `/api/v2/alert-attempts` |
+  | [`POST`](/reference/alerts/retry-alert-attempt) | `/api/v2/alert-attempts/retry` |
+
+  ### Collector Management and Artifacts
+
+  Queue collector management operations, report operation status, and upload, retrieve, download, or delete operation artifacts:
+
+  | Method | Endpoint |
+  | --- | --- |
+  | [`GET`](/reference/clients/get-available-management-operations) | `/api/v2/clients/management/available` |
+  | [`POST`](/reference/clients/queues-a-management-operation) | `/api/v2/clients/{client_id}/management` |
+  | [`POST`](/reference/clients/notifies-the-api-of-a-management-operation-start) | `/api/v2/clients/management/start` |
+  | [`POST`](/reference/clients/notifies-the-api-of-a-management-operation-ending) | `/api/v2/clients/management/end` |
+  | [`POST`](/reference/clients/create-an-artifact-upload-session) | `/api/v2/clients/management/artifacts` |
+  | [`GET`](/reference/clients/get-an-artifact-upload-session) | `/api/v2/clients/management/artifacts/{artifact_id}` |
+  | [`POST`](/reference/clients/upload-an-artifact-part) | `/api/v2/clients/management/artifacts/{artifact_id}/parts/{part_number}` |
+  | [`POST`](/reference/clients/complete-an-artifact-upload-session) | `/api/v2/clients/management/artifacts/{artifact_id}/complete` |
+  | [`GET`](/reference/clients/download-a-management-operation-artifact-for-the-client), [`DELETE`](/reference/clients/delete-a-management-operation-artifact-for-the-client) | `/api/v2/clients/{client_id}/artifacts/{artifact_id}` |
+  | [`POST`](/reference/clients/get-a-client-artifact-download-url) | `/api/v2/clients/{client_id}/artifacts/{artifact_id}/download-url` |
+  | [`GET`](/reference/clients/download-a-management-operation-artifact-for-the-client-1) | `/api/v2/clients/{client_id}/artifacts/{artifact_id}/download` |
+
+  ### Protected Asset Score
+
+  Retrieve Protected Asset Score results for Privilege Zones:
+
+  | Method | Endpoint |
+  | --- | --- |
+  | [`GET`](/reference/asset-scores/get-zone-protected-asset-score) | `/api/v2/asset-scores/zone-protected-asset-score` |
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
@@ -94,6 +150,8 @@ import FeatureFlagNote from '/snippets/feature-flag-so-managed.mdx';
   <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
 
   Evaluate the protection of assets in each Privilege Zone with the new Protected Asset Score. The score uses the zone's active findings and asset-group tags to help you identify where protection requires attention.
+
+  To retrieve scores programmatically, see the [Protected Asset Score API](#protected-asset-score).
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
