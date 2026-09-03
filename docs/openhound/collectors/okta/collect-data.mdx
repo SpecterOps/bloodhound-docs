@@ -116,6 +116,27 @@ base_url = "https://mytenant.oktapreview.com"
 token = "<api-token>"
 ```
 
+## Pagination settings
+
+The Okta collector requests explicit page sizes for resources that support large result sets. You can tune these defaults with the following DLT source configuration environment variables:
+
+| Environment variable | Default | Purpose |
+| --- | ---: | --- |
+| `SOURCES__SOURCE__OKTA__APPLICATION_USERS_PAGE_SIZE` | `500` | Application users per page, from 1 through 500 |
+| `SOURCES__SOURCE__OKTA__GROUPS_PAGE_SIZE` | `200` | Expanded groups per page, from 1 through 200 |
+| `SOURCES__SOURCE__OKTA__APPLICATION_GROUP_ASSIGNMENTS_PAGE_SIZE` | `200` | Application-group assignments per page, from 20 through 200 |
+| `SOURCES__SOURCE__OKTA__GROUP_PUSH_MAPPINGS_PAGE_SIZE` | `1000` | Group push mappings per page, from 1 through 1,000 |
+| `SOURCES__SOURCE__OKTA__IDENTITY_PROVIDER_USERS_PAGE_SIZE` | `200` | Identity-provider users per page, from 1 through 200 |
+| `SOURCES__SOURCE__OKTA__ENDPOINT_CONCURRENCY` | `2` | Maximum simultaneous requests per endpoint family |
+| `SOURCES__SOURCE__OKTA__RATE_LIMIT_MAX_ELAPSED_SECONDS` | `900` | Maximum elapsed retry window for an individual 429 request |
+| `SOURCES__SOURCE__OKTA__RATE_LIMIT_REMAINING_RESERVE` | `1` | Requests held in reserve when pacing against a rate-limit window |
+
+Application-group assignments are collected from each application's public assignment endpoint, and the collector retains Okta's assignment timestamp, priority, and profile field names without publishing assignment profile values to the graph.
+
+<Note>
+  If the initial expanded group page repeatedly times out on large Okta tenants, the collector retries that first page with successively halved page sizes before failing. With the default `GROUPS_PAGE_SIZE` of 200, that fallback sequence is 200, then 100, then 50.
+</Note>
+
 ## Running OpenHound and Collecting Data
 
 <RunAndCollect source="Okta" env="organization" />

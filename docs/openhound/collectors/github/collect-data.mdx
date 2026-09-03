@@ -134,6 +134,36 @@ Click the tab that matches your authentication setup for details and example con
   </Tab>
 </Tabs>
 
+## Configure GitHub Enterprise Server endpoints
+
+GitHub.com is the default deployment and requires no endpoint configuration. To collect from GitHub Enterprise Server (GHES), set both the REST and GraphQL endpoint URLs in the `[sources.github]` section of `config.toml` or as environment variables.
+
+| Setting | Description | Environment Variable |
+|---------|-------------|----------------------|
+| `rest_api_url` | The GHES REST API base URL. | `SOURCES__GITHUB__REST_API_URL` |
+| `graphql_url` | The GHES GraphQL endpoint URL. | `SOURCES__GITHUB__GRAPHQL_URL` |
+
+**`config.toml`**
+
+```toml title="~/.dlt/config_github.toml"
+[sources.github]
+rest_api_url = "https://ghe.example/api/v3"
+graphql_url = "https://ghe.example/api/graphql"
+```
+
+**Environment variables**
+
+```text
+SOURCES__GITHUB__REST_API_URL=https://ghe.example/api/v3
+SOURCES__GITHUB__GRAPHQL_URL=https://ghe.example/api/graphql
+```
+
+<Note>
+  `rest_api_url` and `graphql_url` must be configured together. Both values must use HTTPS and share the same origin. If you authenticate with a GitHub App, `credentials.api_uri` can only override the path on that same origin, not the origin itself.
+
+  GitHub App authentication and secret scanning PAT validation use the configured REST endpoint instead of assuming GitHub.com, so existing GitHub.com configurations continue to work without changes.
+</Note>
+
 ## Running OpenHound and Collecting Data
 
 <RunAndCollect source="GitHub" env="organization or enterprise account" />
