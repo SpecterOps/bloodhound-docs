@@ -11,7 +11,7 @@ Use the procedures on this page to create a generic HTTPS webhook destination, t
 
 <EarlyAccessAccessNote feature="Alerts" />
 
-If you are new to **Alerts** in BloodHound Enterprise, start with the [Overview](/manage-bloodhound/alerts/overview) to learn how delivery, rules, and event history fit together. Then return here when you are ready to configure an alert webhook.
+If you are new to **Alerts** in BloodHound Enterprise, start with the [Overview](/manage-bloodhound/alerts/overview) to learn how delivery, rules, and event history fit together. Then return here when you are ready to configure a webhook.
 
 ## Before you begin
 
@@ -22,12 +22,12 @@ Ensure you have the necessary permissions and prerequisites in place before conf
 - Your receiver returns a 2xx response after it accepts an event.
 - You have a secure location to store the HMAC secret. BloodHound Enterprise generates a secret for each webhook and displays it only when you create or rotate the webhook.
 
-## Create an alert webhook
+## Create a webhook
 
-Alert webhooks in BloodHound Enterprise are reusable destinations. Multiple rules can send alert events to the same webhook.
+Webhooks in BloodHound Enterprise are reusable destinations. Multiple rules can send alert events to the same webhook.
 
 <Note>
-  We'll cover how to configure rules that connect events to webhook destinations later in this procedure. For now, focus on creating a webhook and verifying that your receiver can accept it.
+  We'll cover how to configure rules that connect event types to webhook destinations later in this procedure. For now, focus on creating a webhook and verifying that your receiver can accept events.
 </Note>
 
 <Steps>
@@ -65,15 +65,15 @@ Alert webhooks in BloodHound Enterprise are reusable destinations. Multiple rule
   </Step>
 </Steps>
 
-## Test an alert webhook
+## Test a webhook
 
-Use **Run Test** from the webhook's actions menu before you create a production rule. The test sends a sample alert event to the alert webhook destination.
+Use **Run Test** from the webhook's actions menu before you create a production rule. The test sends a sample alert event to the webhook destination.
 
 <Note>
-  Use the [alert webhook reference](/integrations/webhooks/collector-offline) to validate the headers, payload, and signature.
+  Use the [webhook reference](/integrations/webhooks/collector-offline) to validate the headers, payload, and signature.
 </Note>
 
-A test does not create a record on the **Event History** page, increase a delivery attempt count, or affect [alert webhook health](/manage-bloodhound/alerts/configure#alert-webhook-health).
+A test does not create a record on the **Event History** page, increase a delivery attempt count, or affect [webhook health](/manage-bloodhound/alerts/configure#webhook-health).
 
 <Steps>
   <Step title="Open Run Test">
@@ -83,7 +83,7 @@ A test does not create a record on the **Event History** page, increase a delive
     In the **Run Test** dialog, select the **Collector Offline** event trigger and version **1**.
 
     <Note>
-      The version identifies the alert webhook contract for the alert event. BloodHound Enterprise can add a newer contract version without changing the version used by an existing rule, so your receiver can continue processing the current contract until you update it.
+      The version identifies the webhook payload contract for the event type. BloodHound Enterprise can add a newer contract version without changing the version used by an existing rule, so your receiver can continue processing the current contract until you update it.
     </Note>
   </Step>
   <Step title="Run the test">
@@ -100,7 +100,7 @@ A test does not create a record on the **Event History** page, increase a delive
 
 ## Create a rule
 
-Rules allow you to define which alert events BloodHound Enterprise sends to which alert webhook destinations. When an event is triggered, BloodHound Enterprise sends an alert event to the selected alert webhook destination.
+Rules allow you to define which event types BloodHound Enterprise sends to which webhook destinations. When BloodHound Enterprise generates a matching event, it sends the alert event to the selected webhook destination.
 
 <Steps>
   <Step title="Open Rules">
@@ -116,53 +116,53 @@ Rules allow you to define which alert events BloodHound Enterprise sends to whic
     | Description                | Optionally describe the rule's purpose. Use no more than 500 characters and do not include leading or trailing spaces. | No |
     | Alert channel              | Accept the default **Webhook** channel. This is currently the only supported channel type. | Yes |
     | Select an existing webhook | Select a webhook from the list. If you have not created one, click **Create new webhook**. | Yes |
-    | Event trigger              | Select the event that triggers the rule. During Early Access, **Collector Offline** is currently the only available trigger. | Yes |
-    | Version                    | Accept the default **1** version for the event trigger. The version identifies the webhook contract for that event.<br/><br/>Existing rules can continue using their selected version when a newer contract version becomes available. | Yes |
+    | Event trigger              | Select the event type that triggers the rule. During Early Access, **Collector Offline** is currently the only available trigger. | Yes |
+    | Version                    | Accept the default **1** version for the event trigger. The version identifies the webhook payload contract for that event type.<br/><br/>Existing rules can continue using their selected version when a newer contract version becomes available. | Yes |
 
   </Step>
   <Step title="Complete rule configuration">
     Click **Create** to save the rule and return to the **Rules** page.
 
-    BloodHound Enterprise sends an alert event to the selected alert webhook when the selected alert event is triggered.
+    BloodHound Enterprise sends the alert event to the selected webhook when it generates an event that matches the rule.
   </Step>
 </Steps>
 
-## Manage alert webhooks and rules
+## Manage webhooks and rules
 
-The **Actions** column on the **Delivery** and **Rules** pages provides options for managing existing alert webhook and rule configurations. The column includes **Edit** and **Delete** options. Click the ellipsis (<Icon icon="ellipsis-vertical" />) to access more actions.
+The **Actions** column on the **Delivery** and **Rules** pages provides options for managing existing webhook and rule configurations. The column includes **Edit** and **Delete** options. Click the ellipsis (<Icon icon="ellipsis-vertical" />) to access more actions.
 
-### Manage an alert webhook
+### Manage webhooks
 
 You can perform the following actions on a webhook:
 
 | Action | Behavior |
 | --- | --- |
-| **Edit** | Opens the alert webhook configuration. Update its settings, then click **Save**. |
-| **Delete** | Permanently removes the alert webhook, its secret, connected subscription associations, and delivery-attempt history. It does not delete the associated rule. |
-| **View Details** | Displays the alert webhook's configuration and status. |
-| **Run Test** | Sends a sample alert event to the alert webhook destination. |
+| **Edit** | Opens the webhook configuration. Update its settings, then click **Save**. |
+| **Delete** | Permanently removes the webhook, its secret, connected subscription associations, and delivery-attempt history. It does not delete the associated rule. |
+| **View Details** | Displays the webhook's configuration and status. |
+| **Run Test** | Sends a sample alert event to the webhook destination. |
 | **Regenerate Secret** | Replaces the current HMAC secret. Update your receiver before you resume normal delivery. |
-| **Disable Webhook** | Temporarily stops every rule from sending to this alert webhook destination without deleting its configuration.<br/><br/>Use it while you repair, reconfigure, or review the receiving system. Select **Enable Webhook** to resume delivery. Re-enabling a webhook resets its delivery health. |
-| **View Event History** | Opens delivery attempts for that alert webhook. |
+| **Disable Webhook** | Temporarily stops every rule from sending to this webhook destination without deleting its configuration.<br/><br/>Use it while you repair, reconfigure, or review the receiving system. Select **Enable Webhook** to resume delivery. Re-enabling a webhook resets its delivery health. |
+| **View Event History** | Opens delivery attempts for that webhook. |
 
 <Note>
   See [Webhook health](/manage-bloodhound/alerts/configure#webhook-health) for how BloodHound Enterprise calculates and displays health and when it automatically disables a webhook.
 </Note>
 
-### Manage a rule
+### Manage rules
 
 You can perform the following actions on a rule:
 
 | Action | Behavior |
 | --- | --- |
 | **Edit** | Opens the rule configuration. Update its settings, then click **Save**. |
-| **Delete** | Permanently removes the rule. If no rules reference a webhook, it remains configured and can be reused; delete it separately when you no longer need the destination.<br/><br/>It does not delete the associated alert webhooks. Confirm the deletion when prompted. |
-| **Disable Notification** | Temporarily stops this rule from sending notifications without affecting other rules that use the same alert webhook.<br/><br/>Use it to suppress expected alert events, such as collector maintenance. Select **Enable Notification** to resume notifications. |
+| **Delete** | Permanently removes the rule. If no rules reference a webhook, it remains configured and can be reused; delete it separately when you no longer need the destination.<br/><br/>It does not delete the associated webhooks. Confirm the deletion when prompted. |
+| **Disable Notification** | Temporarily stops this rule from delivering events without affecting other rules that use the same webhook.<br/><br/>Use it to suppress expected alert events, such as collector maintenance. Select **Enable Notification** to resume delivery. |
 | **View Event History** | Opens delivery attempts for that rule. |
 
-### Disable an alert webhook or rule
+### Disable a webhook or rule
 
-You may need to temporarily disable an alert webhook or rule to pause deliveries while you perform maintenance, troubleshoot issues, or review configurations.
+You may need to temporarily disable a webhook or rule to pause deliveries while you perform maintenance, troubleshoot issues, or review configurations.
 
 Choose the action that matches the scope of the pause:
 
@@ -172,24 +172,24 @@ Choose the action that matches the scope of the pause:
 | Every rule that sends to one destination | **Disable Webhook** |
 
 <Note>
-  Disabled rules and alert webhooks are excluded from new deliveries and scheduled retries. Disabling does not cancel a request that is already in progress.
+  Disabled rules and webhooks are excluded from new deliveries and scheduled retries. Disabling does not cancel a request that is already in progress.
 
-  Failed delivery attempts remain in Event History and can resume retrying after you re-enable the associated rule or alert webhook. BloodHound Enterprise does not automatically deliver events that occur while the rule or alert webhook is disabled.
+  Failed delivery attempts remain in Event History and can resume retrying after you re-enable the associated rule or webhook. BloodHound Enterprise does not automatically deliver events that occur while the rule or webhook is disabled.
 </Note>
 
-## Alert webhook health
+## Webhook health
 
-BloodHound Enterprise represents alert webhook health as a rolling score from `0` to `1`, where `1.0` is fully healthy. The API returns this value in the alert webhook's `health` field. Each alert webhook starts with a health score of `1.0`.
+BloodHound Enterprise represents webhook health as a rolling score from `0` to `1`, where `1.0` is fully healthy. The API returns this value in the webhook's `health` field. Each webhook starts with a health score of `1.0`.
 
 BloodHound Enterprise calculates the score as an exponentially weighted moving average of dispatch results. Each result has a weight of `0.1`: successful dispatches increase the score and failed dispatches decrease it.
 
 The **Delivery** page displays the score as a color-coded percentage badge in the **Health** column. The **Webhook Details** view displays the same badge. A score of `0.9` or higher is green, a score from `0.7` to less than `0.9` is yellow, and a score below `0.7` is red. For example:
 
-- <Badge color="green">90%</Badge> indicates a healthy alert webhook.
-- <Badge color="yellow">80%</Badge> indicates an alert webhook that has experienced some failed deliveries.
-- <Badge color="red">60%</Badge> indicates an alert webhook that has experienced many failed deliveries.
+- <Badge color="green">90%</Badge> indicates a healthy webhook.
+- <Badge color="yellow">80%</Badge> indicates a webhook that has experienced some failed deliveries.
+- <Badge color="red">60%</Badge> indicates a webhook that has experienced many failed deliveries.
 
-BloodHound Enterprise automatically disables an alert webhook when its health falls below `0.5`, which occurs after roughly seven consecutive failed dispatches. Health changes only after production dispatches; test requests do not affect the score. Review and correct the receiver before you re-enable the webhook. Re-enabling the alert webhook resets its health score to `1.0`.
+BloodHound Enterprise automatically disables a webhook when its health falls below `0.5`, which occurs after roughly seven consecutive failed dispatches. Health changes only after production dispatches; test requests do not affect the score. Review and correct the receiver before you re-enable the webhook. Re-enabling the webhook resets its health score to `1.0`.
 
 ## Automate configuration
 

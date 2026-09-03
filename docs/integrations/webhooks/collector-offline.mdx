@@ -7,17 +7,17 @@ import EarlyAccessAccessNote from '/snippets/feature-flag-user-managed.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-BloodHound Enterprise sends a signed HTTPS POST request to a generic webhook destination when a collector remains offline. Use this reference to validate the request, route the event, and process it safely. See [Configure](/manage-bloodhound/alerts/configure) for setup instructions.
+BloodHound Enterprise sends a signed HTTPS POST request to an alert webhook when a collector remains offline. Use this reference to validate the request, route the event, and process it safely. See [Configure](/manage-bloodhound/alerts/configure) for setup instructions.
 
 <EarlyAccessAccessNote feature="Alerts" />
 
-## Supported event
+## Supported alert event
 
-| Event | Identifier | Data version | Trigger |
+| Alert event | Identifier | Data version | Trigger |
 | --- | --- | --- | --- |
 | Collector Offline | `collector.status.offline` | `1` | A collector has not checked in for at least 20 minutes. |
 
-BloodHound Enterprise evaluates collector status about every seven minutes. It suppresses another event for the same collector for seven days and does not issue a recovery event.
+BloodHound Enterprise evaluates collector status about every seven minutes. It suppresses another alert event for the same collector for seven days and does not issue a recovery event.
 
 ## Receive the request
 
@@ -27,8 +27,8 @@ BloodHound Enterprise sends a JSON request with the following headers:
 | --- | --- |
 | `Content-Type: application/json` | Identifies the request body format. |
 | `X-Bloodhound-Signature` | Carries the signature timestamp and HMAC-SHA256 signature. |
-| `X-Bloodhound-Event-Type` | Lets your receiver route the event without parsing the body. |
-| `X-Bloodhound-Event-ID` | Identifies the event for idempotent processing. |
+| `X-Bloodhound-Event-Type` | Lets your receiver route the alert event without parsing the body. |
+| `X-Bloodhound-Event-ID` | Identifies the alert event for idempotent processing. |
 
 Return a 2xx response after your receiver accepts the event. BloodHound Enterprise treats every other HTTP status, including redirects, as a failed delivery.
 
@@ -61,16 +61,16 @@ The envelope stays stable across event versions. The `version` field identifies 
 ```
 
 <ResponseField name="event_id" type="UUID" required>
-  Stable event identifier. It matches `X-Bloodhound-Event-ID`.
+  Stable alert event identifier. It matches `X-Bloodhound-Event-ID`.
 </ResponseField>
 <ResponseField name="event_type" type="string" required>
-  `collector.status.offline`.
+  Alert event type identifier: `collector.status.offline`.
 </ResponseField>
 <ResponseField name="version" type="integer" required>
   Payload data version. This event uses `1`.
 </ResponseField>
 <ResponseField name="timestamp" type="RFC 3339 timestamp" required>
-  Time BloodHound Enterprise created the event.
+  Time BloodHound Enterprise created the alert event.
 </ResponseField>
 <ResponseField name="message" type="string" required>
   Human-readable summary.
@@ -128,7 +128,7 @@ The event builder does not validate the declared collector type or authenticatio
 
 ## Verify the signature
 
-BloodHound Enterprise signs the exact raw request body with your webhook's HMAC secret. The signature header uses the following format:
+BloodHound Enterprise signs the exact raw request body with your alert webhook's HMAC secret. The signature header uses the following format:
 
 ```text
 t=<unix-timestamp>,v1=<hex-hmac-sha256>
@@ -144,7 +144,7 @@ Do not parse and reserialize JSON before verification. That changes the body and
 
 Use `event_id` to make processing idempotent. Retries retain the event ID and payload timestamp but receive a new signature timestamp.
 
-Failed deliveries can arrive more than once, including after a manual retry. Delivery is not strictly at least once: if BloodHound Enterprise sends an event but cannot record the success, it does not automatically retry that attempt.
+The same alert event can arrive more than once, including after a manual retry. Delivery is not strictly at least once: if BloodHound Enterprise sends an event but cannot record the success, it does not automatically retry that attempt.
 
 Delivery order is not guaranteed. Initial deliveries and retries run independently, so events can arrive out of order. Use the event timestamp for context, not the arrival time.
 
