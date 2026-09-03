@@ -81,9 +81,7 @@ group:admin
 
 ## Pathfinding
 
-The **Pathfinding** tab allows you to discover relationships between objects by finding paths from a start node through one or more destination nodes.
-
-You can include a total of four destination nodes in a single search, which is useful for investigating potential attack paths across identity providers and cloud services in a single graph view.
+The **Pathfinding** tab allows you to discover relationships between two nodes. You can add up to two additional destination nodes to narrow the results, which helps you focus on a particular part of the graph.
 
 <Note>
   When [ETAC](/manage-bloodhound/auth/environment-targeted-access-control) applies to your user account, pathfinding returns data from the environments you can access only.
@@ -95,7 +93,8 @@ BloodHound currently supports the **Search** and **Cypher** search methods for O
 
 Use cases for the pathfinding search method include:
 
-* **Attack path analysis:** Identify potential compromise chains through selected objects
+* **Attack path analysis:** Identify potential compromise chains through two nodes
+* **Focused path analysis:** Require paths to include one or two additional destination nodes to focus on a specific part of the graph
 * **Relationship mapping:** Understand how objects are connected within your environment
 * **Filtered exploration:** Focus on relevant relationships by excluding edge types or reversing path direction
 
@@ -109,7 +108,7 @@ For example, you can find all paths from a user named "bob" to a group containin
   <img src="/images/explore/search-pathfinding.gif" alt="A view showing how to search for paths from a user named bob to groups containing the word domain admins in the Explore page" />
 </Frame>
 
-To build a path through multiple objects, select the nodes in the order that you want BloodHound to traverse them. BloodHound finds the shortest path between each consecutive pair and combines the results into one graph.
+To build a path through multiple nodes, select a start node and one or more destination nodes. You can rearrange the destination nodes to set the order in which BloodHound traverses them. BloodHound finds the shortest path between each consecutive pair and combines the results into one graph.
 
 Pathfinding also includes options to customize your search:
 
@@ -161,11 +160,23 @@ For example, clicking `USERS@PHANTOM.CORP` in the previous graph highlights the 
 
 Right-click on any node in the graph to access the context menu. Options in the context menu include:
 
-* **Set as starting node**—Set the node as the first node in the **Pathfinding** tab and immediately draw a new graph showing paths through the current destination nodes
-* **Set as ending node**—Set the node as the first destination in the **Pathfinding** tab and immediately draw a new graph showing paths from the current starting node through that destination and any remaining destination nodes
+* **Set as starting node**—Set the node as the starting point in the **Pathfinding** tab.
+
+  * If a pathfinding search is already in progress, BloodHound redraws the graph using the current destination nodes.
+
+  * Otherwise, BloodHound displays only the selected node so you can continue building the pathfinding search.
+
+* **Set as ending node**—Set the node as the destination in the **Pathfinding** tab.
+
+  * If a pathfinding search is already in progress, BloodHound redraws the graph from the current starting node through the selected destination and any remaining destination nodes.
+
+  * Otherwise, BloodHound displays only the selected node so you can continue building the pathfinding search.
+
 * **Add to/Remove from Tier Zero**—Mark or unmark the node as a member of the Tier Zero privilege zone. Adding automatically triggers analysis to tag the object; removing requires [manually editing](/analyze-data/privilege-zones/rules#edit-or-delete-a-rule) the zone rule to remove the object.
+
 * **Add to/Remove from Owned**—Mark or unmark the node as compromised in the Privilege Zones page. Adding automatically triggers analysis to tag the object; removing requires [manually editing](/analyze-data/privilege-zones/rules#edit-or-delete-a-rule) the label rule to remove the object.
-* **Copy**—Copy the node's name, object ID, or a Cypher query to your clipboard for use in other searches or documentation
+
+* **Copy**—Copy the node's name, object ID, or a Cypher query to your clipboard for use in other searches or documentation.
 
 #### Entity panel
 
