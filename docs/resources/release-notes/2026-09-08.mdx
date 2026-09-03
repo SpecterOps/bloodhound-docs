@@ -179,12 +179,61 @@ import FeatureFlagNote from '/snippets/feature-flag-so-managed.mdx';
 </Update>
 
 <Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9508*/}
+  ## GitHub Enterprise Server Endpoint Support
+
+  Configure separate `rest_api_url` and `graphql_url` values to collect data from GitHub Enterprise Server. GitHub.com remains the default, so existing configurations continue to work without changes.
+
+  The endpoint settings must use HTTPS, share the same origin, and be configured together. GitHub App authentication and PAT validation now use the configured REST endpoint instead of assuming GitHub.com.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
   {/*BED-9559, BED-9063, BED-8759*/}
   ## OpenHound Configuration and Diagnostics
 
   Use the current OpenHound GitHub collector with OpenHound v0.4.0 and configure the BloodHound Enterprise destination URL consistently in `config.toml` for asset uploads.
 
   Collection logs now identify the installed collector extension version to make troubleshooting easier.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9562, BED-9519, BED-9505*/}
+  ## GitHub and Okta Collection Resilience
+
+  Improve collection reliability for large environments and organization-scoped GitHub runs.
+
+  The Okta collector pages expanded group requests and retries the initial request with limits of 200, 100, and 50 when a timeout persists.
+
+  The GitHub collector reduces repository GraphQL page sizes from 100 to 50 and then 25 after transient gateway failures, then returns to the default page size when later pages succeed.
+
+  Organization-only GitHub collections also resolve the canonical organization login before resource collection begins, preventing case-sensitive lookup failures.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["OpenGraph"]}>
+  {/*BED-9473*/}
+  ## GitHub Enterprise Role Memberships
+
+  Restore accurate membership data for the synthetic `GH_EnterpriseRole` `owners` and `members` roles across supported GitHub authentication configurations.
+
+  OpenHound now uses the available enterprise or organization-backed collection paths to populate `GH_User -[:GH_HasRole]-> GH_EnterpriseRole` relationships.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["OpenGraph"]}>
+  {/*BED-9472*/}
+  ## GitHub EMU External Group Modeling
+
+  Collect external identity-provider group metadata for normal `GH_Team` nodes in GitHub Enterprise Managed User organizations.
+
+  OpenHound adds the `external_group_id` and `external_group_name` properties and emits a `SCIM_Provisioned` relationship to the matching `SCIM_Group` when the corresponding SCIM data is available.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["OpenGraph"]}>
+  {/*BED-9437*/}
+  ## Authoritative Okta Application-Group Assignments
+
+  Collect group-to-application assignments from Okta's application assignment endpoints instead of relying on group statistics that may be stale.
+
+  The collector preserves the existing `Okta_AppAssignment` relationships and assignment evidence while failing closed when required assignment data is incomplete or ambiguous.
 </Update>
 
 <Update label="BloodHound" tags={["Fixed Issues"]}>
