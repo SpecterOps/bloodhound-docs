@@ -7,17 +7,15 @@ import EarlyAccessAccessNote from '/snippets/feature-flag-user-managed.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
-Alerts help you detect important conditions in your tenant or environments and send alert events to the operational tools your team already monitors. During Early Access, BloodHound Enterprise supports the **Collector Offline** event delivered through generic HTTPS webhooks.
+Alerts help you detect important conditions in your BloodHound Enterprise tenant and deliver notifications to the operational tools your team already monitors.
 
 <EarlyAccessAccessNote feature="Alerts" />
 
-During Early Access, Alerts support the **Collector Offline** event type and **Webhook** delivery method. You can configure multiple webhook destinations, including separate destinations for different Slack or Teams channels.
-
-You configure where BloodHound Enterprise sends events in **Delivery**, configure which event type triggers each alert in **Rules**, and review delivery attempts in **Event History**.
+During Early Access, Alerts support the **Collector Offline** event type and **Webhook** alert channel.
 
 ## Use cases
 
-Use Alerts to keep collection interruptions visible to the people and systems responsible for resolving them:
+Use Alerts to keep BloodHound Enterprise events visible to the people and systems responsible for resolving them:
 
 - **Detect important events sooner:** Send an alert event to a monitored endpoint so an operations team can investigate an issue promptly.
 - **Connect collector health to existing workflows:** Route signed events through a generic webhook receiver that creates an incident, posts a message to an approved internal system, or starts an automation workflow.
@@ -25,62 +23,70 @@ Use Alerts to keep collection interruptions visible to the people and systems re
 
 ## Key concepts
 
-An alert is a user-configured rule that connects an event type to a delivery destination. BloodHound Enterprise stores the resulting alert events and delivery attempts separately from the alert rule and destination.
-
-Treat webhooks as reusable destinations, not as children of a rule. For example, multiple rules can send events to the same webhook.
-
 Use the following terms to distinguish the parts of the Alerts workflow:
 
 | Term | Meaning |
 | --- | --- |
-| Alert | A user-configured rule that connects an event type to one or more delivery destinations. |
-| Event | A system-generated occurrence, such as a collector going offline. BloodHound Enterprise sends the event to every matching webhook. |
-| Event type | The trigger definition that a rule uses, such as `collector.status.offline`. Each type can support multiple payload versions. |
-| Webhook | A reusable HTTPS delivery destination for alert events. |
-| Delivery attempt | A record of BloodHound Enterprise sending an alert event to a destination for a specific alert rule. |
+| Alert event | A system-generated record for a condition that matches a rule, such as a collector remaining offline. BloodHound Enterprise sends the event to every matching alert channel. |
+| Alert channel | A delivery method for alert events. **Webhook** is currently the only available alert channel. |
+| Event trigger | An event type or condition that can cause an alert event. A trigger can represent something that happens or something that does not happen within a defined period.<br/><br/>Each type can support multiple payload versions. **Collector Offline** is currently the only available trigger. |
+| Rule | A configuration that specifies an event trigger and maps it to one or more alert channel configurations. |
+| Webhook | A reusable alert channel configuration for delivering alert events based on an event trigger. |
+
+<Note>
+  Treat alert channels as reusable configurations, not as children of a rule. For example, multiple rules can send events to the same webhook.
+</Note>
+
+## How alerts work
+
+You configure alert channels in **Delivery**, configure which event type triggers an alert event in **Rules**, and review alert channel delivery attempts in **Event History**.
 
 | Page | Purpose | What you configure or review |
 | --- | --- | --- |
 | **Delivery** | Defines where BloodHound Enterprise sends alert events. | Create and manage generic HTTPS webhooks, including their HMAC secrets. |
-| **Rules** | Connects an alert event type to a delivery destination. | Create a rule that sends matching alert events to a selected webhook destination. |
-| **Event History** | Records webhook delivery activity. | Review delivery attempts, delivery state, and errors when you investigate an event or a receiver. |
+| **Rules** | Defines which event type triggers an alert channel. | Create a rule that sends matching alert events to selected alert channels. |
+| **Event History** | Records alert channel delivery activity. | Review delivery attempts, delivery state, and errors when you investigate an event or an alert channel. |
 
-Each webhook destination has a [delivery-health signal](/manage-bloodhound/alerts/configure#webhook-health). BloodHound Enterprise updates this signal from dispatch outcomes so you can identify destinations that may not receive alerts. Health belongs to the delivery destination; it does not describe the alert event type or rule.
+Each alert channel configuration has a [health signal](/manage-bloodhound/alerts/configure#webhook-health). BloodHound Enterprise updates this signal from dispatch outcomes so you can identify destinations that may not receive alerts. Health belongs to the delivery destination; it does not describe the alert event type or rule.
 
 <Note>
-  Your BloodHound Enterprise user role determines permissions on the **Alerts** pages.
+  Your BloodHound Enterprise user role determines permissions on the Alerts pages:
 
-  - Administrators can create and manage delivery destinations, rules, and view event history.
+  - Administrators have read-write access to all pages.
   - Auditors have read-only access to all pages.
 </Note>
 
-An example **Alerts** workflow involves the following high-level steps:
+An example **Alerts** workflow involves the following steps:
 
 1. Create a webhook on the **Delivery** page.
-1. Create a rule that links the webhook to an event type, such as the **Collector Offline** event type (`collector.status.offline`), on the **Rules** page.
+1. Create a rule that links the webhook to an event trigger (such as **Collector Offline**) on the **Rules** page.
 1. When BloodHound Enterprise generates a matching alert event, it evaluates enabled rules, queues a delivery attempt for each configured webhook, sends the signed event, and records the outcome on the **Event History** page.
 
 <Tip>
   See [Configure alerts](/manage-bloodhound/alerts/configure) for detailed instructions.
 </Tip>
 
-## How alerts work
+An alert workflow has three parts:
 
-BloodHound Enterprise periodically evaluates alert conditions. During Early Access, it evaluates collector check-in status approximately every seven minutes. A collector that remains offline normally triggers an event about 20 to 27 minutes after its last check-in.
+- BloodHound Enterprise detects a system event or condition
+- An alert rule determines whether to notify you
+- A channel delivers the notification
+
+BloodHound Enterprise periodically evaluates alert conditions. During Early Access, it evaluates collector check-in status approximately every seven minutes. A collector that remains offline normally causes BloodHound Enterprise to create an alert event about 20 to 27 minutes after its last check-in.
 
 ```mermaid
 sequenceDiagram
     participant C as Collector
     participant B as BloodHound Enterprise
     participant R as Alert rule
-    participant W as Destination
+    participant W as Alert channel
     participant H as Event History
 
     C->>B: Stops checking in
     B->>B: Detects a 20-minute missed check-in
     B->>B: Generates a Collector Offline event
     B->>R: Evaluates matching rule
-    R->>B: Matches configured destination
+    R->>B: Matches configured alert channel
     B->>W: Sends a signed Collector Offline event
     B->>H: Records the delivery result
 ```
@@ -91,6 +97,6 @@ sequenceDiagram
 
 ## Next steps
 
-- [Configure a webhook](/manage-bloodhound/alerts/configure) to create a destination and an alert rule.
+- [Configure a webhook](/manage-bloodhound/alerts/configure) to configure an alert channel and rule.
 - [Review the webhook contract](/integrations/webhooks/collector-offline) before you connect a receiver.
 - [Troubleshoot webhook delivery](/manage-bloodhound/alerts/troubleshoot) when Event History shows delivery failures.

@@ -142,14 +142,6 @@ HMAC-SHA256(secret, "{t}.{raw body}")
 
 Do not parse and reserialize JSON before verification. That changes the body and invalidates the signature.
 
-Use `event_id` to make processing idempotent. Retries retain the event ID and payload timestamp but receive a new signature timestamp.
-
-The same alert event can arrive more than once, including after a manual retry. Delivery is not strictly at least once: if BloodHound Enterprise sends an event but cannot record the success, it does not automatically retry that attempt.
-
-Delivery order is not guaranteed. Initial deliveries and retries run independently, so events can arrive out of order. Use the event timestamp for context, not the arrival time.
-
-BloodHound Enterprise does not enforce a replay-timestamp tolerance. The examples reject signatures whose `t` value differs from the receiver's clock by more than five minutes. Set and enforce an appropriate window in your receiver.
-
 ## Delivery behavior
 
 | Behavior | Value |
@@ -158,15 +150,17 @@ BloodHound Enterprise does not enforce a replay-timestamp tolerance. The example
 | Success response | Any 2xx HTTP response |
 | Request timeout | 7 seconds |
 | TLS requirement | TLS 1.2 or later |
-| Redirects | Not followed; treated as failed delivery |
 | Automatic retries | Up to seven total attempts: the initial delivery and up to six retries |
-| Retry timing | The first retry is scheduled after up to about six minutes. Each later retry uses a 4x backoff with up to 20% subtract-only jitter. The retry worker runs about every six minutes. |
+| Retry timing | The first retry is scheduled after up to about six minutes. Later retries use a 4x backoff with up to 20% subtract-only jitter. The retry worker runs about every six minutes. |
 | Retry processing | The retry worker processes up to 30 due deliveries per run. A backlog can delay a retry beyond its scheduled time. |
-| Failed final delivery | The delivery is dead-lettered and receives no further automatic retries. |
 | Event History retention | Events and their delivery attempts are retained for 90 days. |
 
-A delivery is considered failed when the request times out, encounters a transport or TLS error, or receives a non-2xx HTTP response. Each of these failures consumes the current attempt and is eligible for automatic retry while attempts remain. Redirect responses are not followed and are treated as failed deliveries.
+BloodHound Enterprise treats a delivery as failed when the request times out, encounters a transport or TLS error, or returns a non-2xx response. Failed deliveries are retried according to the table and dead-lettered after the final failed attempt. Use the **Event History** page or the [retry attempt API](/reference/alerts/retry-alert-attempt) to requeue a failed delivery. A manual requeue gives it one additional send attempt.
+
+Retries and manual requeues can deliver the same event more than once. Use `event_id` to deduplicate events and make processing idempotent. Retries retain the event ID and payload timestamp but receive a new signature timestamp.
+
+Delivery order is not guaranteed. Initial deliveries and retries run independently, so events can arrive out of order. Use the event timestamp for context, not the arrival time.
+
+BloodHound Enterprise does not enforce a replay-timestamp tolerance. The examples reject signatures whose `t` value differs from the receiver's clock by more than five minutes. Set and enforce an appropriate window in your receiver.
 
 Return a 2xx response only after your receiver has accepted the event for processing. If your receiver cannot accept the event, return a non-2xx response so BloodHound Enterprise can record the failure and retry it when eligible.
-
-After the final failed attempt, use the **Event History** page or the [retry attempt API](/reference/alerts/retry-alert-attempt) to investigate and requeue a failed delivery. Manually requeuing a dead-lettered delivery gives it one additional send attempt; if that attempt fails, BloodHound Enterprise dead-letters it again.
