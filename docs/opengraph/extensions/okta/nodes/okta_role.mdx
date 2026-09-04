@@ -32,59 +32,7 @@ The following roles can either be scoped to specific resources or assigned organ
 <Info>
 Although the Workflows Administrator role is a built-in role, the Okta API treats it as a custom role that is scoped to the built-in `Workflows Resource Set`.
 </Info>
-Built-in roles are represented as Okta_Role nodes in BloodHound.
-## Edges
-
-<Note>
-The tables below list edges defined by the Okta extension only. Additional edges to or from this node may be created by other extensions.
-</Note>
-
-### Inbound Edges
-
-| Edge Type | Source Node Types | Traversable |
-| --------- | ----------------- | ----------- |
-| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Organization](/opengraph/extensions/okta/nodes/okta_organization) | ✅ |
-| [Okta_HasRole](/opengraph/extensions/okta/edges/okta_hasrole) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user), [Okta_Group](/opengraph/extensions/okta/nodes/okta_group), [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ❌ |
-
-### Outbound Edges
-
-No outbound edges are defined by the Okta extension for this node.
-
-## Properties
-
-| Name | Source | Type | Description |
-| ---- | ------ | ---- | ----------- |
-| `id` | `role.id + "@" + okta_domain` | `string` | Unique role identifier (domain-qualified). |
-| `name` | `role.label` | `string` | Role name. |
-| `display_name` | `role.label` | `string` | Display-friendly role name. |
-| `okta_domain` | Collector context (non-API) | `string` | Okta organization domain where the role exists. |
-| `description` | `role.description` | `string` | Role description text when available. |
-| `permissions` | Hardcoded mapping | `string[]` | Effective permission labels associated with the role. |
-
-## Sample Property Values
-
-```yaml
-id: APP_ADMIN@contoso.okta.com
-name: Application Administrator
-display_name: Application Administrator
-okta_domain: contoso.okta.com
-permissions:
-    - okta.apps.manage
-    - okta.apps.read
-    - okta.apps.assignment.manage
-    - okta.apps.clientCredentials.read
-    - okta.users.appAssignment.manage
-    - okta.groups.appAssignment.manage
-    - okta.policies.manage
-    - okta.policies.read
-    - okta.users.read
-    - okta.groups.read
-    - okta.users.userprofile.manage
-    - okta.users.userprofile.read
-    - okta.profilesources.import.run
-    - okta.agents.register
-    - okta.realms.read
-```
+Okta built-in roles are represented as Okta_Role nodes.
 
 ## Built-In Role Identifiers
 
@@ -105,11 +53,8 @@ When working with roles using the Okta API, the built-in roles are referenced by
 | REPORT_ADMIN                | Report Administrator                |
 | READ_ONLY_ADMIN             | Read-Only Administrator             |
 
-To make the role identifiers unique, the collector adds the organization domain name as a suffix to each role's ID, e.g., `SUPER_ADMIN@contoso.okta.com`.
+To make the role identifiers unique, the OpenHound collector adds the organization domain name as a suffix to each role's ID, e.g., `SUPER_ADMIN@contoso.okta.com`.
 
 ## Built-In Role Permissions
 
-Unlike custom roles, built-in roles have fixed permissions that cannot be changed.
-However, the exact OAuth 2.0 scopes granted to each built-in role are not publicly documented by Okta and cannot even be retrieved via the API.
-We therefore did the mapping by ourselves based on the role descriptions in the Okta documentation.
-Hence, the resulting permissions ingested to BloodHound are best-effort approximations and may not be 100% accurate.
+Unlike custom roles, built-in roles have fixed permissions that cannot be changed. However, the exact OAuth 2.0 scopes granted to each built-in role are not publicly documented by Okta and cannot even be retrieved via the API. We therefore did the mapping by ourselves based on the role descriptions in the Okta documentation. Hence, the resulting permissions ingested to BloodHound are best-effort approximations and may not be 100% accurate.
