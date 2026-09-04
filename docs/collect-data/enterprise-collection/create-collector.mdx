@@ -3,76 +3,34 @@ title: Create a Collector Client
 description: Learn how to create a BloodHound Enterprise collector client.
 ---
 
+import FeatureFlagNote from "/snippets/feature-flag-so-managed.mdx";
+
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
 
 ## Purpose
 
-This guide explains how to create a BloodHound Enterprise collector client. It is intended for Administrators who are deploying SharpHound Enterprise or AzureHound Enterprise for data collection.
+This guide explains how to create a BloodHound Enterprise collector client. It is intended for Administrators who are deploying a collector application for data collection.
 
-Collector clients connect your BloodHound Enterprise tenant to your collector applications. They provide the necessary authentication and configuration information for your SharpHound Enterprise or AzureHound Enterprise collector applications to securely upload collected data to your BloodHound Enterprise instance for processing and analysis.
+Collector clients connect your BloodHound Enterprise tenant to collector applications. They provide the authentication and configuration information that SharpHound Enterprise, AzureHound Enterprise, and OpenHound use to securely upload collected data for processing and analysis.
 
-BloodHound Enterprise supports two types of collector clients:
+BloodHound Enterprise supports three types of collector clients:
 
 - **SharpHound Enterprise** - Collects data from Active Directory environments
 - **AzureHound Enterprise** - Collects data from Entra ID environments
+- **OpenHound** - Collects data from cloud environments supported by OpenHound collectors
 
 ## Prerequisites
 
 - A BloodHound Enterprise <Tooltip headline="tenant" tip="A dedicated instance of BloodHound that contains its own data, configurations, and user access controls.">tenant</Tooltip>
 - Logged in as a user assigned a [role](/manage-bloodhound/auth/users-and-roles) authorized to create a collector client
 
-<Note>See [SharpHound Enterprise System Requirements](/install-data-collector/install-sharphound/system-requirements) or [AzureHound Enterprise System Requirements](/install-data-collector/install-azurehound/system-requirements) for more information on the requirements for each collector type.</Note>
+<Note>See [SharpHound Enterprise System Requirements](/install-data-collector/install-sharphound/system-requirements), [AzureHound Enterprise System Requirements](/install-data-collector/install-azurehound/system-requirements), or [OpenHound server/container requirements](/openhound/enterprise#server%2Fcontainer-requirements) for collector-specific requirements.</Note>
 
 ## Process
 
 This guide covers the required steps to create a collector client in your BloodHound Enterprise tenant.
 
 Optional configuration settings are also explained, but can be skipped during initial setup and configured later if necessary.
-
-### AzureHound Enterprise
-
-AzureHound collector clients use API token-based authentication. When creating an AzureHound collector client, you must save the generated token information and use it to [configure](/install-data-collector/install-azurehound/create-configuration) the AzureHound collector application.
-
-<Steps>
-  <Step title="Open the Manage Clients page">
-  In the left menu, click **Administration** > **Manage Clients**.
-  </Step>
-
-  <Step title="Create the client">
-  1. On the right side of the page, click **Create Client**.
-
-  1. Select **Create AzureHound Client** from the dropdown menu.
-
-  1. Complete the required fields:
-
-      | Field | Required | Description |
-      |-------|----------|-------------|
-      | **Client Name** | Yes | A descriptive name for the collector client (e.g., the name of the domain it collects from or system it runs on) |
-      | **Collection Schedule** | No | Optional configuration options for [scheduling](/collect-data/enterprise-collection/collection-schedule) data collection jobs |
-
-      <Frame>
-        <img
-          src="/images/data_collectors/create-azurehound.png"
-          alt="A view of the Create Client screen for AzureHound Enterprise"
-        />
-      </Frame>
-    
-    1. Click **Create**.
-  </Step>
-
-  <Step title="Save the client token">
-  A _Client Token Info_ window will appear with authentication credentials. Copy and save the token information before closing.
-
-  <Note>The token information is required to [configure](/install-data-collector/install-azurehound/create-configuration) the AzureHound collector application.</Note>
-
-    <Frame>
-      <img
-        src="/images/data_collectors/azurehound-client-token-info.png"
-        alt="A view of the client token info screen for AzureHound Enterprise"
-      />
-    </Frame>
-  </Step>
-</Steps>
 
 ### SharpHound Enterprise
 
@@ -94,7 +52,7 @@ When creating a SharpHound Enterprise collector client, you must select the auth
 
         | Field | Required | Description |
         |-------|----------|-------------|
-        | **Client Name** | Yes | A descriptive name for the collector client (e.g., the name of the domain it collects from or system it runs on) |
+        | **Client Name** | Yes | A descriptive name for the collector client (for example, the name of the domain it collects from or system it runs on) |
         | **Collection Schedule** | No | Optional configuration options for [scheduling](/collect-data/enterprise-collection/collection-schedule) data collection jobs |
         | **Advanced Options** | No | Optional domain controller targeting<br/><br/>By default, SharpHound automatically selects a Domain Controller for LDAP queries.<br/><br/>Specifying a target will prevent cross-trust collection from working unless the targeted LDAP server can respond for all desired domains |
         | **Authentication** | Yes | Authentication method the client will use:<br/><ul><li>**BHE Authentication**: Traditional API token-based authentication (default)</li><li>**Integrated Windows Authentication**: Windows-based authentication via ADFS</li></ul> |
@@ -168,6 +126,102 @@ When creating a SharpHound Enterprise collector client, you must select the auth
   </Step>
 </Steps>
 
+### AzureHound Enterprise
+
+AzureHound collector clients use API token-based authentication. When creating an AzureHound collector client, you must save the generated **Token ID** and **Token** before closing the dialog. You use these credentials to [configure](/install-data-collector/install-azurehound/create-configuration) the AzureHound collector application.
+
+<Steps>
+  <Step title="Open the Manage Clients page">
+  In the left menu, click **Administration** > **Manage Clients**.
+  </Step>
+
+  <Step title="Create the client">
+  1. On the right side of the page, click **Create Client**.
+
+  1. Select **Create AzureHound Client** from the dropdown menu.
+
+  1. Complete the required fields:
+
+      | Field | Required | Description |
+      |-------|----------|-------------|
+      | **Client Name** | Yes | A descriptive name for the collector client (for example, the name of the domain it collects from or system it runs on) |
+      | **Collection Schedule** | No | Optional configuration options for [scheduling](/collect-data/enterprise-collection/collection-schedule) data collection jobs |
+
+      <Frame>
+        <img
+          src="/images/data_collectors/create-azurehound.png"
+          alt="A view of the Create Client screen for AzureHound Enterprise"
+        />
+      </Frame>
+    
+    1. Click **Create**.
+  </Step>
+
+  <Step title="Save the client token">
+  A _Client Token Info_ window appears with authentication credentials. Copy and save the token information before closing the window.
+
+  <Note>
+    The token information is required to [configure](/install-data-collector/install-azurehound/create-configuration) the AzureHound collector application.
+  </Note>
+
+  <Frame>
+    <img
+      src="/images/data_collectors/azurehound-client-token-info.png"
+      alt="A view of the client token info screen for AzureHound Enterprise"
+    />
+  </Frame>
+  </Step>
+</Steps>
+
+### OpenHound
+
+OpenHound collector clients use API token-based authentication. When creating an OpenHound collector client, you must save the generated **Token ID** and **Token** before closing the dialog. You use these credentials to [configure](/openhound/configuration#enterprise-2) the OpenHound `secrets.toml` file.
+
+<FeatureFlagNote />
+
+<Steps>
+  <Step title="Open the Manage Clients page">
+  In the left menu, click **Administration** > **Manage Clients**.
+  </Step>
+
+  <Step title="Create the client">
+    1. On the right side of the page, click **Create Client**.
+
+    1. Select **Create OpenHound Client** from the dropdown menu.
+
+    1. Complete the required fields:
+
+        | Field | Required | Description |
+        |-------|----------|-------------|
+        | **Client Name** | Yes | A descriptive name for the collector client (for example, the environment it collects from) |
+        | **Collection Schedule** | No | Optional configuration options for [scheduling](/collect-data/enterprise-collection/collection-schedule) data collection jobs |
+
+        <Frame>
+          <img
+            src="/images/data_collectors/create-openhound.png"
+            alt="A view of the Create Client screen for OpenHound"
+          />
+        </Frame>
+
+    1. Click **Create**.
+  </Step>
+
+  <Step title="Save the client token">
+  A _Client Token Info_ window appears with authentication credentials. Copy and save the token information before closing the window.
+
+  <Note>
+    The token information is required to [configure](/openhound/configuration#enterprise-2) the OpenHound `secrets.toml` file.
+  </Note>
+
+  <Frame>
+    <img
+      src="/images/data_collectors/create-openhound-client-token-info.png"
+      alt="A view of the client token info screen for OpenHound"
+    />
+  </Frame>
+  </Step>
+</Steps>
+
 ## Outcome
 
 BloodHound Enterprise displays collector clients in the table on the **Manage Clients** page with a **Status** of **Unconfigured**.
@@ -175,7 +229,7 @@ BloodHound Enterprise displays collector clients in the table on the **Manage Cl
 <Frame>
   <img
     src="/images/data_collectors/create-collector-outcome.png"
-    alt="A view of the clients table showing a newly created AzureHound and SharpHound Enterprise collector clients with a status of Unconfigured"
+    alt="A view of the clients table showing newly created AzureHound, OpenHound, and SharpHound Enterprise collector clients with a status of Unconfigured"
   />
 </Frame>
 
@@ -187,3 +241,6 @@ BloodHound Enterprise displays collector clients in the table on the **Manage Cl
 
 - AzureHound Enterprise clients:
   - Use the token information to [configure](/install-data-collector/install-azurehound/create-configuration) the AzureHound collector application.
+
+- OpenHound clients:
+  - Use the **Token ID** and **Token** to [configure](/openhound/configuration#enterprise-2) the OpenHound `secrets.toml` file.
