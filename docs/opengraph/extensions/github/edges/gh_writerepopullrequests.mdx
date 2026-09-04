@@ -7,22 +7,34 @@ description: '[Repository] Repo role can create and merge pull requests'
 
 ## Edge Schema
 
-- Source: [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole)
-- Destination: [GH_Repository](/opengraph/extensions/github/nodes/gh_repository)
 - Traversable: ❌
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | GH_WriteRepoPullRequests | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) |
+
+```mermaid
+flowchart LR
+    GH_RepoRole["GH_RepoRole"]
+    GH_Repository["GH_Repository"]
+    GH_RepoRole -- GH_WriteRepoPullRequests --> GH_Repository
+```
 
 ## General Information
 
 The non-traversable GH_WriteRepoPullRequests edge represents a role's ability to create and merge pull requests in the repository. This permission is available to Write, Maintain, and Admin roles. Pull request merge access is security-significant because merging code into protected branches is a common vector for introducing unauthorized changes; however, actual merge capability on protected branches is further governed by branch protection rules and required reviews.
 
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | `false` |
+
+## Diagram
 
 ```mermaid
 graph LR
-    user1("GH_User carol")
-    writeRole("GH_RepoRole GitHound\write")
-    adminRole("GH_RepoRole GitHound\admin")
-    repo("GH_Repository GitHound")
-    user1 -- GH_HasRole --> writeRole
-    writeRole -- GH_WriteRepoPullRequests --> repo
-    adminRole -- GH_WriteRepoPullRequests --> repo
+    n0["GH_RepoRole"]
+    n1["GH_Repository"]
+    n0 -.->|GH_WriteRepoPullRequests| n1
 ```

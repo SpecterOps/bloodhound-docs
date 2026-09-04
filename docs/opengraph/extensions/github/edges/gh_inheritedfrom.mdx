@@ -1,0 +1,42 @@
+---
+title: 'GH_InheritedFrom'
+description: 'Organization runner group is inherited from an enterprise runner group'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Traversable: ✅
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_OrgRunnerGroup](/opengraph/extensions/github/nodes/gh_orgrunnergroup) | GH_InheritedFrom | [GH_EnterpriseRunnerGroup](/opengraph/extensions/github/nodes/gh_enterpriserunnergroup) |
+
+```mermaid
+flowchart LR
+    GH_EnterpriseRunnerGroup["GH_EnterpriseRunnerGroup"]
+    GH_OrgRunnerGroup["GH_OrgRunnerGroup"]
+    GH_OrgRunnerGroup -- GH_InheritedFrom --> GH_EnterpriseRunnerGroup
+```
+
+## General Information
+
+The traversable GH_InheritedFrom edge links an inherited [GH_OrgRunnerGroup](/opengraph/extensions/github/nodes/gh_orgrunnergroup) to the [GH_EnterpriseRunnerGroup](/opengraph/extensions/github/nodes/gh_enterpriserunnergroup) that owns the underlying runner set. This preserves the organization-local view of a runner group while still identifying the enterprise source that provides the runners.
+
+This edge is traversable because an inherited organization runner group is the organization-facing policy boundary for the enterprise runner group. Repository access flows through the organization runner group, then through GH_InheritedFrom to the enterprise group, and finally through [GH_HasRunner](/opengraph/extensions/github/edges/gh_hasrunner) to directly assigned enterprise runners.
+
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_OrgRunnerGroup](/opengraph/extensions/github/nodes/gh_orgrunnergroup) | [GH_EnterpriseRunnerGroup](/opengraph/extensions/github/nodes/gh_enterpriserunnergroup) | `true` |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_OrgRunnerGroup"]
+    n1["GH_EnterpriseRunnerGroup"]
+    n0 -->|GH_InheritedFrom| n1
+```
