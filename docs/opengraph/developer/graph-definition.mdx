@@ -93,8 +93,8 @@ Each `info` object is a map of section identifiers to rendered sections. Use sta
 | --- | --- |
 | `info` key | Stable section identifier. Must match `^[a-z0-9_-]{1,128}$`, which allows lowercase letters, numbers, hyphens, and underscores. |
 | `title` | Section title displayed in the Entity Panel accordion header. |
-| `position` | Integer that controls the order of extension-defined sections. Lower values render first. Use `1` or greater. |
-| `markdown.content` | Markdown rendered in the section body. Required when `markdown` is present. Validated on upload. See [Markdown validation](/opengraph/developer/graph-definition#markdown-validation). |
+| `position` | Non-negative integer that controls the order of extension-defined sections. Lower values render first. |
+| `markdown.content` | Markdown rendered in the section body. Required when `markdown` is present. You can use static Markdown or a Go template that renders values for the selected entity. See [Create dynamic Entity Panel content](/opengraph/developer/dynamic-entity-panel-content). |
 
 Every Entity Panel starts with **Object Information** at position `0`. This section lists all properties for the selected node or relationship.
 
@@ -114,7 +114,7 @@ BloodHound validates Markdown in the following fields:
 
 | Field(s) | Where |
 | --- | --- |
-| `info.<section>.markdown.content` | `node_kinds` and `relationship_kinds` arrays (see [Custom Entity Panel content](/opengraph/developer/graph-definition#custom-entity-panel-content)) |
+| `info.<section>.markdown.content` | `node_kinds` and `relationship_kinds` arrays. This content can also use a [dynamic Entity Panel template](/opengraph/developer/dynamic-entity-panel-content). |
 | `remediation.short_description` `remediation.long_description` `remediation.short_remediation` `remediation.long_remediation` | `relationship_findings` array (BloodHound Enterprise only) |
 
 ### Supported Markdown
@@ -141,6 +141,14 @@ BloodHound rejects the upload when a Markdown field contains unsafe or disallowe
 <Warning>
   If any Markdown field fails validation, the entire extension definition schema upload fails.
 </Warning>
+
+### Template validation
+
+Only `info.<section>.markdown.content` supports dynamic templates. BloodHound treats Markdown in `relationship_findings.remediation` as literal Markdown.
+
+When you upload an extension definition schema, BloodHound also parses every `info.<section>.markdown.content` value in the `node_kinds` and `relationship_kinds` arrays as a Go template. An invalid template, including an unknown helper function, causes the extension upload to fail.
+
+For template syntax, contexts, supported authoring patterns, and testing guidance, see [Create dynamic Entity Panel content](/opengraph/developer/dynamic-entity-panel-content).
 
 ## Findings and metrics
 
