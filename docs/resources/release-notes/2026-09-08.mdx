@@ -1,0 +1,269 @@
+---
+title: 2026-09-08 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-09-08"
+---
+
+import CollectorDeprecationNotice from '/snippets/resources/collector-deprecation-notice.mdx';
+import EarlyAccessNote from '/snippets/feature-flag-user-managed.mdx';
+import FeatureFlagNote from '/snippets/feature-flag-so-managed.mdx';
+
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-09-08 | v9.7.0 | v0.4.0 | v2.16.0 | v3.1.1 |
+
+<CollectorDeprecationNotice />
+
+<Update label="BloodHound" description="New Feature" tags={["OpenGraph"]}>
+  {/*BED-8604, BED-9022, BED-9017*/}
+  ## Dynamic Entity Panel Content
+
+  Render selected-entity data in custom OpenGraph Entity Panel sections with Go templates in extension definition schemas.
+
+  BloodHound validates template syntax when you upload the schema, helping you catch invalid templates before they reach the Entity Panel. Dynamic Markdown supports node and relationship properties, conditional content, and supported helper functions.
+</Update>
+
+<Update label="BloodHound" description="New Feature" tags={["Administration"]}>
+  {/*BED-7944, BED-9366, BED-9362, BED-8380, BED-8379, BED-8377, BED-8020, BED-9482, BED-9257, BED-9256, BED-9215, BED-8994, BED-8993, BED-8992, BED-8600, BED-8599, BED-8569, BED-8568, BED-8566, BED-8565, BED-8557, BED-8556, BED-8555, BED-8554, BED-8553, BED-8552, BED-8549, BED-9561*/}
+  ## Alerts <Badge color="yellow">Early Access</Badge>
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Create reusable generic HTTPS webhooks, connect them to configurable rules, and review delivery attempts.
+  
+  The initial release of [Alerts](/manage-bloodhound/alerts/overview) supports the **Collector Offline** event type and **Webhook** delivery method to monitor collector availability. You can configure rules to trigger when a collector is offline for a specified duration and BloodHound Enterprise will send an alert to the configured webhook URL.
+
+  <EarlyAccessNote feature="Alerts" />
+
+  This feature introduces new APIs to manage alerts. You can use them to programmatically manage webhooks and rules, inspect event types, events, and delivery attempts, test webhook destinations, rotate webhook secrets, and retry failed deliveries:
+
+  | Method | Endpoint |
+  | --- | --- |
+  | [`GET`](/reference/alerts/list-alert-webhooks), [`POST`](/reference/alerts/create-alert-webhook) | `/api/v2/alert-webhooks` |
+  | [`GET`](/reference/alerts/get-alert-webhook), [`PATCH`](/reference/alerts/update-alert-webhook), [`DELETE`](/reference/alerts/delete-alert-webhook) | `/api/v2/alert-webhooks/{alert_webhook_id}` |
+  | [`POST`](/reference/alerts/rotate-alert-webhook-secret) | `/api/v2/alert-webhooks/{alert_webhook_id}/rotate-secret` |
+  | [`POST`](/reference/alerts/test-alert-webhook) | `/api/v2/alert-webhooks/{alert_webhook_id}/test` |
+  | [`GET`](/reference/alerts/list-alert-event-types) | `/api/v2/alert-event-types` |
+  | [`GET`](/reference/alerts/list-alert-events) | `/api/v2/alert-events` |
+  | [`GET`](/reference/alerts/get-alert-event) | `/api/v2/alert-events/{alert_event_id}` |
+  | [`GET`](/reference/alerts/list-alerts), [`POST`](/reference/alerts/create-alert) | `/api/v2/alerts` |
+  | [`GET`](/reference/alerts/get-alert), [`PATCH`](/reference/alerts/update-alert), [`DELETE`](/reference/alerts/delete-alert) | `/api/v2/alerts/{alert_id}` |
+  | [`GET`](/reference/alerts/list-alert-attempts) | `/api/v2/alert-attempts` |
+  | [`POST`](/reference/alerts/retry-alert-attempt) | `/api/v2/alert-attempts/retry` |
+</Update>
+
+<Update label="BloodHound" description="New Feature" tags={["Data Collection"]}>
+  {/*BED-7970, BED-9475, BED-9361, BED-9218, BED-9152, BED-8835, BED-8129, BED-7975, BED-7968*/}
+  ## Collector Support Bundles
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Request, download, and delete diagnostic [support bundles](/collect-data/enterprise-collection/collector-support-bundles) from the **Manage Clients** page for SharpHound Enterprise and OpenHound collector clients.
+
+  SharpHound Enterprise v2.16.0 or OpenHound v0.4.0 are prerequisites for this feature.
+
+  <FeatureFlagNote />
+
+  This feature introduces new APIs to manage support bundles for collector clients. You can use them to programmatically request, download, and delete support bundles, as well as retrieve available management operations and upload artifacts for management operations:
+
+  | Method | Endpoint |
+  | --- | --- |
+  | [`GET`](/reference/clients/get-available-management-operations) | `/api/v2/clients/management/available` |
+  | [`POST`](/reference/clients/queues-a-management-operation) | `/api/v2/clients/{client_id}/management` |
+  | [`POST`](/reference/clients/notifies-the-api-of-a-management-operation-start) | `/api/v2/clients/management/start` |
+  | [`POST`](/reference/clients/notifies-the-api-of-a-management-operation-ending) | `/api/v2/clients/management/end` |
+  | [`POST`](/reference/clients/create-an-artifact-upload-session) | `/api/v2/clients/management/artifacts` |
+  | [`GET`](/reference/clients/get-an-artifact-upload-session) | `/api/v2/clients/management/artifacts/{artifact_id}` |
+  | [`POST`](/reference/clients/upload-an-artifact-part) | `/api/v2/clients/management/artifacts/{artifact_id}/parts/{part_number}` |
+  | [`POST`](/reference/clients/complete-an-artifact-upload-session) | `/api/v2/clients/management/artifacts/{artifact_id}/complete` |
+  | [`GET`](/reference/clients/download-a-management-operation-artifact-for-the-client), [`DELETE`](/reference/clients/delete-a-management-operation-artifact-for-the-client) | `/api/v2/clients/{client_id}/artifacts/{artifact_id}` |
+  | [`POST`](/reference/clients/get-a-client-artifact-download-url) | `/api/v2/clients/{client_id}/artifacts/{artifact_id}/download-url` |
+  | [`GET`](/reference/clients/download-a-management-operation-artifact-for-the-client-1) | `/api/v2/clients/{client_id}/artifacts/{artifact_id}/download` |
+</Update>
+
+<Update label="BloodHound" description="New Feature" tags={["Administration"]}>
+  {/*BED-9126*/}
+  ## Enterprise Marketplace
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Discover supported OpenGraph extensions, community extensions, and integrations from the new **Marketplace** page.
+  
+  This initial release includes search, filtering, and links to learn more, with expanded Marketplace capabilities planned for future releases. Click the <Icon icon="grid-2" /> icon in the left navigation panel to open the **Marketplace** page.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Accessibility"]}>
+  {/*BED-7211, BED-9129, BED-9128, BED-9127, BED-8975, BED-8641, BED-8639, BED-8635, BED-7225, BED-7223, BED-7220, BED-7217, BED-9173, BED-9172*/}
+  ## Accessibility Improvements
+
+  Navigate BloodHound with clearer focus indicators, improved keyboard navigation, more useful screen-reader announcements, and chart colors.
+
+  Form validation, posture results, environment selection, data tables, administration, and Zone Builder receive additional accessibility coverage and behavior improvements.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-9043*/}
+  ## Accessible Explore Toolbar
+
+  Navigate the Explore graph toolbar with accessible icons, tooltips, improved keyboard behavior, and clearer screen-reader labels.
+
+  BloodHound Enterprise can also provide optional export actions in the **Export** menu while retaining JSON as the default export format.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-8871*/}
+  ## Multi-Destination Pathfinding
+
+  Build a [pathfinding](/analyze-data/explore/search#pathfinding) query through up to three destination nodes, which can help focus the results on a specific set of nodes.
+  
+  BloodHound now supports up to four pathfinding nodes total: one source and three destinations. You can reorder nodes, remove destination nodes, and review the combined graph result for the selected route.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-8863, BED-8848, BED-8760*/}
+  ## Protection Score
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Evaluate the protection of assets in each Privilege Zone with the new Protection Score on the [Posture](/analyze-data/findings/posture) page.
+  
+  The score shows the percentage of objects in the selected zone that do not have Attack Path findings, helping you identify where protection requires attention over time.
+
+  This feature introduces a new API to retrieve protection score results for Privilege Zones. You can use it to programmatically retrieve the protection score for a specific Privilege Zone or for all Privilege Zones in the current environment:
+
+  | Method | Endpoint |
+  | --- | --- |
+  | [`GET`](/reference/asset-scores/get-zone-protected-asset-score) | `/api/v2/asset-scores/zone-protected-asset-score` |
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  ## Findings Table <Badge color="yellow">Early Access</Badge>
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  <EarlyAccessNote feature="Findings Table" />
+
+  ### Actions
+  {/*BED-9146, BED-9144*/}
+
+  An [action bar](/analyze-data/findings/table-view#open-a-remediation-plan-or-explore-a-finding) is now available when you select findings in the Findings Table. The action bar allows you to open a finding's remediation plan or pivot directly to the **Explore** page for further investigation.
+
+  ### Filtering and Context
+
+  This release also includes the following enhancements to the Findings Table filtering behavior:
+
+  - {/*BED-9220*/} Default-selected filters now use an outlined enabled state and visually change when you modify their selections, so you can distinguish filters that remain at their defaults from filters you changed.
+  - {/*BED-8281*/} Use the new **Attack Path** filter to select one or more Attack Path types and limit the table to matching findings.
+  - {/*BED-8622*/} View the total number of findings that match the current filter selections in a count displayed above the table. The count updates as you change the filters.
+  - {/*BED-8623*/} Open a finding in the Findings Table from its Attack Path details in the Graph view. The finding's status, environment, and Privilege Zone context are carried into the table so you can continue the investigation with the relevant filters applied.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9508*/}
+  ## GitHub Enterprise Server Endpoint Support
+
+  [Configure](/openhound/collectors/github/collect-data#configure-github-enterprise-server-endpoints) separate `rest_api_url` and `graphql_url` values to collect data from GitHub Enterprise Server. GitHub.com remains the default, so existing configurations continue to work without changes.
+
+  The endpoint settings must use HTTPS, share the same origin, and be configured together. GitHub App authentication and PAT validation now use the configured REST endpoint instead of assuming GitHub.com.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9562, BED-9519, BED-9505*/}
+  ## GitHub and Okta Collection Resilience
+
+  Improve collection reliability for large environments and organization-scoped GitHub collection runs.
+
+  - The Okta collector pages expanded group requests and retries the initial request with limits of 200, 100, and 50 when a timeout persists. You can tune these and other Okta resource page sizes with the new [pagination settings](/openhound/collectors/okta/collect-data#pagination-settings).
+
+  - The GitHub collector reduces repository GraphQL page sizes from 100 to 50 and then 25 after transient gateway failures, then returns to the default page size when later pages succeed.
+
+  - Organization-only GitHub collections also resolve the canonical organization login before resource collection begins, preventing case-sensitive lookup failures.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9473*/}
+  ## GitHub Enterprise Role Memberships
+
+  Restore accurate membership data for the synthetic `GH_EnterpriseRole` `owners` and `members` roles across supported GitHub authentication configurations.
+
+  OpenHound now uses the available enterprise or organization-backed collection paths to populate `GH_User -[:GH_HasRole]-> GH_EnterpriseRole` relationships.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9472*/}
+  ## GitHub EMU External Group Modeling
+
+  Collect external identity-provider group metadata for normal `GH_Team` nodes in GitHub Enterprise Managed User organizations.
+
+  OpenHound adds the `external_group_id` and `external_group_name` properties and emits a `SCIM_Provisioned` relationship to the matching `SCIM_Group` when the corresponding SCIM data is available.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9437*/}
+  ## Authoritative Okta Application-Group Assignments
+
+  Collect group-to-application assignments from Okta's application assignment endpoints instead of relying on group statistics that may be stale.
+
+  The collector preserves the existing `Okta_AppAssignment` relationships and assignment evidence while failing closed when required assignment data is incomplete or ambiguous.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-8759*/}
+  ## OpenHound Logs
+
+  Review collector lifecycle logs to identify the collector name and version, OpenHound version, and job ID, making it easier to troubleshoot collection runs.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9063*/}
+  ## OpenHound Configuration
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Store the BloodHound Enterprise destination URL as configuration instead of a secret when you configure [CLI authentication](/openhound/upload-extension-assets#configure-cli-authentication) for extension asset uploads.
+  
+  OpenHound now reads the destination URL from `~/.dlt/config.toml` and the browser JWT from `~/.dlt/secrets.toml`. This change separates the destination URL from sensitive credentials, which remain in the secrets file.
+</Update>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## Authentication
+
+  {/*BED-9064*/} **SAML replay protection:** Resolved an issue where a valid signed SAML response could be replayed to create multiple BloodHound sessions.
+
+  BloodHound now records both the SAML response ID and assertion ID before creating a session. Any later callback that reuses either identifier is rejected.
+
+  <Callout icon="heart" color="#FFB74D">
+    Special thanks to Corban Villa, Sohee Kim, and Austin Chu for their detailed report and responsible disclosure.
+  </Callout>
+
+  ## Cypher
+
+  - {/*BED-8955*/} Resolved an issue where Cypher queries using traversal expansion to find a cyclical loop could fail.
+  - {/*BED-8779*/} Improved query optimization for Cypher queries that begin with an unbounded traversal expansion, reducing avoidable timeouts.
+  - {/*BED-9469*/} Resolved an issue where Cypher query optimization consumed excessive CPU, increasing query durations and causing failures.
+
+  ## Explore
+
+  - {/*BED-9216*/} Resolved an issue where the Cypher panel did not render correctly the first time you switched from a completed pathfinding query.
+  - {/*BED-9157*/} Resolved an issue where selecting a node reset manually positioned graph nodes.
+
+  ## OpenGraph
+
+  - {/*BED-9445*/} Resolved an issue where the **Data Quality** page could fail to load after you switched domains.
+  - {/*BED-9316*/} Resolved an issue where columns in the **OpenGraph Management** table could be inaccessible when content wrapped.
+
+  ## Findings
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  - {/*BED-9471*/} Resolved an issue where archived findings could return an active status from the Attack Paths findings API.
+  - {/*BED-9358*/} Resolved an issue where Findings Table filters could fail for environment IDs containing characters such as `:`.
+  - {/*BED-9107*/} Resolved a Findings Table column-header contrast regression in light and dark modes.
+  - {/*BED-9563*/} Improved tooltip contrast for Attack Paths finding charts in dark mode.
+  - {/*BED-9241*/} Resolved an issue where Findings Table filters overflowed when the navigation panel was expanded.
+</Update>

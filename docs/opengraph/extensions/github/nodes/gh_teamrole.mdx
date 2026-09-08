@@ -6,7 +6,41 @@ icon: '/images/extensions/github/gh_teamrole.png'
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
+## General Information
+
 Represents a role within a GitHub team. Each team has two built-in roles: Member and Maintainer. Maintainers can add and remove team members. Team roles connect users to teams and transitively to any repository roles assigned to the team.
+
+## Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | The node name used for matching and display. |
+| `displayname` | `string` | The human-readable display name. |
+| `environmentid` | `string` | The identifier of the GitHub environment where this node was collected. |
+| `last_seen` | `datetime` | The timestamp when this node was last observed during collection. |
+| `node_id` | `string` | The stable identifier used as the OpenGraph node ID; this is the native GitHub node ID where available. |
+| `short_name` | `string` | The short role name: `member` or `maintainer`. |
+| `type` | `string` | Always `default` for team roles. |
+| `team_name` | `string` | The team name property. |
+| `team_id` | `string` | The team id property. |
+| `environment_name` | `string` | The name of the environment (GitHub organization). |
+| `query_team` | `string` | Query for team. |
+| `query_members` | `string` | Query for members. |
+| `query_repositories` | `string` | Query for repositories. |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_TeamRole"]
+    n1["GH_EnterpriseTeam"]
+    n2["GH_Team"]
+    n3["GH_User"]
+    n0 -->|GH_MemberOf| n1
+    n0 -.->|GH_AddMember| n2
+    n0 -->|GH_MemberOf| n2
+    n3 -->|GH_HasRole| n0
+```
 
 ## Edges
 
@@ -14,42 +48,46 @@ Represents a role within a GitHub team. Each team has two built-in roles: Member
 The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
 </Note>
 
+```mermaid
+flowchart LR
+
+    GH_EnterpriseTeam["GH_EnterpriseTeam"]
+    GH_Team["GH_Team"]
+    GH_TeamRole["GH_TeamRole"]
+    GH_User["GH_User"]
+    GH_TeamRole -- GH_AddMember --> GH_Team
+    GH_TeamRole -- GH_MemberOf --> GH_EnterpriseTeam
+    GH_TeamRole -- GH_MemberOf --> GH_Team
+    GH_User -- GH_HasRole --> GH_TeamRole
+```
+
 ### Inbound Edges
 
 | Edge Type | Source Node Types | Traversable |
 | --------- | ----------------- | ----------- |
-| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization), [GH_Repository](/opengraph/extensions/github/nodes/gh_repository), [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | ❌ |
-| [GH_HasRole](/opengraph/extensions/github/edges/gh_hasrole) | [GH_User](/opengraph/extensions/github/nodes/gh_user), [GH_Team](/opengraph/extensions/github/nodes/gh_team) | ✅ |
+| [GH_HasRole](/opengraph/extensions/github/edges/gh_hasrole) | [GH_User](/opengraph/extensions/github/nodes/gh_user) | ✅ |
 
 ### Outbound Edges
 
 | Edge Type | Destination Node Types | Traversable |
 | --------- | ---------------------- | ----------- |
-| [GH_AddMember](/opengraph/extensions/github/edges/gh_addmember) | [GH_Team](/opengraph/extensions/github/nodes/gh_team) | ✅ |
-| [GH_MemberOf](/opengraph/extensions/github/edges/gh_memberof) | [GH_Team](/opengraph/extensions/github/nodes/gh_team) | ✅ |
+| [GH_AddMember](/opengraph/extensions/github/edges/gh_addmember) | [GH_Team](/opengraph/extensions/github/nodes/gh_team) | ❌ |
+| [GH_MemberOf](/opengraph/extensions/github/edges/gh_memberof) | [GH_EnterpriseTeam](/opengraph/extensions/github/nodes/gh_enterpriseteam), [GH_Team](/opengraph/extensions/github/nodes/gh_team) | ✅ |
 
 ## Properties
 
-| Property Name    | Data Type | Description                                                                          |
-| ---------------- | --------- | ------------------------------------------------------------------------------------ |
-| objectid         | string    | A deterministic ID derived from the team ID and role name (e.g., `{teamId}_member`). |
-| name             | string    | The fully qualified role name (e.g., `TeamSlug\member`).                             |
-| id               | string    | Same as objectid.                                                                    |
-| short_name       | string    | The short role name: `member` or `maintainer`.                                       |
-| type             | string    | Always `default` for team roles.                                                     |
-| environment_name | string    | The name of the environment (GitHub organization).                                   |
-| environmentid    | string    | The node_id of the environment (GitHub organization).                                |
-
-## Diagram
-
-```mermaid
-flowchart TD
-    GH_TeamRole[fa:fa-user-tie GH_TeamRole]
-    GH_User[fa:fa-user GH_User]
-    GH_Team[fa:fa-user-group GH_Team]
-
-
-    GH_User -->|GH_HasRole| GH_TeamRole
-    GH_TeamRole -->|GH_MemberOf| GH_Team
-    GH_TeamRole -->|GH_AddMember| GH_Team
-```
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `name` | `str` | - |
+| `displayname` | `str` | - |
+| `environmentid` | `str` | - |
+| `last_seen` | `datetime` | - |
+| `node_id` | `str` | - |
+| `enterpriseid` | `str \| None` | The containing enterprise node ID. |
+| `team_name` | `str \| None` | The team display name. |
+| `team_id` | `str \| None` | The enterprise team node ID. |
+| `short_name` | `str \| None` | The role short name. |
+| `type` | `str \| None` | The role type. |
+| `environment_name` | `str \| None` | The enterprise environment name. |
+| `query_team` | `str \| None` | Query for the team. |
+| `query_members` | `str \| None` | Query for role members. |

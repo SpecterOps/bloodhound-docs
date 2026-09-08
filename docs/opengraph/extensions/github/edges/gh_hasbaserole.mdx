@@ -7,24 +7,38 @@ description: 'Role inherits permissions from another role'
 
 ## Edge Schema
 
-- Source: [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole), [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole)
-- Destination: [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole), [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole)
 - Traversable: ✅
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole) | GH_HasBaseRole | [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole) |
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | GH_HasBaseRole | [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) |
+
+```mermaid
+flowchart LR
+    GH_OrgRole["GH_OrgRole"]
+    GH_RepoRole["GH_RepoRole"]
+    GH_OrgRole -- GH_HasBaseRole --> GH_OrgRole
+    GH_RepoRole -- GH_HasBaseRole --> GH_RepoRole
+```
 
 ## General Information
 
 The traversable GH_HasBaseRole edge represents role inheritance within the GitHub permission hierarchy. Org roles inherit down to all-repo roles (e.g., Owners inherits to all_repo_admin), and custom roles inherit from their base roles (e.g., a custom_role inherits from write). This edge is traversable because it extends permissions through the role hierarchy, meaning a principal with a higher-level role implicitly holds all inherited lower-level roles.
 
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole) | [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole) | `true` |
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | `true` |
+
+## Diagram
 
 ```mermaid
 graph LR
-    orgOwners("GH_OrgRole SpecterOps\\Owners")
-    orgMembers("GH_OrgRole SpecterOps\\Members")
-    allRepoAdmin("GH_RepoRole SpecterOps\\all_repo_admin")
-    allRepoRead("GH_RepoRole SpecterOps\\all_repo_read")
-    customRole("GH_RepoRole GitHound\\security_reviewer")
-    writeRole("GH_RepoRole GitHound\\write")
-    orgOwners -- GH_HasBaseRole --> allRepoAdmin
-    orgMembers -- GH_HasBaseRole --> allRepoRead
-    customRole -- GH_HasBaseRole --> writeRole
+    n0["GH_OrgRole"]
+    n1["GH_RepoRole"]
+    n0 -->|GH_HasBaseRole| n0
+    n1 -->|GH_HasBaseRole| n1
 ```

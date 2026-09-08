@@ -7,22 +7,34 @@ description: 'SAML identity provider has this external identity'
 
 ## Edge Schema
 
-- Source: [GH_SamlIdentityProvider](/opengraph/extensions/github/nodes/gh_samlidentityprovider)
-- Destination: [GH_ExternalIdentity](/opengraph/extensions/github/nodes/gh_externalidentity)
 - Traversable: ❌
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_SamlIdentityProvider](/opengraph/extensions/github/nodes/gh_samlidentityprovider) | GH_HasExternalIdentity | [GH_ExternalIdentity](/opengraph/extensions/github/nodes/gh_externalidentity) |
+
+```mermaid
+flowchart LR
+    GH_ExternalIdentity["GH_ExternalIdentity"]
+    GH_SamlIdentityProvider["GH_SamlIdentityProvider"]
+    GH_SamlIdentityProvider -- GH_HasExternalIdentity --> GH_ExternalIdentity
+```
 
 ## General Information
 
 The non-traversable GH_HasExternalIdentity edge represents the relationship between a SAML identity provider and the external identities (SSO users) it manages. This edge links each external identity to the SAML provider that authenticated it. External identities are a key component in cross-platform attack path analysis because they bridge the gap between corporate identity providers and GitHub user accounts via the [GH_MapsToUser](/opengraph/extensions/github/edges/gh_mapstouser) edge. Enumerating external identities reveals which corporate users have linked GitHub accounts and enables mapping from IdP compromise to GitHub access.
 
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_SamlIdentityProvider](/opengraph/extensions/github/nodes/gh_samlidentityprovider) | [GH_ExternalIdentity](/opengraph/extensions/github/nodes/gh_externalidentity) | `false` |
+
+## Diagram
 
 ```mermaid
 graph LR
-    node1("GH_SamlIdentityProvider entra-id-sso")
-    node2("GH_ExternalIdentity alice\@specterops.io")
-    node3("GH_ExternalIdentity bob\@specterops.io")
-    node4("GH_User alice")
-    node1 -- GH_HasExternalIdentity --> node2
-    node1 -- GH_HasExternalIdentity --> node3
-    node2 -- GH_MapsToUser --> node4
+    n0["GH_SamlIdentityProvider"]
+    n1["GH_ExternalIdentity"]
+    n0 -.->|GH_HasExternalIdentity| n1
 ```

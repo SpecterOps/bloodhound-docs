@@ -1,0 +1,50 @@
+---
+title: 'GH_HasRunner'
+description: 'Runner group exposes a directly assigned self-hosted runner to authorized repositories or workflows'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Traversable: ✅
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_OrgRunnerGroup](/opengraph/extensions/github/nodes/gh_orgrunnergroup) | GH_HasRunner | [GH_OrgRunner](/opengraph/extensions/github/nodes/gh_orgrunner) |
+| [GH_EnterpriseRunnerGroup](/opengraph/extensions/github/nodes/gh_enterpriserunnergroup) | GH_HasRunner | [GH_EnterpriseRunner](/opengraph/extensions/github/nodes/gh_enterpriserunner) |
+
+```mermaid
+flowchart LR
+    GH_EnterpriseRunner["GH_EnterpriseRunner"]
+    GH_EnterpriseRunnerGroup["GH_EnterpriseRunnerGroup"]
+    GH_OrgRunner["GH_OrgRunner"]
+    GH_OrgRunnerGroup["GH_OrgRunnerGroup"]
+    GH_EnterpriseRunnerGroup -- GH_HasRunner --> GH_EnterpriseRunner
+    GH_OrgRunnerGroup -- GH_HasRunner --> GH_OrgRunner
+```
+
+## General Information
+
+The traversable GH_HasRunner edge represents that a runner group exposes a directly assigned self-hosted runner to repositories or workflows that satisfy the runner group's access policy.
+
+This edge is distinct from [GH_Contains](/opengraph/extensions/github/edges/gh_contains). [GH_Contains](/opengraph/extensions/github/edges/gh_contains) records structural membership only, while GH_HasRunner represents the runner-group-to-runner capability hop used for attack-path composition. This edge is emitted only for direct organization and enterprise runner group memberships; inherited organization runner group access to enterprise runners is modeled as [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) or [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) -[:[GH_CanUseRunner](/opengraph/extensions/github/edges/gh_canuserunner)]-> [GH_OrgRunnerGroup](/opengraph/extensions/github/nodes/gh_orgrunnergroup) -[:[GH_InheritedFrom](/opengraph/extensions/github/edges/gh_inheritedfrom)]-> [GH_EnterpriseRunnerGroup](/opengraph/extensions/github/nodes/gh_enterpriserunnergroup) -[:GH_HasRunner]-> [GH_EnterpriseRunner](/opengraph/extensions/github/nodes/gh_enterpriserunner).
+
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_EnterpriseRunnerGroup](/opengraph/extensions/github/nodes/gh_enterpriserunnergroup) | [GH_EnterpriseRunner](/opengraph/extensions/github/nodes/gh_enterpriserunner) | `true` |
+| [GH_OrgRunnerGroup](/opengraph/extensions/github/nodes/gh_orgrunnergroup) | [GH_OrgRunner](/opengraph/extensions/github/nodes/gh_orgrunner) | `true` |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_EnterpriseRunnerGroup"]
+    n1["GH_EnterpriseRunner"]
+    n2["GH_OrgRunnerGroup"]
+    n3["GH_OrgRunner"]
+    n0 -->|GH_HasRunner| n1
+    n2 -->|GH_HasRunner| n3
+```
