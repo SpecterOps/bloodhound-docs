@@ -3,9 +3,6 @@ title: Graph Definition
 description: Define structured graph behavior for OpenGraph extensions with an extension definition schema.
 ---
 
-import FeatureFlagNote from "/snippets/feature-flag-so-managed.mdx";
-import FindingsAndMetrics from '/snippets/opengraph/extensions/findings-requirements.mdx';
-
 <img
   noZoom
   src="/assets/enterprise-AND-community-edition-pill-tag.svg"
@@ -31,8 +28,7 @@ This page describes the components of an extension definition schema. For a full
   "schema": { ... },
   "node_kinds": [ ... ],
   "relationship_kinds": [ ... ],
-  "environments": [ ... ],
-  "relationship_findings": [ ... ]
+  "environments": [ ... ]
 }
 ```
 
@@ -49,9 +45,6 @@ This page describes the components of an extension definition schema. For a full
   Defines the environments for a platform and identifies which node kinds an extension treats as principals within each environment.
   
   BloodHound Enterprise uses these environment definitions to group analysis, findings, and metrics.
-</ResponseField>
-<ResponseField name="relationship_findings" type="array">
-  Defines the findings and remediation guidance BloodHound Enterprise uses when relationships of the specified kind represent potential Attack Paths in a target environment (based on Privilege Zone rules).
 </ResponseField>
 
 ## Namespacing
@@ -115,7 +108,6 @@ BloodHound validates Markdown in the following fields:
 | Field(s) | Where |
 | --- | --- |
 | `info.<section>.markdown.content` | `node_kinds` and `relationship_kinds` arrays (see [Custom Entity Panel content](/opengraph/developer/graph-definition#custom-entity-panel-content)) |
-| `remediation.short_description` `remediation.long_description` `remediation.short_remediation` `remediation.long_remediation` | `relationship_findings` array (BloodHound Enterprise only) |
 
 ### Supported Markdown
 
@@ -142,19 +134,6 @@ BloodHound rejects the upload when a Markdown field contains unsafe or disallowe
   If any Markdown field fails validation, the entire extension definition schema upload fails.
 </Warning>
 
-## Findings and metrics
-
-<img
-  noZoom
-  src="/assets/enterprise-edition-pill-tag.svg"
-  alt="Applies to BloodHound Enterprise only"
-  style={{ "width":"20%" }}
-/>
-
-<FeatureFlagNote />
-
-<FindingsAndMetrics />
-
 ## `schema`
 
 Defines metadata about the extension itself.
@@ -178,7 +157,7 @@ Defines metadata about the extension itself.
   Extension schema version, prefixed with `v` followed by semantic version format, for example `v1.0.0`.
 </ResponseField>
 <ResponseField name="namespace" type="string" required>
-  Namespace key used as a prefix for all `name` fields in the `node_kinds`, `relationship_kinds`, and `relationship_findings` arrays to indicate that the data belongs to that namespace.
+  Namespace key used as a prefix for all `name` fields in the `node_kinds` and `relationship_kinds` arrays to indicate that the data belongs to that namespace.
 </ResponseField>
 
 ## `node_kinds`
@@ -308,75 +287,6 @@ Environments are platform-specific groupings of nodes that BloodHound Enterprise
   BloodHound Enterprise incorporates these node kinds in findings and metrics.
 </ResponseField>
 
-## `relationship_findings`
-
-<img
-  noZoom
-  src="/assets/enterprise-edition-pill-tag.svg"
-  alt="Applies to BloodHound Enterprise only"
-  style={{ "width":"20%" }}
-/>
-
-Defines findings based on relationships. Each finding represents a single instance of an <Tooltip tip="A chain of abusable privileges and user behaviors that creates direct or indirect connections between principals." cta="Learn more" href="/analyze-data/findings/attack-paths">Attack Path</Tooltip>. BloodHound Enterprise identifies instances of a traversable edge targeting a node of higher privilege (violating a Privilege Zone boundary), analyzes the risk, and provides remediation guidance.
-
-<Tip>
-  **Best practice**
-
-  If a finding `name` would match its associated `relationship_kind`, include `_Finding` as a suffix in the name to distinguish them.
-  
-  For example:
-
-  - Relationship kind name: `Okta_ResetPassword`
-  - Finding name: `Okta_ResetPassword_Finding`
-</Tip>
-
-```json
-[
-  {
-    "name": "Okta_ResetPassword_Finding",
-    "display_name": "Password Reset Permission Across Privilege Zones",
-    "environment_kind": "Okta_Organization",
-    "relationship_kind": "Okta_ResetPassword",
-    "remediation": {
-      "short_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "long_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-      "short_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "long_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
-    }
-  }
-]
-```
-
-<ResponseField name="name" type="string" required>
-  Unique finding identifier. Must follow [namespacing](/opengraph/developer/graph-definition#namespacing) rules and be unique across all schema definition names, including node kinds, relationship kinds, and findings.
-</ResponseField>
-<ResponseField name="display_name" type="string">
-  Human-readable label shown for this finding in BloodHound.
-</ResponseField>
-<ResponseField name="environment_kind" type="string" required>
-  Environment kind where this finding should be evaluated. Must match an `environments.environment_kind` and `node_kinds.name` defined in any installed extension definition schema.
-
-  For intra-extension findings, this typically matches the environment kind defined by the same extension schema. For cross-platform findings (for example, hybrid relationships), the impacted environment kind may be different.
-</ResponseField>
-<ResponseField name="relationship_kind" type="string" required>
-  Relationship kind that contributes to this finding when matching edges are present and the edge crosses a Privilege Zone boundary. Must match a `relationship_kinds.name` defined in any installed extension definition schema.
-</ResponseField>
-<ResponseField name="remediation" type="object">
-  Remediation guidance to resolve the finding, including both short and long forms. The `short_description`, `long_description`, `short_remediation`, and `long_remediation` fields accept Markdown and are validated on upload. See [Markdown validation](/opengraph/developer/graph-definition#markdown-validation).
-</ResponseField>
-<ResponseField name="remediation.short_description" type="string">
-  A concise summary of the recommended remediation action, which can include Markdown formatting for better readability.
-</ResponseField>
-<ResponseField name="remediation.long_description" type="string">
-  A detailed explanation of the finding and its cause, which can include Markdown formatting for better readability.
-</ResponseField>
-<ResponseField name="remediation.short_remediation" type="string">
-  A concise summary of the steps to remediate the finding, which can include Markdown formatting for better readability.
-</ResponseField>
-<ResponseField name="remediation.long_remediation" type="string">
-  A detailed, step-by-step guide to remediate the finding, which can include Markdown formatting for better readability.
-</ResponseField>
-
 ## Example schema
 
 The following example schema is based on Okta to illustrate how the different components of the schema work together.
@@ -433,20 +343,6 @@ The following example schema is based on Okta to illustrate how the different co
         "Okta_Application",
         "Okta_ApiServiceIntegration"
       ]
-    }
-  ],
-  "relationship_findings": [
-    {
-      "name": "Okta_ResetPassword_Finding",
-      "display_name": "Password Reset Permission Across Privilege Zones",
-      "environment_kind": "Okta_Organization",
-      "relationship_kind": "Okta_ResetPassword",
-      "remediation": {
-        "short_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-        "long_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-        "short_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-        "long_remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
-      }
     }
   ]
 }
