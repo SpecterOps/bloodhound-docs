@@ -1,7 +1,6 @@
 ---
-title: Create dynamic Entity Panel content
-sidebarTitle: Dynamic Entity Panel Content
-description: Use Go templates to render Entity Panel Markdown with data from the selected node or relationship.
+title: Entity Panel Content
+description: Define and validate custom Entity Panel content for nodes and relationships in BloodHound.
 ---
 
 <img
@@ -10,11 +9,89 @@ description: Use Go templates to render Entity Panel Markdown with data from the
   alt="Applies to BloodHound Enterprise and Community Edition"
 />
 
+When you select a node or relationship in **Explore**, BloodHound displays its properties in the Entity Panel.
+
+OpenGraph extensions can add custom sections to the panel for extension-specific context. Define custom content in the `info` object of an [extension definition schema](/opengraph/developer/graph-definition) using static Markdown or dynamic Go templates.
+
+This page covers custom section structure, Markdown and template validation, and dynamic content options.
+
+## Custom Entity Panel content
+
+Use the [`info`](opengraph/developer/graph-definition#param-info) object to define custom Entity Panel sections for node kinds and relationship kinds. When a user selects a node or relationship in Explore, BloodHound renders an Entity Panel with the specified accordion sections as defined by the `info` entries.
+
+Each `info` object is a map of section identifiers to rendered sections. Use stable identifiers for the keys so future schema updates can modify the same section without changing its identity.
+
+```json
+"info": {
+  "overview": {
+    "title": "Overview",
+    "position": 1,
+    "markdown": {
+      "content": "This content appears in the Entity Panel."
+    }
+  }
+}
+```
+
+| Field | Description |
+| --- | --- |
+| `info` key | Stable section identifier. Must match `^[a-z0-9_-]{1,128}$`, which allows lowercase letters, numbers, hyphens, and underscores. |
+| `title` | Section title displayed in the Entity Panel accordion header. |
+| `position` | Non-negative integer that controls the order of extension-defined sections. Lower values render first. |
+| `markdown.content` | Markdown rendered in the section body. Required when `markdown` is present. You can use static Markdown or a Go template that renders values for the selected entity. See [Dynamic Entity Panel content](/opengraph/developer/entity-panel-content#dynamic-entity-panel-content). |
+
+Every Entity Panel starts with **Object Information** at position `0`. This section lists all properties for the selected node or relationship.
+
+BloodHound renders additional `info` entries for the selected node's primary kind or the selected relationship's kind after **Object Information**. BloodHound orders those extension-defined sections by `position`, then `title`.
+
+If no `info` entries are defined for the selected kind, BloodHound still renders **Object Information**, but does not render additional extension-defined Entity Panel sections.
+
+### Markdown validation
+
+When you upload an extension definition schema, BloodHound validates each Markdown field to ensure it does not contain unsafe or disallowed HTML.
+
+<Note>
+  Validation only checks the content; BloodHound stores your original Markdown without modifying it.
+</Note>
+
+BloodHound validates Markdown in the following fields:
+
+| Field(s) | Where |
+| --- | --- |
+| `info.<section>.markdown.content` | `node_kinds` and `relationship_kinds` arrays (see [Custom Entity Panel content](/opengraph/developer/entity-panel-content#custom-entity-panel-content)) |
+
+#### Supported Markdown
+
+BloodHound supports [CommonMark](https://commonmark.org/) plus the following [GitHub Flavored Markdown](https://github.github.com/gfm/) extensions:
+
+- Tables
+- Strikethrough
+- Task lists
+- Autolinks
+- Fenced code blocks (with an alphanumeric language hint)
+
+You can also include inline HTML that is on BloodHound's allowlist of safe elements and attributes, such as links and basic text formatting.
+
+#### Rejected content
+
+BloodHound rejects the upload when a Markdown field contains unsafe or disallowed HTML, including:
+
+- `<script>` tags and other executable content
+- Inline event-handler attributes, such as `onclick`
+- `javascript:` links
+- `<iframe>`, `<style>`, and similar elements
+
+<Warning>
+  If any Markdown field fails validation, the entire extension definition schema upload fails.
+</Warning>
+
+## Dynamic Entity Panel content
+
 Dynamic Entity Panel content lets you tailor a custom Entity Panel section to the node or relationship that a user selects in Explore. Add template expressions to the section's Markdown to display entity properties, relationship endpoints, or conditional guidance.
 
 Templates are supported only in `info.<section>.markdown.content` within an [extension definition schema](/opengraph/developer/graph-definition). The section key, title, and position remain static. A template changes only the Markdown rendered inside the section.
 
-## Add dynamic content to a section
+### Add dynamic content to a section
 
 Define an `info` section for a node kind or relationship kind, then add Go template expressions to `markdown.content`.
 
@@ -44,11 +121,11 @@ Define an `info` section for a node kind or relationship kind, then add Go templ
 
 Use `default` for properties that might be missing or empty. Do not assume every entity contains the same set of properties.
 
-## Access entity data
+### Access entity data
 
 Templates use Go `text/template` syntax. The root context (`.`) contains only the selected entity data described below. A template cannot fetch additional nodes, traverse the graph, or access the complete internal graph object.
 
-### Node context
+#### Node context
 
 Use the following values in a section defined for a node kind:
 
@@ -65,7 +142,7 @@ For property keys that contain punctuation or spaces, use `get` instead of a dir
 Display name: {{ get .Properties "display-name" | default "Unknown" }}
 ```
 
-### Relationship context
+#### Relationship context
 
 Use the following values in a section defined for a relationship kind:
 
@@ -87,7 +164,7 @@ For example, this relationship section displays both endpoint names and the rela
 This is a **{{ .Kind.Name }}** relationship.
 ```
 
-## Format and reuse values
+### Format and reuse values
 
 Use a pipeline (`|`) to pass a value through one or more functions. Create a variable with `:=` when you use the same value more than once.
 
@@ -100,7 +177,7 @@ The selected object is {{ $name }}.
 
 The hyphens in `{{-` and `-}}` trim adjacent whitespace. Use them around control-flow actions when omitted content would otherwise leave unwanted blank lines. Do not use them when the surrounding space is meaningful.
 
-## Render optional content
+### Render optional content
 
 Use `if`, `else`, and `end` to render content only when an entity meets a condition. Use `with` to render a block only when a value is present, and use `range` to render a collection.
 
@@ -114,7 +191,7 @@ This account is not marked as a service account.
 
 The conditional changes the content inside the Entity Panel section. It does not remove the section or its accordion header.
 
-## Use supported helpers
+### Use supported helpers
 
 BloodHound provides a restricted set of Sprig helper functions for Entity Panel templates. The following helpers cover common authoring tasks:
 
@@ -129,7 +206,7 @@ BloodHound provides a restricted set of Sprig helper functions for Entity Panel 
 
 Use only helpers that you have tested with the target BloodHound release. BloodHound rejects a schema upload when a template uses an unavailable helper.
 
-## Validate and test templates
+### Validate and test templates
 
 BloodHound parses every Entity Panel template when you upload an extension definition schema. A syntax error, such as an unmatched `end`, or an unavailable helper function causes the entire upload to fail.
 

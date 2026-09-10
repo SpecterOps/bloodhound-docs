@@ -1,5 +1,5 @@
 ---
-title: Graph Definition
+title: Definition Schema
 description: Define structured graph behavior for OpenGraph extensions with an extension definition schema.
 ---
 
@@ -63,84 +63,6 @@ Although the `schema.name` field does not use a namespace prefix, it must still 
   - If names are not unique or properly namespaced, schema uploads fail validation.
   - The `tag` namespace prefix is reserved in any letter case, including `tag`, `Tag`, and `TAG`. Do not use this prefix in an extension definition schema. If you do, BloodHound rejects the upload.
 </Warning>
-
-## Custom Entity Panel content
-
-Use the [`info`](opengraph/developer/graph-definition#param-info) object to define custom Entity Panel sections for node kinds and relationship kinds. When a user selects a node or relationship in Explore, BloodHound renders an Entity Panel with the specified accordion sections as defined by the `info` entries.
-
-Each `info` object is a map of section identifiers to rendered sections. Use stable identifiers for the keys so future schema updates can modify the same section without changing its identity.
-
-```json
-"info": {
-  "overview": {
-    "title": "Overview",
-    "position": 1,
-    "markdown": {
-      "content": "This content appears in the Entity Panel."
-    }
-  }
-}
-```
-
-| Field | Description |
-| --- | --- |
-| `info` key | Stable section identifier. Must match `^[a-z0-9_-]{1,128}$`, which allows lowercase letters, numbers, hyphens, and underscores. |
-| `title` | Section title displayed in the Entity Panel accordion header. |
-| `position` | Non-negative integer that controls the order of extension-defined sections. Lower values render first. |
-| `markdown.content` | Markdown rendered in the section body. Required when `markdown` is present. You can use static Markdown or a Go template that renders values for the selected entity. See [Create dynamic Entity Panel content](/opengraph/developer/dynamic-entity-panel-content). |
-
-Every Entity Panel starts with **Object Information** at position `0`. This section lists all properties for the selected node or relationship.
-
-BloodHound renders additional `info` entries for the selected node's primary kind or the selected relationship's kind after **Object Information**. BloodHound orders those extension-defined sections by `position`, then `title`.
-
-If no `info` entries are defined for the selected kind, BloodHound still renders **Object Information**, but does not render additional extension-defined Entity Panel sections.
-
-## Markdown validation
-
-When you upload an extension definition schema, BloodHound validates each Markdown field to ensure it does not contain unsafe or disallowed HTML.
-
-<Note>
-  Validation only checks the content; BloodHound stores your original Markdown without modifying it.
-</Note>
-
-BloodHound validates Markdown in the following fields:
-
-| Field(s) | Where |
-| --- | --- |
-| `info.<section>.markdown.content` | `node_kinds` and `relationship_kinds` arrays (see [Custom Entity Panel content](/opengraph/developer/graph-definition#custom-entity-panel-content)) |
-
-### Supported Markdown
-
-BloodHound supports [CommonMark](https://commonmark.org/) plus the following [GitHub Flavored Markdown](https://github.github.com/gfm/) extensions:
-
-- Tables
-- Strikethrough
-- Task lists
-- Autolinks
-- Fenced code blocks (with an alphanumeric language hint)
-
-You can also include inline HTML that is on BloodHound's allowlist of safe elements and attributes, such as links and basic text formatting.
-
-### Rejected content
-
-BloodHound rejects the upload when a Markdown field contains unsafe or disallowed HTML, including:
-
-- `<script>` tags and other executable content
-- Inline event-handler attributes, such as `onclick`
-- `javascript:` links
-- `<iframe>`, `<style>`, and similar elements
-
-<Warning>
-  If any Markdown field fails validation, the entire extension definition schema upload fails.
-</Warning>
-
-### Template validation
-
-Only `info.<section>.markdown.content` supports dynamic templates.
-
-When you upload an extension definition schema, BloodHound parses every `info.<section>.markdown.content` value in the `node_kinds` and `relationship_kinds` arrays as a Go template. An invalid template, including an unknown helper function, causes the extension upload to fail.
-
-For template syntax, contexts, supported authoring patterns, and testing guidance, see [Create dynamic Entity Panel content](/opengraph/developer/dynamic-entity-panel-content).
 
 ## `schema`
 
@@ -215,7 +137,7 @@ Defines all node types in your extension. Each node kind represents an entity ty
   Optional Hex color code (in `#RGB` or `#RRGGBB` format, the `#` is required) to apply to nodes of this kind in the graph.
 </ResponseField>
 <ResponseField name="info" type="object">
-  Optional [custom Entity Panel content](/opengraph/developer/graph-definition#custom-entity-panel-content) for nodes of this kind.
+  Optional [custom Entity Panel content](/opengraph/developer/entity-panel-content#custom-entity-panel-content) for nodes of this kind.
 </ResponseField>
 
 ## `relationship_kinds`
@@ -253,7 +175,7 @@ Defines what kind of connections exist. Each relationship kind represents a spec
   When `is_traversable` is set to `true` on a relationship kind, all edges of that kind inherit the same traversability behavior. Only <Tooltip tip="Represents a relationship where the starting node can take control of the ending node to a degree that lets an attacker abuse the ending node's outgoing edges" cta="Learn more" href="/resources/edges/traversable-edges">traversable edges</Tooltip> are included in pathfinding and considered for findings and metrics.
 </ResponseField>
 <ResponseField name="info" type="object">
-  Optional [custom Entity Panel content](/opengraph/developer/graph-definition#custom-entity-panel-content) for relationships of this kind.
+  Optional [custom Entity Panel content](/opengraph/developer/entity-panel-content#custom-entity-panel-content) for relationships of this kind.
 </ResponseField>
 
 ## `environments`
