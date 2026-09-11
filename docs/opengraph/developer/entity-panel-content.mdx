@@ -17,7 +17,7 @@ This page covers custom section structure, Markdown and template validation, and
 
 ## Custom Entity Panel content
 
-Use the [`info`](opengraph/developer/graph-definition#param-info) object to define custom Entity Panel sections for node kinds and relationship kinds. When a user selects a node or relationship in Explore, BloodHound renders an Entity Panel with the specified accordion sections as defined by the `info` entries.
+Use the [`info`](/opengraph/developer/graph-definition#param-info) object to define custom Entity Panel sections for node kinds and relationship kinds. When a user selects a node or relationship in Explore, BloodHound renders an Entity Panel with the specified accordion sections as defined by the `info` entries.
 
 Each `info` object is a map of section identifiers to rendered sections. Use stable identifiers for the keys so future schema updates can modify the same section without changing its identity.
 
@@ -33,12 +33,16 @@ Each `info` object is a map of section identifiers to rendered sections. Use sta
 }
 ```
 
+<Tip>
+  Draft your Markdown in a Markdown editor, then convert it to a single-line JSON string before adding it to the `content` field. This workflow applies to both static and dynamic content.
+</Tip>
+
 | Field | Description |
 | --- | --- |
 | `info` key | Stable section identifier. Must match `^[a-z0-9_-]{1,128}$`, which allows lowercase letters, numbers, hyphens, and underscores. |
 | `title` | Section title displayed in the Entity Panel accordion header. |
 | `position` | Non-negative integer that controls the order of extension-defined sections. Lower values render first. |
-| `markdown.content` | Markdown rendered in the section body. Required when `markdown` is present. You can use static Markdown or a Go template that renders values for the selected entity. See [Dynamic Entity Panel content](/opengraph/developer/entity-panel-content#dynamic-entity-panel-content). |
+| `markdown.content` | Single-line JSON string containing the Markdown rendered in the section body. Encode line breaks as escaped `\n` sequences. Required when `markdown` is present. You can use static Markdown or a [Go template](/opengraph/developer/entity-panel-content#dynamic-entity-panel-content) that renders values for the selected entity. |
 
 Every Entity Panel starts with **Object Information** at position `0`. This section lists all properties for the selected node or relationship.
 
@@ -89,7 +93,7 @@ BloodHound rejects the upload when a Markdown field contains unsafe or disallowe
 
 Dynamic Entity Panel content lets you tailor a custom Entity Panel section to the node or relationship that a user selects in Explore. Add template expressions to the section's Markdown to display entity properties, relationship endpoints, or conditional guidance.
 
-Templates are supported only in `info.<section>.markdown.content` within an [extension definition schema](/opengraph/developer/graph-definition). The section key, title, and position remain static. A template changes only the Markdown rendered inside the section.
+Templates are supported only in `info.<section>.markdown.content` within an [extension definition schema](/opengraph/developer/graph-definition). The section key, title, and position are static. A template changes only the Markdown rendered inside the section.
 
 ### Add dynamic content to a section
 
@@ -125,6 +129,12 @@ Use `default` for properties that might be missing or empty. Do not assume every
 
 Templates use Go `text/template` syntax. The root context (`.`) contains only the selected entity data described below. A template cannot fetch additional nodes, traverse the graph, or access the complete internal graph object.
 
+For properties on the selected node or relationship, use `get` instead of a direct reference when a property key contains punctuation or spaces:
+
+```markdown
+Display name: {{ get .Properties "display-name" | default "Unknown" }}
+```
+
 #### Node context
 
 Use the following values in a section defined for a node kind:
@@ -135,12 +145,6 @@ Use the following values in a section defined for a node kind:
 | `.Kinds` | Kinds assigned to the node. Each kind exposes `.Name` and `.KindID`. |
 | `.Properties` | Map of node properties. |
 | `.Properties.<property>` | A property with an identifier-safe key, such as `.Properties.name`. |
-
-For property keys that contain punctuation or spaces, use `get` instead of a direct reference:
-
-```markdown
-Display name: {{ get .Properties "display-name" | default "Unknown" }}
-```
 
 #### Relationship context
 
@@ -164,9 +168,13 @@ For example, this relationship section displays both endpoint names and the rela
 This is a **{{ .Kind.Name }}** relationship.
 ```
 
-### Format and reuse values
+### Use variables and pipelines
 
-Use a pipeline (`|`) to pass a value through one or more functions. Create a variable with `:=` when you use the same value more than once.
+Use variables to store values for reuse, and use pipelines to pass values through helper functions. Both features help you keep dynamic Entity Panel content readable and consistent.
+
+#### Create and reuse variables
+
+Create a variable with `:=` and assign it a value. You can reference the variable multiple times; using it does not consume or change its value.
 
 ```markdown
 {{- $name := .Properties.name | default "Unknown" | upper -}}
@@ -175,11 +183,25 @@ Use a pipeline (`|`) to pass a value through one or more functions. Create a var
 The selected object is {{ $name }}.
 ```
 
-The hyphens in `{{-` and `-}}` trim adjacent whitespace. Use them around control-flow actions when omitted content would otherwise leave unwanted blank lines. Do not use them when the surrounding space is meaningful.
+Variable scope follows the Go template block where you declare the variable:
 
-### Render optional content
+- A variable declared outside a control-flow block is available for the rest of the same `markdown.content` value.
+- A variable declared inside an `if`, `with`, or `range` block is available only inside that block.
+- Variables are local to one `markdown.content` value. You cannot use a variable in another Entity Panel section.
 
-Use `if`, `else`, and `end` to render content only when an entity meets a condition. Use `with` to render a block only when a value is present, and use `range` to render a collection.
+#### Chain helper functions with pipelines
+
+Use a pipeline (`|`) to pass the result of one function to the next. The result from the previous pipeline command becomes the last argument of the next function. For example, `replace` expects the old value, the new value, and the text to change:
+
+```markdown
+Display name: {{ .Properties.name | default "Unknown" | replace " " "-" | lower }}
+```
+
+In this example, the result of `default "Unknown"` becomes the last argument to `replace " " "-"`, which replaces spaces with hyphens. Each function returns a result that the next function receives.
+
+### Render conditional content
+
+Use conditional statements to control what content appears for an entity. Use `if`, `else`, and `end` to evaluate a condition, `with` to render a block when a value is present, and `range` to render a collection.
 
 ```markdown
 {{- if .Properties.isServiceAccount }}
@@ -190,6 +212,10 @@ This account is not marked as a service account.
 ```
 
 The conditional changes the content inside the Entity Panel section. It does not remove the section or its accordion header.
+
+#### Trim template whitespace
+
+The hyphens in `{{-` and `-}}` trim adjacent whitespace. Use them around control-flow actions when omitted content would otherwise leave unwanted blank lines. Do not use them when the surrounding space is meaningful.
 
 ### Use supported helpers
 
@@ -215,7 +241,7 @@ Some errors depend on the selected entity and occur only when BloodHound renders
 Before you publish an extension, test each template with the following cases:
 
 - An entity with every expected property
-- An entity missing each optional property
+- An entity missing each conditional property
 - Every `if` and `else` branch
 - Each item in a `range` block
 - The final rendered Markdown, including its whitespace
