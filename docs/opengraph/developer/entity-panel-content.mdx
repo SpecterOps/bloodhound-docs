@@ -37,12 +37,18 @@ Each `info` object is a map of section identifiers to rendered sections. Use sta
   Draft your Markdown in a Markdown editor, then convert it to a single-line JSON string before adding it to the `content` field. This workflow applies to both static and dynamic content.
 </Tip>
 
-| Field | Description |
-| --- | --- |
-| `info` key | Stable section identifier. Must match `^[a-z0-9_-]{1,128}$`, which allows lowercase letters, numbers, hyphens, and underscores. |
-| `title` | Section title displayed in the Entity Panel accordion header. |
-| `position` | Positive integer (`1` or higher) that controls the order of extension-defined sections. Lower values render first. Use `1` for the first extension-defined section. |
-| `markdown.content` | Single-line JSON string containing the Markdown rendered in the section body. Encode line breaks as escaped `\n` sequences. Required when `markdown` is present. You can use static Markdown or a [Go template](/opengraph/developer/entity-panel-content#dynamic-entity-panel-content) that renders values for the selected entity. |
+<ResponseField name="info key" type="string">
+  Stable section identifier. Must match `^[a-z0-9_-]{1,128}$`, which allows lowercase letters, numbers, hyphens, and underscores.
+</ResponseField>
+<ResponseField name="title" type="string">
+  Section title displayed in the Entity Panel accordion header.
+</ResponseField>
+<ResponseField name="position" type="integer">
+  Positive integer (`1` or higher) that controls the order of extension-defined sections. Lower values render first. Use `1` for the first extension-defined section.
+</ResponseField>
+<ResponseField name="markdown.content" type="string">
+  Single-line JSON string containing the Markdown rendered in the section body. Encode line breaks as escaped `\n` sequences. Required when `markdown` is present. You can use static Markdown or a [Go template](/opengraph/developer/entity-panel-content#dynamic-entity-panel-content) that renders values for the selected entity.
+</ResponseField>
 
 Every Entity Panel starts with **Object Information** at position `0`. This section lists all properties for the selected node or relationship.
 
@@ -91,3 +97,491 @@ BloodHound rejects the upload when a Markdown field contains unsafe or disallowe
 
 ## Dynamic Entity Panel content
 
+Most Entity Panel content can be ordinary Markdown. When a panel should adapt to the selected node or relationship, use a template expression to insert values, describe relationship endpoints, or build links from entity data.
+
+This guide is organized by authoring goal:
+
+- Read a value: **Basic templates**
+- Transform or reuse a value: **Pipelines and variables**
+- Include or omit content: **Control flow**
+- Link to another BloodHound page: **Links to BloodHound pages**
+- Build a dynamic Cypher query: **Dynamic Cypher links**
+
+The panel's section name, title, and position remain static. Templates change the Markdown rendered inside a section; they do not create or remove accordion sections.
+
+<Tip>
+  **Best practice**
+
+  Guard dynamic content before rendering it. See Guarding Dynamic Content.
+</Tip>
+
+### Template expressions
+
+The simplest template expression evaluates a value and inserts the result into the Markdown. Expressions use Go `text/template` syntax and are enclosed in `{{` and `}}`:
+
+```markdown
+# {{ .Properties.name }}
+```
+
+For a node whose `name` property is `Alice`, the rendered content is:
+
+```markdown
+# Alice
+```
+
+This small expression is the foundation for the rest of the guide. Static Markdown remains static (defined in advance). Use templates when content needs to be evaluated at render time (for example, to read entity data, compute or reuse a value, or conditionally render part of the Markdown).
+
+### Basic templates
+
+Template expressions evaluate values available to the template and insert their results into Markdown. Those values may come from the current graph context, such as `.Properties`, `.Source`, or `.Target`, or from template variables declared with `:=`. The surrounding Markdown remains literal, while the template determines which values are evaluated and where their results appear.
+
+- Graph context values come from the selected node or relationship and are accessed from `.`.
+- Template variables are local names created with `:=`, such as `$name` or `$cypherQuery`. They store a value so the template can reuse it.
+
+Graph context describes the data the panel starts with. Template variables describe values that the template creates and reuses while rendering.
+
+#### Graph context
+
+The graph context is the entity data made available to the panel. Its shape depends on whether the panel is rendered for a node or a relationship.
+
+##### Node context
+
+For a node panel, the root context represents the selected node:
+
+| Expression | Description |
+| --- | --- |
+| `.NodeID` | Graph-assigned ID of the node |
+| `.Kinds` | Kinds assigned to the node |
+| `.Properties` | Map of node properties |
+| `.Properties.<property>` | A specific property, such as `.Properties.name` |
+
+Template Example:
+
+```markdown
+# {{ .Properties.name | default "Unknown" }}
+
+Kinds: {{ join ", " .Kinds }}
+```
+
+Rendered Example:
+
+```markdown
+# Alice
+
+Kinds: User, Entity
+```
+
+##### Relationship context
+
+For a relationship panel, the root context represents the relationship and includes source and target node contexts:
+
+| Expression | Description |
+| --- | --- |
+| `.RelationshipID` | Graph-assigned ID of the relationship |
+| `.Kind.Name` | Relationship kind name |
+| `.Properties` | Map of relationship properties |
+| `.Properties.<property>` | A specific property, such as `.Properties.lastseen` |
+| `.Source` | Source node context |
+| `.Target` | Target node context |
+| `.Source.Properties.<property>` | Property on the source node |
+| `.Target.Properties.<property>` | Property on the target node |
+
+Example:
+
+```markdown
+## {{ .Source.Properties.name | default "Unknown source" }} → {{ .Target.Properties.name | default "Unknown target" }}
+
+This is a **{{ .Kind.Name }}** relationship.
+```
+
+Rendered example:
+
+```markdown
+## Alice → Domain Admins
+
+This is a **MemberOf** relationship.
+```
+
+The context is intentionally limited. Templates cannot fetch additional data, traverse the graph, or access the complete internal node or relationship object.
+
+##### Direct Property References and `get`
+
+Use a direct property reference when the key is a normal identifier, such as `.Properties.displayName`.
+
+Use `get` when you need a string-based map lookup—for example, when a key contains punctuation or spaces, or when the key is stored in another template variable:
+
+```markdown
+{{ get .Properties "display-name" | default "Unknown" }}
+```
+
+`get` only looks up a key in the `.Properties` map; it does not retrieve additional graph data or make absent properties available.
+
+#### Function syntax
+
+Go template functions use space-separated call syntax: the function name comes first, followed by its arguments. Parentheses can group an argument and nest a function call, but they are not written as conventional function-call syntax:
+
+```markdown
+{{ get .Properties "display-name" }}
+{{ default "Unknown" .Properties.name }}
+{{ upper (default "Unknown" .Properties.name) }}
+```
+
+Use parentheses when a function result must be passed as an argument to another function or when a condition combines multiple comparisons:
+
+```markdown
+{{ if and (ne .Properties.name "") (hasPrefix .Properties.name "svc-") }}
+This service account uses the expected naming convention.
+{{ end }}
+```
+
+Use pipelines for straightforward left-to-right transformations. A function receives graph context expressions, template variables, literal values, or parenthesized expressions and returns a result. Assign the result with `:=` when it needs to be reused.
+
+#### Pipelines
+
+Go template pipelines use `|` to pass the result of one command to the next command as its final argument:
+
+```markdown
+{{ .Properties.name | upper | default "Unknown" }}
+```
+
+Functions with arguments can be used in pipelines. In Go templates, the result of the preceding command is appended as the final argument to the next command, so place fixed arguments before the piped value:
+
+```markdown
+{{ .Properties.name | replace " " "-" | default "Unknown" }}
+```
+
+Here, `replace` receives its fixed arguments (`" "` and `"-"`) before the piped property value. If the piped value belongs in another position, use a direct function call and pipe its result instead. For example, `get` expects the map before the key:
+
+```markdown
+{{ get .Properties "display-name" | default "Unknown" }}
+```
+
+#### Whitespace trimming
+
+Hyphens next to the template brackets are optional. They trim whitespace around an action:
+
+- `{{-` trims whitespace immediately before the action.
+- `}}` trims whitespace immediately after the action.
+- `{{- ... -}}` trims whitespace on both sides.
+
+Whitespace includes spaces, tabs, and newlines. Hyphens do not represent subtraction and do not change the value being evaluated.
+
+Trimming is common around control-flow actions because a block that renders no content can otherwise leave an unwanted blank line.
+
+Without trimming:
+
+```markdown
+This account requires delegation protection.
+{{ if .Properties.isTierZero }}
+Because it is Tier Zero, review its delegation exposure carefully.
+{{ end }}
+Continue with the general remediation steps.
+```
+
+When `isTierZero` is false, the rendered content contains an empty line:
+
+```markdown
+This account requires delegation protection.
+
+Continue with the general remediation steps.
+```
+
+With trimming around the control-flow actions:
+
+```markdown
+This account requires delegation protection.
+{{- if .Properties.isTierZero }}
+Because it is Tier Zero, review its delegation exposure carefully.
+{{- end }}
+Continue with the general remediation steps.
+```
+
+When `isTierZero` is false, the rendered content is:
+
+```markdown
+This account requires delegation protection.
+Continue with the general remediation steps.
+```
+
+Use trimming deliberately. It can remove meaningful spacing that may be intended.
+
+For example:
+
+```json
+Access: {{ .Properties.level }}
+```
+
+Renders as `Access: admin`, while:
+
+```json
+Access:{{- .Properties.level }}
+```
+
+Renders as `Access:admin`.
+
+#### Template variables
+
+Template variables are local names that start with `$` and are assigned with `:=`.
+
+A variable declared in the current template body remains available through the end of that template execution. A variable declared inside an `if`, `range`, or `with` block is available only within that block. Each `markdown.content` value is rendered independently, so variables do not carry between separate Entity Panel objects.
+
+##### Reusable variables
+
+Create a local template value by writing a `$`-prefixed identifier first, followed by `:=` and the expression that supplies its value: `$identifier := expression`. Reuse that value later by referencing the same identifier, such as `$edgeType`. In the example below, each value is assigned once and reused in multiple rendered sentences or list items.
+
+```markdown
+{{- $edgeType := .Kind.Name | default "unknown" -}}
+{{- $sourceName := .Source.Properties.name | default "unknown source" -}}
+{{- $targetName := .Target.Properties.name | default "unknown target" -}}
+
+This is a {{ $edgeType }} relationship.
+
+Here are some additional details about {{ $edgeType }}:
+* Source: {{ $sourceName }}
+* Target: {{ $targetName }}
+```
+
+Rendered example:
+
+```markdown
+This is a MemberOf relationship.
+
+Here are some additional details about MemberOf:
+* Source: Alice
+* Target: Domain Admins
+```
+
+##### Variables with `printf`
+
+`printf` formats a string using a format string and subsequent arguments. Each `%s` consumes the next argument:
+
+```markdown
+{{- $name := .Properties.name | default "Unknown" -}}
+{{- $kind := .Kind.Name | default "Unknown kind" -}}
+{{- $label := printf "%s (%s)" $name $kind -}}
+{{ $label }}
+```
+
+For `Alice` with kind `User`, `$label` renders `Alice (User)`. `printf` formats text only; encoding and query execution are separate steps.
+
+### Control flow
+
+`if`, `else`, `end`, `range`, and `with` are Go template actions, not helper functions. They control which parts of the Markdown are emitted and should be documented separately from the function allowlist.
+
+#### Required versus optional syntax
+
+The following structural elements are required or optional as follows:
+
+- `if` starts a conditional block.
+- `end` closes an `if`, `range`, or `with` block.
+- `else` is optional and provides the alternate branch of an `if` block.
+- `range` starts an iteration block.
+- `with` starts a block that changes the current context when a value is present.
+- Hyphens next to the brackets are optional whitespace controls. They are not required for any action.
+
+An `if` action does not need to be the first content in a section or paragraph. It can appear wherever conditional output is needed. Its condition is a pipeline and may be a direct value, a comparison, or a combination of predicates.
+
+#### Conditional content
+
+A conditional can wrap a sentence, paragraph, list, code block, or complete Markdown subsection. This is useful when the same finding needs different explanatory or remediation copy depending on the selected entity's state.
+
+For example, the T0MarkSensitive finding could present different Kerberos-delegation remediation guidance for service accounts and non-service accounts. Protected Users might be preferred for non-service accounts, while service accounts may not be compatible with Protected Users; in that case, mark the account as sensitive instead.
+
+The property name below is illustrative; use the property exposed by the extension's entity data.
+
+```markdown
+## Kerberos Delegation Protection
+
+{{ if .Properties.isServiceAccount }}
+Because this is a service account, do not add it to the Protected Users group. Mark it as sensitive and cannot be delegated instead, then test the dependent service.
+{{ else }}
+For a non-service account, adding it to the Protected Users group is the preferred remediation. If that is not practical, mark the account as sensitive and cannot be delegated.
+{{ end }}
+```
+
+For a service account, the rendered content is:
+
+```markdown
+## Kerberos Delegation Protection
+
+Because this is a service account, do not add it to the Protected Users group. Mark it as sensitive and cannot be delegated instead, then test the dependent service.
+```
+
+For a non-service account, the rendered content is:
+
+```markdown
+## Kerberos Delegation Protection
+
+For a non-service account, adding it to the Protected Users group is the preferred remediation. If that is not practical, mark the account as sensitive and cannot be delegated.
+```
+
+This is a true either/or rendering decision: exactly one branch is emitted. The conditional can remove the section's content, but it cannot remove the accordion itself. The section remains because its structure is statically defined in the extension definition schema.
+
+Use `else` when the reader needs alternate wording. Use `with` when a block should appear only when a value is present; inside the block, `.` becomes that value. Use `range` to render a collection, such as a list of tags.
+
+#### Guarding dynamic output
+
+Dynamic output should be generated only when all required inputs are present and non-blank. Normalize optional values before testing them: `default ""` supplies an empty fallback for missing values, and `trim` removes surrounding whitespace. Place query or link construction inside a condition that checks every required value.
+
+```markdown
+{{- $sourceID := .Source.Properties.objectid | default "" | trim -}}
+{{- $targetID := .Target.Properties.objectid | default "" | trim -}}
+{{- if and (ne $sourceID "") (ne $targetID "") -}}
+  Generate and expose the query or link here.
+{{- else -}}
+  Omit the dynamic output or render a safe explanatory message.
+{{- end -}}
+```
+
+Do not construct a partially populated query or URL. If a required value is unavailable, omit the generated output or provide a safe fallback that does not expose an invalid link.
+
+### Links to BloodHound pages
+
+Entity Panel Markdown can link the reader to another BloodHound page. This is useful when the panel provides context for an entity but the reader needs to continue investigating in Explore or Attack Paths.
+
+#### Choose a destination
+
+Use the destination's product route and query parameters to tell BloodHound what to display:
+
+| Destination | Route | Useful query parameters | Example use |
+| --- | --- | --- | --- |
+| Attack Paths | `/ui/graphview` | `findingName`, `detailsView`, `view`, `environmentId` | Open the Attack Paths page and highlight a related finding |
+| Explore | `/ui/explore` | `selectedItem`, `primarySearch`, `searchType` | Open a node or relationship in Explore |
+| Explore Cypher tab | `/ui/explore` | `exploreSearchTab=cypher`, `searchType=cypher`, `cypherSearch` | Open Explore with a generated Cypher query |
+
+For example, a panel can provide a link to a related finding:
+
+```markdown
+View related findings
+```
+
+The Attack Paths page uses `findingName` to identify the finding and supports `detailsView` and `view` for the selected details and page view. Use URL encoding for dynamic query-parameter values. Do not assume that a finding name, kind, or property value is already safe to place directly into a URL.
+
+The destination routes and parameters above are product routes, not template variables. Templates supply the dynamic values; they do not discover routes or query parameters. Validate links against the target BloodHound release, especially when linking to a page other than Explore.
+
+#### Link composition
+
+A link generally has three parts:
+
+1. A BloodHound route, such as `/ui/graphview` or `/ui/explore`.
+2. Fixed query parameters that select the page or view.
+3. Dynamic parameter values rendered from the node or relationship context.
+
+Keep stable route and parameter text outside template expressions. Use templates only for the values that depend on the selected entity.
+
+### Dynamic Cypher links
+
+Dynamic Cypher links are an advanced Explore-link pattern. This subsection focuses on building and encoding a query; the broader **Links to BloodHound pages** section defines where the encoded query is used. For `printf` fundamentals, see **Template Variables**, specifically Variables with `printf` above.
+
+Build the query in four steps:
+
+1. Read the relevant node, relationship, kind, or property values.
+2. Build the complete Cypher query with `printf`.
+3. Encode the complete query with `b64enc` and `urlquery`.
+4. Use the encoded value as the `cypherSearch` parameter in an Explore link.
+
+Queries must be Base64 encoded first and URL encoded second.
+
+For the composition view of a hypothetical DCSync edge with source object ID `SOURCE-123` and target object ID `DOMAIN-456`, the complete query to encode is:
+
+```
+MATCH p = (src {objectid: 'SOURCE-123'})-[:GetChanges]->(tgt {objectid: 'DOMAIN-456'})
+MATCH p2 = (src)-[:GetChangedAll]->(dst)
+RETURN p, p2
+```
+
+The Markdown template can build that query dynamically and emit content only when both required values are present:
+
+```markdown
+{{- $sourceID := .Source.Properties.objectid | default "" -}}
+{{- $targetID := .Target.Properties.objectid | default "" -}}
+{{- if and (ne $sourceID "") (ne $targetID "") -}}
+{{- $cypherQuery := printf "MATCH p = (src {objectid: '%s'})-[:GetChanges]->(tgt {objectid: '%s'})\\nMATCH p2 = (src)-[:GetChangesAll]->(tgt)\\nRETURN p, p2" $sourceID $targetID -}}
+
+{{- $encodedQuery := $cypherQuery | b64enc | urlquery -}}
+View in Explore the underlying entities and connections that compose this relationship
+{{- else -}}
+Composition view unavailable for the selected relationship.
+{{- end -}}
+```
+
+When either value is missing, the condition is false and the template emits no encoded query. When both values are present, the output is the URL-encoded Base64 representation of the complete query. Use that output as the value of the `cypherSearch` parameter in an Explore link.
+
+Authors should not manually paste a partially encoded query into `cypherSearch`. Templates construct the query and link text; they do not execute Cypher or retrieve additional graph data. Prefer controlled values such as known kinds and object identifiers, and be careful when inserting free-form property values into quoted Cypher strings.
+
+#### Escaping query content
+
+The extension content is parsed once when the extension is installed and again when it is interpreted for display. Escaped characters intended to survive into the query therefore need to be escaped for both parsing steps.
+
+For example:
+
+| Intended query content | Schema string |
+| --- | --- |
+| A newline represented as `\n` | `\\n` |
+
+The schema string needs two backslashes so that the newline escape survives both parsing steps. If the schema is represented inside a JSON source file, that JSON representation may require an additional layer of escaping. Test the serialized extension payload and the decoded query, not only the Markdown source shown in an editor.
+
+### Supported functions
+
+Functions are separate from Go template actions. The Entity Panel function map is a curated Sprig-based allowlist.
+
+| Goal | Supported functions |
+| --- | --- |
+| Defaults and predicates | `default`, `coalesce`, `empty`, `ternary`, `contains`, `hasPrefix`, `hasSuffix`, `eq`, `ne`, `lt`, `gt`, `and`, `or`, `not` |
+| Text formatting | `trim`, `trimPrefix`, `trimSuffix`, `upper`, `lower`, `title`, `replace`, `trunc`, `substr`, `repeat`, `indent`, `nindent` |
+| Lists and iteration helpers | `list`, `join`, `first`, `last`, `rest`, `initial`, `reverse`, `uniq`, `compact`, `has`, `sortAlpha`, `len` |
+| Dictionary lookup and manipulation | `dict`, `get`, `hasKey`, `keys`, `values`, `pick`, `omit` |
+| Numbers and conversion | `add`, `sub`, `mul`, `div`, `mod`, `max`, `min`, `ceil`, `floor`, `round`, `int`, `int64`, `float64`, `atoi` |
+| JSON and encoding | `toJson`, `toPrettyJson`, `fromJson`, `b64enc`, `b64dec`, `urlquery` |
+| Quoting | `quote`, `squote` |
+
+Template actions:
+
+| Category | Actions |
+| --- | --- |
+| Conditional control flow | `if`, `else`, `end` |
+| Context and optional blocks | `with`, `end` |
+| List iteration | `range`, `end` |
+
+The function map excludes functions that are unsafe, expensive, or inappropriate for Entity Panel authoring, including regular-expression, cryptographic, certificate-generation, random-number, URL-parsing, and URL-joining helpers. The supported-function reference is the source of truth for the target release.
+
+### Errors and testing
+
+If a template cannot be parsed or executed, the response retains the original unexecuted template string and includes a template error describing the failure.
+
+Schema validation should catch many invalid syntax errors, but not all errors are known prior to runtime resolution.
+
+Common causes include:
+
+- Misspelled context fields or properties
+- Unsupported functions
+- Invalid template syntax
+- Missing values without fallback logic
+- Values passed to a helper with an unexpected type
+- Invalid Cypher or link construction
+- Incorrect escaping across installation and display parsing
+
+Test templates incrementally:
+
+1. Start with static Markdown.
+2. Add one value expression.
+3. Add a fallback with `default`.
+4. Add a pipeline or reusable variable.
+5. Add control flow and test every branch.
+6. Inspect rendered Markdown, including whitespace.
+7. Decode and test any generated Cypher link.
+
+### Quick checklist
+
+Before publishing a dynamic Entity Panel:
+
+- Use the correct node or relationship context.
+- Use direct property references for ordinary keys and `get` for string-based map lookup.
+- Keep variables, pipelines, and control-flow actions conceptually separate.
+- Remember that hyphens are optional whitespace controls, not required syntax.
+- Test rendered output, not only the template source.
+- Base64 encode first, then URL encode, the complete Cypher query before placing it in `cypherSearch`.
+- Double-escape escaped query characters across installation and display parsing.
+- Use the current BloodHound Explore route for the target deployment; do not assume `/explore`.
+- Use only documented helper functions.
+- Confirm that each accordion remains useful when conditional content is absent.
