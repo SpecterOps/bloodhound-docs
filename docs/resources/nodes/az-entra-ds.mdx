@@ -1,0 +1,94 @@
+---
+title: AZEntraDS
+description: A Microsoft Entra Domain Services managed domain represented by an Azure Resource Manager resource.
+icon: '/images/nodes/azure/az-entra-ds.svg'
+---
+
+import NodePropertiesTableGuide from '/snippets/resources/node-properties-table-guide.mdx';
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+An `AZEntraDS` node represents a `Microsoft.AAD/domainServices` Azure Resource Manager resource. Microsoft Entra Domain Services (Entra DS) provides managed domain controllers and synchronizes selected identities and credential material from Microsoft Entra ID into the managed domain.
+
+AzureHound collects this node as part of the `az-rm` collection scope. The collector requires `Microsoft.AAD/domainServices/read`. Collecting direct role assignments against the resource additionally requires `Microsoft.Authorization/roleAssignments/read`.
+
+<Note>
+AzureHound does not collect the Secure LDAP public certificate, certificate expiration, or certificate thumbprint from this resource.
+</Note>
+
+## Node properties
+
+<NodePropertiesTableGuide />
+
+For this Azure Resource Manager node, the **Directory** column identifies the source field in the ARM resource response.
+
+<Note>
+Properties that are blank or null do not appear in the Entity Panel.
+</Note>
+
+<Note>
+BloodHound normalizes the ARM `Enabled` and `Disabled` values listed below to boolean `true` and `false` values. If ARM omits a value or returns an unrecognized value, BloodHound omits the corresponding boolean property.
+</Note>
+
+|     |     |     |     |
+| --- | --- | --- | --- |
+| **Entity Panel** | **Database** | **Directory** | **Description** |
+| Tier Zero / High Value | - | - | BloodHound Enterprise: Whether the object is part of Tier Zero or another configured privilege zone. BloodHound CE: Whether the object is marked as High Value. |
+| Display Name | `name` | `name` | The Azure resource name of the managed domain. |
+| Object ID | `objectid` | `id` | The full Azure Resource Manager resource ID of the managed domain. |
+| Last Collected by BloodHound | `lastcollected` | - | The most recent time the object was collected and ingested. |
+| Tenant ID | `tenantid` | `properties.tenantId` | The unique identifier of the Microsoft Entra tenant associated with the managed domain. |
+| Domain Name | `domainname` | `properties.domainName` | The DNS name of the managed domain. |
+| Domain Configuration Type | `domainconfigurationtype` | `properties.domainConfigurationType` | The domain configuration type reported by the `Microsoft.AAD` resource provider. |
+| Filtered Sync Enabled | `filteredsyncenabled` | `properties.filteredSync` | Whether group-based filtered synchronization is enabled. When enabled, Entra DS synchronizes explicitly scoped groups and their direct user members. |
+| Sync Scope | `syncscope` | `properties.syncScope` | The eligible identity population. `All` includes all Entra identities, while `CloudOnly` limits eligibility to cloud-only identities. Group filtering can further restrict this population. |
+| Sync Application ID | `syncapplicationid` | `properties.syncApplicationId` | The application/client ID reported for the tenant-local Entra DS synchronization application. |
+| NTLM V1 Enabled | `ntlmv1enabled` | `properties.domainSecuritySettings.ntlmV1` | Whether NTLMv1 authentication is enabled in the managed domain. |
+| TLS V1 Enabled | `tlsv1enabled` | `properties.domainSecuritySettings.tlsV1` | Whether legacy TLS is enabled. A `false` value represents TLS 1.2-only mode. |
+| Sync NTLM Passwords Enabled | `syncntlmpasswordsenabled` | `properties.domainSecuritySettings.syncNtlmPasswords` | Whether NTLM-compatible password hashes are synchronized into the managed domain. |
+| Sync Kerberos Passwords Enabled | `synckerberospasswordsenabled` | `properties.domainSecuritySettings.syncKerberosPasswords` | Whether Kerberos-compatible password material is synchronized into the managed domain. |
+| Sync On-Premises Passwords Enabled | `synconprempasswordsenabled` | `properties.domainSecuritySettings.syncOnPremPasswords` | Whether password material for identities synchronized from an on-premises directory is synchronized into the managed domain. |
+| Kerberos RC4 Encryption Enabled | `kerberosrc4encryptionenabled` | `properties.domainSecuritySettings.kerberosRc4Encryption` | Whether Kerberos RC4 encryption is enabled. |
+| Kerberos Armoring Enabled | `kerberosarmoringenabled` | `properties.domainSecuritySettings.kerberosArmoring` | Whether Kerberos armoring is enabled. |
+| LDAP Signing Enabled | `ldapsigningenabled` | `properties.domainSecuritySettings.ldapSigning` | Whether LDAP signing is enabled. |
+| Channel Binding Enabled | `channelbindingenabled` | `properties.domainSecuritySettings.channelBinding` | Whether LDAP channel binding is enabled. |
+| Sync On-Premises SAM Account Name Enabled | `synconpremsamaccountnameenabled` | `properties.domainSecuritySettings.syncOnPremSamAccountName` | Whether Entra DS populates `sAMAccountName` from the Entra `onPremisesSamAccountName` property. |
+| Secure LDAP Enabled | `ldapsenabled` | `properties.ldapsSettings.ldaps` | Whether Secure LDAP is enabled. |
+| Secure LDAP External Access Enabled | `ldapsexternalaccessenabled` | `properties.ldapsSettings.externalAccess` | Whether Secure LDAP access over the public internet is enabled. |
+
+## Relationships
+
+AzureHound and BloodHound create the following containment relationship:
+
+```cypher
+(:AZResourceGroup)-[:AZContains]->(:AZEntraDS)
+```
+
+BloodHound also creates direct Azure RBAC relationships to the node for supported role assignments whose scope exactly matches the domain service resource:
+
+| Azure role | BloodHound relationship |
+| --- | --- |
+| Owner | [`AZOwner`](/resources/edges/az-owner) |
+| User Access Administrator | [`AZUserAccessAdministrator`](/resources/edges/az-user-access-administrator) |
+| Contributor | [`AZContributor`](/resources/edges/az-contributor) |
+| Domain Services Contributor | [`AZEntraDSContributor`](/resources/edges/az-entra-ds-contributor) |
+
+As with other Contributor relationships, inherited general Azure roles are not duplicated as direct edges to every descendant resource. Assignments collected on a management group, subscription, or resource group reach `AZEntraDS` through [`AZContains`](/resources/edges/az-contains) paths. Domain Services Contributor is currently collected only when assigned directly to the managed-domain resource, so parent-scoped assignments of that service-specific role are not represented. The raw `AZContributor` and `AZEntraDSContributor` relationships are not sufficient by themselves to prove control of Entra DS synchronization or security settings.
+
+BloodHound post-processing creates a traversable [`AZManageEntraDS`](/resources/edges/az-manage-entra-ds) relationship only when one effective principal has Contributor or Domain Services Contributor over this resource and also has both Application Administrator and Groups Administrator in Entra ID:
+
+```cypher
+(:AZUser|AZGroup|AZServicePrincipal)-[:AZManageEntraDS]->(:AZEntraDS)
+```
+
+BloodHound corroborates the resource's normalized `domainName` with the tenant's synchronized `AAD DC Administrators` group and the AD domain SID. It then creates a non-traversable [`EntraDSFor`](/resources/edges/entra-ds-for) relationship from the resource to the AD domain. If that domain has a `Domain Users` group with RID 513, BloodHound emits [`ManageEntraDSSync`](/resources/edges/manage-entra-ds-sync) from every qualified principal to that group. This edge is independent of the resource's current `syncscope` and `filteredsyncenabled` properties.
+
+When `syncscope` is `All` and `filteredsyncenabled` is `true`, BloodHound separately emits [`ManageEntraDSSyncFilter`](/resources/edges/manage-entra-ds-sync-filter) from the tenant-local Entra DS Domain Controller Services service principal to the same `Domain Users` group.
+
+## References
+
+* [Microsoft.AAD/domainServices reference](https://learn.microsoft.com/en-us/azure/templates/microsoft.aad/domainservices)
+* [How synchronization works in Microsoft Entra Domain Services](https://learn.microsoft.com/en-us/entra/identity/domain-services/synchronization)
+* [Configure scoped synchronization](https://learn.microsoft.com/en-us/entra/identity/domain-services/scoped-synchronization)
+* [Secure a Microsoft Entra Domain Services managed domain](https://learn.microsoft.com/en-us/entra/identity/domain-services/secure-your-domain)
+* [Configure Secure LDAP](https://learn.microsoft.com/en-us/entra/identity/domain-services/tutorial-configure-ldaps)
