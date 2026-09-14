@@ -1,0 +1,47 @@
+---
+title: ManageEntraDSSync
+description: A qualified managed-domain manager can broaden synchronization and materialize controlled Entra users as Domain Users.
+---
+
+<img
+  noZoom
+  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise and CE"
+/>
+
+BloodHound emits `ManageEntraDSSync` from each principal with [AZManageEntraDS](/resources/edges/az-manage-entra-ds) to a correlated [AZEntraDS](/resources/nodes/az-entra-ds). The destination is the RID 513 Domain Users group in the Domain identified by [EntraDSFor](/resources/edges/entra-ds-for).
+
+The relationship is independent of current `filteredSync` and `syncScope` values because the source can change both settings. BloodHound does not emit an unconditional attack edge from the `AZEntraDS` resource.
+
+## Composition
+
+```text
+AZBase -AZManageEntraDS-> AZEntraDS -EntraDSFor-> Domain -Contains*1..-> Domain Users
+```
+
+BloodHound requires the AD containment path. Domain Users is selected by the correlated domain SID and RID 513, and the relationship is emitted only when the group is reachable from the correlated Domain through `Contains`.
+
+## Abuse Info
+
+### Procedure
+
+1. Read the Microsoft Entra Domain Services (Entra DS) managed domain's current `filteredSync` and `syncScope` values. If `filteredSync=Enabled`, add an Entra security group of which the attacker-controlled user is a direct member to the filter, as described for [ManageEntraDSSyncFilter](/resources/edges/manage-entra-ds-sync-filter). If `filteredSync=Disabled` but `syncScope=CloudOnly`, change `syncScope` to `All` with the ARM `PUT` workflow described for [AZManageEntraDS](/resources/edges/az-manage-entra-ds).
+2. Wait for the controlled user to synchronize to Entra DS. Poll for its Entra object ID in `msDS-aadObjectId`, or use repeated non-destructive authentication attempts when LDAP inspection is unavailable.
+
+Synchronization changes can trigger a full resynchronization and disrupt operations; change only the boundary needed to make the controlled user eligible.
+
+## Opsec Considerations
+
+Managed-domain updates are recorded in the Azure Activity Log and can trigger a full resynchronization, including deletion of objects that fall outside the new boundary.
+
+## Edge Schema
+
+Source: [AZUser](/resources/nodes/az-user), [AZGroup](/resources/nodes/az-group), or [AZServicePrincipal](/resources/nodes/az-service-principal)<br />
+Destination: [Group](/resources/nodes/group)<br />
+Traversable: **Yes**
+
+## References
+
+- [Microsoft Entra Domain Services synchronization](https://learn.microsoft.com/en-us/entra/identity/domain-services/synchronization)
+- [Configure scoped synchronization](https://learn.microsoft.com/en-us/entra/identity/domain-services/scoped-synchronization)
+- [MITRE ATT&CK T1136.002: Create Account - Domain Account](https://attack.mitre.org/techniques/T1136/002/)

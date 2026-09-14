@@ -1,0 +1,58 @@
+---
+title: AZManageEntraDS
+description: The same effective principal has managed-domain ARM authorization plus Application Administrator and Groups Administrator.
+---
+
+import ResourceEditionPill from "/snippets/resources/edition-pill.mdx";
+
+<ResourceEditionPill />
+
+BloodHound creates this post-processed relationship only when one effective principal has:
+
+1. [AZContributor](/resources/edges/az-contributor) or raw [AZEntraDSContributor](/resources/edges/az-entra-ds-contributor) over the target [AZEntraDS](/resources/nodes/az-entra-ds).
+2. Application Administrator in the target tenant.
+3. Groups Administrator in the target tenant.
+
+Post-processing accounts for inherited ARM scope, nested Azure group membership, and effective Entra role assignments. Role scope is matched from `AZRole.tenantid`; a tenant-to-role `AZContains` relationship is not required.
+
+## Composition
+
+Composition exposes the effective ARM assignment, group-membership and resource-containment paths together with the Application Administrator and Groups Administrator role paths. Tenant-to-role `AZContains` relationships and the tenant node are omitted. All three permission components must apply to the same source principal.
+
+## Abuse Info
+
+The source can change the managed domain's security configuration and broad synchronization boundary when all three authorization components are present.
+
+### Procedure
+
+1. Obtain an Azure Resource Manager access token and all three authorization components represented by the edge: `AZContributor` or `AZEntraDSContributor`, Application Administrator, and Groups Administrator.
+2. Read the Microsoft Entra Domain Services (Entra DS) resource and retain its location and current nested settings:
+
+   ```http
+   GET https://management.azure.com/{resource-id}?api-version=2025-06-01
+   ```
+
+3. Choose a supported management-plane change. To change identity synchronization, see [ManageEntraDSSync](/resources/edges/manage-entra-ds-sync).
+4. Submit the change with:
+
+   ```http
+   PUT https://management.azure.com/{resource-id}?api-version=2025-06-01
+   ```
+
+## Opsec Considerations
+
+Azure records managed-domain updates in the Activity Log. Synchronization-scope changes can also generate Microsoft Entra audit activity and trigger a full managed-domain resynchronization, including deletion of objects that fall out of scope.
+
+## Edge Schema
+
+Source: [AZUser](/resources/nodes/az-user), [AZGroup](/resources/nodes/az-group), or [AZServicePrincipal](/resources/nodes/az-service-principal)<br />
+Destination: [AZEntraDS](/resources/nodes/az-entra-ds)<br />
+Traversable: **Yes**
+
+## References
+
+- [Domain Services Contributor built-in role](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/identity#domain-services-contributor)
+- [Microsoft.AAD/domainServices reference](https://learn.microsoft.com/en-us/azure/templates/microsoft.aad/domainservices)
+- [Secure a Microsoft Entra Domain Services managed domain](https://learn.microsoft.com/en-us/entra/identity/domain-services/secure-your-domain)
+- [Configure scoped synchronization](https://learn.microsoft.com/en-us/entra/identity/domain-services/scoped-synchronization)
+- [MITRE ATT&CK T1484: Domain or Tenant Policy Modification](https://attack.mitre.org/techniques/T1484/)

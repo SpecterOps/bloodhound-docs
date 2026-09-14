@@ -1,0 +1,21 @@
+---
+title: EntraDSFor
+description: Correlates an Azure Microsoft Entra Domain Services resource to its managed AD Domain.
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+`EntraDSFor` is a non-traversable, post-processed correlation from a Microsoft Entra Domain Services (Entra DS) resource to its managed AD Domain. BloodHound requires a unique normalized match between `AZEntraDS.domainname` and `Domain.name`, then corroborates the domain SID through the tenant's synchronized `AAD DC Administrators` group.
+
+The group must be represented by an AZGroup named `AAD DC Administrators`, a `SyncedToEntraDSGroup` relationship to its Entra DS Group, and a matching `domainsid` on the candidate Domain. BloodHound fails closed when the name match is missing or ambiguous or the group correlation does not corroborate the SID.
+
+## Edge Schema
+
+Source: [AZEntraDS](/resources/nodes/az-entra-ds)<br />
+Destination: [Domain](/resources/nodes/domain)<br />
+Traversable: **No**
+
+## References
+
+- [How objects and credentials are synchronized in a Microsoft Entra Domain Services managed domain](https://learn.microsoft.com/en-us/entra/identity/domain-services/synchronization)
+- [Configure the AAD DC Administrators group](https://learn.microsoft.com/en-us/entra/identity/domain-services/tutorial-create-instance-advanced#configure-an-administrative-group)
