@@ -214,7 +214,7 @@ For this setup, create a user-assigned managed identity in Azure and assign it t
     - **Microsoft Graph API permissions** — The Azure portal provides no user interface for granting Microsoft Graph **application** permissions to a managed identity's service principal. You must use PowerShell (or Azure Cloud Shell) to assign these permissions directly. See [AzureHound Data and Permissions: Entra ID](/collect-data/azurehound-data-permissions#entra-id) for details on the least-privilege approach.
     - **AzureHound Reader role** — Assign the AzureHound Reader custom role to the managed identity's service principal at the Tenant Root Group scope. See [Create and assign required access roles](#create-and-assign-required-access-roles) below.
 
-    The following PowerShell script (Microsoft Graph SDK) assigns all required Microsoft Graph application permissions to your managed identity's service principal. Replace the `$managedIdentityClientId` placeholder with the **Client ID** found in the Azure portal under **Managed Identities** &gt; your identity &gt; **Overview**.
+    The following PowerShell script (Microsoft Graph SDK) assigns all required Microsoft Graph application permissions to your managed identity's service principal. Replace the `$managedIdentityClientId` placeholder with the **Client ID** found in the Azure portal under **Managed Identities** &gt; your identity &gt; **Overview**. If you use a sovereign Azure cloud, set `$graphEnvironment` to the corresponding Microsoft Graph environment.
 
     ```powershell
     <#
@@ -243,15 +243,18 @@ For this setup, create a user-assigned managed identity in Azure and assign it t
     #Requires -Modules Microsoft.Graph.Applications,Microsoft.Graph.Authentication
 
     # ---------------------------------------------------------------------------
-    # TODO: Replace with your managed identity's Client ID.
+    # Replace with your managed identity's Client ID.
     # Found in the Azure portal: Managed Identities > your identity > Overview.
     # ---------------------------------------------------------------------------
     [string] $managedIdentityClientId = '<YOUR-MANAGED-IDENTITY-CLIENT-ID>'
 
+    # Use Global, China, USGov, or USGovDoD as appropriate.
+    [string] $graphEnvironment = 'Global'
+
     # Connect to Microsoft Graph with the scopes required to read service principals
     # and grant app role assignments.
     # Note: The -TenantId parameter is also required when using an External ID.
-    Connect-MgGraph -NoWelcome -ContextScope Process -Scopes @(
+    Connect-MgGraph -NoWelcome -ContextScope Process -Environment $graphEnvironment -Scopes @(
         'Application.Read.All',
         'AppRoleAssignment.ReadWrite.All'
     )
