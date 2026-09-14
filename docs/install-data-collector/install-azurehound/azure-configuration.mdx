@@ -153,12 +153,12 @@ This section describes how to configure the required Microsoft Graph API permiss
 
     1. Click **Yes** in the confirmation dialog.
 
-    1. After being redirected to API Permissions again, you should see both permissions as **Granted**.
+    1. After being redirected to API Permissions again, you should see all requested permissions as **Granted**.
 
          <Frame>
           <img
             src="/images/data_collectors/azurehound/admin-consent-granted.png"
-            alt="A view of the Azure portal showing the API permissions page with the Directory.Read.All and RoleManagement.Read.All permissions marked as Granted."
+            alt="A view of the Azure portal showing the API permissions page with the requested permissions marked as Granted."
           />
         </Frame>
 
@@ -490,25 +490,42 @@ The AzureHound Reader role is a least-privilege custom role that grants AzureHou
 
     1. Click **Select members**.
 
-        <Frame>
-          <img src="/assets/image-131.png" alt="The Members step with the Select members button highlighted."/>
-        </Frame>
+    Select the tab for your authentication method and assign the AzureHound Reader role to the corresponding service principal.
 
-    1. For **Azure Managed Identity** authentication, under **Assign access to**, select **Managed identity**. For Certificate, Client Secret, and Username and Password authentication, leave the default **User, group, or service principal** selected.
-
-        <Note>Managed identities do not appear in the default member picker. You must switch **Assign access to** to **Managed identity** first, or your search in the next step will return no results.</Note>
-
-    1. Search for and click on the service principal to assign the role to. For Certificate, Client Secret, and Username/Password authentication, select the AzureHound Enterprise app registration's service principal. For **Azure Managed Identity** authentication, select the managed identity's service principal.
+    <Tabs>
+      <Tab title="App registration">
 
         <Frame>
-          <img src="/assets/image-132.png" alt="The member picker dialog with the AzureHound service principal selected."/>
+          <img src="/assets/image-131.png" alt="The Members step with User, group, or service principal selected and the Select members button highlighted."/>
         </Frame>
 
-    1. Validate the principal selected, then click **Select**.
+        1. Under **Assign access to**, leave **User, group, or service principal** selected.
 
-        <Frame>
-          <img src="/assets/image-133.png" alt="The member selection confirmation showing the selected service principal before applying."/>
-        </Frame>
+        1. Search for and click the AzureHound Enterprise app registration's service principal.
+
+            <Frame>
+              <img src="/assets/image-132.png" alt="The member picker dialog with the AzureHound Enterprise app registration service principal selected."/>
+            </Frame>
+
+        1. Validate the selected principal, then click **Select**.
+
+            <Frame>
+              <img src="/assets/image-133.png" alt="The selected AzureHound Enterprise app registration service principal before applying the role assignment."/>
+            </Frame>
+
+      </Tab>
+      <Tab title="Managed identity">
+
+        1. Under **Assign access to**, select **Managed identity**.
+
+            <Note>Managed identities do not appear in the default member picker. You must switch **Assign access to** to **Managed identity** before searching, or your search will return no results.</Note>
+
+        1. Search for and click the managed identity's service principal.
+
+        1. Validate the selected principal, then click **Select**.
+
+      </Tab>
+    </Tabs>
 
   </Step>
   <Step title="Review the role assignment">
@@ -738,6 +755,8 @@ Connect-AzAccount -Environment AzureCloud -Scope Process
         "permissions": [
             {
                 "actions": [
+                    "Microsoft.Resources/tenants/read",
+                    "Microsoft.Resources/subscriptions/read",
                     "Microsoft.Resources/subscriptions/resourceGroups/read",
                     "Microsoft.Authorization/roleAssignments/read",
                     "Microsoft.Management/managementGroups/read",
