@@ -358,17 +358,22 @@ The following structural elements are required or optional as follows:
 - `if` starts a conditional block.
 - `end` closes an `if`, `range`, or `with` block.
 - `else` is optional and provides the alternate branch of an `if` block.
+- `else if` is optional and adds another conditional branch before the final `else` or `end`.
 - `range` starts an iteration block.
 - `with` starts a block that changes the current context when a value is present.
 - Hyphens next to the brackets are optional whitespace controls. They are not required for any action.
 
-An opening `if` action requires one or more arguments that evaluate to boolean values. Use conditional checks to produce those values. The `else` action does not take arguments; it renders the alternate branch when the `if` condition is false. For example:
+An opening `if` action requires one or more arguments that evaluate to boolean values. Use conditional checks to produce those values. The following example shows an `if` action without an `else` or `else if` branch:
 
 ```markdown
 {{- if and (ne .Properties.name "") (hasPrefix .Properties.name "svc-") -}}
 This service account uses the expected naming convention.
 {{- end -}}
 ```
+
+An `else` action does not take arguments; it renders the alternate branch when the `if` condition is false. See [Conditional content](/opengraph/developer/entity-panel-content/#conditional-content) below for an example.
+
+An `else if` action accepts its own arguments (like `if`) and evaluates them only when the preceding condition is false. Use `else if` to add another conditional branch before an optional `else` action.
 
 #### Conditional content
 
@@ -378,8 +383,10 @@ For example, security guidance for an entity could present different Kerberos-de
 
 The property name below is illustrative; use the property exposed by the extension's entity data.
 
+The following example shows an `if`/`else` pair:
+
 ```markdown
-## Kerberos Delegation Protection
+## Kerberos Delegation Context
 
 {{- if (default false .Properties.isServiceAccount) -}}
 Because this is a service account, do not add it to the Protected Users group. Mark it as sensitive and cannot be delegated instead, then test the dependent service.
@@ -391,7 +398,7 @@ For a non-service account, adding it to the Protected Users group is the preferr
 For a service account, the rendered content is:
 
 ```markdown
-## Kerberos Delegation Protection
+## Kerberos Delegation Context
 
 Because this is a service account, do not add it to the Protected Users group. Mark it as sensitive and cannot be delegated instead, then test the dependent service.
 ```
@@ -399,7 +406,7 @@ Because this is a service account, do not add it to the Protected Users group. M
 For a non-service account, the rendered content is:
 
 ```markdown
-## Kerberos Delegation Protection
+## Kerberos Delegation Context
 
 For a non-service account, adding it to the Protected Users group is the preferred approach. If that is not practical, mark the account as sensitive and cannot be delegated.
 ```
@@ -408,13 +415,13 @@ This is a true either/or rendering decision: exactly one branch is emitted. The 
 
 Use `else` when the reader needs alternate wording. Use `with` when a block should appear only when a value is present; inside the block, `.` becomes that value. Use `range` to render a collection, such as a list of tags.
 
-### Conditional checks and null handling
+### Supported functions
 
 Functions are separate from Go template actions. The Entity Panel function map is a curated Sprig-based allowlist.
 
 | Goal | Supported functions |
 | --- | --- |
-| Defaults and predicates | `default`, `coalesce`, `empty`, `ternary`, `contains`, `hasPrefix`, `hasSuffix`, `eq`, `ne`, `lt`, `gt`, `and`, `or`, `not` |
+| Conditional checks and null handling | `default`, `coalesce`, `empty`, `ternary`, `contains`, `hasPrefix`, `hasSuffix`, `eq`, `ne`, `lt`, `gt`, `and`, `or`, `not` |
 | Text formatting | `printf`, `trim`, `trimPrefix`, `trimSuffix`, `upper`, `lower`, `title`, `replace`, `trunc`, `substr`, `repeat`, `indent`, `nindent` |
 | Lists and iteration helpers | `list`, `join`, `first`, `last`, `rest`, `initial`, `reverse`, `uniq`, `compact`, `has`, `sortAlpha`, `len` |
 | Dictionary lookup and manipulation | `dict`, `get`, `hasKey`, `keys`, `values`, `pick`, `omit` |
