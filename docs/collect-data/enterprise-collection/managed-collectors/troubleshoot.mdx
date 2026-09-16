@@ -16,6 +16,10 @@ Use this page to identify whether a managed collection problem comes from beta a
 
 If **Managed Collection** is not present under **Administration** > **Data Collection**, the `managed_openhound_collection` feature is not enabled for your tenant. The feature is SpecterOps-managed and is disabled by default. Contact your account team to confirm beta access.
 
+## Understand beta health signals
+
+The beta exposes collection-plan activity and the latest job result in the **Collection Plans** page. It does not expose a separate managed-worker health panel to customer users. If several plans stop producing results, provide the plan names and expected run times to your SpecterOps account team so they can review managed-service health and detailed logs.
+
 ## Review collection results
 
 On **Collection Plans**, inspect the plan tile and its schedule:
@@ -50,6 +54,12 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
     **Action:** Confirm that the plan displays a daily schedule and that it is not marked **Disabled**. If the schedule is correct and no result appears after the scheduled window, record the plan name and expected run time and contact your account team.
   </Accordion>
 
+  <Accordion title="The managed collector appears unavailable">
+    **Likely cause:** The managed worker is not processing jobs, or several plans are affected by a service-level problem. Customer users see plan results, not the managed worker's detailed health state.
+
+    **Action:** Confirm that the affected plans have active daily schedules and record the expected run times. Contact your SpecterOps account team with the affected plan names and timestamps so they can review service health and detailed logs.
+  </Accordion>
+
   <Accordion title="The schedule time is unexpected">
     **Likely cause:** The form displays local time and the GMT offset, while the recurrence is stored in UTC.
 
@@ -60,6 +70,18 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
     **Likely cause:** The AWS principal does not have read access to all resources in the configured scope, or the scope excludes the resources you expect.
 
     **Action:** Confirm the AWS account or organization scope and review the required read-only policy. Use the AWS permissions page to check service-specific permissions, then review the next collection result.
+  </Accordion>
+
+  <Accordion title="The credential is close to expiration">
+    **Likely cause:** The beta does not provide proactive credential or certificate expiry warnings.
+
+    **Action:** Track the AWS key lifecycle in your organization's credential-management process. Create a replacement plan before the key expires, confirm a successful result, then delete the old plan and disable the old key in AWS.
+  </Accordion>
+
+  <Accordion title="A network allowlist blocks collection">
+    **Likely cause:** Your AWS or network controls do not allow the managed collection traffic path.
+
+    **Action:** Request the current managed-collection egress IP range and change-notification process from your SpecterOps account team. Do not infer the range from a self-deployed collector's address.
   </Accordion>
 
   <Accordion title="A save or run action does not complete">

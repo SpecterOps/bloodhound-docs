@@ -20,10 +20,12 @@ Managed Collectors uses separate responsibilities for BloodHound Enterprise, the
 flowchart LR
     BHE[BloodHound Enterprise]
     Secrets[AWS Secrets Manager]
+    KMS[AWS KMS encryption]
     Collector[Managed OpenHound]
     AWS[Customer AWS environment]
 
     BHE -->|Creates and deletes the tenant credential| Secrets
+    Secrets -->|Encrypts stored credential material| KMS
     Collector -->|Reads the credential when a job runs| Secrets
     Collector -->|Reads resources with customer-granted permissions| AWS
     Collector -->|Uploads collected data| BHE
@@ -38,7 +40,9 @@ The beta accepts one AWS access key pair for each collection plan:
 - **Access Key ID** identifies the AWS credential.
 - **Secret Access Key** authenticates the credential.
 
-When you create a plan, BloodHound Enterprise sends the secret value to AWS Secrets Manager and stores a reference to it. The collector jobs database stores the reference metadata, not the secret value. The API does not return the secret value, and the edit form shows only the saved key identifier.
+When you create a plan, BloodHound Enterprise sends the secret value to AWS Secrets Manager and stores a reference to it. AWS KMS encrypts the stored secret material. The collector jobs database stores the reference metadata, not the secret value. The API does not return the secret value, and the edit form shows only the saved key identifier.
+
+The managed collector retrieves credentials only when a job needs them. The managed runtime clears credential material after collection rather than leaving it in the collector container for later jobs.
 
 <Warning>
   Treat the secret access key as a long-lived credential. Do not reuse it for unrelated workloads, commit it to source control, or include it in screenshots, logs, or support requests.
@@ -61,6 +65,20 @@ Create a dedicated collection principal and grant only the read-only permissions
 
 Review the scope whenever you change the AWS policy. A policy that is too narrow can produce failed or incomplete collection; a policy that is broader than necessary increases the impact of a compromised credential.
 
+## Use trusted extensions only
+
+Managed Collectors supports only SpecterOps-authored and approved OpenGraph extensions. This boundary prevents an unapproved extension from accessing customer information outside its expected collection function.
+
+The beta does not provide separate credential isolation for each extension inside the managed collector. Approved extensions in the same managed runtime can access the tenant credential set. SpecterOps controls the extension software used by the managed service.
+
+## Allow managed collection traffic
+
+Managed collection traffic uses dedicated, stable egress addressing intended for customer-side source access-control lists. Request the current published egress IP range and the change-notification process from your SpecterOps account team before enabling restrictive network controls. Do not use the address of a self-deployed collector as the managed-service source address.
+
+## Understand logs and diagnostics
+
+BloodHound Enterprise displays basic collection errors and plan results. Managed-service logs are retained off-system for operational troubleshooting, and detailed error context is available to SpecterOps personnel when they investigate a tenant issue. The beta documentation does not publish a customer-configurable diagnostic retention period.
+
 ## Protect collected data
 
 Managed OpenHound uploads collected data to your BloodHound Enterprise tenant for processing and graph analysis. BloodHound Enterprise's normal data retention and deletion controls apply to the ingested graph data; review [Data reconciliation and retention](/collect-data/enterprise-collection/data-retention) for those controls.
@@ -81,7 +99,9 @@ Your organization is responsible for:
 - Reviewing collection scope and results for unexpected access or missing resources.
 - Sending only non-secret diagnostic information through approved support channels.
 
-Contact your SpecterOps account team for security-review materials or beta-specific compliance documentation.
+## Request the trust packet
+
+Contact your SpecterOps account team for the current standard trust packet before completing an IT governance or risk assessment. The packet should include the penetration-test summary, credential-handling model, data-flow description, managed-collection egress range and change process, and subprocessor posture. The contents and availability of these artifacts can change during the beta.
 
 ## Next steps
 
