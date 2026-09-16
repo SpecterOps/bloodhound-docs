@@ -1,12 +1,11 @@
 # Documentation validation checklist
 
-Run commands from the `docs/` directory after changing documentation. Use the smallest relevant set for the change, and report anything you could not run.
+Run validation commands from the `docs/` directory after changing documentation. Use the smallest relevant set for the change, and report anything you could not run.
 
 | Change | Required checks |
 | --- | --- |
 | Any documentation change | `mint validate`, `mint broken-links` |
 | Images, UI instructions, navigation, or layout | `mint a11y` |
-| Runnable code blocks | `mint test` |
 | Layout or navigation changes | `mint dev` for a local preview |
 | Project-specific workflow | Check the repository `justfile` and run the applicable recipe |
 

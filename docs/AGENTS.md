@@ -14,11 +14,11 @@ These instructions apply to BloodHound Community Edition and BloodHound Enterpri
 
 Before documenting substantive product behavior—such as UI behavior, commands, configuration, APIs, permissions, compatibility, limits, or version-specific behavior—identify the documentation target and inspect the matching local implementation repository when it is available. Record the target edition, product version or release channel, and documentation branch in the hand-off notes when they are not obvious.
 
-Relevant repositories include BloodHound Community Edition, BloodHound Enterprise, SharpHound, AzureHound, OpenHound, and the applicable OpenHound collector repository.
+Relevant repositories include BloodHound Community Edition, BloodHound Enterprise, DAWGS, SharpHound, AzureHound, OpenHound, and the applicable OpenHound collector repositories.
 
 - Confirm that the repository, branch, and version match the documentation target.
 - Use source code, configuration schemas, API definitions, CLI help, tests, and current examples as evidence. Use existing documentation for context, but do not treat it as the sole source for product behavior when matching implementation evidence is available.
-- If the matching implementation is unavailable, record that limitation and the authoritative alternative source in the issue, pull request, or handoff notes rather than adding internal source-review details to the customer-facing page.
+- If the matching implementation is unavailable, record that limitation and the authoritative alternative source in the handoff notes rather than adding internal source-review details to the customer-facing page.
 - If implementation and documentation disagree, determine whether the difference is version- or branch-specific. Preserve known versioned behavior and call out unresolved discrepancies.
 
 ## Preserve accuracy and product boundaries
@@ -35,7 +35,7 @@ Relevant repositories include BloodHound Community Edition, BloodHound Enterpris
 - Separate conceptual, procedural, and reference content. For task pages, lead with the reader's goal, expected outcome, and prerequisites. For conceptual and reference pages, lead with the purpose and context and include prerequisites only when they are relevant.
 - Use `<Steps>` for sequential procedures.
 - Start body sections at H2 because the frontmatter title renders as the H1.
-- Update `docs/docs.json` when adding, removing, or moving a page.
+- Update `docs/docs.json` when adding, removing, or moving a page. Add redirects for any moved or removed pages.
 - Inspect nearby pages and reuse established content, component, and asset patterns.
 
 ## Validate changes
