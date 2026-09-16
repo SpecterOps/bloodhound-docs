@@ -23,9 +23,9 @@ Like BloodHound CE, our documentation is open-source! Perusing our docs and foun
 
 ## Before you start
 
-Expectations for overall contribution to our codebase are covered in the [Contributing](./Contributing.md) document. Please be sure to review that page first for expectations on issue linking, commit signing, and Pull Request etiquette.
+Repository-wide contribution and pull request expectations are covered in the [Contributing](./Contributing.md) document. Please review that page first for the issue and pull request process, branch and commit conventions, and pull request etiquette.
 
-For instructions on how to specifically contribute to our docs, check out the [Contributing to Docs](./Contributing-To-Docs.md) document.
+For documentation-specific guidance, also review [Contributing to Docs](./Contributing-To-Docs.md), the [documentation style guide](./.github/style-guide.md), the [information architecture guide](./.github/info-architecture.md), the [Mintlify guidance](./.github/mintlify-guidance.md), and the [validation checklist](./.github/validation.md).
 
 ## Contact
 
