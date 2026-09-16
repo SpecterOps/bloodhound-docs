@@ -19,6 +19,25 @@ The following are some general guidelines to follow while writing and submitting
 
 Check out our [Contributing to Docs](./Contributing-To-Docs.md) article for specifics!
 
+### Documentation changes
+
+Documentation contributions should follow the [documentation style guide](./.github/style-guide.md), [information architecture guide](./.github/info-architecture.md), [Mintlify guidance](./.github/mintlify-guidance.md), and [validation checklist](./.github/validation.md).
+
+Before opening a documentation pull request:
+
+- Identify whether the change applies to BloodHound Enterprise, BloodHound Community Edition, or both.
+- Verify substantive product behavior against the matching implementation repository when it is available. Record the target edition, product version or release channel, and documentation branch when they are not obvious.
+- Follow the established frontmatter, heading, component, link, and accessibility conventions.
+- Update `docs/docs.json` when adding, moving, or removing a page.
+- Run the required validation commands from the `docs/` directory:
+
+  ```bash
+  mint validate
+  mint broken-links
+  ```
+
+- Run `mint a11y`, `mint test`, or `mint dev` when the change involves images, UI instructions, navigation, layout, runnable code blocks, or a local preview.
+
 ### Before Opening an Issue or Pull Request
 
 If a Pull Request is being planned, please ensure a GitHub issue has been opened first. The reasons for this are:
