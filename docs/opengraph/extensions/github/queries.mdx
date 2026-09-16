@@ -258,7 +258,7 @@ This query can be imported into BloodHound from the [dependency-graph-disabled-n
 Finds deployment environments where administrators can bypass protection rules such as required reviewers and wait timers. Admins can deploy to these environments without any approval.
 
 ```cypher
-MATCH p=(:GH_Repository)-[:GH_HasEnvironment]->(env:GH_Environment {can_admins_bypass: true})
+MATCH p=(:GH_Repository)-[:GH_Contains]->(env:GH_Environment {can_admins_bypass: true})
 RETURN p
 LIMIT 1000
 ```
@@ -557,7 +557,7 @@ This query can be imported into BloodHound from the [repos-vulnerable-to-workflo
 Returns all repository workflows
 
 ```cypher
-MATCH p=(:GH_Repository)-[:GH_HasWorkflow]->(:GH_Workflow)
+MATCH p=(:GH_Repository)-[:GH_Contains]->(:GH_Workflow)
 RETURN p
 LIMIT 1000
 ```
@@ -646,7 +646,7 @@ This query can be imported into BloodHound from the [team-structure.json](https:
 Returns all unprotected branches in repositories.
 
 ```cypher
-MATCH p=(repo:GH_Repository)-[:GH_HasBranch]-(:GH_Branch {protected: false})
+MATCH p=(repo:GH_Repository)-[:GH_Contains]-(:GH_Branch {protected: false})
 RETURN p
 LIMIT 1000
 ```
@@ -658,8 +658,8 @@ This query can be imported into BloodHound from the [unprotected-branches.json](
 Returns all repositories that have GitHub Actions workflows and an unprotected default branch. This means that users with GH_WriteRepoContents to the Repository can overwrite or change the workflow.
 
 ```cypher
-MATCH p=(repo:GH_Repository)-[:GH_HasWorkflow]->(:GH_Workflow)
-MATCH p1=(repo)-[:GH_HasBranch]->(branch:GH_Branch)
+MATCH p=(repo:GH_Repository)-[:GH_Contains]->(:GH_Workflow)
+MATCH p1=(repo)-[:GH_Contains]->(branch:GH_Branch)
 WHERE repo.default_branch = branch.short_name
 AND branch.protected = false
 RETURN p1
@@ -673,7 +673,7 @@ This query can be imported into BloodHound from the [unprotected-default-branch-
 Returns all default branches in repositories that are not protected.
 
 ```cypher
-MATCH p=(repo:GH_Repository)-[:GH_HasBranch]-(branch:GH_Branch {protected: false})
+MATCH p=(repo:GH_Repository)-[:GH_Contains]-(branch:GH_Branch {protected: false})
 WHERE repo.default_branch = branch.short_name
 RETURN p
 LIMIT 1000

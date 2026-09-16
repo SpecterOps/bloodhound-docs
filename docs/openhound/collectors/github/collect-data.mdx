@@ -1,78 +1,177 @@
 ---
 title: Configure the Collector
-description: Configure the GitHub collector to gather data from your GitHub organization.
+description: Configure the GitHub collector to gather data from your GitHub organization or enterprise.
 ---
 
 import RunAndCollect from '/snippets/hounds/openhound-run-and-collect.mdx';
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-This page covers downloading and running the OpenHound GitHub collector against your GitHub organization.
+This page covers configuring the OpenHound GitHub collector for your GitHub organization or enterprise account. Use this page to choose an authentication method and configure the collector settings in the `secrets.toml` file or environment variables.
 
 ## Prerequisites
 
-* OpenHound installed with the GitHub collector included. Follow the OpenHound [installation](/openhound/community) instructions to set up OpenHound for BloodHound Community Edition. The Github collector is included by default in the OpenHound container image.
-* A [Personal Access Token (PAT)](/openhound/collectors/github/configure-pat) or [GitHub App Installation](/openhound/collectors/github/configure-app) configured with the required permissions
+Before you configure the GitHub collector, ensure that the following prerequisites are met:
 
-<Note>The OpenHound setup instructions for BloodHound Community Edition also apply to BloodHound Enterprise users, for now.</Note>
-
-## Required Permissions
-
-Both PAT and GitHub App authentication methods require the same set of Read-only permissions. The table below maps each permission to the collection functions it enables.
-
-### Repository permissions
-
-- Actions
-- Administration
-- Contents
-- Environments
-- Metadata
-- Secret scanning alerts
-- Secrets
-- Variables
-
-
-### Organization permissions
-
-- Administration
-- Custom organization roles
-- Custom repository roles
-- Members
-- Personal access tokens
-- Personal access token requests
-- Secrets
-- Variables
-
+- OpenHound installed with the GitHub collector included.
+  - For BloodHound Community Edition, install the [OpenHound CLI](/openhound/community).
+  - For BloodHound Enterprise, [deploy](/openhound/enterprise) OpenHound as a container.
+- One of the following authentication setups configured:
+  - [Enterprise GitHub App installation](/openhound/collectors/github/configure-enterprise-app) (<Badge color="green">recommended</Badge>)
+  - [Organization GitHub App installation](/openhound/collectors/github/configure-app)
+  - [Fine-grained Personal Access Token (PAT)](/openhound/collectors/github/configure-pat)
 
 ## Configure OpenHound
 
-The following OpenHound configuration parameters are required to run the Github collector. These can either be set
-via the `[sources.source.github.credentials]` section of the secrets file or via environment variables using the `SOURCES__GITHUB__CREDENTIALS` prefix.
+The GitHub collector needs different settings based on the authentication method you choose. You can set those values in one of two places:
 
-### Option 1: Github app installation
-| Parameter Name | Environment Variable            | Description                                                                        |
-|----------------|---------------------------------|------------------------------------------------------------------------------------|
-| `org_name`         | \{PREFIX\}__ORG_NAME     | The name of the GitHub organization to collect data from. |
-| `app_id`     | \{PREFIX\}__APP_ID | The GitHub App ID used to authenticate to the GitHub API.              |
-| `client_id`     | \{PREFIX\}__CLIENT_ID | The GitHub App Client ID used to authenticate to the GitHub API.              |
-| `key_path`         | \{PREFIX\}__KEY_PATH     | The path to the GitHub App private key file. |
+| Method | Set the values here |
+|--------|---------------------|
+| `secrets.toml` file | `[sources.source.github.credentials]` section |
+| Environment variables | `SOURCES__SOURCE__GITHUB__CREDENTIALS` |
 
+Click the tab that matches your authentication setup for details and example configurations.
 
-### Option 2: Fine-grained Personal Access Token (PAT)
-| Parameter Name | Environment Variable            | Description                                                                        |
-|----------------|---------------------------------|------------------------------------------------------------------------------------|
-| `org_name`         | \{PREFIX\}__ORG_NAME     | The name of the GitHub organization to collect data from. |
-| `token`     | \{PREFIX\}__TOKEN | The fine-grained Personal Access Token (PAT) used to authenticate to the GitHub API. |
+<Tabs>
+  <Tab title="Enterprise GitHub App">
+    Use this option when you need enterprise-scoped collection.
 
-### Example Configuration
-```toml title="secrets.toml"
-[sources.source.github.credentials]
-org_name = "my-github-org"
-key_path = "/path/to/private/key.pem"
-app_id = "123456"
-client_id = "myclientid"
+    | Setting | Description | Environment Variable |
+    |---------|-------------|----------------------|
+    | `client_id` | The GitHub App Client ID used to authenticate to the GitHub API. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__CLIENT_ID` |
+    | `app_id` | The GitHub App ID used to authenticate to the GitHub API. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__APP_ID` |
+    | `key_path` | The path to the GitHub App private key file. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__KEY_PATH` |
+    | `enterprise_name` | The slug of the GitHub enterprise to collect data from. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__ENTERPRISE_NAME` |
+    | `install_id` | The GitHub App Installation ID for the enterprise installation. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__INSTALL_ID` |
+    | `api_uri` | The GitHub API base URI. For GitHub.com, use `https://api.github.com`. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__API_URI` |
+    | `pat_token` | Optional classic PAT from an Enterprise Owner. Grant `read:enterprise` to collect enterprise SAML SSO and SCIM data; add `manage_runners:enterprise` only if you also need enterprise self-hosted runner data. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__PAT_TOKEN` |
+
+    **`secrets.toml`**
+
+    ```toml title="~/.dlt/secrets_github.toml"
+    [sources.source.github.credentials]
+    client_id = "your-client-id"
+    app_id = "your-app-id"
+    key_path = "/path/to/private/key.pem"
+    enterprise_name = "your-enterprise-slug"
+    install_id = "12345678"
+    api_uri = "https://api.github.com"
+    pat_token = "ghp_xxxxxxxxxxxxxxxxxxxx"
+    ```
+
+    **Environment variables**
+
+    ```text
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__CLIENT_ID=your-client-id
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__APP_ID=your-app-id
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__KEY_PATH=/path/to/private/key.pem
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__ENTERPRISE_NAME=your-enterprise-slug
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__INSTALL_ID=12345678
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__API_URI=https://api.github.com
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__PAT_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+    ```
+
+    <Note>
+      The `pat_token` field is optional for enterprise collection, but strongly recommended. If you omit it, the collector continues to collect GitHub App-supported enterprise and organization data, but enterprise SAML SSO, SCIM, and self-hosted runner nodes and relationships are not collected.
+
+      The scopes you grant the PAT determine what it collects: `read:enterprise` for SAML SSO and SCIM data, and `manage_runners:enterprise` for self-hosted runner data. Grant only the scopes you need. The `manage_runners:enterprise` scope permits runner-management operations and is not read-only.
+    </Note>
+  </Tab>
+  <Tab title="Organization GitHub App">
+    Use this option for organization-scoped collection with higher GitHub API rate limits.
+
+    | Setting | Description | Environment Variable |
+    |---------|-------------|----------------------|
+    | `org_name` | The name of the GitHub organization to collect data from. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__ORG_NAME` |
+    | `app_id` | The GitHub App ID used to authenticate to the GitHub API. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__APP_ID` |
+    | `client_id` | The GitHub App Client ID used to authenticate to the GitHub API. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__CLIENT_ID` |
+    | `key_path` | The path to the GitHub App private key file. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__KEY_PATH` |
+    | `install_id` | The GitHub App Installation ID for the organization installation. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__INSTALL_ID` |
+
+    **`secrets.toml`**
+
+    ```toml title="~/.dlt/secrets_github.toml"
+    [sources.source.github.credentials]
+    org_name = "your-github-org"
+    key_path = "/path/to/private/key.pem"
+    app_id = "123456"
+    client_id = "your-client-id"
+    install_id = "12345678"
+    ```
+
+    **Environment variables**
+
+    ```text
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__ORG_NAME=your-github-org
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__KEY_PATH=/path/to/private/key.pem
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__APP_ID=123456
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__CLIENT_ID=your-client-id
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__INSTALL_ID=12345678
+    ```
+  </Tab>
+  <Tab title="Fine-grained PAT">
+    Use this option for smaller environments or testing.
+
+    | Setting | Description | Environment Variable |
+    |---------|-------------|----------------------|
+    | `org_name` | The name of the GitHub organization to collect data from. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__ORG_NAME` |
+    | `token` | The fine-grained Personal Access Token (PAT) used to authenticate to the GitHub API. | `SOURCES__SOURCE__GITHUB__CREDENTIALS__TOKEN` |
+
+    **`secrets.toml`**
+
+    ```toml title="~/.dlt/secrets_github.toml"
+    [sources.source.github.credentials]
+    org_name = "your-github-org"
+    token = "github_pat_xxxxxxxxxxxxx"
+    ```
+
+    **Environment variables**
+
+    ```text
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__ORG_NAME=your-github-org
+    SOURCES__SOURCE__GITHUB__CREDENTIALS__TOKEN=github_pat_xxxxxxxxxxxxx
+    ```
+  </Tab>
+</Tabs>
+
+## Configure GitHub Enterprise Server endpoints
+
+GitHub.com is the default deployment and requires no endpoint configuration. To collect from GitHub Enterprise Server (GHES), set both the REST and GraphQL endpoint URLs in the `[sources.github]` section of `config.toml` or as environment variables.
+
+| Setting | Description | Environment Variable |
+|---------|-------------|----------------------|
+| `rest_api_url` | The GHES REST API base URL. | `SOURCES__GITHUB__REST_API_URL` |
+| `graphql_url` | The GHES GraphQL endpoint URL. | `SOURCES__GITHUB__GRAPHQL_URL` |
+
+**`config.toml`**
+
+```toml title="~/.dlt/config_github.toml"
+[sources.github]
+rest_api_url = "https://ghe.example/api/v3"
+graphql_url = "https://ghe.example/api/graphql"
 ```
+
+**Environment variables**
+
+```text
+SOURCES__GITHUB__REST_API_URL=https://ghe.example/api/v3
+SOURCES__GITHUB__GRAPHQL_URL=https://ghe.example/api/graphql
+```
+
+<Note>
+  `rest_api_url` and `graphql_url` must be configured together. Both values must use HTTPS and share the same origin. If you authenticate with a GitHub App, `credentials.api_uri` can only override the path on that same origin, not the origin itself.
+
+  GitHub App authentication and secret scanning PAT validation use the configured REST endpoint instead of assuming GitHub.com, so existing GitHub.com configurations continue to work without changes.
+</Note>
 
 ## Running OpenHound and Collecting Data
 
-<RunAndCollect source="GitHub" env="organization" />
+<RunAndCollect source="GitHub" env="organization or enterprise account" />
+
+<Note>
+  If your GitHub collection includes SCIM nodes and edges, upload the [SCIM extension schema](/opengraph/extensions/scim/overview) before importing the collected data.
+</Note>
+
+<Note>
+  Large GitHub organizations or enterprises can trigger GitHub's API rate limits during collection. If you see failed or retried requests, tune the [HTTP request parameters](/openhound/configuration#http-request-parameters) to ride out rate limits instead of failing the run.
+</Note>

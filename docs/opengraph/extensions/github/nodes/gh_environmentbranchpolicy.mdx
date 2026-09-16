@@ -1,0 +1,75 @@
+---
+title: 'GH_EnvironmentBranchPolicy'
+description: 'A deployment branch policy attached to a GitHub environment, such as an exact branch name or wildcard pattern like release/*'
+icon: '/images/extensions/github/gh_environmentbranchpolicy.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## General Information
+
+Represents a deployment branch policy attached to a GitHub Environment. These policies define which branches or branch patterns are allowed to deploy to the environment, such as `main`, `release/*`, or `release/**/*`.
+
+Environment branch policies are modeled as their own nodes so analysts can distinguish between the environment itself and the matching rules that govern deployment eligibility.
+
+## Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | The node name used for matching and display. |
+| `displayname` | `string` | The human-readable display name. |
+| `environmentid` | `string` | The identifier of the GitHub environment where this node was collected. |
+| `last_seen` | `datetime` | The timestamp when this node was last observed during collection. |
+| `node_id` | `string` | The stable identifier used as the OpenGraph node ID; this is the native GitHub node ID where available. |
+| `environment_name` | `string` | The environment name value. |
+| `repository_name` | `string` | The repository name value. |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_Branch"]
+    n1["GH_EnvironmentBranchPolicy"]
+    n2["GH_Environment"]
+    n0 -.->|GH_MatchesEnvironmentPolicy| n1
+    n2 -.->|GH_Contains| n1
+```
+
+## Edges
+
+<Note>
+The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
+</Note>
+
+```mermaid
+flowchart LR
+
+    GH_Branch["GH_Branch"]
+    GH_Environment["GH_Environment"]
+    GH_EnvironmentBranchPolicy["GH_EnvironmentBranchPolicy"]
+    GH_Branch -- GH_MatchesEnvironmentPolicy --> GH_EnvironmentBranchPolicy
+    GH_Environment -- GH_Contains --> GH_EnvironmentBranchPolicy
+```
+
+### Inbound Edges
+
+| Edge Type | Source Node Types | Traversable |
+| --------- | ----------------- | ----------- |
+| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | ❌ |
+| [GH_MatchesEnvironmentPolicy](/opengraph/extensions/github/edges/gh_matchesenvironmentpolicy) | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) | ❌ |
+
+### Outbound Edges
+
+No outbound edges are defined by the GitHub extension for this node.
+
+## Properties
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `name` | `str` | - |
+| `displayname` | `str` | - |
+| `environmentid` | `str` | - |
+| `last_seen` | `datetime` | - |
+| `node_id` | `str` | - |
+| `environment_name` | `str \| None` | - |
+| `repository_name` | `str \| None` | - |

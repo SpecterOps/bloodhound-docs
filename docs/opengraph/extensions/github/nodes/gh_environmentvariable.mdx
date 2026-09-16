@@ -6,7 +6,43 @@ icon: '/images/extensions/github/gh_environmentvariable.png'
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
+## General Information
+
 Represents an environment-level GitHub Actions variable. These variables are scoped to a specific deployment environment and are only available to workflow jobs that reference that environment. Unlike secrets, variable values are readable via the API.
+
+The containing environment is linked to the variable with [GH_Contains](/opengraph/extensions/github/edges/gh_contains) and [GH_HasVariable](/opengraph/extensions/github/edges/gh_hasvariable) edges. Workflow steps that reference the variable by name receive [GH_UsesVariable](/opengraph/extensions/github/edges/gh_usesvariable) edges when their job targets the same environment.
+
+## Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | The node name used for matching and display. |
+| `displayname` | `string` | The human-readable display name. |
+| `environmentid` | `string` | The identifier of the GitHub environment where this node was collected. |
+| `last_seen` | `datetime` | The timestamp when this node was last observed during collection. |
+| `node_id` | `string` | The stable identifier used as the OpenGraph node ID; this is the native GitHub node ID where available. |
+| `environment_name` | `string` | The name of the environment (GitHub organization). |
+| `deployment_environment_name` | `string` | The name of the deployment environment (GitHub organization). |
+| `value` | `string` | The plaintext value of the variable. |
+| `created_at` | `datetime` | When the variable was created. |
+| `updated_at` | `datetime` | When the variable was last updated. |
+| `repository_name` | `string` | The name of the containing repository. |
+| `repository_id` | `string` | The id of the containing repository. |
+| `deployment_environmentid` | `string` | The deployment environmentid value. |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_Environment"]
+    n1["GH_EnvironmentVariable"]
+    n2["GH_WorkflowJob"]
+    n3["GH_WorkflowStep"]
+    n0 -.->|GH_Contains| n1
+    n0 -->|GH_HasVariable| n1
+    n2 -.->|GH_UsesVariable| n1
+    n3 -.->|GH_UsesVariable| n1
+```
 
 ## Edges
 
@@ -14,9 +50,26 @@ Represents an environment-level GitHub Actions variable. These variables are sco
 The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
 </Note>
 
+```mermaid
+flowchart LR
+
+    GH_Environment["GH_Environment"]
+    GH_EnvironmentVariable["GH_EnvironmentVariable"]
+    GH_WorkflowJob["GH_WorkflowJob"]
+    GH_WorkflowStep["GH_WorkflowStep"]
+    GH_Environment -- GH_Contains --> GH_EnvironmentVariable
+    GH_Environment -- GH_HasVariable --> GH_EnvironmentVariable
+    GH_WorkflowJob -- GH_UsesVariable --> GH_EnvironmentVariable
+    GH_WorkflowStep -- GH_UsesVariable --> GH_EnvironmentVariable
+```
+
 ### Inbound Edges
 
-No inbound edges are defined by the GitHub extension for this node.
+| Edge Type | Source Node Types | Traversable |
+| --------- | ----------------- | ----------- |
+| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | ❌ |
+| [GH_HasVariable](/opengraph/extensions/github/edges/gh_hasvariable) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | ✅ |
+| [GH_UsesVariable](/opengraph/extensions/github/edges/gh_usesvariable) | [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob), [GH_WorkflowStep](/opengraph/extensions/github/nodes/gh_workflowstep) | ❌ |
 
 ### Outbound Edges
 
@@ -24,28 +77,18 @@ No outbound edges are defined by the GitHub extension for this node.
 
 ## Properties
 
-| Property Name               | Data Type | Description                                                                           |
-| --------------------------- | --------- | ------------------------------------------------------------------------------------- |
-| objectid                    | string    | A deterministic ID in the format `GH_EnvironmentVariable_{envNodeId}_{variableName}`. |
-| id                          | string    | Same as objectid.                                                                     |
-| name                        | string    | The name of the variable.                                                             |
-| environment_name            | string    | The name of the environment (GitHub organization).                                    |
-| environmentid               | string    | The node_id of the environment (GitHub organization).                                 |
-| repository_name             | string    | The name of the containing repository.                                                |
-| repository_id               | string    | The node_id of the containing repository.                                             |
-| deployment_environment_name | string    | The name of the containing deployment environment.                                    |
-| deployment_environmentid    | string    | The node_id of the containing deployment environment.                                 |
-| value                       | string    | The plaintext value of the variable.                                                  |
-| created_at                  | datetime  | When the variable was created.                                                        |
-| updated_at                  | datetime  | When the variable was last updated.                                                   |
-
-## Diagram
-
-```mermaid
-flowchart TD
-    GH_Environment[fa:fa-leaf GH_Environment]
-    GH_EnvironmentVariable[fa:fa-lock-open GH_EnvironmentVariable]
-
-
-    GH_Environment -.->|GH_Contains| GH_EnvironmentVariable
-```
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `name` | `str` | - |
+| `displayname` | `str` | - |
+| `environmentid` | `str` | - |
+| `last_seen` | `datetime` | - |
+| `node_id` | `str` | - |
+| `environment_name` | `str` | The name of the environment (GitHub organization). |
+| `deployment_environment_name` | `str` | The name of the deployment environment (GitHub organization). |
+| `value` | `str` | The plaintext value of the variable. |
+| `created_at` | `datetime \| None` | When the variable was created. |
+| `updated_at` | `datetime \| None` | When the variable was last updated. |
+| `repository_name` | `str` | The name of the containing repository. |
+| `repository_id` | `str` | The id of the containing repository. |
+| `deployment_environmentid` | `str \| None` | - |

@@ -1,0 +1,168 @@
+---
+title: Configure an Enterprise GitHub App
+description: Create a GitHub App in a GitHub Enterprise account for OpenHound data collection.
+---
+
+import GitHubEnterprisePermissions from '/snippets/hounds/openhound-gh-enterprise-permissions.mdx';
+import GitHubRepoAndOrgPermissions from '/snippets/hounds/openhound-gh-repo-and-org-permissions.mdx';
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+This page covers creating a GitHub App in a GitHub Enterprise account so OpenHound can collect enterprise-scoped GitHub data.
+
+Use this flow when you need to install the app at the enterprise level and then reuse that same app across the organizations owned by the enterprise.
+
+To collect enterprise SAML Single Sign-On (SSO) and System for Cross-domain Identity Management (SCIM) data, or enterprise self-hosted runner data, you also create a GitHub Personal Access Token (classic) from an Enterprise Owner account. OpenHound uses this token only for the enterprise SSO, SCIM, and self-hosted runner endpoints; all other GitHub data is collected through the GitHub App installation.
+
+<Tip>
+  For organization-only collection, use [Configure an Organization GitHub App](/openhound/collectors/github/configure-app).
+</Tip>
+
+## Before You Begin
+
+- Verify that you can create or manage GitHub Apps in the target enterprise account.
+- Verify that you can install GitHub Apps on the enterprise account and on each organization that OpenHound will collect.
+- Verify that an Enterprise Owner can create a classic PAT with the `read:enterprise` scope if you need enterprise SSO or SCIM data, or the `manage_runners:enterprise` scope if you need enterprise self-hosted runner data.
+- Identify the enterprise slug you will use during configuration, such as `your-enterprise-name` from `https://github.com/enterprises/your-enterprise-name`.
+
+## Create the GitHub App
+
+Follow these steps to create a GitHub App that can be installed at the enterprise level.
+
+<Steps>
+  <Step title="Open GitHub Apps in the enterprise account">
+    Navigate to your enterprise account homepage at `https://github.com/enterprises/<enterprise-slug>`.
+
+    From the enterprise homepage, click **Settings** > **GitHub Apps** > **New GitHub App**.
+  </Step>
+  <Step title="Configure the app settings">
+    1. Configure the app with these settings:
+
+       - **GitHub App name**: Choose a unique name, such as `OpenHound-Enterprise`
+       - **Homepage URL**: We recommend pointing to the [OpenHound GitHub repository](https://github.com/SpecterOps/openhound-github)
+       - **Webhook**: Clear **Active** unless you have a separate webhook requirement
+       - **Permissions**: Set the following permissions to **Read-only**:
+
+         <Expandable title="required permissions">
+           <GitHubRepoAndOrgPermissions />
+           <GitHubEnterprisePermissions />
+         </Expandable>
+
+       <Note>
+         If you plan to collect external group mapping data for IdP-synced teams, set the organization **Members** permission to **Read and write** instead of **Read-only**. See [Optional privileged collection](/openhound/collectors/github/configure-enterprise-app#optional-privileged-collection) for details.
+       </Note>
+
+    1. Under **Where can this GitHub App be installed?**, select the option for organizations owned by your enterprise.
+  </Step>
+  <Step title="Create the app">
+    Click **Create GitHub App**.
+  </Step>
+  <Step title="Generate a private key">
+    On the app settings page, scroll to **Private keys** and click **Generate a private key**.
+
+    Save the downloaded `.pem` file securely. On the same page, record the **App ID** and **Client ID**.
+
+    <Note>
+      OpenHound uses the **App ID**, **Client ID**, **key path**, **enterprise name**, **Installation ID**, and **API URI** in the GitHub enterprise app collector configuration.
+    </Note>
+  </Step>
+</Steps>
+
+## Install the GitHub App
+
+Install the same GitHub App in the enterprise account and in each organization you plan to collect.
+
+<Steps>
+  <Step title="Install the app on the enterprise account">
+    Open the GitHub App settings page, click **Install App**, select the enterprise account, and complete the installation. Record the enterprise **Installation ID** for the collector configuration.
+  </Step>
+  <Step title="Install the app on each organization">
+    From the same GitHub App, install the app on every organization owned by the enterprise that you want OpenHound to collect.
+
+    If GitHub prompts you to choose a repository scope, select **All repositories** unless you intentionally want a partial collection.
+
+    <Note>
+      The GitHub collector enterprise orchestration expects a real enterprise installation and then enumerates related organization installations for follow-on organization collection.
+    </Note>
+  </Step>
+</Steps>
+
+## Optional privileged collection
+
+The collector runs successfully with the read-only permission set described above. Some higher-fidelity relationships require optional non-read-only permissions because GitHub exposes the supporting read APIs behind privileged permission names.
+
+<Note>
+  In most environments you can skip these; grant them only if you need the specific data they unlock.
+</Note>
+
+- Organization **Members: Read and write** enables external group mapping collection for IdP-synced teams, which allows the converter to emit `SCIM_Provisioned` edges from `SCIM_Group` to `GH_Team`.
+
+  This is useful when the organization uses team synchronization with an external identity provider. If no GitHub teams are linked to external groups, this permission does not add graph data.
+
+- Classic PAT scope `manage_runners:enterprise` enables enterprise self-hosted runner group and runner collection.
+
+  This is useful when the enterprise has enterprise-scoped runner groups or runners, especially runner groups shared into organizations. If all runners are organization- or repository-scoped, this scope does not add graph data.
+
+If you don't grant these optional permissions, OpenHound skips the affected resources and continues collecting the rest of the GitHub environment.
+
+## Create a Classic PAT for SSO, SCIM, and Runners
+
+GitHub Enterprise App installations are currently in preview and do not support all GitHub Enterprise REST APIs. The GitHub App installation token cannot access the enterprise SAML SSO, SCIM, and self-hosted runner endpoints that OpenHound uses to collect enterprise identity configuration and enterprise runner data.
+
+Create a classic PAT when you need OpenHound to collect enterprise SSO, SCIM, or self-hosted runner objects.
+
+The following video provides a walkthrough of creating a classic PAT for enterprise SSO and SCIM collection. Text instructions follow the video.
+
+<iframe
+  className="w-full aspect-video rounded-xl"
+  src="https://app.arcade.software/share/gnXenQtRti4tLcHgUDor"
+  title="YouTube video player"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+></iframe>
+
+<Steps>
+  <Step title="Open your user settings">
+    Sign in to GitHub as an **Enterprise Owner**.
+
+    From your user profile menu, click **Settings**. Do not open the enterprise settings page for this token.
+  </Step>
+  <Step title="Open classic token settings">
+    Click **Developer settings** > **Personal access tokens** > **Tokens (classic)**.
+  </Step>
+  <Step title="Open the new token creation page">
+    Click **Generate new token (classic)**.
+
+    Enter a descriptive name, such as `OpenHound Enterprise Collector`, and select an expiration that matches your organization's security policy.
+  </Step>
+  <Step title="Set the required scopes">
+    Grant only the scopes you need:
+
+    - `read:enterprise`: Required to collect enterprise SSO and SCIM data.
+    - `manage_runners:enterprise`: Required to collect enterprise self-hosted runner groups and runners. This scope also permits runner-management operations and is not read-only, so grant it only if you need runner data.
+  </Step>
+  <Step title="Generate and copy the token">
+    Click **Generate token**, then copy the token immediately.
+
+    You add this token to the `pat_token` field in your `secrets.toml` file when you [configure the collector](/openhound/collectors/github/collect-data).
+    <Warning>
+      GitHub displays the token value only once. Store it securely and never commit it to version control.
+    </Warning>
+  </Step>
+</Steps>
+
+## Security Considerations
+
+- Store the `.pem` private key securely and never commit it to version control.
+- Store the classic PAT securely and never commit it to version control.
+- Rotate private keys periodically and revoke keys that you no longer use.
+- Rotate the classic PAT according to your organization's credential rotation policy.
+- Limit the app to the minimum repository, organization, and enterprise permissions required for collection.
+- Grant the classic PAT only the scopes you need:
+  - `read:enterprise` for SSO and SCIM data.
+  - `manage_runners:enterprise` only if you also collect self-hosted runner data.
+- Install the app only on the enterprise account and organizations that you intend to collect.
+
+## Next Steps
+
+After you install the enterprise GitHub App and record the required values, continue to [Configure the Collector](/openhound/collectors/github/collect-data) to set the OpenHound authentication parameters.

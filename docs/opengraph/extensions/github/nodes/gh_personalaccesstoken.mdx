@@ -6,7 +6,48 @@ icon: '/images/extensions/github/gh_personalaccesstoken.png'
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
+## General Information
+
 Represents a fine-grained personal access token that has been granted access to organization resources. PATs are linked to their owning user, the organization, and the repositories they can access. The permissions granted to the token are captured as a JSON string in the properties.
+
+## Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | The node name used for matching and display. |
+| `displayname` | `string` | The human-readable display name. |
+| `environmentid` | `string` | The identifier of the GitHub environment where this node was collected. |
+| `last_seen` | `datetime` | The timestamp when this node was last observed during collection. |
+| `node_id` | `string` | The stable identifier used as the OpenGraph node ID; this is the native GitHub node ID where available. |
+| `environment_name` | `string` | The name of the environment (GitHub organization) where the token has access. |
+| `owner_id` | `string` | The GitHub ID of the token owner. |
+| `owner_node_id` | `string` | The GraphQL node ID of the token owner. |
+| `token_expires_at` | `datetime` | The ISO 8601 timestamp of when the token expires. |
+| `token_last_used_at` | `datetime` | The ISO 8601 timestamp of when the token was last used. |
+| `access_granted_at` | `datetime` | The ISO 8601 timestamp of when the token was granted to the organization. |. |
+| `organization_permissions` | `string` | JSON string of the PAT's organization-scoped permissions. |
+| `repository_permissions` | `string` | JSON string of the PAT's repository-scoped permissions. |
+| `token_name` | `string` | The user-assigned display name of the token. |
+| `owner_login` | `string` | The login handle of the user who owns the token. |
+| `repository_selection` | `string` | Whether the token has access to `all`, `subset`, or `none` of the organization's repositories. |
+| `token_expired` | `boolean` | Whether the token has expired. |
+| `query_organization_permissions` | `string` | Query for organization permissions. |
+| `query_user` | `string` | Query for user. |
+| `query_repositories` | `string` | Query for repositories. |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_Organization"]
+    n1["GH_PersonalAccessToken"]
+    n2["GH_Repository"]
+    n3["GH_User"]
+    n0 -.->|GH_Contains| n1
+    n1 -.->|GH_CanAccess| n0
+    n1 -.->|GH_CanAccess| n2
+    n3 -.->|GH_HasPersonalAccessToken| n1
+```
 
 ## Edges
 
@@ -14,51 +55,53 @@ Represents a fine-grained personal access token that has been granted access to 
 The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
 </Note>
 
+```mermaid
+flowchart LR
+
+    GH_Organization["GH_Organization"]
+    GH_PersonalAccessToken["GH_PersonalAccessToken"]
+    GH_Repository["GH_Repository"]
+    GH_User["GH_User"]
+    GH_Organization -- GH_Contains --> GH_PersonalAccessToken
+    GH_PersonalAccessToken -- GH_CanAccess --> GH_Organization
+    GH_PersonalAccessToken -- GH_CanAccess --> GH_Repository
+    GH_User -- GH_HasPersonalAccessToken --> GH_PersonalAccessToken
+```
+
 ### Inbound Edges
 
 | Edge Type | Source Node Types | Traversable |
 | --------- | ----------------- | ----------- |
-| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization), [GH_Repository](/opengraph/extensions/github/nodes/gh_repository), [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | ❌ |
+| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
 | [GH_HasPersonalAccessToken](/opengraph/extensions/github/edges/gh_haspersonalaccesstoken) | [GH_User](/opengraph/extensions/github/nodes/gh_user) | ❌ |
 
 ### Outbound Edges
 
 | Edge Type | Destination Node Types | Traversable |
 | --------- | ---------------------- | ----------- |
-| [GH_CanAccess](/opengraph/extensions/github/edges/gh_canaccess) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
+| [GH_CanAccess](/opengraph/extensions/github/edges/gh_canaccess) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization), [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
 
 ## Properties
 
-| Property Name        | Data Type | Description                                                                                        |
-| -------------------- | --------- | -------------------------------------------------------------------------------------------------- |
-| objectid             | string    | Deterministic Base64-encoded identifier, used as the unique graph identifier.                      |
-| id                   | string    | The deterministic identifier (same as objectid).                                                   |
-| name                 | string    | The user-assigned display name of the token.                                                       |
-| environment_name     | string    | The name of the environment (GitHub organization) where the token has access.                      |
-| environmentid        | string    | The node_id of the environment (GitHub organization).                                              |
-| owner_login          | string    | The login handle of the user who owns the token.                                                   |
-| owner_id             | integer   | The numeric GitHub ID of the token owner.                                                          |
-| owner_node_id        | string    | The GraphQL node ID of the token owner.                                                            |
-| token_id             | integer   | Unique identifier of the user's token, found in audit logs and organization settings.              |
-| token_name           | string    | The user-assigned display name of the token.                                                       |
-| token_expired        | boolean   | Whether the token has expired.                                                                     |
-| token_expires_at     | string    | ISO 8601 timestamp of when the token expires.                                                      |
-| token_last_used_at   | string    | ISO 8601 timestamp of when the token was last used.                                                |
-| repository_selection | string    | Whether the token has access to `all`, `subset`, or `none` of the organization's repositories.     |
-| access_granted_at    | string    | ISO 8601 timestamp of when access was granted to the organization.                                 |
-| permissions          | string    | JSON string of the permissions granted to the token (e.g., `{"organization":{},"repository":{}}`). |
-
-## Diagram
-
-```mermaid
-flowchart TD
-    GH_PersonalAccessToken[fa:fa-key GH_PersonalAccessToken]
-    GH_User[fa:fa-user GH_User]
-    GH_Organization[fa:fa-building GH_Organization]
-    GH_Repository[fa:fa-box-archive GH_Repository]
-
-
-    GH_User -.->|GH_HasPersonalAccessToken| GH_PersonalAccessToken
-    GH_Organization -.->|GH_Contains| GH_PersonalAccessToken
-    GH_PersonalAccessToken -.->|GH_CanAccess| GH_Repository
-```
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `name` | `str` | - |
+| `displayname` | `str` | - |
+| `environmentid` | `str` | - |
+| `last_seen` | `datetime` | - |
+| `node_id` | `str` | - |
+| `environment_name` | `str` | The name of the environment (GitHub organization) where the token has access. |
+| `owner_id` | `str \| None` | The GitHub ID of the token owner. |
+| `owner_node_id` | `str \| None` | The GraphQL node ID of the token owner. |
+| `token_expires_at` | `datetime \| None` | The ISO 8601 timestamp of when the token expires. |
+| `token_last_used_at` | `datetime \| None` | The ISO 8601 timestamp of when the token was last used. |
+| `access_granted_at` | `datetime \| None` | The ISO 8601 timestamp of when the token was granted to the organization. \| |
+| `organization_permissions` | `str \| None` | JSON string of the PAT's organization-scoped permissions. |
+| `repository_permissions` | `str \| None` | JSON string of the PAT's repository-scoped permissions. |
+| `token_name` | `str \| None` | The user-assigned display name of the token. |
+| `owner_login` | `str \| None` | The login handle of the user who owns the token. |
+| `repository_selection` | `str \| None` | Whether the token has access to `all`, `subset`, or `none` of the organization's repositories. |
+| `token_expired` | `bool \| None` | Whether the token has expired. |
+| `query_organization_permissions` | `str \| None` | Query for organization permissions. |
+| `query_user` | `str \| None` | Query for user. |
+| `query_repositories` | `str \| None` | Query for repositories. |

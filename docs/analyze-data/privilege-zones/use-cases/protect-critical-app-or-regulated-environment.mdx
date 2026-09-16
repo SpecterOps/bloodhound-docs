@@ -1,0 +1,111 @@
+---
+title: Protect Critical Applications and Environments
+description: Model critical applications and regulated environments as Privilege Zones for focused attack path analysis.
+---
+
+import StarterQueriesCallout from "/snippets/privilege-zones/starter-queries-callout.mdx";
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }} />
+
+Some important systems do not fit cleanly into a traditional Tier Zero, Tier One, or Tier Two model. Many applications and environments matter because of the data they process, the business function they support, or the regulatory exposure they create.
+
+Examples include:
+
+- Clinical systems
+- Payment systems
+- Customer data platforms
+- Production control planes
+- Trading or settlement systems
+- Identity infrastructure for a specific business unit
+- Systems in scope for PCI, HIPAA, SOX, or other regulatory programs
+
+Privilege Zones can draw a fence around those assets and analyze attack paths into them.
+
+## Scenario
+
+A healthcare organization wants to understand attack paths into a set of critical clinical application servers. These systems may not be Tier Zero in the traditional sense, but compromise would create patient care, regulatory, financial, and reputational impact.
+
+The team creates a Privilege Zone containing the application servers and supporting infrastructure. The first version may use known server lists, application owner input, OUs, or naming conventions. Once the zone is analyzed, BloodHound Enterprise identifies the users, groups, systems, and relationships that can create paths into that environment.
+
+## What this can reveal
+
+- Broad server groups with access to application servers
+- Administrative users outside the expected support model
+- Legacy permissions inherited from prior domain or application structures
+- Misaligned ownership between application teams and infrastructure teams
+- Paths from ordinary users or lower-tier systems into regulated environments
+
+## Why this works
+
+Critical application zones make Attack Path Management easier to connect to business priorities. The team can ask a specific question: who can reach this application and should they be able to?
+
+This approach is useful in complex environments where full tiering may take time. A critical application zone gives the team a practical starting point with clear business relevance.
+
+## Suggested workflow
+
+1. Select one critical application or regulated environment.
+1. Identify the systems, groups, service accounts, and administrative roles that support it.
+1. Create a [zone](/analyze-data/privilege-zones/zones) using known objects, OUs, naming conventions, or Cypher.
+1. Review [attack paths](/analyze-data/findings/attack-paths) into the zone.
+1. Validate findings with the application owner and infrastructure owner.
+1. Remediate unexpected paths.
+1. Keep the zone for ongoing monitoring or use the process to define the next critical application zone.
+
+## Starter Cypher queries
+
+<StarterQueriesCallout />
+
+### Healthcare or clinical system discovery
+
+```cypher
+MATCH (n)
+WHERE toUpper(coalesce(n.name, '')) CONTAINS 'EPIC'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'EHR'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'EMR'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'CLINICAL'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'PATIENT'
+RETURN n
+LIMIT 1000
+```
+
+### PCI or payment system discovery
+
+```cypher
+MATCH (n)
+WHERE toUpper(coalesce(n.name, '')) CONTAINS 'PCI'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'CARD'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'PAYMENT'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'POS'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'CDE'
+RETURN n
+LIMIT 1000
+```
+
+### Production system discovery
+
+```cypher
+MATCH (n)
+WHERE toUpper(coalesce(n.name, '')) CONTAINS 'PROD'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'PRODUCTION'
+   OR toUpper(coalesce(n.name, '')) CONTAINS 'PRD'
+RETURN n
+LIMIT 1000
+```
+
+### Paths into a critical application zone
+
+```cypher
+// Replace Tag_Critical_App with your application zone's tag label.
+MATCH p=(s)-[:AD_ATTACK_PATHS*1..]->(t:Tag_Critical_App)
+WHERE NOT (s:Tag_Critical_App)
+RETURN p
+LIMIT 1000
+```
+
+## Guidance
+
+Start with a system that has a clear business owner and clear consequences if compromised. Broad keyword searches are useful for discovery, but production rules should be reviewed with application owners so the zone remains credible.
+
+## Key takeaway
+
+Privilege Zones help organizations apply Attack Path Management to the applications and regulated environments that carry the highest business impact.

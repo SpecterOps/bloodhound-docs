@@ -1,0 +1,144 @@
+---
+title: Use Google SecOps with BloodHound Enterprise
+description: Learn how to investigate BloodHound Enterprise findings in Google SecOps by using cases, alerts, events, playbooks, and actions.
+sidebarTitle: Investigate findings
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+After you complete the [installation and configuration](/integrations/google-secops/configure), Google SecOps begins receiving BloodHound Enterprise Attack Path data through the connector. This page explains how that data is organized and how analysts can work with it during an investigation.
+
+## Understand the investigation structure
+
+The integration organizes BloodHound Enterprise findings into Google SecOps cases, alerts, and events.
+
+| Object | Purpose |
+| --- | --- |
+| **Case** | Groups related BloodHound Enterprise findings for investigation. With alert grouping configured, Google SecOps groups related alerts into one case per source domain. |
+| **Alert** | Represents a unique BloodHound Enterprise finding or path title within a case. |
+| **Event** | Captures an individual Attack Path occurrence and its supporting details, such as the involved nodes and object IDs. |
+
+## Review cases, alerts, and events
+
+Use the following workflow to inspect the findings created by the connector.
+
+<Steps>
+  <Step title="Open the Cases page">
+  With alert grouping configured, a case is created for each unique domain. The case contains alerts for each distinct BloodHound Enterprise finding or path title, and the events under those alerts capture the details of each Attack Path occurrence.
+
+    1. Open your Google SecOps dashboard.
+
+    1. Select **Cases** from the navigation menu.
+
+    1. Review the list of cases created by the BloodHound Enterprise connector.
+  </Step>
+
+  <Step title="Inspect alerts in a case">
+    Each alert corresponds to a distinct BloodHound Enterprise finding or path title.
+
+    1. Open a case for the domain that you want to investigate.
+
+    1. Review the alerts in that case.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-4-2-case-alerts.png"
+           alt="Google SecOps case showing alerts generated from BloodHound Enterprise findings."
+         />
+       </Frame>
+  </Step>
+
+  <Step title="Inspect events in an alert">
+    Event details include the step-by-step path traversal and identifiers such as `object_id`.
+
+    1. Open an alert in the case.
+
+    1. Review the events listed under that alert.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-4-3-alert-events.png"
+           alt="Google SecOps alert showing the events generated for a BloodHound Enterprise finding."
+         />
+       </Frame>
+
+    1. Double-click an event to open the full Attack Path details.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-4-4-event-details.png"
+           alt="Google SecOps event details view showing Attack Path traversal data."
+         />
+       </Frame>
+  </Step>
+</Steps>
+
+## Work with playbooks
+
+The **BloodHound Attack Path Alerts Playbook** can run against generated cases. You can also create your own playbook if you want to extend the workflow in Google SecOps.
+
+<Frame>
+  <img
+    src="/images/integrations/google-secops/fig-5-1-playbook-tab.png"
+    alt="Google SecOps playbook tab for a generated BloodHound Enterprise case."
+  />
+</Frame>
+
+<Steps>
+  <Step title="Create a custom playbook">
+    1. Go to **Response** > **Playbooks**.
+
+    1. Click the add (**+**) icon.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-6-1-create-playbook.png"
+           alt="Google SecOps Playbooks page showing the add icon."
+         />
+       </Frame>
+
+    1. Select **Playbook** as the type and click **Create**.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-6-2-select-playbook-type.png"
+           alt="Google SecOps dialog for selecting Playbook as the item type."
+         />
+       </Frame>
+
+    1. Build the custom playbook by adding components from **Actions**, **Triggers**, **Blocks**, and **Flows**.
+
+       <Frame>
+         <img
+           src="/images/integrations/google-secops/fig-6-4-playbook-components.png"
+           alt="Google SecOps playbook editor showing available actions, triggers, blocks, and flows."
+         />
+       </Frame>
+  </Step>
+
+  <Step title="Review playbook results">
+
+    After Google SecOps creates the cases, one playbook runs for each case.
+
+    The following example shows the consolidated playbook results for one case.
+
+    <Frame>
+      <img
+        src="/images/integrations/google-secops/fig-6-5-playbook-results.png"
+        alt="Playbook results for a generated BloodHound Enterprise case in Google SecOps."
+      />
+    </Frame>
+  </Step>
+</Steps>
+
+## Run BloodHound Enterprise actions
+
+The integration includes on-demand actions that help analysts enrich investigations with data from BloodHound Enterprise.
+
+| Action | Description |
+| --- | --- |
+| **Ping** | Verifies connectivity to the BloodHound Enterprise server. |
+| **Get Object Id** | Retrieves the object ID for a named node, such as a user, group, or computer. |
+| **Does Path Exist** | Checks whether a shortest path exists between two specified nodes in the BloodHound Enterprise graph. |
+| **Fetch Assets** | Retrieves detailed information about an asset based on its object ID. |
+| **Path Does Not Exist** | Logs that no shortest path exists between the specified nodes. |

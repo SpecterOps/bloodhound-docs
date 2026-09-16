@@ -7,24 +7,34 @@ description: '[Repository] Repo role can write repository contents'
 
 ## Edge Schema
 
-- Source: [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole)
-- Destination: [GH_Repository](/opengraph/extensions/github/nodes/gh_repository)
 - Traversable: ❌
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | GH_WriteRepoContents | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) |
+
+```mermaid
+flowchart LR
+    GH_RepoRole["GH_RepoRole"]
+    GH_Repository["GH_Repository"]
+    GH_RepoRole -- GH_WriteRepoContents --> GH_Repository
+```
 
 ## General Information
 
 The non-traversable GH_WriteRepoContents edge represents a role's ability to push commits to the repository. This permission is available to Write, Maintain, and Admin roles. Pushing code can modify application behavior and introduce vulnerabilities, making this a security-significant edge. However, this edge represents only the raw permission; actual branch push capability is determined by the computed [GH_CanWriteBranch](/opengraph/extensions/github/edges/gh_canwritebranch) edge, which factors in branch protection rules and push restrictions.
 
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | `false` |
+
+## Diagram
 
 ```mermaid
 graph LR
-    user1("GH_User bob")
-    writeRole("GH_RepoRole GitHound\write")
-    maintainRole("GH_RepoRole GitHound\maintain")
-    adminRole("GH_RepoRole GitHound\admin")
-    repo("GH_Repository GitHound")
-    user1 -- GH_HasRole --> writeRole
-    writeRole -- GH_WriteRepoContents --> repo
-    maintainRole -- GH_WriteRepoContents --> repo
-    adminRole -- GH_WriteRepoContents --> repo
+    n0["GH_RepoRole"]
+    n1["GH_Repository"]
+    n0 -.->|GH_WriteRepoContents| n1
 ```

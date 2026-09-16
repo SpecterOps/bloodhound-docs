@@ -7,10 +7,40 @@ description: 'Enterprise or organization has this user as a member'
 
 ## Edge Schema
 
-- Source: [GH_Organization](/opengraph/extensions/github/nodes/gh_organization)
-- Destination: [GH_User](/opengraph/extensions/github/nodes/gh_user)
 - Traversable: ❌
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | GH_HasMember | [GH_User](/opengraph/extensions/github/nodes/gh_user) |
+| [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | GH_HasMember | [GH_EnterpriseManagedUser](/opengraph/extensions/github/nodes/gh_enterprisemanageduser) |
+
+```mermaid
+flowchart LR
+    GH_Enterprise["GH_Enterprise"]
+    GH_EnterpriseManagedUser["GH_EnterpriseManagedUser"]
+    GH_User["GH_User"]
+    GH_Enterprise -- GH_HasMember --> GH_EnterpriseManagedUser
+    GH_Enterprise -- GH_HasMember --> GH_User
+```
 
 ## General Information
 
-The non-traversable GH_HasMember edge represents the relationship between a GitHub organization and a user who is a member of that scope. This edge records membership as directory context rather than as an access path. Being listed as a member does not by itself describe what the user can do, only that the user belongs to the organization. Membership is still security-relevant because it defines the population from which roles, team assignments, and token approvals are drawn.
+The non-traversable GH_HasMember edge represents the relationship between a GitHub enterprise or organization and a user who is a member of that scope. This edge records membership as directory context rather than as an access path: being listed as a member does not by itself describe what the user can do, only that the user belongs to the enterprise or organization. Membership remains security-relevant because it defines the population from which roles, team assignments, and token approvals are drawn, and it helps analysts understand who is inside the trust boundary when reviewing GitHub exposure.
+
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | [GH_EnterpriseManagedUser](/opengraph/extensions/github/nodes/gh_enterprisemanageduser) | `false` |
+| [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | [GH_User](/opengraph/extensions/github/nodes/gh_user) | `false` |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_Enterprise"]
+    n1["GH_EnterpriseManagedUser"]
+    n2["GH_User"]
+    n0 -.->|GH_HasMember| n1
+    n0 -.->|GH_HasMember| n2
+```

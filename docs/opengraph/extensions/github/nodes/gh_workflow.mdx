@@ -6,7 +6,49 @@ icon: '/images/extensions/github/gh_workflow.png'
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
+## General Information
+
 Represents a GitHub Actions workflow defined in a repository. Workflow nodes capture the workflow definition metadata including its file path, state, containing repository, and the full YAML contents of the workflow file. Only repositories with GitHub Actions enabled are queried for workflows.
+
+## Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | The node name used for matching and display. |
+| `displayname` | `string` | The human-readable display name. |
+| `environmentid` | `string` | The identifier of the GitHub environment where this node was collected. |
+| `last_seen` | `datetime` | The timestamp when this node was last observed during collection. |
+| `node_id` | `string` | The stable identifier used as the OpenGraph node ID; this is the native GitHub node ID where available. |
+| `short_name` | `string` | The workflow's display name. |
+| `path` | `string` | The file path of the workflow definition (e.g., `.github/workflows/ci.yml`). |
+| `state` | `string` | The workflow state (e.g., `active`, `disabled_manually`). |
+| `url` | `string` | The API URL for the workflow. |
+| `repository_name` | `string` | The full name of the containing repository. |
+| `repository_id` | `string` | The node_id of the containing repository. |
+| `html_url` | `string` | The GitHub web URL for the workflow file. |
+| `branch` | `string` | The branch where the workflow file was found. |
+| `contents` | `string` | The content of the workflow file. |
+| `triggers` | `list[string]` | The triggers value. |
+| `trigger_dispatch_inputs` | `list[string]` | The trigger dispatch inputs value. |
+| `is_pwn_requestable` | `boolean` | The is pwn requestable value. |
+| `query_repository` | `string` | Query for repository. |
+| `query_jobs` | `string` | Query for workflow jobs. |
+| `query_execution` | `string` | Query for workflow executions. |
+| `query_references` | `string` | Query for workflow references (secrets and variables). |
+| `query_editors` | `string` | Query for editors. |
+| `environment_name` | `string` | The name of the environment (GitHub organization). |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_Repository"]
+    n1["GH_Workflow"]
+    n2["GH_WorkflowJob"]
+    n0 -.->|GH_Contains| n1
+    n1 -.->|GH_Contains| n2
+    n2 -.->|GH_CallsWorkflow| n1
+```
 
 ## Edges
 
@@ -14,42 +56,54 @@ Represents a GitHub Actions workflow defined in a repository. Workflow nodes cap
 The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
 </Note>
 
+```mermaid
+flowchart LR
+
+    GH_Repository["GH_Repository"]
+    GH_Workflow["GH_Workflow"]
+    GH_WorkflowJob["GH_WorkflowJob"]
+    GH_Repository -- GH_Contains --> GH_Workflow
+    GH_Workflow -- GH_Contains --> GH_WorkflowJob
+    GH_WorkflowJob -- GH_CallsWorkflow --> GH_Workflow
+```
+
 ### Inbound Edges
 
 | Edge Type | Source Node Types | Traversable |
 | --------- | ----------------- | ----------- |
-| [GH_HasWorkflow](/opengraph/extensions/github/edges/gh_hasworkflow) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
+| [GH_CallsWorkflow](/opengraph/extensions/github/edges/gh_callsworkflow) | [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | ❌ |
+| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
 
 ### Outbound Edges
 
-No outbound edges are defined by the GitHub extension for this node.
+| Edge Type | Destination Node Types | Traversable |
+| --------- | ---------------------- | ----------- |
+| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | ❌ |
 
 ## Properties
 
-| Property Name    | Data Type | Description                                                                  |
-| ---------------- | --------- | ---------------------------------------------------------------------------- |
-| objectid         | string    | The GitHub `node_id` of the workflow, used as the unique graph identifier.   |
-| name             | string    | The fully qualified workflow name (e.g., `repoName\CI Build`).               |
-| short_name       | string    | The workflow's display name.                                                 |
-| node_id          | string    | The GitHub GraphQL node ID. Redundant with objectid.                         |
-| environment_name | string    | The name of the environment (GitHub organization).                           |
-| environmentid    | string    | The node_id of the environment (GitHub organization).                        |
-| repository_name  | string    | The full name of the containing repository.                                  |
-| repository_id    | string    | The node_id of the containing repository.                                    |
-| path             | string    | The file path of the workflow definition (e.g., `.github/workflows/ci.yml`). |
-| state            | string    | The workflow state (e.g., `active`, `disabled_manually`).                    |
-| url              | string    | The API URL for the workflow.                                                |
-| html_url         | string    | The GitHub web URL for the workflow file.                                    |
-| branch           | string    | The branch where the workflow file was found.                                |
-| contents         | string    | The full YAML contents of the workflow file, downloaded from the repository. |
-
-## Diagram
-
-```mermaid
-flowchart TD
-    GH_Workflow[fa:fa-cogs GH_Workflow]
-    GH_Repository[fa:fa-box-archive GH_Repository]
-
-
-    GH_Repository -.->|GH_HasWorkflow| GH_Workflow
-```
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `name` | `str` | - |
+| `displayname` | `str` | - |
+| `environmentid` | `str` | - |
+| `last_seen` | `datetime` | - |
+| `node_id` | `str` | - |
+| `short_name` | `str \| None` | The workflow's display name. |
+| `path` | `str \| None` | The file path of the workflow definition (e.g., `.github/workflows/ci.yml`). |
+| `state` | `str \| None` | The workflow state (e.g., `active`, `disabled_manually`). |
+| `url` | `str \| None` | The API URL for the workflow. |
+| `repository_name` | `str \| None` | The full name of the containing repository. |
+| `repository_id` | `str \| None` | The node_id of the containing repository. |
+| `html_url` | `str \| None` | The GitHub web URL for the workflow file. |
+| `branch` | `str \| None` | The branch where the workflow file was found. |
+| `contents` | `str \| None` | The content of the workflow file. |
+| `triggers` | `list[str] \| None` | - |
+| `trigger_dispatch_inputs` | `list[str] \| None` | - |
+| `is_pwn_requestable` | `bool` | - |
+| `query_repository` | `str \| None` | Query for repository. |
+| `query_jobs` | `str \| None` | Query for workflow jobs. |
+| `query_execution` | `str \| None` | Query for workflow executions. |
+| `query_references` | `str \| None` | Query for workflow references (secrets and variables). |
+| `query_editors` | `str \| None` | Query for editors. |
+| `environment_name` | `str \| None` | The name of the environment (GitHub organization). |

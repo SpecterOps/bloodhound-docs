@@ -6,7 +6,56 @@ icon: '/images/extensions/github/gh_orgrole.png'
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
+## General Information
+
 Represents an organization-level role such as Owner, Member, or a custom organization role. Org roles define what permissions a user or team has at the organization level. The Owner and Member roles are default (built-in), while custom roles inherit from a base role and can have additional permissions.
+
+## Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | The node name used for matching and display. |
+| `displayname` | `string` | The human-readable display name. |
+| `environmentid` | `string` | The identifier of the GitHub environment where this node was collected. |
+| `last_seen` | `datetime` | The timestamp when this node was last observed during collection. |
+| `node_id` | `string` | The stable identifier used as the OpenGraph node ID; this is the native GitHub node ID where available. |
+| `short_name` | `string` | The short display name of the role (e.g., `Owners`, `Members`, or the custom role name). |
+| `type` | `string` | `default` for built-in roles (Owner, Member) or `custom` for custom organization roles. |
+| `environment_name` | `string` | The name of the environment (GitHub organization). |
+| `query_explicit_members` | `string` | Query for explicit members. |
+| `query_unrolled_members` | `string` | Query for unrolled members. |
+| `query_org_permissions` | `string` | Query for org permissions. |
+| `query_repo_permissions` | `string` | Query for repo permissions. |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_OrgRole"]
+    n1["GH_OrgRunnerGroup"]
+    n2["GH_OrgSecret"]
+    n3["GH_Organization"]
+    n4["GH_SecretScanningAlert"]
+    n5["GH_Team"]
+    n6["GH_User"]
+    n0 -->|GH_HasBaseRole| n0
+    n0 -->|GH_CanCreateRepositoryWithRunnerAccess| n1
+    n0 -->|GH_CanReadSecret| n2
+    n0 -.->|GH_AddCollaborator| n3
+    n0 -.->|GH_CanCreateInternalRepositories| n3
+    n0 -.->|GH_CanCreatePrivateRepositories| n3
+    n0 -.->|GH_CanCreatePublicRepositories| n3
+    n0 -.->|GH_CanCreateRepositories| n3
+    n0 -.->|GH_CreateTeam| n3
+    n0 -.->|GH_InviteMember| n3
+    n0 -.->|GH_ResolveSecretScanningAlerts| n3
+    n0 -.->|GH_TransferRepository| n3
+    n0 -.->|GH_ViewSecretScanningAlerts| n3
+    n0 -->|GH_CanReadSecretScanningAlert| n4
+    n3 -.->|GH_Contains| n0
+    n5 -->|GH_HasRole| n0
+    n6 -->|GH_HasRole| n0
+```
 
 ## Edges
 
@@ -14,77 +63,75 @@ Represents an organization-level role such as Owner, Member, or a custom organiz
 The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
 </Note>
 
+```mermaid
+flowchart LR
+
+    GH_Organization["GH_Organization"]
+    GH_OrgRole["GH_OrgRole"]
+    GH_OrgRunnerGroup["GH_OrgRunnerGroup"]
+    GH_OrgSecret["GH_OrgSecret"]
+    GH_SecretScanningAlert["GH_SecretScanningAlert"]
+    GH_Team["GH_Team"]
+    GH_User["GH_User"]
+    GH_Organization -- GH_Contains --> GH_OrgRole
+    GH_OrgRole -- GH_AddCollaborator --> GH_Organization
+    GH_OrgRole -- GH_CanCreateInternalRepositories --> GH_Organization
+    GH_OrgRole -- GH_CanCreatePrivateRepositories --> GH_Organization
+    GH_OrgRole -- GH_CanCreatePublicRepositories --> GH_Organization
+    GH_OrgRole -- GH_CanCreateRepositories --> GH_Organization
+    GH_OrgRole -- GH_CanCreateRepositoryWithRunnerAccess --> GH_OrgRunnerGroup
+    GH_OrgRole -- GH_CanReadSecret --> GH_OrgSecret
+    GH_OrgRole -- GH_CanReadSecretScanningAlert --> GH_SecretScanningAlert
+    GH_OrgRole -- GH_CreateTeam --> GH_Organization
+    GH_OrgRole -- GH_HasBaseRole --> GH_OrgRole
+    GH_OrgRole -- GH_InviteMember --> GH_Organization
+    GH_OrgRole -- GH_ResolveSecretScanningAlerts --> GH_Organization
+    GH_OrgRole -- GH_TransferRepository --> GH_Organization
+    GH_OrgRole -- GH_ViewSecretScanningAlerts --> GH_Organization
+    GH_Team -- GH_HasRole --> GH_OrgRole
+    GH_User -- GH_HasRole --> GH_OrgRole
+```
+
 ### Inbound Edges
 
 | Edge Type | Source Node Types | Traversable |
 | --------- | ----------------- | ----------- |
-| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization), [GH_Repository](/opengraph/extensions/github/nodes/gh_repository), [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | ❌ |
-| [GH_HasBaseRole](/opengraph/extensions/github/edges/gh_hasbaserole) | [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole), [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | ✅ |
-| [GH_HasRole](/opengraph/extensions/github/edges/gh_hasrole) | [GH_User](/opengraph/extensions/github/nodes/gh_user), [GH_Team](/opengraph/extensions/github/nodes/gh_team) | ✅ |
+| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
+| [GH_HasBaseRole](/opengraph/extensions/github/edges/gh_hasbaserole) | [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole) | ✅ |
+| [GH_HasRole](/opengraph/extensions/github/edges/gh_hasrole) | [GH_Team](/opengraph/extensions/github/nodes/gh_team), [GH_User](/opengraph/extensions/github/nodes/gh_user) | ✅ |
 
 ### Outbound Edges
 
 | Edge Type | Destination Node Types | Traversable |
 | --------- | ---------------------- | ----------- |
 | [GH_AddCollaborator](/opengraph/extensions/github/edges/gh_addcollaborator) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
+| [GH_CanCreateInternalRepositories](/opengraph/extensions/github/edges/gh_cancreateinternalrepositories) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
+| [GH_CanCreatePrivateRepositories](/opengraph/extensions/github/edges/gh_cancreateprivaterepositories) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
+| [GH_CanCreatePublicRepositories](/opengraph/extensions/github/edges/gh_cancreatepublicrepositories) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
+| [GH_CanCreateRepositories](/opengraph/extensions/github/edges/gh_cancreaterepositories) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
+| [GH_CanCreateRepositoryWithRunnerAccess](/opengraph/extensions/github/edges/gh_cancreaterepositorywithrunneraccess) | [GH_OrgRunnerGroup](/opengraph/extensions/github/nodes/gh_orgrunnergroup) | ✅ |
+| [GH_CanReadSecret](/opengraph/extensions/github/edges/gh_canreadsecret) | [GH_OrgSecret](/opengraph/extensions/github/nodes/gh_orgsecret) | ✅ |
 | [GH_CanReadSecretScanningAlert](/opengraph/extensions/github/edges/gh_canreadsecretscanningalert) | [GH_SecretScanningAlert](/opengraph/extensions/github/nodes/gh_secretscanningalert) | ✅ |
-| [GH_CreateRepository](/opengraph/extensions/github/edges/gh_createrepository) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
 | [GH_CreateTeam](/opengraph/extensions/github/edges/gh_createteam) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_HasBaseRole](/opengraph/extensions/github/edges/gh_hasbaserole) | [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole), [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | ✅ |
+| [GH_HasBaseRole](/opengraph/extensions/github/edges/gh_hasbaserole) | [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole) | ✅ |
 | [GH_InviteMember](/opengraph/extensions/github/edges/gh_invitemember) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_ManageOrganizationWebhooks](/opengraph/extensions/github/edges/gh_manageorganizationwebhooks) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_OrgBypassCodeScanningDismissalRequests](/opengraph/extensions/github/edges/gh_orgbypasscodescanningdismissalrequests) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_OrgBypassSecretScanningClosureRequests](/opengraph/extensions/github/edges/gh_orgbypasssecretscanningclosurerequests) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_OrgReviewAndManageSecretScanningBypassRequests](/opengraph/extensions/github/edges/gh_orgreviewandmanagesecretscanningbypassrequests) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_OrgReviewAndManageSecretScanningClosureRequests](/opengraph/extensions/github/edges/gh_orgreviewandmanagesecretscanningclosurerequests) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_ReadOrganizationActionsUsageMetrics](/opengraph/extensions/github/edges/gh_readorganizationactionsusagemetrics) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_ReadOrganizationCustomOrgRole](/opengraph/extensions/github/edges/gh_readorganizationcustomorgrole) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_ReadOrganizationCustomRepoRole](/opengraph/extensions/github/edges/gh_readorganizationcustomreporole) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
 | [GH_ResolveSecretScanningAlerts](/opengraph/extensions/github/edges/gh_resolvesecretscanningalerts) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
 | [GH_TransferRepository](/opengraph/extensions/github/edges/gh_transferrepository) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_ViewSecretScanningAlerts](/opengraph/extensions/github/edges/gh_viewsecretscanningalerts) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization), [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
-| [GH_WriteOrganizationActionsSecrets](/opengraph/extensions/github/edges/gh_writeorganizationactionssecrets) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_WriteOrganizationActionsSettings](/opengraph/extensions/github/edges/gh_writeorganizationactionssettings) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_WriteOrganizationActionsVariables](/opengraph/extensions/github/edges/gh_writeorganizationactionsvariables) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_WriteOrganizationCustomOrgRole](/opengraph/extensions/github/edges/gh_writeorganizationcustomorgrole) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ✅ |
-| [GH_WriteOrganizationCustomRepoRole](/opengraph/extensions/github/edges/gh_writeorganizationcustomreporole) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_WriteOrganizationNetworkConfigurations](/opengraph/extensions/github/edges/gh_writeorganizationnetworkconfigurations) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
+| [GH_ViewSecretScanningAlerts](/opengraph/extensions/github/edges/gh_viewsecretscanningalerts) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
 
 ## Properties
 
-| Property Name    | Data Type | Description                                                                              |
-| ---------------- | --------- | ---------------------------------------------------------------------------------------- |
-| objectid         | string    | A deterministic ID derived from the organization ID and role name.                       |
-| name             | string    | The fully qualified role name (e.g., `OrgName\Owners`).                                  |
-| id               | string    | Same as objectid.                                                                        |
-| short_name       | string    | The short display name of the role (e.g., `Owners`, `Members`, or the custom role name). |
-| type             | string    | `default` for built-in roles (Owner, Member) or `custom` for custom organization roles.  |
-| environment_name | string    | The name of the environment (GitHub organization).                                       |
-| environmentid    | string    | The node_id of the environment (GitHub organization).                                    |
-
-## Diagram
-
-```mermaid
-flowchart TD
-    GH_OrgRole[fa:fa-user-tie GH_OrgRole]
-    GH_User[fa:fa-user GH_User]
-    GH_Team[fa:fa-user-group GH_Team]
-    GH_Organization[fa:fa-building GH_Organization]
-    GH_RepoRole[fa:fa-user-tie GH_RepoRole]
-    GH_SecretScanningAlert[fa:fa-key GH_SecretScanningAlert]
-
-
-    GH_User -->|GH_HasRole| GH_OrgRole
-    GH_Team -->|GH_HasRole| GH_OrgRole
-    GH_OrgRole -->|GH_HasBaseRole| GH_OrgRole
-    GH_OrgRole -.->|GH_ManageOrganizationWebhooks| GH_Organization
-    GH_OrgRole -.->|GH_OrgBypassCodeScanningDismissalRequests| GH_Organization
-    GH_OrgRole -.->|GH_OrgBypassSecretScanningClosureRequests| GH_Organization
-    GH_OrgRole -.->|GH_CreateRepository| GH_Organization
-    GH_OrgRole -.->|GH_InviteMember| GH_Organization
-    GH_OrgRole -.->|GH_AddCollaborator| GH_Organization
-    GH_OrgRole -.->|GH_CreateTeam| GH_Organization
-    GH_OrgRole -.->|GH_TransferRepository| GH_Organization
-    GH_OrgRole -->|GH_HasBaseRole| GH_RepoRole
-    GH_OrgRole -->|GH_CanReadSecretScanningAlert| GH_SecretScanningAlert
-```
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `name` | `str` | - |
+| `displayname` | `str` | - |
+| `environmentid` | `str` | - |
+| `last_seen` | `datetime` | - |
+| `node_id` | `str` | - |
+| `short_name` | `str` | The short display name of the role (e.g., `Owners`, `Members`, or the custom role name). |
+| `type` | `str` | `default` for built-in roles (Owner, Member) or `custom` for custom organization roles. |
+| `environment_name` | `str \| None` | The name of the environment (GitHub organization). |
+| `query_explicit_members` | `str \| None` | Query for explicit members. |
+| `query_unrolled_members` | `str \| None` | Query for unrolled members. |
+| `query_org_permissions` | `str \| None` | Query for org permissions. |
+| `query_repo_permissions` | `str \| None` | Query for repo permissions. |

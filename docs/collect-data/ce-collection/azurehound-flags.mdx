@@ -8,107 +8,165 @@ AzureHound Community Edition has several optional flags that let you control sca
 
 ## Enumeration Commands and Options
 
-### list
+The `list` command collects all supported Entra ID and Azure Resource Manager data. Add a collection option directly after `list` to limit the scope.
 
-The \`list\` command tells AzureHound to read all possible information from AzureAD and AzureRM. You can optionally limit the scope of what data AzureHound will collect by providing a scope option after the “list” command:
+For example, use `azurehound list az-ad` to collect all supported Entra ID data and `azurehound list apps` to collect only application registrations within Entra ID. Run `azurehound list -h` to see all available collection commands.
 
-These are the most common options you’ll likely use:
+The following tree logically groups every collection option by resource and abuse type. This grouping does not mean an aggregate command emits every option shown beneath it. All options are direct children of `list`; for example, run `azurehound list apps`, not `azurehound list az-ad apps`.
 
-* **az-ad:** Collect all information available at the AzureAD tenant level. In most tenants, all users can read all this information by default.
-* **az-rm:** Collect all information available at the AzureRM subscription level. Users cannot read this by default.
-
-You can also scope the collection to particular object types:
-
-* **apps** Collects AzureAD application registration objects.
-* **devices** Collects AzureAD devices regardless of join type.
-* **groups** Collects AzureAD security-enabled groups, both role- and non-role-eligible.
-* **key-vaults** Collects AzureRM key vaults.
-* **management-groups** Collects AzureRM management group objects
-* **resource-groups** Collects AzureRM resource group objects
-* **roles** Collects AzureAD admin role objects
-* **service-principals** Collects AzureAD service principals
-* **subscriptions** Collects AzureRM subscriptions
-* **tenants** Collects AzureAD tenant objects
-* **users** Collects AzureAD users, including any guest users in the target tenant.
-* **virtual-machines** Collects AzureRM virtual machines
-
-You can even further scope collection to particular abuses against each object type. Here are a few examples:
-
-* **app-owners** Collects explicitly set owners of AzureAD application registration objects
-* **management-group-user-access-admins** Collects any principal with the User Access Admin role against any management group
-* **virtual-machine-avere-contributors** Collects any principal with the Avere Contributor role assignment against any virtual machine
+```text expandable
+list # Collects both Entra ID and Azure Resource Manager data
+├── az-ad # Collects all supported Entra ID data
+│   ├── apps # Collects application registrations
+│   │   ├── app-owners # Collects explicitly assigned owners of application registrations
+│   │   └── appfics # Collects federated identity credentials for application registrations
+│   ├── devices # Collects devices
+│   ├── groups # Collects security-enabled groups
+│   │   ├── group-members # Collects group memberships
+│   │   └── group-owners # Collects explicitly assigned owners of groups
+│   ├── roles # Collects Entra ID directory role definitions
+│   │   └── role-assignments # Collects Entra ID directory role assignments
+│   ├── service-principals # Collects service principals
+│   │   ├── app-role-assignments # Collects principals assigned application roles exposed by service principals
+│   │   └── service-principal-owners # Collects explicitly assigned owners of service principals
+│   ├── tenants # Collects the target tenant and other accessible tenants
+│   ├── unified-role-assignment-policies # Collects tenant-wide Entra PIM directory role policy assignments and activation requirements
+│   ├── unified-role-eligibility-schedule-instances # Collects Entra PIM directory role eligibility instances
+│   └── users # Collects users, including guest users in the target tenant
+└── az-rm # Runs the aggregate Azure Resource Manager collection
+    ├── management-groups # Collects management groups
+    │   ├── management-group-descendants # Collects descendant management groups and subscriptions
+    │   └── management-group-role-assignments # Collects role assignments at management group scope
+    │       ├── management-group-contributors # Collects principals with the Contributor role on management groups
+    │       ├── management-group-owners # Collects principals with the Owner role on management groups
+    │       └── management-group-user-access-admins # Collects principals with the User Access Administrator role on management groups
+    └── subscriptions # Collects subscriptions
+        ├── subscription-role-assignments # Collects role assignments at subscription scope
+        │   ├── subscription-contributors # Collects principals with the Contributor role on subscriptions
+        │   ├── subscription-owners # Collects principals with the Owner role on subscriptions
+        │   └── subscription-user-access-admins # Collects principals with the User Access Administrator role on subscriptions
+        ├── resource-groups # Collects resource groups
+        │   └── resource-group-role-assignments # Collects role assignments that apply to resource groups
+        │       ├── resource-group-contributors # Collects principals with the Contributor role on resource groups
+        │       ├── resource-group-owners # Collects principals with the Owner role on resource groups
+        │       └── resource-group-user-access-admins # Collects principals with the User Access Administrator role on resource groups
+        ├── automation-accounts # Collects Automation accounts
+        │   └── automation-account-role-assignments # Collects role assignments that apply to Automation accounts
+        ├── container-registries # Collects container registries
+        │   └── container-registry-role-assignments # Collects role assignments that apply to container registries
+        ├── function-apps # Collects function apps
+        │   └── function-app-role-assignments # Collects role assignments that apply to function apps
+        ├── key-vaults # Collects key vaults
+        │   ├── key-vault-access-policies # Collects legacy access policies for key vaults
+        │   └── key-vault-role-assignments # Collects role assignments that apply to key vaults
+        │       ├── key-vault-contributors # Collects principals with the Contributor role on key vaults
+        │       ├── key-vault-kvcontributors # Collects principals with the Key Vault Contributor role on key vaults
+        │       ├── key-vault-owners # Collects principals with the Owner role on key vaults
+        │       └── key-vault-user-access-admins # Collects principals with the User Access Administrator role on key vaults
+        ├── logic-apps # Collects logic apps
+        │   └── logic-app-role-assignments # Collects role assignments that apply to logic apps
+        ├── managed-clusters # Collects Azure Kubernetes Service managed clusters
+        │   └── managed-cluster-role-assignments # Collects role assignments that apply to managed clusters
+        ├── storage-accounts # Collects storage accounts
+        │   ├── storage-account-role-assignments # Collects role assignments that apply to storage accounts
+        │   └── storage-containers # Collects blob containers in storage accounts
+        ├── virtual-machines # Collects virtual machines
+        │   └── virtual-machine-role-assignments # Collects role assignments that apply to virtual machines
+        │       ├── virtual-machine-admin-logins # Collects principals with the Virtual Machine Administrator Login role
+        │       ├── virtual-machine-avere-contributors # Collects principals with the Avere Contributor role on virtual machines
+        │       ├── virtual-machine-contributors # Collects principals with the Contributor role on virtual machines
+        │       ├── virtual-machine-owners # Collects principals with the Owner role on virtual machines
+        │       ├── virtual-machine-user-access-admins # Collects principals with the User Access Administrator role on virtual machines
+        │       └── virtual-machine-vmcontributors # Collects principals with the Virtual Machine Contributor role
+        ├── vm-scale-sets # Collects virtual machine scale sets
+        │   └── vm-scale-set-role-assignments # Collects role assignments that apply to virtual machine scale sets
+        └── web-apps # Collects web apps
+            └── web-app-role-assignments # Collects role assignments that apply to web apps
+```
 
 ## Authentication Flags
 
-AzureHound supports several authentication options. You can control how AzureHound authenticates by using command line flags or the configuration file. Some flags should always be used together and are presented here in the context of their authentication use cases:
+AzureHound supports several authentication options. You can control how AzureHound authenticates by using command-line flags or the configuration file. Some flags should always be used together and are presented here in the context of their authentication use cases.
+
+<Note>
+For authentication flags, AzureHound reads file contents only from paths passed to `--cert` and `--key`. Every other authentication flag takes a literal value and does not interpret that value as a file path.
+</Note>
 
 ### Authenticating with Username and Password
 
-* `-u` or `--username` \- The user principal name of the AzureAD user you wish to authenticate as. UPN format is “username@domain.com”
-* `-p` or `--password` \- The clear-text password of the AzureAD user.
-* `-t` or `--tenant` \- The directory tenant to authenticate to (GUID or friendly name format).
+* `-u` or `--username` — The Entra ID user's user principal name (UPN), in `username@domain.com` format.
+* `-p` or `--password` — The user's clear-text password value.
+* `-t` or `--tenant` — The directory tenant value, in GUID or friendly-name format.
 
 Example:
+
 ```bash
 ./azurehound -u "MattNelson@contoso.onmicrosoft.com" -p "MyVerySecurePassword123" --tenant "contoso.onmicrosoft.com" list
 ```
-You can skip proving the password on the command line, and AzureHound will interactively prompt you for the password instead.
+
+You can omit the password from the command line, and AzureHound will interactively prompt you for it instead.
 
 ### Authenticating with Service Principal Secret
 
-* `-a` or `--app` \- The Application (client) ID that the Azure app registration portal assigned when the app was registered.
-* `-s` or `--secret` \- The Application Secret generated for the app in the app registration portal.
-* `-t` or `--tenant` \- The directory tenant to authenticate to (GUID or friendly name format).
+* `-a` or `--app` — The application (client) ID value assigned when the app was registered.
+* `-s` or `--secret` — The client secret value generated for the app registration.
+* `-t` or `--tenant` — The directory tenant value, in GUID or friendly-name format.
 
 Example:
+
 ```bash
-./azurehound -a "6b5adee8-0d36-45b6-b393-8f29ae8a8cc8" -s "&lt;secret&gt;" --tenant "contoso.onmicrosoft.com" list
+./azurehound -a "6b5adee8-0d36-45b6-b393-8f29ae8a8cc8" -s "MyVerySecureClientSecret123" --tenant "contoso.onmicrosoft.com" list
 ```
 
 ### Authenticating with Service Principal Certificate
 
-* `-a` or `--app` \- The Application (client) ID that the Azure app registration portal assigned when the app was registered.
-* `--cert` \- The path to the certificate uploaded to the app registration portal (PEM format).
-* `-k` or `--key` \- The path to the private key file for the certificate (PEM format).
-* `--keypass` (optional) \- The passphrase to use if the private key is encrypted.
-* `-t` or `--tenant` \- The directory tenant to authenticate to (GUID or friendly name format).
+* `-a` or `--app` — The application (client) ID value assigned when the app was registered.
+* `--cert` — The path to the certificate uploaded for the app registration, in PEM format. AzureHound reads the certificate from this file.
+* `-k` or `--key` — The path to the certificate's private key file, in PEM format. AzureHound reads the private key from this file.
+* `--keypass` (optional) — The literal passphrase value to use if the private key is encrypted.
+* `-t` or `--tenant` — The directory tenant value, in GUID or friendly-name format.
 
 Example:
+
 ```bash
 ./azurehound -a "6b5adee8-0d36-45b6-b393-8f29ae8a8cc8" --cert ./certificate.pem --key ./key.pem --tenant "contoso.onmicrosoft.com" list
 ```
 
 ### Authenticating with Azure Managed Identity
 
-* `--managed-identity` \- Use Azure Managed Identity to authenticate. Use this when running AzureHound on an Azure resource (VM, App Service, etc.) with a managed identity assigned.
-* `--managed-identity-client-id` (optional) \- Client ID of a user-assigned managed identity. If not provided, uses system-assigned identity.
-* `-t` or `--tenant` \- The directory tenant to authenticate to (GUID or friendly name format).
+* `--managed-identity` — Use Azure Managed Identity to authenticate. Use this when running AzureHound on an Azure resource, such as a virtual machine or App Service, with a managed identity assigned.
+* `--managed-identity-client-id` (optional) — The client ID value of a user-assigned managed identity. If not provided, AzureHound uses the system-assigned identity.
+* `-t` or `--tenant` — The directory tenant value, in GUID or friendly-name format.
 
 Example (system-assigned):
+
 ```bash
 ./azurehound --managed-identity --tenant "contoso.onmicrosoft.com" list
 ```
 
 Example (user-assigned):
+
 ```bash
 ./azurehound --managed-identity --managed-identity-client-id "6b5adee8-0d36-45b6-b393-8f29ae8a8cc8" --tenant "contoso.onmicrosoft.com" list
 ```
 
 ### Authenticating with a JWT
 
-* `-j` or `--jwt` \- An MS Graph or AzureRM scoped JWT. These JWTs last a maximum of 90 minutes, so you may need to get a new JWT to enumerate data with AzureHound later.
+* `-j` or `--jwt` — The literal value of a Microsoft Graph or Azure Resource Manager scoped JWT.
 
 Example:
+
 ```bash
 ./azurehound -j "ey..." list az-ad
 ```
 
 ### Authenticating with a Refresh Token
 
-* `-r` or `--refresh-token` \- A refresh token. AzureHound will automatically exchange this for an appropriately scoped JWT when accessing the MS Graph and AzureRM APIs.
-* `-t` or `--tenant` \- The directory tenant to authenticate to (GUID or friendly name format).
+* `-r` or `--refresh-token` — The literal refresh token value. AzureHound exchanges it for an appropriately scoped JWT when accessing the Microsoft Graph and Azure Resource Manager APIs.
+* `-t` or `--tenant` — The directory tenant value, in GUID or friendly-name format.
 
 Example:
+
 ```bash
 ./azurehound -r "0.ARwA6Wg..." --tenant "contoso.onmicrosoft.com" list
 ```

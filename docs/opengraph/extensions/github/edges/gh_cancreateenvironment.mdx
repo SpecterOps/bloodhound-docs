@@ -1,0 +1,42 @@
+---
+title: 'GH_CanCreateEnvironment'
+description: 'Repo role can create new GitHub environments in this repository by editing a workflow that references a nonexistent environment name'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Traversable: ✅
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | GH_CanCreateEnvironment | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) |
+
+```mermaid
+flowchart LR
+    GH_RepoRole["GH_RepoRole"]
+    GH_Repository["GH_Repository"]
+    GH_RepoRole -- GH_CanCreateEnvironment --> GH_Repository
+```
+
+## General Information
+
+The traversable GH_CanCreateEnvironment edge is a computed edge indicating that a repository role can cause a new GitHub environment to be created in the repository. This is derived from the ability to create and modify runnable branches/workflows: if a workflow references an environment name that does not already exist, GitHub will create that environment automatically.
+
+This edge is useful for modeling OIDC and deployment scenarios where trust is tied to an environment name. An attacker who can create a new environment through workflow changes may be able to instantiate a trusted environment on demand, even if it was not previously configured.
+
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | `true` |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_RepoRole"]
+    n1["GH_Repository"]
+    n0 -->|GH_CanCreateEnvironment| n1
+```

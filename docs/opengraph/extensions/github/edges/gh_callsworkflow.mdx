@@ -7,9 +7,18 @@ description: '[Workflow] Job calls a reusable workflow — GH_WorkflowJob → GH
 
 ## Edge Schema
 
-- Source: [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob)
-- Destination: [GH_Workflow](/opengraph/extensions/github/nodes/gh_workflow)
 - Traversable: ❌
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | GH_CallsWorkflow | [GH_Workflow](/opengraph/extensions/github/nodes/gh_workflow) |
+
+```mermaid
+flowchart LR
+    GH_Workflow["GH_Workflow"]
+    GH_WorkflowJob["GH_WorkflowJob"]
+    GH_WorkflowJob -- GH_CallsWorkflow --> GH_Workflow
+```
 
 ## General Information
 
@@ -21,3 +30,18 @@ The traversable GH_CallsWorkflow edge links a workflow job to a reusable workflo
 - **Remote** (`org/repo/.github/workflows/file.yml@ref`): the destination is matched by the full reference string. If the called workflow has not been collected, the edge destination will not resolve.
 
 The `reusable_ref` property on the edge always contains the raw `uses:` value from the workflow file.
+
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | [GH_Workflow](/opengraph/extensions/github/nodes/gh_workflow) | `false` |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_WorkflowJob"]
+    n1["GH_Workflow"]
+    n0 -.->|GH_CallsWorkflow| n1
+```

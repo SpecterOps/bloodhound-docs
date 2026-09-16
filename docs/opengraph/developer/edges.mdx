@@ -5,6 +5,7 @@ sidebarTitle: Edges
 ---
 
 import DataValidationNote from '/snippets/opengraph/data-validation-note.mdx';
+import ReservedPrefixWarning from '/snippets/opengraph/reserved-prefix.mdx';
 
 <img
   noZoom
@@ -48,9 +49,11 @@ At minimum, each edge must include a `start` endpoint, an `end` endpoint, and a 
 <ResponseField name="kind" type="string" required>
   A string that describes the relationship type.
 
-  - A descriptive name that identifies the edge kind and does not overlap with [built-in edge](/resources/edges/overview) kinds. 
-  
+  - A descriptive name that identifies the edge kind and does not overlap with [built-in edge](/resources/edges/overview) kinds.
+
     Consider using a prefix related to your data source or environment separated from the name by an underscore. For example, `Okta_ResetPassword`. For [structured graphs](/opengraph/overview#structured-graphs), a prefix that matches the extension's [`namespace`](/opengraph/developer/graph-definition#namespacing) is required.
+
+    <ReservedPrefixWarning type="edge" />
 
   - Must match the regex pattern `^[A-Za-z0-9_]+$`, which means edge kinds can only contain uppercase letters, lowercase letters, numbers, and underscores. Spaces, dashes, backticks, and other special characters are not allowed in edge kinds. PascalCase is recommended for readability and consistency.
 
@@ -593,3 +596,5 @@ Use the schema below as the source of truth for validation requirements. You can
 - **Endpoint validation fails:** Use either `value` for `id`/`name` matching, or `property_matchers` for `property` matching, not both.
 
 - **Expected edge disappears after ingest:** Check whether it is a post-processed edge kind.
+
+- **Upload rejected due to reserved kind:** Check whether the edge kind begins with `tag` in any casing (for example, `tag_`, `Tag_`, `TAG_`). BloodHound rejects the entire upload if a reserved kind prefix is found.

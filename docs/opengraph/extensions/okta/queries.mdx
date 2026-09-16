@@ -29,7 +29,7 @@ Identifies principals with access to the Okta Admin Console.
 
 ```cypher
 MATCH path = (:Okta_Organization)-[:Okta_Contains]->(:Okta)-[:Okta_AppAssignment]->(console:Okta_Application)
-WHERE console.appType = "saasure"
+WHERE console.name = "saasure"
 RETURN path
 LIMIT 1000
 ```
@@ -291,31 +291,6 @@ LIMIT 1000
 
 This query can be imported into BloodHound from the [privileged-principals-hybrid-indirect.json](https://github.com/SpecterOps/openhound-okta/tree/main/extension/saved_searches/privileged-principals-hybrid-indirect.json) file.
 
-## Privileged Users without MFA (Direct)
-
-Users who do not have multi-factor authentication enabled and directly hold privileged role assignments.
-
-```cypher
-MATCH path = (user:Okta_User)-[:Okta_HasRoleAssignment]->(:Okta_RoleAssignment)-[:Okta_ScopedTo]->(:Okta)
-WHERE user.authenticationFactors = 0
-RETURN path
-LIMIT 1000
-```
-
-This query can be imported into BloodHound from the [privileged-users-no-mfa-direct.json](https://github.com/SpecterOps/openhound-okta/tree/main/extension/saved_searches/privileged-users-no-mfa-direct.json) file.
-
-## Privileged Users without MFA (Indirect)
-
-Users who do not have multi-factor authentication enabled and hold privileged role assignments through group membership.
-
-```cypher
-MATCH path = (user:Okta_User)-[:Okta_MemberOf]->(:Okta_Group)-[:Okta_HasRoleAssignment]->(:Okta_RoleAssignment)-[:Okta_ScopedTo]->(:Okta)
-WHERE user.authenticationFactors = 0
-RETURN path
-LIMIT 1000
-```
-
-This query can be imported into BloodHound from the [privileged-users-no-mfa-indirect.json](https://github.com/SpecterOps/openhound-okta/tree/main/extension/saved_searches/privileged-users-no-mfa-indirect.json) file.
 
 ## Privileged Users with Old Passwords (Direct)
 
@@ -323,7 +298,7 @@ Finds users whose last password change was more than a year ago and directly hol
 
 ```cypher
 MATCH path = (user:Okta_User)-[:Okta_HasRoleAssignment]->(:Okta_RoleAssignment)-[:Okta_ScopedTo]->(:Okta)
-WHERE user.passwordChanged IS NOT NULL AND datetime(user.passwordChanged) <= datetime() - duration("P365D")
+WHERE user.password_changed IS NOT NULL AND datetime(user.password_changed) <= datetime() - duration("P365D")
 RETURN path
 LIMIT 1000
 ```
@@ -336,7 +311,7 @@ Finds users whose last password change was more than a year ago and hold privile
 
 ```cypher
 MATCH path = (user:Okta_User)-[:Okta_MemberOf]->(:Okta_Group)-[:Okta_HasRoleAssignment]->(:Okta_RoleAssignment)-[:Okta_ScopedTo]->(:Okta)
-WHERE user.passwordChanged IS NOT NULL AND datetime(user.passwordChanged) <= datetime() - duration("P365D")
+WHERE user.password_changed IS NOT NULL AND datetime(user.password_changed) <= datetime() - duration("P365D")
 RETURN path
 LIMIT 1000
 ```
@@ -499,7 +474,7 @@ Finds user accounts that have not logged in for at least 180 days and directly h
 
 ```cypher
 MATCH path = (user:Okta_User)-[:Okta_HasRoleAssignment]->(:Okta_RoleAssignment)-[:Okta_ScopedTo]->(:Okta)
-WHERE user.lastLogin IS NULL OR datetime(user.lastLogin) <= datetime() - duration("P180D")
+WHERE user.last_login IS NULL OR datetime(user.last_login) <= datetime() - duration("P180D")
 RETURN path
 LIMIT 1000
 ```
@@ -512,7 +487,7 @@ Finds user accounts that have not logged in for at least 180 days and hold privi
 
 ```cypher
 MATCH path = (user:Okta_User)-[:Okta_MemberOf]->(:Okta_Group)-[:Okta_HasRoleAssignment]->(:Okta_RoleAssignment)-[:Okta_ScopedTo]->(:Okta)
-WHERE user.lastLogin IS NULL OR datetime(user.lastLogin) <= datetime() - duration("P180D")
+WHERE user.last_login IS NULL OR datetime(user.last_login) <= datetime() - duration("P180D")
 RETURN path
 LIMIT 1000
 ```
