@@ -1,0 +1,119 @@
+---
+title: Configure managed collectors
+description: Configure an AWS collection plan and daily schedule for Managed Collectors in BloodHound Enterprise.
+hidden: true
+---
+
+import ManagedCollectorsBetaNote from '/snippets/managed-collectors-beta.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<ManagedCollectorsBetaNote />
+
+Use a collection plan to define the AWS credentials, collection scope, and daily schedule for a managed OpenHound collector. After you configure a plan, use its history and result indicators to confirm collection activity.
+
+## Prepare your AWS environment
+
+Before you configure a plan, complete the following prerequisites:
+
+- Your BloodHound Enterprise tenant has Managed Collectors enabled by SpecterOps.
+- You are signed in with an account that can manage collector jobs.
+- You have an AWS access key ID and secret access key for a collection principal.
+- The collection principal has the required read-only permissions for your target AWS account or organization. Follow [Configure AWS permissions](/openhound/collectors/aws/configure-permissions).
+- You know whether the plan collects one AWS account or an AWS organization.
+
+<Note>
+  Managed Collectors runs the collector for you. Do not install a self-deployed OpenHound collector for this workflow. Use the self-deployed [AWS collector documentation](/openhound/collectors/aws/overview) when you need to operate OpenHound in your own environment.
+</Note>
+
+## Create a collection plan
+
+The beta form creates an AWS plan. The **Service** and **Authentication Type** fields are fixed because AWS and access-key authentication are the only beta options.
+
+<Steps>
+  <Step title="Open Managed Collection">
+    In the left menu, select **Administration** > **Data Collection** > **Managed Collection**.
+  </Step>
+
+  <Step title="Start a plan">
+    Select **New Collection**. Enter a descriptive value in **Name**, such as `Production AWS organization`.
+  </Step>
+
+  <Step title="Confirm the service">
+    Confirm that **Service** is set to **AWS**. The service selector is disabled in the beta.
+  </Step>
+
+  <Step title="Enter the AWS credential">
+    In **Authentication**, confirm that **Authentication Type** is **Access Key**. Enter the **Access Key ID** and **Secret Access Key** for the AWS collection principal.
+
+    BloodHound Enterprise saves the credential separately from the collection plan. After the credential is saved, the secret value is not displayed again.
+  </Step>
+
+  <Step title="Configure the AWS collection">
+    Define the collection scope and AWS options supported by the form. Match the scope to the permissions you configured in [Configure AWS permissions](/openhound/collectors/aws/configure-permissions).
+  </Step>
+
+  <Step title="Add a daily schedule">
+    Enter a **Schedule Name** if you want the plan to run automatically. Set **Frequency** to **Daily**, then select one of the available **Timeframe** values:
+
+    - **Morning**—approximately 6:00 A.M.
+    - **Noon**—approximately 12:00 P.M.
+    - **Afternoon**—approximately 6:00 P.M.
+    - **Midnight**—approximately 12:00 A.M.
+
+    BloodHound Enterprise displays the selected time in your detected local timezone and shows the corresponding GMT offset. The schedule is stored as a UTC recurrence.
+  </Step>
+
+  <Step title="Save the plan">
+    Select **Save**. The plan appears on the **Collection Plans** page after the save completes.
+  </Step>
+</Steps>
+
+<Note>
+  The Managed Collectors beta is still being rolled out. If the configuration, schedule, or save action is unavailable in your tenant, contact your SpecterOps account team. Do not create a self-deployed collector client as a substitute for this workflow.
+</Note>
+
+## Review collection plans
+
+The **Collection Plans** page displays each plan as a tile. A tile can show:
+
+- The plan name.
+- Its daily schedule, or **No schedule set** when it has no schedule.
+- The latest run time, or **Not run yet** when the plan has not produced a completed run.
+- The latest result: **Success**, **Failed**, or **Cancelled**.
+
+Select **Edit** to update the plan name, AWS configuration, or schedule. Changes apply to future jobs. A job that BloodHound Enterprise already created uses the configuration captured when that job was created.
+
+## Replace an AWS credential
+
+Managed Collectors does not edit a saved secret in place. Create a new plan with the replacement access key pair, confirm that the new plan collects successfully, and then delete the old plan.
+
+<Warning>
+  Never paste a secret access key into a ticket, log, screenshot, or support bundle. BloodHound Enterprise does not display the saved secret value after the credential is created.
+</Warning>
+
+## Delete a collection plan
+
+Delete a plan when you no longer need it or when you have replaced its credentials.
+
+<Steps>
+  <Step title="Open the plan actions">
+    On **Collection Plans**, find the plan and select **Delete**.
+  </Step>
+
+  <Step title="Confirm deletion">
+    Review the confirmation dialog and confirm the deletion. The plan is removed from the collection plan list and future scheduled jobs are no longer created from it.
+  </Step>
+</Steps>
+
+Jobs that BloodHound Enterprise already created are independent snapshots. Deleting or editing the plan does not rewrite a job that is already queued or running.
+
+## Run a collection on demand
+
+On-demand execution is not part of the supported beta workflow. Use a daily schedule while the beta execution workflow is being completed. If your tenant displays a **Run** action but the action does not queue a job, contact your SpecterOps account team with the plan name and time of the attempt.
+
+## Next steps
+
+- [Monitor managed collection](/collect-data/enterprise-collection/managed-collectors/troubleshoot#review-collection-results)
+- [Troubleshoot managed collection](/collect-data/enterprise-collection/managed-collectors/troubleshoot)
+- [Review managed collection security and compliance](/collect-data/enterprise-collection/managed-collectors/security-and-compliance)

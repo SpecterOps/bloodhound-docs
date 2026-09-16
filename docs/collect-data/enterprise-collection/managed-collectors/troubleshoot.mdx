@@ -1,0 +1,88 @@
+---
+title: Troubleshoot managed collectors
+description: Diagnose common AWS Managed Collectors configuration, scheduling, and collection failures.
+hidden: true
+---
+
+import ManagedCollectorsBetaNote from '/snippets/managed-collectors-beta.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<ManagedCollectorsBetaNote />
+
+Use this page to identify whether a managed collection problem comes from beta availability, AWS authentication, permissions, scheduling, or the managed collection service. Record the plan name, time of the attempt, visible result, and error text before you contact your SpecterOps account team.
+
+## Check beta availability
+
+If **Managed Collection** is not present under **Administration** > **Data Collection**, the `managed_openhound_collection` feature is not enabled for your tenant. The feature is SpecterOps-managed and is disabled by default. Contact your account team to confirm beta access.
+
+## Review collection results
+
+On **Collection Plans**, inspect the plan tile and its schedule:
+
+- **No schedule set** means the plan will not create recurring jobs.
+- **Not run yet** means the plan has no completed collection history.
+- **Success** means the latest job completed successfully.
+- **Failed** means the latest job ended with an error. Review the available failure details.
+- **Cancelled** means the latest job was cancelled before completion.
+- **Disabled** next to a schedule means the schedule is paused.
+
+If the page cannot load a schedule or latest result, use the page's **Retry** action. If the problem persists, record the plan name and the error message.
+
+## Resolve common issues
+
+<AccordionGroup>
+  <Accordion title="The AWS credential is rejected">
+    **Likely cause:** The access key ID or secret access key is incorrect, inactive, expired, or not available to the managed collector.
+
+    **Action:** Verify the key pair in AWS without sharing the secret value. Confirm that the key is active and that the plan uses the correct access key ID. Managed Collectors does not edit a saved credential in place; create a new plan with the replacement key pair and delete the old plan after the new plan succeeds.
+  </Accordion>
+
+  <Accordion title="The collection lacks AWS permissions">
+    **Likely cause:** The collection principal cannot read one or more AWS services or accounts in the configured scope.
+
+    **Action:** Compare the plan's scope with the principal's policy. Grant only the read permissions required by the scope, following [Configure AWS permissions](/openhound/collectors/aws/configure-permissions), then create a new plan if the credential also changed.
+  </Accordion>
+
+  <Accordion title="The plan has no collection results">
+    **Likely cause:** The plan has no schedule, the schedule is disabled, or the scheduled job has not been processed yet.
+
+    **Action:** Confirm that the plan displays a daily schedule and that it is not marked **Disabled**. If the schedule is correct and no result appears after the scheduled window, record the plan name and expected run time and contact your account team.
+  </Accordion>
+
+  <Accordion title="The schedule time is unexpected">
+    **Likely cause:** The form displays local time and the GMT offset, while the recurrence is stored in UTC.
+
+    **Action:** Edit the plan and review the detected timezone and GMT offset shown below **Timeframe**. Select the desired timeframe again and save the plan.
+  </Accordion>
+
+  <Accordion title="The collection is incomplete">
+    **Likely cause:** The AWS principal does not have read access to all resources in the configured scope, or the scope excludes the resources you expect.
+
+    **Action:** Confirm the AWS account or organization scope and review the required read-only policy. Use the AWS permissions page to check service-specific permissions, then review the next collection result.
+  </Accordion>
+
+  <Accordion title="A save or run action does not complete">
+    **Likely cause:** The Managed Collectors beta workflow is not enabled for the tenant or the action is still being rolled out.
+
+    **Action:** Retry once. If the action still fails, capture the visible notification, plan name, and timestamp. Contact your SpecterOps account team. Do not include credential values in the report.
+  </Accordion>
+</AccordionGroup>
+
+## Preserve evidence for support
+
+Provide the following non-secret details when you request help:
+
+- Tenant name or identifier through your approved support channel.
+- Collection plan name.
+- AWS collection scope.
+- Expected schedule and detected timezone.
+- Time of the attempted or scheduled run.
+- Result shown in BloodHound Enterprise and the complete visible error text.
+
+Do not provide an access key secret, secret access key, or any other credential material.
+
+## Next steps
+
+- [Configure a managed collection plan](/collect-data/enterprise-collection/managed-collectors/configure)
+- [Review managed collection security and compliance](/collect-data/enterprise-collection/managed-collectors/security-and-compliance)
