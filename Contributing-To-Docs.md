@@ -15,8 +15,8 @@ To set up your local environment for docs:
 1. Create a fork of the BloodHound Docs repository.
 2. Clone your fork into your local development environment.
 3. Install Mintlify, our documentation publishing platform.
-   1. Install node.js (version 19 or higher).
-   2. Install the Mintlify CLI with `npm i -g mintlify`.
+   1. Install node.js (version 20.17.0 or higher).
+   2. Install the Mintlify CLI with `npm i -g mint`.
 
 ### 1. Write the docs
 
