@@ -5,10 +5,10 @@ These instructions apply to BloodHound Community Edition and BloodHound Enterpri
 ## Apply these instructions
 
 - Follow the instruction hierarchy established by the execution environment and apply the most specific applicable `AGENTS.md`.
-- From the repository root, read [`.github/style-guide.md`](/.github/style-guide.md) when writing or substantially editing a page.
-- From the repository root, read [`.github/info-architecture.md`](/.github/info-architecture.md) when adding, moving, or reorganizing pages.
-- From the repository root, read [`.github/mintlify-guidance.md`](/.github/mintlify-guidance.md) when adding or changing Mintlify components.
-- Use the validation checklist in [`.github/validation.md`](/.github/validation.md) before handing off documentation changes. Report any required checks that you could not run.
+- From the repository root, read [`.github/style-guide.md`](../.github/style-guide.md) when writing or substantially editing a page.
+- From the repository root, read [`.github/info-architecture.md`](../.github/info-architecture.md) when adding, moving, or reorganizing pages.
+- From the repository root, read [`.github/mintlify-guidance.md`](../.github/mintlify-guidance.md) when adding or changing Mintlify components.
+- Use the validation checklist in [`.github/validation.md`](../.github/validation.md) before handing off documentation changes. Report any required checks that you could not run.
 
 ## Verify product behavior
 
@@ -27,7 +27,7 @@ Relevant repositories include BloodHound Community Edition, BloodHound Enterpris
 - Identify whether each page, feature, command, permission, or procedure applies to BloodHound Enterprise, BloodHound Community Edition, or both. For product pages, use the established edition pill asset at the top of the page; label edition-specific sections explicitly when a page covers both editions.
 - Never imply that an Enterprise-only capability is available in Community Edition, or that a Community Edition workflow applies unchanged to Enterprise.
 - When editions require different workflows, separate and label them clearly.
-- Use [`/docs/resources/glossary/overview.mdx`](/docs/resources/glossary/overview.mdx) as the source of truth for BloodHound terminology, definitions, capitalization, and product-specific usage. If implementation evidence conflicts with the glossary, verify the current product behavior and update or flag the glossary separately.
+- Use [`resources/glossary/overview.mdx`](resources/glossary/overview.mdx) as the source of truth for BloodHound terminology, definitions, capitalization, and product-specific usage. If implementation evidence conflicts with the glossary, verify the current product behavior and update or flag the glossary separately.
 
 ## Page requirements
 

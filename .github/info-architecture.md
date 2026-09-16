@@ -1,6 +1,6 @@
 # BloodHound documentation information architecture
 
-Use this guide when adding, moving, or reorganizing documentation pages. The public navigation is the source of truth for the site's information architecture. The navigation lives in [`docs/docs.json`](/docs/docs.json); the directory structure supports that navigation but does not replace it.
+Use this guide when adding, moving, or reorganizing documentation pages. The public navigation is the source of truth for the site's information architecture. The navigation lives in [`docs/docs.json`](../docs/docs.json); the directory structure supports that navigation but does not replace it.
 
 ## Site structure
 
