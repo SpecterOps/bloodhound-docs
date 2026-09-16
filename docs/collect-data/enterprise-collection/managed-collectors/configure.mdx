@@ -10,7 +10,7 @@ import ManagedCollectorsBetaNote from '/snippets/managed-collectors-beta.mdx';
 
 <ManagedCollectorsBetaNote />
 
-Use a collection plan to define the AWS credentials, collection scope, and daily schedule for a managed OpenHound collector. After you configure a plan, use its history and result indicators to confirm collection activity.
+Use a collection plan to define the AWS credentials, collection scope, and daily schedule for a managed OpenHound collector. After a plan is available in your tenant, use on-demand collection and its history indicators to validate the credential and confirm collection activity.
 
 ## Prepare your AWS environment
 
@@ -30,48 +30,22 @@ Before you configure a plan, complete the following prerequisites:
   The beta uses an AWS access key and secret access key. Cross-account IAM role assumption through AWS Security Token Service (STS) is not a Managed Collectors beta authentication option. Confirm support for your intended AWS scope with your SpecterOps account team before you configure a plan.
 </Warning>
 
-## Create a collection plan
+## Configure a collection plan
 
-The beta form creates an AWS plan. The **Service** and **Authentication Type** fields are fixed because AWS and access-key authentication are the only beta options.
+<Warning>
+  The collection-plan configuration and save workflow is not available in the current beta build. Do not enter credentials or rely on the steps below until profile creation, AWS configuration fields, and the collection-plan API routes are available in your tenant. This page remains hidden while that work is in progress.
+</Warning>
 
-<Steps>
-  <Step title="Open Managed Collection">
-    In the left menu, select **Administration** > **Data Collection** > **Managed Collection**.
-  </Step>
+When the workflow is enabled, the beta form creates an AWS plan. The **Service** and **Authentication Type** fields are fixed because AWS and access-key authentication are the only beta options.
 
-  <Step title="Start a plan">
-    Select **New Collection**. Enter a descriptive value in **Name**, such as `Production AWS organization`.
-  </Step>
+The planned beta workflow includes:
 
-  <Step title="Confirm the service">
-    Confirm that **Service** is set to **AWS**. The service selector is disabled in the beta.
-  </Step>
-
-  <Step title="Enter the AWS credential">
-    In **Authentication**, confirm that **Authentication Type** is **Access Key**. Enter the **Access Key ID** and **Secret Access Key** for the AWS collection principal.
-
-    BloodHound Enterprise saves the credential separately from the collection plan. After the credential is saved, the secret value is not displayed again.
-  </Step>
-
-  <Step title="Configure the AWS collection">
-    Define the collection scope and AWS options supported by the form. Match the scope to the permissions you configured in [Configure AWS permissions](/openhound/collectors/aws/configure-permissions).
-  </Step>
-
-  <Step title="Add a daily schedule">
-    Enter a **Schedule Name** if you want the plan to run automatically. Set **Frequency** to **Daily**, then select one of the available **Timeframe** values:
-
-    - **Morning**—approximately 6:00 A.M.
-    - **Noon**—approximately 12:00 P.M.
-    - **Afternoon**—approximately 6:00 P.M.
-    - **Midnight**—approximately 12:00 A.M.
-
-    BloodHound Enterprise displays the selected time in your detected local timezone and shows the corresponding GMT offset. The schedule is stored as a UTC recurrence.
-  </Step>
-
-  <Step title="Save the plan">
-    Select **Save**. The plan appears on the **Collection Plans** page after the save completes.
-  </Step>
-</Steps>
+- Open **Administration** > **Data Collection** > **Managed Collection**, then select **New Collection**.
+- Enter a plan **Name** and confirm that **Service** is **AWS**.
+- In **Authentication**, confirm that **Authentication Type** is **Access Key**, then provide the **Access Key ID** and **Secret Access Key**. BloodHound Enterprise saves the credential separately and does not display the secret value again.
+- Configure the AWS collection scope and options supported by the form. Match the scope to the permissions in [Configure AWS permissions](/openhound/collectors/aws/configure-permissions).
+- If you want automatic collection, enter a **Schedule Name**, confirm **Frequency** is **Daily**, and select a **Start Time**. The menu provides every hour from **12:00am** through **11:00pm** in one-hour increments. BloodHound Enterprise displays the selected time in your detected local timezone and shows the corresponding GMT offset; the schedule is stored as a UTC recurrence.
+- Select **Save** after the collection-plan workflow is available. The plan should then appear on the **Collection Plans** page.
 
 <Note>
   The Managed Collectors beta is still being rolled out. If the configuration, schedule, or save action is unavailable in your tenant, contact your SpecterOps account team. Do not create a self-deployed collector client as a substitute for this workflow.
@@ -79,7 +53,7 @@ The beta form creates an AWS plan. The **Service** and **Authentication Type** f
 
 ## Review collection plans
 
-The **Collection Plans** page displays each plan as a tile. A tile can show:
+After the collection-plan workflow is available, the **Collection Plans** page displays each plan as a tile. A tile can show:
 
 - The plan name.
 - Its daily schedule, or **No schedule set** when it has no schedule.
@@ -88,7 +62,7 @@ The **Collection Plans** page displays each plan as a tile. A tile can show:
 
 Select **Edit** to update the plan name, AWS configuration, or schedule. Changes apply to future jobs. A job that BloodHound Enterprise already created uses the configuration captured when that job was created.
 
-The beta does not provide a separate test-connection action. A saved credential is used when a collection job executes, so **Not run yet** does not confirm that the credential or AWS permissions are valid. Review the first collection result and use [Troubleshoot managed collection](/collect-data/enterprise-collection/managed-collectors/troubleshoot) if it fails.
+The beta does not provide a separate test-connection action. A saved credential is used when a collection job executes, so **Not run yet** does not confirm that the credential or AWS permissions are valid. Select **Run** to queue an on-demand collection; this is the quickest beta method for validating the credential. Review the collection result and use [Troubleshoot managed collection](/collect-data/enterprise-collection/managed-collectors/troubleshoot) if it fails.
 
 ## Replace an AWS credential
 
@@ -116,7 +90,19 @@ Jobs that BloodHound Enterprise already created are independent snapshots. Delet
 
 ## Run a collection on demand
 
-On-demand execution is not part of the supported beta workflow. Use a daily schedule while the beta execution workflow is being completed. If your tenant displays a **Run** action but the action does not queue a job, contact your SpecterOps account team with the plan name and time of the attempt.
+After the collection-plan workflow is available, on-demand collection is the quickest beta method for validating a saved AWS credential because the beta does not provide a separate test-connection action.
+
+<Steps>
+  <Step title="Queue the collection">
+    On **Collection Plans**, find the plan and select **Run**. BloodHound Enterprise queues a job using the plan's saved credential and collection configuration.
+  </Step>
+
+  <Step title="Review the result">
+    Review the plan's latest run and result. A failed run indicates that you should check the AWS credential, collection scope, and required permissions before you create a schedule.
+  </Step>
+</Steps>
+
+If **Run** does not queue a job, record the plan name, time of the attempt, and visible error text, then contact your SpecterOps account team. Do not include credential values.
 
 ## Next steps
 
