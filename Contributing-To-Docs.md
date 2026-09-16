@@ -13,8 +13,8 @@ This document covers the necessary steps for contributing to our documentation. 
 To set up your local environment for docs:
 
 1. Create a fork of the BloodHound Docs repository.
-2. Clone your fork into your local development environment.
-3. Install Mintlify, our documentation publishing platform.
+1. Clone your fork into your local development environment.
+1. Install Mintlify, our documentation publishing platform.
    1. Install node.js (version 20.17.0 or higher).
    2. Install the Mintlify CLI with `npm i -g mint`.
 
@@ -56,18 +56,18 @@ To edit the docs:
 
 1. Follow the [documentation style guide](./.github/style-guide.md) and [Mintlify guidance](./.github/mintlify-guidance.md) while writing and formatting the page.
 
-1. From the `docs/` directory, run the required validation commands:
+1. _(Optional)_ Run the following commands to validate your changes:
 
-   ```bash
-   mint validate
-   mint broken-links
-   ```
+   | Command | Description |
+   | ------- | ----------- |
+   | `mint validate` | Validates changes for build errors |
+   | `mint broken-links` | Checks for broken links |
+   | `mint a11y` | Checks for accessibility issues |
+   | `mint dev` | Starts a local development server for previewing the documentation site |
 
-1. Run `mint a11y`, `mint test`, or `mint dev` when the change involves images, UI instructions, navigation, layout, runnable code blocks, or a local preview.
+   If you get stuck on local development, see the [Mintlify documentation](https://mintlify.com/docs/development).
 
-   If you get stuck on local development, see the [Mintlify development documentation](https://mintlify.com/docs/development).
-
-1. Use this checklist to review your docs for quality.
+2. Use this checklist to review your docs for quality.
    
    - **Task-ify page titles and headings**: Where possible, use task-based titles like “Create a data collection schedule” instead of “Creating a data collection schedule”.
 
@@ -91,6 +91,6 @@ To get your docs reviewed:
 
 ## 4. Publish the docs
 
-After you’ve addressed all the reviewers’ feedback and approve your PR, the reviewers will merge your changes into the main branch and they will automatically deploy!
+After you’ve addressed all the feedback and your pull request has been approved by the reviewers, the reviewers will merge your changes into the main branch and they will automatically deploy!
 
 Congratulations and thank you for your contribution!
