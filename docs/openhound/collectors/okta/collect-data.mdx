@@ -137,6 +137,88 @@ Application-group assignments are collected from each application's public assig
   If the initial expanded group page repeatedly times out on large Okta tenants, the collector retries that first page with successively halved page sizes before failing. With the default `GROUPS_PAGE_SIZE` of 200, that fallback sequence is 200, then 100, then 50.
 </Note>
 
+## Performance telemetry
+
+Use optional collection performance telemetry to diagnose and tune Okta collection performance.
+
+Telemetry is disabled by default and does not change the collection scope, schedule, Okta permissions, or number of Okta requests.
+
+When enabled, the collector writes bounded, value-free JSONL diagnostics for endpoint latency, HTTP outcomes, retries, quota observations, concurrency, pacing, pagination, and row counts.
+
+<Steps>
+  <Step title="Configure telemetry">
+
+    Add the following section to `config.toml`:
+
+    ```toml title="config.toml"
+    [sources.source.okta.telemetry]
+    enabled = true
+    output_directory = "./telemetry"
+    reporting_interval_seconds = 60
+    max_file_bytes = 10485760
+    max_interval_records = 1440
+    queue_capacity = 16
+    ```
+
+    `output_directory` must be outside the raw collection output directory.
+
+    The collector rejects a nested location so the telemetry file is not treated as collection data or uploaded with it.
+
+  </Step>
+  <Step title="Run the collection">
+
+    Run the Okta collection normally. The same configuration applies to interactive, scheduled, and containerized collections.
+
+    Each collection writes one file named `openhound-okta-<opaque-run-id>.jsonl` in the configured output directory.
+
+  </Step>
+  <Step title="Review the diagnostics">
+
+    Each JSONL line is an independently parseable record.
+
+    The file starts with a `run_start` record, followed by periodic `interval` records, and normally ends with a `run_summary` record. Interrupted or incomplete collections retain records that were flushed before the interruption.
+
+  </Step>
+</Steps>
+
+### Telemetry settings
+
+You can set the following values in `config.toml` or with the equivalent environment variable. Environment variables take precedence over `config.toml`.
+
+| TOML key | Environment variable | Default | Description |
+| --- | --- | ---: | --- |
+| `enabled` | `SOURCES__SOURCE__OKTA__TELEMETRY__ENABLED` | `false` | Enables telemetry. No telemetry file is created when this is `false` or omitted. |
+| `output_directory` | `SOURCES__SOURCE__OKTA__TELEMETRY__OUTPUT_DIRECTORY` | `./telemetry` | Directory for the JSONL file. It must be outside the raw collection output directory. |
+| `reporting_interval_seconds` | `SOURCES__SOURCE__OKTA__TELEMETRY__REPORTING_INTERVAL_SECONDS` | `60` | Interval at which the collector flushes aggregated diagnostic records. Must be greater than zero. |
+| `max_file_bytes` | `SOURCES__SOURCE__OKTA__TELEMETRY__MAX_FILE_BYTES` | `10485760` | Maximum telemetry file size. Must be at least `65536` bytes. |
+| `max_interval_records` | `SOURCES__SOURCE__OKTA__TELEMETRY__MAX_INTERVAL_RECORDS` | `1440` | Maximum number of interval records. Must be at least `1`. |
+| `queue_capacity` | `SOURCES__SOURCE__OKTA__TELEMETRY__QUEUE_CAPACITY` | `16` | Maximum number of records waiting for export. Must be at least `2`. |
+
+The collector bounds telemetry memory, queue depth, interval records, and file size. If the telemetry destination is unavailable, the exporter fails, or a limit is reached, the collection continues.
+
+The diagnostic records indicate dropped records, truncation, or exporter failure; an incomplete telemetry summary does not mean that the Okta collection failed.
+
+### Telemetry metrics
+
+Telemetry separates the following measurements so you can identify where collection time is spent:
+
+| Measurement | Description |
+| --- | --- |
+| `http_execution` | Measures request execution through response-body transfer. It excludes JSON decoding and downstream DLT row conversion. |
+| `slot_wait` | Measures time waiting for the Okta endpoint-family concurrency slot. |
+| `proactive_pacing_wait` | Measures waits caused by pacing against observed quota headers. |
+| `retry_backoff_wait` | Measures the actual wait before a retry. Retry delay totals are also recorded by retry category. |
+
+The summary records the effective DLT extraction settings (`extract_workers` and `extract_max_parallel_items`) and the effective Okta performance settings, including page sizes, endpoint concurrency, retry window, and rate-limit reserve.
+
+Page and row counts describe data yielded by Okta pagination; they do not confirm that DLT committed the rows to the raw collection.
+
+<Warning>
+  Telemetry uses normalized endpoint templates and excludes credentials, tenant hostnames, raw URLs, cursors, object identifiers, response bodies, profiles, and exception text.
+
+  Store the JSONL files as diagnostic artifacts and do not place them under the raw collection directory.
+</Warning>
+
 ## Running OpenHound and Collecting Data
 
 <RunAndCollect source="Okta" env="organization" />
