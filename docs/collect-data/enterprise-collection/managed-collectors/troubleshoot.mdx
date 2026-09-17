@@ -10,11 +10,11 @@ import ManagedCollectorsBetaNote from '/snippets/managed-collectors-beta.mdx';
 
 <ManagedCollectorsBetaNote />
 
-Use this page to identify whether a managed collection problem comes from beta availability, AWS authentication, permissions, scheduling, or the managed collection service. Record the plan name, time of the attempt, visible result, and error text before you contact your SpecterOps account team.
+Use this page to identify whether a managed collection problem comes from beta availability, AWS authentication, permissions, scheduling, or the managed collection service. The current beta build may expose the navigation and early plan UI before the complete production workflow is enabled. Record the plan name, time of the attempt, visible result, and error text before you contact your SpecterOps account team.
 
 ## Check beta availability
 
-If **Managed Collection** is not present under **Administration** > **Data Collection**, the `managed_openhound_collection` feature is not enabled for your tenant. The feature is SpecterOps-managed and is disabled by default. Contact your account team to confirm beta access.
+If **Managed Collection** is not present under **Administration** > **Data Collection**, the `managed_openhound_collection` feature is not enabled for your tenant. The feature is SpecterOps-managed, disabled by default, and not user-updatable. Contact your account team to confirm beta access.
 
 ## Understand beta health signals
 
@@ -27,7 +27,7 @@ On **Collection Plans**, inspect the plan tile and its schedule:
 - **No schedule set** means the plan will not create recurring jobs.
 - **Not run yet** means the plan has no completed collection history.
 - **Success** means the latest job completed successfully.
-- **Failed** means the latest job ended with an error. Review the available failure details.
+- **Failed** means the latest job ended with an error. The current tile shows the outcome and timestamp, but not the full failure metadata.
 - **Cancelled** means the latest job was cancelled before completion.
 - **Disabled** next to a schedule means the schedule is paused.
 
@@ -39,7 +39,7 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
   <Accordion title="The AWS credential is rejected">
     **Likely cause:** The access key ID or secret access key is incorrect, inactive, expired, or not available to the managed collector.
 
-    **Action:** Verify the key pair in AWS without sharing the secret value. Confirm that the key is active and that the plan uses the correct access key ID. Managed Collectors does not edit a saved credential in place; create a new plan with the replacement key pair and delete the old plan after the new plan succeeds.
+    **Action:** Verify the key pair in AWS without sharing the secret value. Confirm that the key is active and that the plan uses the correct access key ID. Managed Collectors does not edit a saved credential in place; when the complete workflow is available, create a new plan with the replacement key pair. Deleting the old plan does not revoke the old AWS key or automatically delete its secret reference.
   </Accordion>
 
   <Accordion title="The collection lacks AWS permissions">
@@ -57,7 +57,7 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
   <Accordion title="The managed collector appears unavailable">
     **Likely cause:** The managed worker is not processing jobs, or several plans are affected by a service-level problem. Customer users see plan results, not the managed worker's detailed health state.
 
-    **Action:** Confirm that the affected plans have active daily schedules and record the expected run times. Contact your SpecterOps account team with the affected plan names and timestamps so they can review service health and detailed logs.
+    **Action:** Confirm that the affected plans have active daily schedules and record the expected run times. If the complete workflow is enabled and several plans are affected, contact your SpecterOps account team with the affected plan names and timestamps so they can review service health and detailed logs.
   </Accordion>
 
   <Accordion title="The schedule time is unexpected">
@@ -75,7 +75,7 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
   <Accordion title="The credential is close to expiration">
     **Likely cause:** The beta does not provide proactive credential or certificate expiry warnings.
 
-    **Action:** Track the AWS key lifecycle in your organization's credential-management process. Create a replacement plan before the key expires, confirm a successful result, then delete the old plan and disable the old key in AWS.
+    **Action:** Track the AWS key lifecycle in your organization's credential-management process. Create a replacement plan before the key expires, confirm a successful result, disable or delete the old key in AWS, and follow the SpecterOps-provided process for deleting the old secret reference.
   </Accordion>
 
   <Accordion title="A network allowlist blocks collection">
@@ -85,7 +85,7 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
   </Accordion>
 
   <Accordion title="A save or run action does not complete">
-    **Likely cause:** The Managed Collectors beta workflow is not enabled for the tenant or the action is still being rolled out.
+    **Likely cause:** The Managed Collectors beta workflow is not enabled for the tenant, the action is still being rolled out, or the current build does not yet include the production profile or queue route.
 
     **Action:** Retry once. If the action still fails, capture the visible notification, plan name, and timestamp. Contact your SpecterOps account team. Do not include credential values in the report.
   </Accordion>

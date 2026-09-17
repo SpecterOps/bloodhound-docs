@@ -10,14 +10,14 @@ import ManagedCollectorsBetaNote from '/snippets/managed-collectors-beta.mdx';
 
 <ManagedCollectorsBetaNote />
 
-Use a collection plan to define the AWS credentials, collection scope, and daily schedule for a managed OpenHound collector. After a plan is available in your tenant, use on-demand collection and its history indicators to validate the credential and confirm collection activity.
+Use a collection plan to define the AWS credentials, collection scope, and daily schedule for a managed OpenHound collector. After the complete workflow is available in your tenant, use on-demand collection and its history indicators to validate the credential and confirm collection activity.
 
 ## Prepare your AWS environment
 
 Before you configure a plan, complete the following prerequisites:
 
 - Your BloodHound Enterprise tenant has Managed Collectors enabled by SpecterOps.
-- You are signed in with an account that can manage collector jobs.
+- You are signed in with an account that has permission to manage collector jobs.
 - You have an AWS access key ID and secret access key for a collection principal.
 - The collection principal has the required read-only permissions for your target AWS account or organization. Follow [Configure AWS permissions](/openhound/collectors/aws/configure-permissions).
 - You know the AWS account and collection scope that the plan should use.
@@ -33,7 +33,7 @@ Before you configure a plan, complete the following prerequisites:
 ## Configure a collection plan
 
 <Warning>
-  The collection-plan configuration and save workflow is not available in the current beta build. Do not enter credentials or rely on the steps below until profile creation, AWS configuration fields, and the collection-plan API routes are available in your tenant. This page remains hidden while that work is in progress.
+  The current beta build contains the collection-plan route, authentication UI, schedule UI, and shared API contracts, but it does not provide the complete production save workflow. AWS configuration fields, profile creation and update, and the production collection-job routes are still being implemented. Do not enter credentials or rely on the steps below until your SpecterOps account team confirms that the complete workflow is available in your tenant.
 </Warning>
 
 When the workflow is enabled, the beta form creates an AWS plan. The **Service** and **Authentication Type** fields are fixed because AWS and access-key authentication are the only beta options.
@@ -43,7 +43,7 @@ The planned beta workflow includes:
 - Open **Administration** > **Data Collection** > **Managed Collection**, then select **New Collection**.
 - Enter a plan **Name** and confirm that **Service** is **AWS**.
 - In **Authentication**, confirm that **Authentication Type** is **Access Key**, then provide the **Access Key ID** and **Secret Access Key**. BloodHound Enterprise saves the credential separately and does not display the secret value again.
-- Configure the AWS collection scope and options supported by the form. Match the scope to the permissions in [Configure AWS permissions](/openhound/collectors/aws/configure-permissions).
+- Configure the AWS collection scope and options supported by the form. The current beta build does not yet expose the AWS configuration fields. When they become available, match the scope to the permissions in [Configure AWS permissions](/openhound/collectors/aws/configure-permissions).
 - If you want automatic collection, enter a **Schedule Name**, confirm **Frequency** is **Daily**, and select a **Start Time**. The menu provides every hour from **12:00am** through **11:00pm** in one-hour increments. BloodHound Enterprise displays the selected time in your detected local timezone and shows the corresponding GMT offset; the schedule is stored as a UTC recurrence.
 - Select **Save** after the collection-plan workflow is available. The plan should then appear on the **Collection Plans** page.
 
@@ -60,13 +60,15 @@ After the collection-plan workflow is available, the **Collection Plans** page d
 - The latest run time, or **Not run yet** when the plan has not produced a completed run.
 - The latest result: **Success**, **Failed**, or **Cancelled**.
 
-Select **Edit** to update the plan name, AWS configuration, or schedule. Changes apply to future jobs. A job that BloodHound Enterprise already created uses the configuration captured when that job was created.
+The current edit page can display plan details and the schedule form, but profile name and AWS configuration updates are not yet wired to the production save workflow. Authentication settings remain immutable after a credential is saved. When profile updates are available, changes will apply to future jobs. A job that BloodHound Enterprise already created uses the configuration captured when that job was created.
 
-The beta does not provide a separate test-connection action. A saved credential is used when a collection job executes, so **Not run yet** does not confirm that the credential or AWS permissions are valid. Select **Run** to queue an on-demand collection; this is the quickest beta method for validating the credential. Review the collection result and use [Troubleshoot managed collection](/collect-data/enterprise-collection/managed-collectors/troubleshoot) if it fails.
+The beta does not provide a separate test-connection action. A saved credential is used when a collection job executes, so **Not run yet** does not confirm that the credential or AWS permissions are valid. When the production queue route is available, select **Run** to queue an on-demand collection. The action does not itself indicate terminal completion; wait for the latest history result, then use [Troubleshoot managed collection](/collect-data/enterprise-collection/managed-collectors/troubleshoot) if it fails.
 
 ## Replace an AWS credential
 
-Managed Collectors does not edit a saved secret in place. Create a new plan with the replacement access key pair, confirm that the new plan collects successfully, and then delete the old plan.
+Managed Collectors does not edit a saved secret in place. The current collection-job design treats secret deletion as a separate operation from plan deletion: deleting a plan removes its profile and schedule links but does not revoke the AWS key or automatically delete the secret reference. Do not use plan deletion alone as credential rotation.
+
+When the complete workflow is available, create a new plan with the replacement access key pair, confirm that the new plan collects successfully, revoke the old AWS key according to your organization's credential policy, and follow the SpecterOps-provided process for removing the old secret reference.
 
 <Warning>
   Never paste a secret access key into a ticket, log, screenshot, or support bundle. BloodHound Enterprise does not display the saved secret value after the credential is created.
@@ -74,7 +76,7 @@ Managed Collectors does not edit a saved secret in place. Create a new plan with
 
 ## Delete a collection plan
 
-Delete a plan when you no longer need it or when you have replaced its credentials.
+Delete a plan when you no longer need it or when you have replaced its credentials. Deleting a plan does not revoke the AWS key or automatically delete its secret reference.
 
 <Steps>
   <Step title="Open the plan actions">
@@ -82,11 +84,11 @@ Delete a plan when you no longer need it or when you have replaced its credentia
   </Step>
 
   <Step title="Confirm deletion">
-    Review the confirmation dialog and confirm the deletion. The plan is removed from the collection plan list and future scheduled jobs are no longer created from it.
+    Review the confirmation dialog and confirm the deletion. The plan is removed from the collection plan list and future scheduled jobs are no longer created from it. Linked schedule records survive profile deletion in the collector-job design.
   </Step>
 </Steps>
 
-Jobs that BloodHound Enterprise already created are independent snapshots. Deleting or editing the plan does not rewrite a job that is already queued or running.
+Jobs that BloodHound Enterprise already created are independent snapshots. Deleting or editing the plan does not rewrite a job that is already queued or running. Revoking the credential used by a queued or running job can still cause that job to fail.
 
 ## Run a collection on demand
 

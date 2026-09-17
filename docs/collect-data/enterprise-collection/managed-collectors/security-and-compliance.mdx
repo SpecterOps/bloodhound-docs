@@ -10,7 +10,7 @@ import ManagedCollectorsBetaNote from '/snippets/managed-collectors-beta.mdx';
 
 <ManagedCollectorsBetaNote />
 
-Managed Collectors reduces the infrastructure you operate for AWS data collection, but your organization remains responsible for choosing the AWS scope, granting collection permissions, and protecting the credential you provide. This page describes the beta credential and data-handling model.
+Managed Collectors reduces the infrastructure you operate for AWS data collection, but your organization remains responsible for choosing the AWS scope, granting collection permissions, and protecting the credential you provide. This page describes the intended beta credential and data-handling model; the complete workflow is not available in the current BHE build.
 
 ## Understand the security model
 
@@ -25,7 +25,7 @@ flowchart LR
     AWS[Customer AWS environment]
 
     BHE -->|Triggers credential lifecycle| Jobs
-    Jobs -->|Creates and deletes the tenant credential| Secrets
+    Jobs -->|Manages tenant credential lifecycle| Secrets
     Collector -->|Reads the credential when a job runs| Secrets
     Collector -->|Reads resources with customer-granted permissions| AWS
     Collector -->|Uploads collected data| BHE
@@ -42,7 +42,7 @@ The beta accepts one AWS access key pair for each collection plan:
 
 When you create a plan, the Jobs Engine sends the secret value to AWS Secrets Manager and stores a reference to it. The collector jobs database stores reference metadata, not the secret value. BloodHound Enterprise does not read the secret value back, and the edit form shows only the saved key identifier. The managed collector reads the configured secret directly from AWS Secrets Manager when it performs collection.
 
-The Jobs Engine writes and deletes customer secrets. The managed OpenHound collector has read-only access to the secret. The design does not provide an in-place credential edit operation during the beta.
+The Jobs Engine writes and deletes customer secrets when those lifecycle operations are invoked. The managed OpenHound collector has read-only access to the secret. The design does not provide an in-place credential edit operation during the beta.
 
 <Warning>
   Treat the secret access key as a long-lived credential. Do not reuse it for unrelated workloads, commit it to source control, or include it in screenshots, logs, or support requests.
@@ -54,10 +54,10 @@ The beta does not support editing a saved credential in place. To rotate a crede
 
 1. Create a new collection plan with the replacement AWS access key pair.
 2. Confirm that the new plan can collect from the intended scope.
-3. Delete the old collection plan.
-4. Disable or delete the old AWS access key in AWS according to your organization's credential policy.
+3. Disable or delete the old AWS access key in AWS according to your organization's credential policy.
+4. Follow the SpecterOps-provided process for deleting the old secret reference.
 
-Deleting the old plan removes its credential binding and triggers irreversible secret deletion. Deletion can complete asynchronously. A job that BloodHound Enterprise already created uses its captured configuration and may finish independently.
+Deleting the old plan removes its profile and schedule links; it does not automatically delete the secret reference or revoke the AWS key. Secret deletion is a separate operation that detaches referencing profiles. A job that BloodHound Enterprise already created keeps its captured key reference, but it can fail if the underlying AWS key is revoked.
 
 ## Apply least privilege in AWS
 
@@ -81,7 +81,7 @@ BloodHound Enterprise displays basic collection errors and plan results. The acc
 
 Managed OpenHound uploads collected data to your BloodHound Enterprise tenant for processing and graph analysis. BloodHound Enterprise's normal data retention and deletion controls apply to the ingested graph data; review [Data reconciliation and retention](/collect-data/enterprise-collection/data-retention) for those controls.
 
-Managed collector job history is separate from graph data and contains job metadata and outcome details, not the AWS secret value. The collector-job design treats outcome history as immutable; the related ADRs do not define a customer-configurable retention period.
+Managed collector job history is separate from graph data and contains job metadata and outcome details, not the AWS secret value. The collector-job design treats outcome history as immutable and retains it for 90 days in phase 1. The retention period is not customer-configurable.
 
 ## Understand tenant isolation
 

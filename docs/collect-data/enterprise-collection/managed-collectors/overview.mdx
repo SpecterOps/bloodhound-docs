@@ -10,13 +10,15 @@ import ManagedCollectorsBetaNote from '/snippets/managed-collectors-beta.mdx';
 
 <ManagedCollectorsBetaNote />
 
-Managed Collectors lets BloodHound Enterprise run an OpenHound collector for you. You configure an AWS collection plan in BloodHound Enterprise, and SpecterOps operates the managed collector that reads your AWS environment and uploads the results for analysis.
+Managed Collectors is a planned BloodHound Enterprise workflow for running an OpenHound collector for you. You configure an AWS collection plan in BloodHound Enterprise, and SpecterOps operates the managed collector that reads your AWS environment and uploads the results for analysis.
+
+The current beta build includes the Managed Collection navigation and early collection-plan UI, but collection-plan save and managed collector job processing are still being implemented. Keep this page hidden until your tenant has the complete workflow enabled.
 
 Managed collection is a convenience layer. It does not replace [self-deployed OpenHound collection](/openhound/collectors/aws/overview) when you need to operate the collector in your own environment.
 
 ## Why use Managed Collectors
 
-Managed Collectors removes the customer-side collector infrastructure step. You do not deploy a container, maintain its host, or plan collector upgrades. Instead, you manage collection plans and schedules in BloodHound Enterprise and review the resulting collection activity in one place.
+When available, Managed Collectors removes the customer-side collector infrastructure step. You do not deploy a container, maintain its host, or plan collector upgrades. Instead, you manage collection plans and schedules in BloodHound Enterprise and review the resulting collection activity in one place.
 
 This model is intended to reduce the time required to start a collection and the amount of daily validation and troubleshooting required to keep it running.
 
@@ -29,12 +31,12 @@ The beta supports the following workflow:
 | Capability | Beta behavior |
 | --- | --- |
 | Collector | SpecterOps-managed OpenHound |
-| Runtime | One managed collector worker; collection jobs run serially in the beta |
+| Runtime | Managed collector job processing is provided by the managed service; processing is not available in the current BHE build |
 | Extension | AWS collection only |
 | Extension trust | SpecterOps-authored and approved extensions only |
 | Authentication | AWS access key and secret access key (`auth_key`) |
-| Collection plans | Multiple plans are supported; each plan describes one AWS collection configuration |
-| Schedule | One daily schedule per collection plan |
+| Collection plans | Multiple plans are supported by the collection-plan model; each plan describes one AWS collection configuration |
+| Schedule | The beta form supports one daily schedule per plan; the underlying job API supports multiple schedules linked to a plan |
 | Cross-account authentication | AWS role assumption through STS is not supported in the beta |
 | Availability | Selected tenants with the `managed_openhound_collection` feature enabled |
 
@@ -42,7 +44,7 @@ Additional extensions, authentication methods, schedule frequencies, cross-accou
 
 ## Learn the core concepts
 
-A **collection plan** tells BloodHound Enterprise what to collect, which credential to use, and when to create collection jobs. You can use a plan to queue an on-demand job or create a schedule for automatic collection. A plan contains:
+A **collection plan** tells BloodHound Enterprise what to collect, which credential to use, and when to create collection jobs. When the workflow is available, you can use a plan to queue an on-demand job or create a schedule for automatic collection. A plan contains:
 
 - A name and target service. The beta supports **AWS**.
 - An AWS collection configuration and scope.
@@ -53,7 +55,7 @@ A **managed collector** is the OpenHound service that SpecterOps deploys and ope
 
 ## Follow the managed collection workflow
 
-The following diagram shows the high-level flow. BloodHound Enterprise stores credential references and job configuration separately from the credential material.
+The following diagram shows the intended high-level flow. BloodHound Enterprise stores credential references and job configuration separately from the credential material.
 
 ```mermaid
 sequenceDiagram
@@ -75,6 +77,8 @@ sequenceDiagram
 ```
 
 The plan is the reusable configuration. Each scheduled execution creates a job from the plan, so later edits affect future jobs rather than changing a job that is already in progress.
+
+The current BHE implementation does not yet provide the complete profile, schedule, secret, queue, or history workflow shown here.
 
 ## Protect collection credentials
 
