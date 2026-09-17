@@ -1,0 +1,143 @@
+---
+title: Package an extension bundle
+sidebarTitle: Extension Bundles
+description: Internal guidance for packaging OpenGraph extension bundles for BloodHound.
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+
+<Warning>
+  This is internal guidance for SpecterOps extension authors. It describes the v9.8.0 implementation state and is not a declaration that GitHub, Okta, or Jamf are ready to migrate to bundles.
+</Warning>
+
+An **extension bundle** is a ZIP archive that packages an OpenGraph extension definition schema with the extension-managed assets that BloodHound installs with it.
+
+The bundle gives one extension one installable artifact and gives the platform a single source of truth for the extension's schema and managed assets.
+
+## Implementation status
+
+The ZIP parser is implemented in the [`PUT /api/v2/extensions`](https://bloodhound.specterops.io/reference/opengraph-experimental/upserts-the-opengraph-extension) upload path for Community and Enterprise. The BloodHound Enterprise startup loader also accepts ZIP bundles.
+
+<Warning>
+  The component lifecycle is not complete for every component.
+</Warning>
+
+| Component | Current implementation state | Author action for v9.8.0 |
+|---|---|---|
+| `schema.json` | Required and installed through the API and startup loader. | Keep the extension definition schema as the bundle's required component. |
+| `pz_rules.json` | The bundle parser reads the component and maps it to `PZRulesInput`, but the extension upsert service does not persist that input. [BED-9319](https://specterops.atlassian.net/browse/BED-9319) remains in progress. | Do not migrate GitHub, Okta, or Jamf Privilege Zone rules to bundles yet.<br/><br/>Continue using the existing standalone asset workflow. |
+| `saved_queries.json` | Both editions parse the component.<br/><br/>Enterprise also has database reconciliation for extension-associated queries, but saved-query attribution, read-path, and mutation-guard work remains incomplete ([BED-9322](https://specterops.atlassian.net/browse/BED-9322), [BED-9498](https://specterops.atlassian.net/browse/BED-9498), and [BED-9553](https://specterops.atlassian.net/browse/BED-9553)).<br/><br/>Community does not persist the optional component in its current upsert path. | Do not make bundle-installed saved queries part of the v9.8.0 pre-installed-extension rollout.<br/><br/>Keep the existing standalone saved-query workflow. |
+
+The practical v9.8.0 adoption boundary for the three pre-installed extensions is therefore **schema-only bundle plumbing and validation**. Do not change the production GitHub, Okta, or Jamf artifacts from JSON to ZIP until the PZ persistence work, saved-query lifecycle work, and artifact publication changes are complete.
+
+The parser accepting an optional component does not mean that the component is fully supported. Treat an upload that returns success as confirmation that the bundle was accepted, not as confirmation that every optional asset was installed.
+
+## ZIP archive structure
+
+Place the recognized component files at the root of the ZIP archive:
+
+<Tree>
+  <Tree.Folder name="<extension-name>-v<version>.zip" defaultOpen>
+    <Tree.File name="schema.json" />
+    <Tree.File name="pz_rules.json" />
+    <Tree.File name="saved_queries.json" />
+  </Tree.Folder>
+</Tree>
+
+The following rules apply to the archive:
+
+- `schema.json` is required.
+
+- `pz_rules.json` and `saved_queries.json` are optional at the parser boundary, but do not ship them for the v9.8.0 GitHub, Okta, or Jamf migration until their lifecycle work is complete.
+
+- Use the exact root-level file names. Nested files, documentation files, checksums, and other extra files are rejected as unexpected components.
+
+- Include each component at most once. Duplicate component names are rejected.
+
+- For the BHE API, keep each recognized component at or below the 10 MiB decompressed component limit.
+
+- Keep the optional components separate from `schema.json`. A `schema.json` file that embeds `pz_rules` or `queries` is rejected when it is uploaded as part of a bundle.
+
+The schema itself keeps the existing [extension definition schema](https://bloodhound.specterops.io/opengraph/developer/graph-definition) format. A minimal schema-only bundle is valid when `schema.json` contains the required `schema`, `node_kinds`, `relationship_kinds`, and any applicable `environments` and `relationship_findings` definitions.
+
+<Note>
+  If `schema.json` declares relationship findings, the API requires `pz_rules.json` and at least one rule.
+
+  Because PZ rule persistence is not complete, do not use a bundle as the rollout artifact for an extension with relationship findings until [BED-9319](https://specterops.atlassian.net/browse/BED-9319) is complete and verified.
+</Note>
+
+## Privilege Zone rule contract
+
+The current parser contract for `pz_rules.json` is a single JSON object containing a `rules` array. Each rule has a name, an optional description, an optional `auto_certify` flag, and one or more seeds.
+
+```json title="pz_rules.json"
+{
+  "rules": [
+    {
+      "name": "GitHub: Tier Zero principals",
+      "description": "Identifies GitHub principals assigned to Tier Zero.",
+      "auto_certify": false,
+      "seeds": [
+        {
+          "type": 2,
+          "value": "MATCH (n:GH_User) WHERE n.tier = 0 RETURN n"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Use the following seed type values:
+
+| `type` | Seed value |
+|---|---|
+| `1` | An object ID |
+| `2` | A Cypher query that returns the seed objects |
+
+The current payload model requires every rule to have a non-empty `name`, at least one seed, and a non-empty seed `value`. `auto_certify: true` maps to automatic certification for all members; `false` or omission disables automatic certification in the mapped input.
+
+Do not copy the standalone OpenHound rule-file fields into this component. The current bundle payload does not define `zone`, `enabled`, `allow_disable`, or `key`, and the current upsert path does not persist bundle Privilege Zone rules.
+
+## Saved query contract
+
+The current parser recognizes `saved_queries.json` as an object with a top-level `queries` array—not a top-level `saved_queries` property.
+
+```json title="saved_queries.json"
+{
+  "queries": [
+    {
+      "query_key": "github-critical-repositories",
+      "name": "GitHub: Critical repositories",
+      "query": "MATCH (n:GH_Repository) WHERE n.critical = true RETURN n",
+      "description": "Lists repositories marked as critical.",
+      "category": "GitHub"
+    }
+  ]
+}
+```
+
+The current validation requires a non-empty `query_key`, `name`, and `query`; query keys and names must be unique within the component; and the query must parse as valid Cypher.
+
+The upsert path associates created queries with the extension and makes them public. It also reconciles the submitted set: omitting the component produces an empty desired query set, so an update can remove existing extension-associated queries.
+
+<Warning>  
+  Treat this as an implementation reference only. Do not use it as a v9.8.0 adoption contract until the saved-query UI, read paths, and mutation protections are complete.
+</Warning>
+
+## Prepare GitHub, Okta, and Jamf for adoption
+
+Until the rollout gates are complete, keep each extension repository's current source layout and publication flow:
+
+- Keep `extension/schema.json` as the source schema.
+- Keep the existing `extension/privilege_zone_rules` files and `extension/saved_searches` files for the manual extension installation workflows.
+- Do not replace the standalone files with a ZIP artifact in the BHE extension artifact pipeline.
+
+When the remaining implementation is complete, update each extension's release process to generate a ZIP whose root contains the schema and the finalized managed components. Test the same ZIP through both consumers:
+
+1. Upload it through `PUT /api/v2/extensions` with an accepted ZIP content type.
+2. Load it through the BHE embedded extension directory used by the startup loader.
+3. Verify the installed extension version and confirm that Privilege Zone rules and saved queries reconcile on both first install and update.
+4. Update the `bhe-extensions` publication artifact and the BHE Dockerfile versioned artifact references together.
+
+For the current customer-facing workflow, use [Manage Extensions](https://bloodhound.specterops.io/opengraph/extensions/manage) to verify or install the schema and [Upload Extension Assets](https://bloodhound.specterops.io/openhound/upload-extension-assets) to upload the standalone OpenHound saved queries and Privilege Zone rules.
