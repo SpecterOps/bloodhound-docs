@@ -12,6 +12,8 @@ Represents a GitHub Actions deployment environment configured on a repository. E
 
 Repositories always contain their environments. When custom branch policies are configured, the environment also contains one or more [GH_EnvironmentBranchPolicy](/opengraph/extensions/github/nodes/gh_environmentbranchpolicy) nodes that describe which branches are allowed to deploy. Environment-scoped secrets and variables are modeled as child nodes of the environment and become available to workflow jobs that reference it.
 
+[GH_CanRequestOIDCTokenFor](/opengraph/extensions/github/edges/gh_canrequestoidctokenfor) edges from [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) nodes identify jobs with a static upper-bound capability to request a GitHub-signed OIDC token for this environment because their effective `GITHUB_TOKEN` permissions include `id-token:write`. Runtime permission recalculation, such as forked `pull_request` permission downgrades, may prevent a specific execution from requesting OIDC even when this edge exists.
+
 ## Properties
 
 | Property | Type | Description |
@@ -98,6 +100,7 @@ flowchart LR
     GH_Team -- GH_CanDeployToEnvironment --> GH_Environment
     GH_User -- GH_ApprovesDeploymentTo --> GH_Environment
     GH_User -- GH_CanDeployToEnvironment --> GH_Environment
+    GH_WorkflowJob -- GH_CanRequestOIDCTokenFor --> GH_Environment
     GH_WorkflowJob -- GH_DeploysTo --> GH_Environment
 ```
 
@@ -108,6 +111,7 @@ flowchart LR
 | [GH_ApprovesDeploymentTo](/opengraph/extensions/github/edges/gh_approvesdeploymentto) | [GH_Team](/opengraph/extensions/github/nodes/gh_team), [GH_User](/opengraph/extensions/github/nodes/gh_user) | ❌ |
 | [GH_CanDeployToEnvironment](/opengraph/extensions/github/edges/gh_candeploytoenvironment) | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch), [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole), [GH_Repository](/opengraph/extensions/github/nodes/gh_repository), [GH_Team](/opengraph/extensions/github/nodes/gh_team), [GH_User](/opengraph/extensions/github/nodes/gh_user) | ✅ |
 | [GH_CanEditEnvironment](/opengraph/extensions/github/edges/gh_caneditenvironment) | [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | ✅ |
+| [GH_CanRequestOIDCTokenFor](/opengraph/extensions/github/edges/gh_canrequestoidctokenfor) | [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | ✅ |
 | [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
 | [GH_DeploysTo](/opengraph/extensions/github/edges/gh_deploysto) | [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | ❌ |
 

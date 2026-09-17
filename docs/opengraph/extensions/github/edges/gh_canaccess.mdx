@@ -1,6 +1,6 @@
 ---
 title: 'GH_CanAccess'
-description: 'Personal access token or app installation can access this repository or organization'
+description: 'Personal access token, app installation, or deploy key can access this repository or organization'
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
@@ -11,6 +11,7 @@ description: 'Personal access token or app installation can access this reposito
 
 | Start | Kind | End |
 |-------|-----------|-------|
+| [GH_DeployKey](/opengraph/extensions/github/nodes/gh_deploykey) | GH_CanAccess | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) |
 | [GH_PersonalAccessToken](/opengraph/extensions/github/nodes/gh_personalaccesstoken) | GH_CanAccess | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) |
 | [GH_AppInstallation](/opengraph/extensions/github/nodes/gh_appinstallation) | GH_CanAccess | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) |
 | [GH_PersonalAccessToken](/opengraph/extensions/github/nodes/gh_personalaccesstoken) | GH_CanAccess | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) |
@@ -18,23 +19,26 @@ description: 'Personal access token or app installation can access this reposito
 ```mermaid
 flowchart LR
     GH_AppInstallation["GH_AppInstallation"]
+    GH_DeployKey["GH_DeployKey"]
     GH_Organization["GH_Organization"]
     GH_PersonalAccessToken["GH_PersonalAccessToken"]
     GH_Repository["GH_Repository"]
     GH_AppInstallation -- GH_CanAccess --> GH_Repository
+    GH_DeployKey -- GH_CanAccess --> GH_Repository
     GH_PersonalAccessToken -- GH_CanAccess --> GH_Organization
     GH_PersonalAccessToken -- GH_CanAccess --> GH_Repository
 ```
 
 ## General Information
 
-The non-traversable GH_CanAccess edge indicates that a personal access token or app installation has been granted access to specific repositories. This edge represents the scope of access granted to a token or app rather than a direct attack path, providing visibility into which repositories are reachable through non-human credentials. It is non-traversable because token and app access does not transitively extend to other principals.
+The non-traversable GH_CanAccess edge indicates that a personal access token, app installation, or deploy key has been granted access to a repository or organization. This edge represents the scope of access granted to a non-human credential rather than a direct attack path, providing visibility into which repositories are reachable through that credential. It is non-traversable because credential access does not transitively extend to other principals.
 
 ## Edge Schema
 
 | Source | Destination | Traversable |
 | --- | --- | --- |
 | [GH_AppInstallation](/opengraph/extensions/github/nodes/gh_appinstallation) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | `false` |
+| [GH_DeployKey](/opengraph/extensions/github/nodes/gh_deploykey) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | `false` |
 | [GH_PersonalAccessToken](/opengraph/extensions/github/nodes/gh_personalaccesstoken) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | `false` |
 | [GH_PersonalAccessToken](/opengraph/extensions/github/nodes/gh_personalaccesstoken) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | `false` |
 
@@ -44,9 +48,11 @@ The non-traversable GH_CanAccess edge indicates that a personal access token or 
 graph LR
     n0["GH_AppInstallation"]
     n1["GH_Repository"]
-    n2["GH_PersonalAccessToken"]
-    n3["GH_Organization"]
+    n2["GH_DeployKey"]
+    n3["GH_PersonalAccessToken"]
+    n4["GH_Organization"]
     n0 -.->|GH_CanAccess| n1
-    n2 -.->|GH_CanAccess| n3
     n2 -.->|GH_CanAccess| n1
+    n3 -.->|GH_CanAccess| n4
+    n3 -.->|GH_CanAccess| n1
 ```
