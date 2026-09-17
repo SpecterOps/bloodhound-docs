@@ -33,7 +33,7 @@ Before you configure a plan, complete the following prerequisites:
 ## Configure a collection plan
 
 <Warning>
-  The current beta build contains the collection-plan route, authentication UI, schedule UI, and shared API contracts, but it does not provide the complete production save workflow. AWS configuration fields, profile creation and update, and the production collection-job routes are still being implemented. Do not enter credentials or rely on the steps below until your SpecterOps account team confirms that the complete workflow is available in your tenant.
+  The current beta build contains the collection-plan route, authentication UI, Configuration JSON field, schedule UI, and shared API contracts, but it does not provide the complete production save workflow. Profile creation and update and the production collection-job routes are still being implemented. Do not enter credentials or rely on the steps below until your SpecterOps account team confirms that the complete workflow is available in your tenant.
 </Warning>
 
 When the workflow is enabled, the beta form creates an AWS plan. The **Service** and **Authentication Type** fields are fixed because AWS and access-key authentication are the only beta options.
@@ -43,7 +43,7 @@ The planned beta workflow includes:
 - Open **Administration** > **Data Collection** > **Managed Collection**, then select **New Collection**.
 - Enter a plan **Name** and confirm that **Service** is **AWS**.
 - In **Authentication**, confirm that **Authentication Type** is **Access Key**, then provide the **Access Key ID** and **Secret Access Key**. BloodHound Enterprise saves the credential separately and does not display the secret value again.
-- Configure the AWS collection scope and options supported by the form. The current beta build does not yet expose the AWS configuration fields. When they become available, match the scope to the permissions in [Configure AWS permissions](/openhound/collectors/aws/configure-permissions).
+- In **Configuration**, paste the JSON object that defines the collection job. Use the linked [AWS collector documentation](/openhound/collectors/aws/collect-data#aws-organization-profile-recommended) for the supported schema, required fields, and examples. The field accepts a JSON object, not a TOML file, array, or scalar value. The form checks JSON syntax only; it does not confirm that the AWS settings are semantically valid or that the credential has the required permissions. Match the collection scope to the permissions in [Configure AWS permissions](/openhound/collectors/aws/configure-permissions).
 - If you want automatic collection, enter a **Schedule Name**, confirm **Frequency** is **Daily**, and select a **Start Time**. The menu provides every hour from **12:00am** through **11:00pm** in one-hour increments. BloodHound Enterprise displays the selected time in your detected local timezone and shows the corresponding GMT offset; the schedule is stored as a UTC recurrence.
 - Select **Save** after the collection-plan workflow is available. The plan should then appear on the **Collection Plans** page.
 
@@ -60,7 +60,7 @@ After the collection-plan workflow is available, the **Collection Plans** page d
 - The latest run time, or **Not run yet** when the plan has not produced a completed run.
 - The latest result: **Success**, **Failed**, or **Cancelled**.
 
-The current edit page can display plan details and the schedule form, but profile name and AWS configuration updates are not yet wired to the production save workflow. Authentication settings remain immutable after a credential is saved. When profile updates are available, changes will apply to future jobs. A job that BloodHound Enterprise already created uses the configuration captured when that job was created.
+The current edit page can display and locally edit plan details and the Configuration JSON field, but profile name and configuration updates are not yet wired to the production save workflow. Authentication settings remain immutable after a credential is saved. When profile updates are available, changes will apply to future jobs. A job that BloodHound Enterprise already created uses the configuration captured when that job was created.
 
 The beta does not provide a separate test-connection action. A saved credential is used when a collection job executes, so **Not run yet** does not confirm that the credential or AWS permissions are valid. When the production queue route is available, select **Run** to queue an on-demand collection. The action does not itself indicate terminal completion; wait for the latest history result, then use [Troubleshoot managed collection](/collect-data/enterprise-collection/managed-collectors/troubleshoot) if it fails.
 
@@ -72,6 +72,10 @@ When the complete workflow is available, create a new plan with the replacement 
 
 <Warning>
   Never paste a secret access key into a ticket, log, screenshot, or support bundle. BloodHound Enterprise does not display the saved secret value after the credential is created.
+</Warning>
+
+<Warning>
+  Keep credentials, BHE tokens, and other secret values out of **Configuration**. Enter only the non-secret JSON settings required by the collection job; authentication credentials are handled in the separate **Authentication** section.
 </Warning>
 
 ## Delete a collection plan
