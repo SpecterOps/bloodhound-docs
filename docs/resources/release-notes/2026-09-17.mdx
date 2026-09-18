@@ -1,0 +1,147 @@
+---
+title: 2026-09-17 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-09-17"
+---
+
+import CollectorDeprecationNotice from '/snippets/resources/collector-deprecation-notice.mdx';
+
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-09-17 | v9.7.1 | v0.4.1 | No release | No release |
+
+<CollectorDeprecationNotice />
+
+<Update label="OpenHound" description="Enhancement" tags={["GitHub"]}>
+  ## Workflow and runner visibility
+
+  - {/*BED-9674*/} **Workflow runner matching**: Adds `GH_RunsOn` to associate workflow jobs with eligible self-hosted runners using statically defined group and label selectors.
+  
+    Dynamic selectors are identified but not resolved, and matches are suppressed when Actions is disabled.
+
+  - {/*BED-9675*/} **Effective workflow permissions**: Calculates `effective_github_token_permissions` using repository defaults and workflow- and job-level overrides.
+  
+    Permissions are represented in query-friendly scope:access form.
+
+  - {/*BED-9677*/} **Runner job interception**: Adds traversable `GH_CanInterceptJob` relationships for persistent self-hosted runners capable of intercepting workflow jobs. 
+  
+    `GH_CanAccessSecret` identifies repository, organization, and environment secrets available to a job's execution context. New saved searches highlight interceptable jobs and exposed credentials.
+
+  - {/*BED-9678*/} **Environment OIDC capability**: Adds traversable `GH_CanRequestOIDCTokenFor` relationships when a job deploys to an environment with effective `id-token:write` permission.
+  
+    This models the capability to request a token, not observed token issuance or its final claims.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["GitHub"]}>
+  ## Credentials and access
+
+  - {/*BED-9679*/} **Normalized credential permissions**: App installation, fine-grained PAT, PAT request, and workflow permission properties now use arrays of `scope:access` values rather than JSON strings.
+  
+    PAT requests now include requested organization and repository permissions.
+
+  - {/*BED-9684*/} **Repository deploy keys**: Adds `GH_DeployKey` nodes with repository containment/access and, where available, `GH_AddedDeployKey` attribution.
+  
+    Captures key status, public key material, read-only/read-write access, and last-use metadata.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["GitHub"]}>
+  ## Collection and identity improvements
+
+  - {/*BED-9673*/} **Deployment detection**: Detects GitHub.com versus GitHub Enterprise Server at startup.
+  
+    Records `github_deployment_type` and, for GHES, `ghes_version` on collected organization and enterprise nodes.
+
+  - {/*BED-9680*/} **Environment collection performance**: Uses GraphQL counts to avoid environment REST requests for repositories with no environments.
+  
+    Repository nodes now report `branch_count` and `environment_count`.
+
+  - {/*BED-9686*/} **Organization role naming**: Qualifies organization role names as organization/role to prevent ambiguity across organizations while retaining the unqualified value in `short_name`.
+  
+    Node IDs remain unchanged.
+
+  - {/*BED-9713*/} **Immutable GitHub database IDs**: Persists numeric organization, repository, and repository-owner database IDs needed to correlate immutable GitHub OIDC subjects.
+  
+    This will solve the issue with newer `GH_CanAssumeIdentity` edges.
+
+  - {/*BED-9720*/} **Source-family labels**: Assigns GitHub, SAML, or SCIM kinds according to node family.
+  
+    Improves source filtering and prevents SCIM objects from being presented as native GitHub nodes.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Okta"]}>
+  {/*BED-9655*/}
+  ## Shared trusted SAML issuers
+
+  Trusted inbound `SAML_Issuer` nodes are now identified by their byte-exact SAML entity ID and collecting Okta tenant, rather than by the individual Okta Identity Provider that referenced them.
+
+  - Multiple identity providers in one tenant that trust the same entity now converge on one `SAML_Issuer`.
+
+  - Identical entity IDs in different Okta tenants remain isolated.
+
+  - Each `Okta_IdentityProvider`, `SAML_ServiceProvider`, and `SAML_TrustsIssuer` relationship remains distinct, preserving trust provenance.
+
+  - Per-IdP ownership properties were removed from the shared issuer node.
+
+  - Missing or empty issuer values are rejected, and tenant URLs are normalized and validated.
+
+  <Note>
+    **Upgrade notice**
+
+    Issuer IDs changed. Existing IdP-keyed issuer nodes and trust edges will age out according to BloodHound retention; purge the graph before testing if an immediately clean result is required.
+  </Note>
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Okta"]}>
+  {/*BED-9735*/}
+  ## Per-node source kinds
+
+  Graph output now distinguishes native Okta nodes from normalized SAML nodes using per-node source kinds.
+
+  - Native nodes, including `Okta_IdentityProvider`, receive the Okta kind.
+
+  - Normalized `SAML_*` nodes receive the SAML kind.
+
+  - The previous graph-wide source-kind assignment was removed.
+
+  - `openhound>=0.4.0` is now a runtime dependency.
+
+  This makes source-specific filtering and interpretation possible without configuration changes.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Okta"]}>
+  {/*BED-9741*/}
+  ## Optional collection performance telemetry
+
+  Added disabled-by-default performance telemetry for diagnosing and tuning Okta collections.
+
+  - Records bounded JSONL diagnostics for endpoint latency, HTTP outcomes, retries, quota observations, concurrency, pacing, pagination, and row counts.
+
+  - Separates HTTP execution, concurrency-slot waits, proactive pacing, and retry backoff.
+
+  - Records effective DLT extraction and Okta performance settings.
+
+  - Uses normalized endpoints and excludes credentials, tenant hostnames, URLs, cursors, object identifiers, response bodies, and exception text.
+
+  - Telemetry uses no additional Okta requests or permissions and does not alter collection scope or scheduling.
+
+  - Export failures are isolated from collection behavior; interrupted or incomplete runs retain available progress records.
+
+  - Memory, queue, interval, and file-size limits bound telemetry overhead.
+
+  Configuration is available under [sources.source.okta.telemetry] in config.toml. Output must be outside the raw collection directory.
+</Update>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## Client management and S3 ingest
+
+  - {/*BED-9698, BED-9700*/} Resolved an issue that caused unnecessary log noise from client management operations and routine S3 ingest diagnostic events.
+
+  ## Attack Paths
+
+  - {/*BED-9682*/} Resolved an issue where the Attack Paths page incorrectly showed resolved findings as still active.
+</Update>
