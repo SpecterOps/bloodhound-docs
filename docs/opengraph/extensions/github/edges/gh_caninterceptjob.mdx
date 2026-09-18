@@ -1,0 +1,44 @@
+---
+title: 'GH_CanInterceptJob'
+description: '[Computed] Persistent self-hosted runner can intercept a workflow job that may be scheduled on it — GH_Runner → GH_WorkflowJob'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Traversable: ✅
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_Runner](/opengraph/extensions/github/nodes/gh_runner) | GH_CanInterceptJob | [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) |
+
+```mermaid
+flowchart LR
+    GH_Runner["GH_Runner"]
+    GH_WorkflowJob["GH_WorkflowJob"]
+    GH_Runner -- GH_CanInterceptJob --> GH_WorkflowJob
+```
+
+## General Information
+
+The traversable GH_CanInterceptJob edge represents that a self-hosted runner not explicitly marked ephemeral can intercept a GitHub Actions workflow job that GitHub could schedule on it.
+
+This edge is derived from [GH_RunsOn](/opengraph/extensions/github/edges/gh_runson) and is intended for attack-path analysis. It does not mean that the job has historically executed on the runner. It means that control of the runner may expose the future execution context of the job when the runner is not ephemeral.
+
+The collector does not emit this edge for runners GitHub explicitly marks as ephemeral.
+
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_Runner](/opengraph/extensions/github/nodes/gh_runner) | [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | `true` |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_Runner"]
+    n1["GH_WorkflowJob"]
+    n0 -->|GH_CanInterceptJob| n1
+```

@@ -616,6 +616,35 @@ LIMIT 1000
 
 This query can be imported into BloodHound from the [secrets-reachable-by-user.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/secrets-reachable-by-user.json) file.
 
+## Self-Hosted Runners Can Intercept Broad-Token Jobs
+
+Returns self-hosted runners that can intercept workflow jobs whose effective GITHUB_TOKEN has high-impact write permissions. These jobs can materially increase the blast radius of runner compromise.
+
+```cypher
+MATCH p=(runner:GH_Runner)-[:GH_CanInterceptJob]->(job:GH_WorkflowJob)
+WHERE 'contents:write' IN job.effective_github_token_permissions
+OR 'actions:write' IN job.effective_github_token_permissions
+OR 'pull-requests:write' IN job.effective_github_token_permissions
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [self-hosted-runners-can-intercept-broad-token-jobs.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/self-hosted-runners-can-intercept-broad-token-jobs.json) file.
+
+## Shared Self-Hosted Runners Can Intercept Secret-Bearing Jobs
+
+Returns organization- and enterprise-scoped self-hosted runners that can intercept workflow jobs with statically resolvable secret access. Shared runners are especially important to review because compromise can expose execution contexts across multiple repositories.
+
+```cypher
+MATCH p=(runner:GH_Runner)-[:GH_CanInterceptJob]->(job:GH_WorkflowJob)-[:GH_CanAccessSecret]->(secret:GH_Secret)
+WHERE runner:GH_OrgRunner
+OR runner:GH_EnterpriseRunner
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [shared-self-hosted-runners-can-intercept-secret-bearing-jobs.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/shared-self-hosted-runners-can-intercept-secret-bearing-jobs.json) file.
+
 ## Team Membership Admins
 
 Returns all users who hold the maintainer role over a team, this also represents team nesting.
@@ -692,4 +721,79 @@ LIMIT 1000
 ```
 
 This query can be imported into BloodHound from the [web-commit-signoff-not-required.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/web-commit-signoff-not-required.json) file.
+
+## Workflow Jobs Interceptable by Self-Hosted Runners
+
+Returns workflow jobs whose future execution context may be exposed to an actor controlling a collected self-hosted runner that is not explicitly marked ephemeral.
+
+```cypher
+MATCH p=(runner:GH_Runner)-[:GH_CanInterceptJob]->(job:GH_WorkflowJob)
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [workflow-jobs-interceptable-by-self-hosted-runners.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/workflow-jobs-interceptable-by-self-hosted-runners.json) file.
+
+## Workflow Jobs with Broad GITHUB_TOKEN Write Permissions
+
+Returns workflow jobs whose calculated effective GITHUB_TOKEN permissions include write access to repository contents, Actions, or pull requests. These permissions can materially increase the impact of workflow compromise.
+
+```cypher
+MATCH p=(repo:GH_Repository)-[:GH_Contains]->(:GH_Workflow)-[:GH_Contains]->(job:GH_WorkflowJob)
+WHERE 'contents:write' IN job.effective_github_token_permissions
+OR 'actions:write' IN job.effective_github_token_permissions
+OR 'pull-requests:write' IN job.effective_github_token_permissions
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [workflow-jobs-with-broad-token-write-permissions.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/workflow-jobs-with-broad-token-write-permissions.json) file.
+
+## OIDC-Capable Workflow Jobs Interceptable by Self-Hosted Runners
+
+Returns OIDC-capable workflow jobs whose execution context may be exposed to an actor controlling a collected self-hosted runner that is not explicitly marked ephemeral. These jobs are especially important to review because runner compromise could expose short-lived cloud federation tokens.
+
+```cypher
+MATCH p=(runner:GH_Runner)-[:GH_CanInterceptJob]->(job:GH_WorkflowJob)
+WHERE 'id-token:write' IN job.effective_github_token_permissions
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [workflow-jobs-with-id-token-write-on-self-hosted-runners.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/workflow-jobs-with-id-token-write-on-self-hosted-runners.json) file.
+
+## Workflow Jobs with OIDC Token Permission
+
+Returns workflow jobs whose calculated effective GITHUB_TOKEN permissions include id-token:write. These jobs can request GitHub OIDC tokens, though additional step analysis is needed to determine whether the token is actually used.
+
+```cypher
+MATCH p=(repo:GH_Repository)-[:GH_Contains]->(:GH_Workflow)-[:GH_Contains]->(job:GH_WorkflowJob)
+WHERE 'id-token:write' IN job.effective_github_token_permissions
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [workflow-jobs-with-id-token-write.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/workflow-jobs-with-id-token-write.json) file.
+
+## Workflow Jobs with Observed OIDC Authentication Steps
+
+Returns OIDC-capable workflow jobs with direct descendant steps that show likely OIDC token consumption, including common AWS, Azure, GitHub Pages, and direct token-request patterns. This is evidence of likely use, not a complete classifier for every possible OIDC consumer; reusable workflow callers may require following GH_CallsWorkflow to find the consuming steps.
+
+```cypher
+MATCH p=(repo:GH_Repository)-[:GH_Contains]->(:GH_Workflow)-[:GH_Contains]->(job:GH_WorkflowJob)-[:GH_Contains]->(step:GH_WorkflowStep)
+WHERE 'id-token:write' IN job.effective_github_token_permissions
+AND (
+  step.action_slug = 'aws-actions/configure-aws-credentials'
+  OR step.action_slug = 'azure/login'
+  OR step.action_slug = 'Azure/login'
+  OR step.action_slug = 'actions/deploy-pages'
+  OR step.contents CONTAINS 'getIDToken'
+  OR step.contents CONTAINS 'ACTIONS_ID_TOKEN_REQUEST_URL'
+  OR step.contents CONTAINS 'ACTIONS_ID_TOKEN_REQUEST_TOKEN'
+)
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [workflow-jobs-with-observed-oidc-auth-steps.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/workflow-jobs-with-observed-oidc-auth-steps.json) file.
 
