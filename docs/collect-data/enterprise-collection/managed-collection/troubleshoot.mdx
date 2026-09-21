@@ -1,16 +1,16 @@
 ---
-title: Troubleshoot managed collectors
-description: Diagnose common AWS Managed Collectors configuration, scheduling, and collection failures.
+title: Troubleshoot managed collection
+description: Diagnose common AWS Managed Collection configuration, scheduling, and collection failures.
 hidden: true
 ---
 
-import ManagedCollectorsBetaNote from '/snippets/managed-collectors-beta.mdx';
+import ManagedCollectorsBetaNote from '/snippets/managed-collection-beta.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
 <ManagedCollectorsBetaNote />
 
-Use this page to identify whether a managed collection problem comes from beta availability, AWS authentication, permissions, scheduling, or the managed collection service. The current beta build may expose the navigation and early plan UI before the complete production workflow is enabled. Record the plan name, time of the attempt, visible result, and error text before you contact your SpecterOps account team.
+Use this page to identify whether a managed collection problem comes from beta availability, AWS authentication, permissions, scheduling, or the managed collection service. The BHE UI supports plan save and queue operations, but the feature is tenant-gated and collection processing occurs in the managed service. Record the plan name, time of the attempt, visible result, and error text before you contact your SpecterOps account team.
 
 ## Check beta availability
 
@@ -37,15 +37,15 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
 
 <AccordionGroup>
   <Accordion title="The AWS credential is rejected">
-    **Likely cause:** The access key ID or secret access key is incorrect, inactive, expired, or not available to the managed collector.
+    **Likely cause:** The access key ID or secret access key is incorrect, inactive, expired, or not available to the managed OpenHound collector.
 
-    **Action:** Verify the key pair in AWS without sharing the secret value. Confirm that the key is active and that the plan uses the correct access key ID. Managed Collectors does not edit a saved credential in place; when the complete workflow is available, create a new plan with the replacement key pair. Deleting the old plan does not revoke the old AWS key or automatically delete its secret reference.
+    **Action:** Verify the key pair in AWS without sharing the secret value. Confirm that the key is active and that the plan uses the correct access key ID. Managed Collection does not edit a saved credential in place; create a new plan with the replacement key pair. Deleting the old plan does not revoke the old AWS key or automatically delete its secret reference.
   </Accordion>
 
   <Accordion title="The configuration JSON is rejected">
     **Likely cause:** The Configuration field contains malformed JSON or a valid JSON value that is not an object, such as an array, string, number, or `null`.
 
-    **Action:** Enter a JSON object in **Configuration** and correct the syntax indicated by the form. The **Save** button remains disabled while the field is invalid. The form checks JSON syntax only; if the JSON is accepted but collection fails, review the AWS collector schema, collection scope, and required permissions. Do not include credentials or tokens in the configuration.
+    **Action:** Enter a JSON object in **Configuration** and correct the validation message shown by the form. Selecting **Save** with invalid configuration displays the error and does not create or update credentials, schedules, or the plan. The form checks JSON syntax and that the value is an object; if the JSON is accepted but collection fails, review the AWS collector schema, collection scope, and required permissions. Do not include credentials or tokens in the configuration.
   </Accordion>
 
   <Accordion title="The collection lacks AWS permissions">
@@ -57,13 +57,13 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
   <Accordion title="The plan has no collection results">
     **Likely cause:** The plan has no schedule, the schedule is disabled, or the scheduled job has not been processed yet.
 
-    **Action:** Confirm that the plan displays a daily schedule and that it is not marked **Disabled**. If the schedule is correct and no result appears after the scheduled window, record the plan name and expected run time and contact your account team.
+    **Action:** Confirm that the plan displays an active schedule and that it is not marked **Disabled**. If the schedule is correct and no result appears after the scheduled window, record the plan name and expected run time and contact your account team.
   </Accordion>
 
-  <Accordion title="The managed collector appears unavailable">
+  <Accordion title="The managed collection service appears unavailable">
     **Likely cause:** The managed worker is not processing jobs, or several plans are affected by a service-level problem. Customer users see plan results, not the managed worker's detailed health state.
 
-    **Action:** Confirm that the affected plans have active daily schedules and record the expected run times. If the complete workflow is enabled and several plans are affected, contact your SpecterOps account team with the affected plan names and timestamps so they can review service health and detailed logs.
+    **Action:** Confirm that the affected plans have active schedules and record the expected run times. If several plans are affected, contact your SpecterOps account team with the affected plan names and timestamps so they can review service health and detailed logs.
   </Accordion>
 
   <Accordion title="The schedule time is unexpected">
@@ -91,7 +91,7 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
   </Accordion>
 
   <Accordion title="A save or run action does not complete">
-    **Likely cause:** The Managed Collectors beta workflow is not enabled for the tenant, the action is still being rolled out, or the current build does not yet include the production profile or queue route.
+    **Likely cause:** The Managed Collection beta is not enabled for the tenant, the action is still being rolled out, or the profile, schedule, or queue request failed.
 
     **Action:** Retry once. If the action still fails, capture the visible notification, plan name, and timestamp. Contact your SpecterOps account team. Do not include credential values in the report.
   </Accordion>
@@ -112,5 +112,5 @@ Do not provide an access key secret, secret access key, or any other credential 
 
 ## Next steps
 
-- [Configure a managed collection plan](/collect-data/enterprise-collection/managed-collectors/configure)
-- [Review managed collection security and compliance](/collect-data/enterprise-collection/managed-collectors/security-and-compliance)
+- [Configure a managed collection plan](/collect-data/enterprise-collection/managed-collection/configure)
+- [Review managed collection security and compliance](/collect-data/enterprise-collection/managed-collection/security-and-compliance)

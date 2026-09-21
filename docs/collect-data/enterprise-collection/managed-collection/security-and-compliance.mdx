@@ -1,16 +1,16 @@
 ---
-title: Managed Collectors security
-description: Understand credential handling, data protection, and customer responsibilities for Managed Collectors.
+title: Security and compliance
+description: Understand credential handling, data protection, and customer responsibilities for Managed Collection.
 hidden: true
 ---
 
-import ManagedCollectorsBetaNote from '/snippets/managed-collectors-beta.mdx';
+import ManagedCollectorsBetaNote from '/snippets/managed-collection-beta.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
 <ManagedCollectorsBetaNote />
 
-Managed Collectors reduces the infrastructure you operate for AWS data collection, but your organization remains responsible for choosing the AWS scope, granting collection permissions, and protecting the credential you provide. This page describes the intended beta credential and data-handling model; the complete workflow is not available in the current BHE build.
+Managed Collection reduces the infrastructure you operate for AWS data collection, but your organization remains responsible for choosing the AWS scope, granting collection permissions, and protecting the credential you provide. This page describes the beta credential and data-handling model. The BHE UI submits the plan and its related records, while the managed service processes collection jobs outside the BHE UI.
 
 ## Understand the security model
 
@@ -31,7 +31,7 @@ flowchart LR
     Collector -->|Uploads collected data| BHE
 ```
 
-The managed collector uses the AWS credential to read the configured AWS scope. The AWS collector is read-only and does not modify your AWS organization or account.
+The managed OpenHound collector uses the AWS credential to read the configured AWS scope. The AWS collector is read-only and does not modify your AWS organization or account.
 
 ## Protect AWS credentials
 
@@ -40,7 +40,7 @@ The beta accepts one AWS access key pair for each collection plan:
 - **Access Key ID** identifies the AWS credential.
 - **Secret Access Key** authenticates the credential.
 
-When you create a plan, the Jobs Engine sends the secret value to AWS Secrets Manager and stores a reference to it. The collector jobs database stores reference metadata, not the secret value. BloodHound Enterprise does not read the secret value back, and the edit form shows only the saved key identifier. The managed collector reads the configured secret directly from AWS Secrets Manager when it performs collection.
+When you create a plan, the Jobs Engine sends the secret value to AWS Secrets Manager and stores a reference to it. The collector jobs database stores reference metadata, not the secret value. BloodHound Enterprise does not read the secret value back, and the edit form shows only the saved key identifier. The managed OpenHound collector reads the configured secret directly from AWS Secrets Manager when it performs collection.
 
 The Jobs Engine writes and deletes customer secrets when those lifecycle operations are invoked. The managed OpenHound collector has read-only access to the secret. The design does not provide an in-place credential edit operation during the beta.
 
@@ -83,11 +83,11 @@ BloodHound Enterprise displays basic collection errors and plan results. The acc
 
 Managed OpenHound uploads collected data to your BloodHound Enterprise tenant for processing and graph analysis. BloodHound Enterprise's normal data retention and deletion controls apply to the ingested graph data; review [Data reconciliation and retention](/collect-data/enterprise-collection/data-retention) for those controls.
 
-Managed collector job history is separate from graph data and contains job metadata and outcome details, not the AWS secret value. The collector-job design treats outcome history as immutable and retains it for 90 days in phase 1. The retention period is not customer-configurable.
+Managed collection job history is separate from graph data and contains job metadata and outcome details, not the AWS secret value. The collector-job design treats outcome history as immutable and retains it for 90 days in phase 1. The retention period is not customer-configurable.
 
 ## Understand tenant isolation
 
-Managed collector credentials use tenant-scoped secret paths and IAM resource keys. Each secret path is prefixed with the owning tenant's codename. This design separates responsibilities: BloodHound Enterprise and the Jobs Engine manage the credential lifecycle, while the collector reads the credential to perform collection. The security ADR identifies zero cross-tenant secret access and removal of orphaned secrets as operational success outcomes.
+Managed collection credentials use tenant-scoped secret paths and IAM resource keys. Each secret path is prefixed with the owning tenant's codename. This design separates responsibilities: BloodHound Enterprise and the Jobs Engine manage the credential lifecycle, while the collector reads the credential to perform collection. The security ADR identifies zero cross-tenant secret access and removal of orphaned secrets as operational success outcomes.
 
 ## Meet your responsibilities
 
@@ -105,5 +105,5 @@ Contact your SpecterOps account team for current security-review materials befor
 
 ## Next steps
 
-- [Configure a managed collection plan](/collect-data/enterprise-collection/managed-collectors/configure)
-- [Troubleshoot managed collection](/collect-data/enterprise-collection/managed-collectors/troubleshoot)
+- [Configure a managed collection plan](/collect-data/enterprise-collection/managed-collection/configure)
+- [Troubleshoot managed collection](/collect-data/enterprise-collection/managed-collection/troubleshoot)
