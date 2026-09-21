@@ -3,6 +3,8 @@ title: Table View
 description: Review, filter, and sort Attack Path findings at scale in BloodHound Enterprise.
 ---
 
+import EarlyAccessAccessNote from '/snippets/feature-flag-user-managed.mdx';
+
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
 The **Findings Table** is an alternate view on the [Attack Paths](/analyze-data/findings/attack-paths) page. Use it to review many <Tooltip tip="A specific instance of an Attack Path that BloodHound Enterprise has identified as a high-value remediation point." cta="Learn more" href="/analyze-data/findings/attack-paths#findings">findings</Tooltip> at once, compare finding state across environments and zones, and triage high-volume result sets faster.
@@ -15,7 +17,8 @@ Each row in the table represents a single finding. The table displays the follow
 
 | Column | Description |
 | --- | --- |
-| **Severity** | The severity of the finding:<ul><li>**Critical**</li><li>**High**</li><li>**Moderate**</li><li>**Low**</li></ul> |
+| **Risk** | When [Findings Prioritization](#prioritize-findings) is enabled on the **Early Access Features** page, displays the finding's rank. Rank **1** is the highest priority. The column replaces **Severity** in the table and uses severity-specific colors. |
+| **Severity** | When Findings Prioritization is disabled, displays the severity of the finding:<ul><li>**Critical**</li><li>**High**</li><li>**Moderate**</li><li>**Low**</li></ul> Severity remains available as a filter when Findings Prioritization is enabled. |
 | **Attack Path** | The name of the finding type that identifies the risk condition under review: an abusable relationship between principals for relationship-based findings, or a vulnerable configuration on a principal for list-based findings. |
 | **Platform** | The platform associated with the finding, such as Active Directory, Azure, or OpenGraph extension-defined platform. |
 | **Environment** | The environment associated with the finding, such as an Active Directory domain, Azure tenant, or OpenGraph extension-defined environment. |
@@ -34,7 +37,7 @@ Each row in the table represents a single finding. The table displays the follow
 
 Use the **Findings Table** to focus an investigation on a set of findings:
 
-- **Triage findings at scale:** Review a dense list of Attack Path findings and sort by severity, date, status, or contextual columns.
+- **Triage findings at scale:** Review a dense list of Attack Path findings and sort by Risk, date, status, or contextual columns. When Findings Prioritization is disabled, sort by severity instead.
 - **Focus an investigation:** Filter by Attack Path, severity, platform, environment, zone, and status to move from a broad result set to a smaller set that matches your investigation goal.
 - **Compare scope across environments or zones:** Select multiple environments or zones and review the matching findings together.
 - **Review finding state and recency:** Use **Status**, **First Seen**, and **Last Seen** to understand whether findings are open, accepted, remediated, deprecated, or orphaned, and when BloodHound Enterprise last updated them.
@@ -45,8 +48,10 @@ Use the **Findings Table** to focus an investigation on a set of findings:
 
 Before you can use the **Findings Table**, you must have the following:
 
-- BloodHound Enterprise with the **Findings Table** beta feature enabled on the **Early Access Features** page.
+- BloodHound Enterprise with the **Findings Table** Early Access feature enabled on the **Early Access Features** page.
 - Access to the environments you want to analyze.
+
+  <EarlyAccessAccessNote feature="Findings Table" />
 
   <Note>
     If [Environment Targeted Access Control (ETAC)](/manage-bloodhound/auth/environment-targeted-access-control) is enabled on your tenant, it can limit which findings and environments appear for your account. Two users can see different rows for the same filters depending on their access.
@@ -87,9 +92,9 @@ Use filters to narrow the result set:
 
 | Filter | What it does |
 | --- | --- |
-| **Attack Path** | Search for and select one or more Attack Path finding types. |
 | **Severity** | Select one or more severity levels: **Critical**, **High**, **Moderate**, and **Low**. |
 | **Platform** | Search for and select one or more platforms to focus on findings from specific sources. |
+| **Attack Paths** | Search for and select one or more Attack Path finding types. |
 | **Environment** | Select one or more environments, such as an Active Directory domain, Azure tenant, or OpenGraph environment. |
 | **Zone** | Select one or more privilege zones to focus on findings within those zones. |
 | **Status** | Select one or more finding statuses: **Open**, **Accepted**, **Remediated**, **Deprecated**, and **Orphaned**. By default, the table shows **Open** and **Accepted** findings. |
@@ -102,10 +107,59 @@ The filters support multi-select. Selecting **All** for a filter removes that fi
 
 ## Sort findings
 
-You can sort by each table column and resize column width. Sorting reorders the full result set for the current filters. For example:
+You can sort by each visible table column and resize column width. Sorting reorders the full result set for the current filters. For example:
 
+- When Findings Prioritization is enabled, the table sorts by **Risk** by default, with the highest-priority findings first. The table uses zone and first-seen time as secondary sort fields.
 - Sort by **First Seen** to distinguish newer findings from findings that have persisted across analysis runs.
 - Sort by **Last Seen** to review the most recently updated findings for the current filters.
+
+## Prioritize findings
+
+**Findings Prioritization** helps you decide where to start when many findings compete for attention. It supplements severity with additional risk signals and provides a ranked starting queue for investigation and remediation.
+
+<EarlyAccessAccessNote feature="Findings Prioritization" />
+
+Use **Findings Prioritization** as guidance for triage and remediation. It does not replace severity or your organization's knowledge of business context, compensating controls, and remediation effort.
+
+Once enabled, BloodHound Enterprise calculates a prioritization score for each finding during the next analysis run.
+
+<Note>
+  BloodHound Enterprise requests an analysis run when you enable the feature. Wait for analysis to complete before you use the new ranks.
+</Note>
+
+### How prioritization works
+
+BloodHound Enterprise calculates a prioritization score during analysis, then converts that score into a ranked order using _competition ranking_.
+
+Findings with the same score receive the same rank, and the next rank skips the positions occupied by the tie. For example, if two findings tie for second place, the ranks are 1, 2, 2, 4; not 1, 2, 2, 3.
+
+A higher-ranked finding represents a stronger combination of underlying factors present in the enterprise's graph data.
+
+### Rank and operational context
+
+A finding can rank above another finding with the same—or even higher—severity when its combined exposure, impact, and start-object breadth indicate a larger remediation opportunity.
+
+Use the rank to create a starting queue, then apply operational context before you act, such as:
+
+- Business importance of affected assets
+- Existing compensating controls
+- Ownership and change windows
+- Remediation effort and potential disruption
+- Current investigations or accepted risk
+
+<Note>
+  The color of the rank in the **Risk** column indicates the finding's severity. **Findings Prioritization** supplements severity; it does not redefine it.
+</Note>
+
+### When rank changes
+
+BloodHound recalculates prioritization during analysis. The rank does not update dynamically between analysis runs.
+
+A finding's rank can change after analysis when graph data, exposure, impact, starting objects, or the set of open and accepted findings changes. Review the latest analysis before using a rank to plan remediation.
+
+<Note>
+  If BloodHound has not calculated a rank for a finding, the **Risk** column displays `-`. For example, archived findings do not have a rank.
+</Note>
 
 ## Finding status lifecycle
 
