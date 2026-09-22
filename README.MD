@@ -7,7 +7,13 @@
 
 <hr />
 
-[BloodHound Community Edition](https://github.com/SpecterOps/BloodHound) (BHCE) uses graph theory to reveal the hidden and often unintended relationships within an Active Directory or Azure environment. Attackers can use BloodHound to quickly identify highly complex attack paths that would otherwise be impossible to find. Defenders can use BloodHound to identify and eliminate those same attack paths. Both red and blue teams can use BloodHound to better understand privileged relationships in an Active Directory or Azure environment.
+[BloodHound Community Edition](https://github.com/SpecterOps/BloodHound) (BHCE) uses graph theory and the extensible OpenGraph framework to reveal hidden and often unintended relationships across Active Directory, Azure, and other identity, developer, device management, and custom data sources.
+
+- Attackers can use BloodHound to quickly identify highly complex attack paths that would otherwise be impossible to find.
+
+- Defenders can use BloodHound to identify and eliminate those same attack paths.
+ 
+Both red and blue teams can use BloodHound to better understand privileged relationships across environments.
 
 [BloodHound Community Edition](https://github.com/SpecterOps/BloodHound) and [BloodHound Enterprise](https://specterops.io/bloodhound-overview/) are created and maintained by [SpecterOps](https://specterops.io/). The original BloodHound was created by [@\_wald0](https://www.twitter.com/_wald0), [@CptJesus](https://twitter.com/CptJesus), and [@harmj0y](https://twitter.com/harmj0y).
 
@@ -19,13 +25,21 @@
 
 ## Getting started
 
-Like BloodHound CE, our documentation is open-source! Perusing our docs and found a typo or an opportunity to expand the documentation? You can contribute directly to fixing and enhancing our documentation. We're incredibly grateful for any contributions, and will make sure to recognize your contribution in the next release notes, and will get you a sweet package of BloodHound swag to boot!
+Like BloodHound CE, our documentation is open-source! Perusing our docs and found a typo or an opportunity to expand the documentation? 
+
+You can contribute directly to fixing and enhancing our documentation. We're incredibly grateful for any contributions, and will make sure to recognize your contribution in the next release notes, and will get you a sweet package of BloodHound swag to boot!
 
 ## Before you start
 
-Expectations for overall contribution to our codebase are covered in the [Contributing](./Contributing.md) document. Please be sure to review that page first for expectations on issue linking, commit signing, and Pull Request etiquette.
+Repository-wide contribution and pull request expectations are covered in the [Contributing](./Contributing.md) document. Please review that page first for the issue and pull request process, branch and commit conventions, and pull request etiquette.
 
-For instructions on how to specifically contribute to our docs, check out the [Contributing to Docs](./Contributing-To-Docs.md) document.
+For documentation-specific guidance, also review the following resources:
+
+- [Contributing to Docs](./Contributing-To-Docs.md)
+- [Documentation style guide](./.github/style-guide.md)
+- [Information architecture guide](./.github/info-architecture.md)
+- [Mintlify guidance](./.github/mintlify-guidance.md)
+- [Validation checklist](./.github/validation.md)
 
 ## Contact
 
