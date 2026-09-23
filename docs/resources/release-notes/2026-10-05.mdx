@@ -4,6 +4,7 @@ description: Learn about new features, enhancements, and fixed issues in BloodHo
 sidebarTitle: "2026-10-05"
 ---
 
+import EarlyAccessNote from '/snippets/feature-flag-user-managed.mdx';
 import CollectorDeprecationNotice from '/snippets/resources/collector-deprecation-notice.mdx';
 
 <Tip>
@@ -17,6 +18,28 @@ import CollectorDeprecationNotice from '/snippets/resources/collector-deprecatio
 
 <CollectorDeprecationNotice />
 
+<Update label="BloodHound" description="New Feature" tags={["Attack Paths"]}>
+  {/*BED-9240, BED-9153, BED-9154, BED-9147*/}
+  ## Findings Table <Badge color="green">General Availability</Badge>
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  The [Findings Table](/analyze-data/findings/table-view) feature is now generally available. Triage findings more efficiently with clearer state and platform indicators, and new copy actions.
+
+  Findings display a cross-platform badge when appropriate, use distinct muted styling and status icons for accepted, remediated, deprecated, and orphaned findings, and provide a floating action-bar copy menu for selected finding asset information.
+</Update>
+
+<Update label="BloodHound" description="New Feature" tags={["Attack Paths"]}>
+  {/*BED-9718*/}
+  ## Findings Prioritization <Badge color="yellow">Early Access</Badge>
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Use the [Findings Prioritization](/analyze-data/findings/table-view#prioritize-findings) feature as guidance to triage and remediate findings. When enabled, the **Risk** column replaces **Severity** and ranks findings by priority.
+
+  <EarlyAccessNote feature="Findings Prioritization"/>
+</Update>
+
 <Update label="BloodHound" description="Enhancement" tags={["Data Collection"]}>
   {/*BED-9465*/}
   ## Active Directory Sites support
@@ -24,6 +47,11 @@ import CollectorDeprecationNotice from '/snippets/resources/collector-deprecatio
   Collect and analyze Active Directory Sites data with SharpHound v2.17.0.
 
   BloodHound now ingests and analyzes Active Directory [Sites](/resources/nodes/site), [SiteServer](/resources/nodes/site-server), and [SiteSubnet](/resources/nodes/site-subnet) objects, including their containment, ACLs, site-linked GPOs, and [ServerIs](/resources/edges/server-is) relationships.
+
+  Zone Builder now include two corresponding [default rules](/analyze-data/privilege-zones/default-rules) for Tier Zero zone:
+
+  - **Sites:** Classifies Active Directory Site objects as Tier Zero because control over a site can enable compromise of the assets associated with it through linked Group Policy Objects.
+  - **Domain Controller Site Servers:** Classifies Site Server objects that reference Domain Controllers as Tier Zero because a malicious Group Policy Object linked to the Site could compromise the Domain Controller and its domain.
 
   The API now exposes the following endpoints:
 
@@ -59,26 +87,31 @@ import CollectorDeprecationNotice from '/snippets/resources/collector-deprecatio
   Collected Active Directory nodes also expose the first value from the directory object's `objectClass` attribute so you can distinguish the underlying AD class when BloodHound maps an object to a different node kind.
 </Update>
 
-<Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
-  {/*BED-9206, BED-9208, BED-9210*/}
-  ## Custom client identifiers for IWA authentication
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-8949, BED-9077*/}
+  ## More useful Explore search results
 
-  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+  Distinguish duplicate display names in **Explore** search results with the node's distinguished name, and keep node-kind tooltip labels visible above the result list in search and pathfinding results.
 
-  Configure how BloodHound Enterprise resolves SharpHound Enterprise clients from Integrated Windows Authentication (IWA) bearer tokens.
-
-  Administrators can set a tenant-level JWT claim name and an optional per-client **Custom Client Identifier**. BloodHound Enterprise persists the identifier, reads the configured claim (or `sub` when no custom claim is configured), requires an exact non-empty string match, and then applies the existing issuer, audience, signature, and time-based token validation before authenticating the resolved client. See [Configure ADFS for IWA](/install-data-collector/install-sharphound/configure-adfs-iwa) for configuration guidance.
+  These changes reduce the need to open several similarly named objects before identifying the correct one.
 </Update>
 
-<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
-  {/*BED-9718, BED-9240, BED-9153, BED-9154, BED-9147*/}
-  ## Findings Table workflow improvements
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-8096*/}
+  ## Empty array properties in the Entity Panel
 
-  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+  See when a collected node property is explicitly configured as an empty array.
 
-  Triage findings more efficiently in the **Findings Table** with clearer state, platform, prioritization, and copy actions.
+  The Entity Panel now displays `NONE` for empty array values instead of hiding the property, making important states such as empty `EffectiveEKUs` visible during investigation.
+</Update>
 
-  The **Findings Prioritization** feature flag is now user-updatable: when prioritization is disabled, the table shows finding severity instead of a rank. Findings also display a **Cross-platform** badge when appropriate, use distinct muted styling and status icons for accepted, remediated, deprecated, and orphaned findings, and provide a floating action-bar copy menu for selected finding asset information. See the [Findings Table](/analyze-data/findings/table-view) documentation for more information.
+<Update label="BloodHound" description="Enhancement" tags={["Security"]}>
+  {/*BED-8047*/}
+  ## Parameterized PostgreSQL query formatting
+
+  BloodHound Enterprise now consumes DAWGS v0.9.0, which parameterizes string literals generated for PostgreSQL queries and passes their values separately from the query text.
+
+  This hardens the Cypher-to-SQL path against string-literal injection while preserving the existing query behavior.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Accessibility"]}>
@@ -92,20 +125,37 @@ import CollectorDeprecationNotice from '/snippets/resources/collector-deprecatio
   Attack Paths finding rows now reflow their content, the main navigation expands or contracts when the viewport crosses the `xl` breakpoint, and responsive behavior was improved across the Attack Paths graph and information panels. The Manage Clients table preserves semantic cell navigation for JAWS users, table sorting retains keyboard focus, and Explore, Posture, and Privilege Zones expose clearer page headings for screen-reader navigation.
 </Update>
 
+<Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
+  {/*BED-9206, BED-9208, BED-9210*/}
+  ## Custom client identifiers for IWA authentication
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Configure an optional per-client **Custom Client Identifier** and a tenant-level JWT claim name to control how BloodHound Enterprise resolves SharpHound Enterprise [collector clients](/collect-data/enterprise-collection/create-collector#sharphound-enterprise) from Integrated Windows Authentication (IWA) bearer tokens.
+
+  BloodHound Enterprise persists the identifier, reads the configured claim (or `sub` when no custom claim is configured), requires an exact non-empty string match, and then applies the existing issuer, audience, signature, and time-based token validation before authenticating the resolved client.
+</Update>
+
 <Update label="BloodHound" description="Enhancement" tags={["Data Collection"]}>
   {/*BED-9522*/}
   ## Cleaner collector scheduling dialogs
 
   <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
 
-  Manage SharpHound, AzureHound, and OpenHound scheduling dialogs from a cleaner shared UI structure on the **Manage Clients** page. The refactor removes duplicated dialog organization and MUI usage while preserving the existing scheduling behavior.
+  Manage SharpHound, AzureHound, and OpenHound scheduling dialogs from a cleaner shared UI structure on the **Manage Clients** page.
+
+  This enhancement removes duplicated dialog organization and MUI usage while preserving the existing scheduling behavior.
 </Update>
 
 <Update label="SharpHound" description="Enhancement" tags={["Data Collection"]}>
   {/*BED-9538*/}
   ## Faster support bundle creation
 
-  Build SharpHound Enterprise support bundles faster by skipping recompression of existing `log_archive` zip files. This avoids unnecessary CPU work while preserving the archived logs in the bundle; see [Manage Collector Support Bundles](/collect-data/enterprise-collection/collector-support-bundles) for more information.
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Build SharpHound Enterprise support bundles faster by skipping recompression of existing `log_archive` zip files.
+
+  This avoids unnecessary CPU work while preserving the archived logs in the bundle; see [Manage Collector Support Bundles](/collect-data/enterprise-collection/collector-support-bundles) for more information.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["API"]}>
@@ -114,16 +164,9 @@ import CollectorDeprecationNotice from '/snippets/resources/collector-deprecatio
 
   <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
 
-  Use the `archived_at` field in the Attack Path findings API to distinguish findings that have been archived from active findings. The field is returned as a timestamp when a finding has been archived and is omitted when it has not.
-</Update>
+  Use the `archived_at` field in the [List attack path findings](/reference/attack-paths/list-attack-path-findings) API to distinguish findings that have been archived from active findings.
 
-<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
-  {/*BED-8949, BED-9077*/}
-  ## More useful Explore search results
-
-  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
-
-  Distinguish duplicate display names in **Explore** search results with the node's distinguished name, and keep node-kind tooltip labels visible above the result list in search and pathfinding results. These changes reduce the need to open several similarly named objects before identifying the correct one.
+  The field is returned as a timestamp when a finding has been archived and is omitted when it has not.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
@@ -132,33 +175,17 @@ import CollectorDeprecationNotice from '/snippets/resources/collector-deprecatio
 
   <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
 
-  Keep the **Database Management** page limited to administrators. Read-only users can no longer discover or open a page that presents destructive data-wipe controls they cannot use.
-</Update>
+  Keep the **Database Management** page limited to administrators.
 
-<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
-  {/*BED-8096*/}
-  ## Empty array properties in the Entity Panel
-
-  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
-
-  See when a collected node property is explicitly configured as an empty array. The Entity Panel now displays `NONE` for empty array values instead of hiding the property, making important states such as empty `EffectiveEKUs` visible during investigation.
-</Update>
-
-<Update label="BloodHound" description="Enhancement" tags={["Security"]}>
-  {/*BED-8047*/}
-  ## Parameterized PostgreSQL query formatting
-
-  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
-
-  BloodHound Enterprise now consumes DAWGS v0.9.0, which parameterizes string literals generated for PostgreSQL queries and passes their values separately from the query text. This hardens the Cypher-to-SQL path against string-literal injection while preserving the existing query behavior.
+  Read-only users can no longer discover or open a page that presents destructive data-wipe controls they cannot use.
 </Update>
 
 <Update label="BloodHound" tags={["Fixed Issues"]}>
   ## Fixed Issues
 
-  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
-
   ### Administration
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
 
   - {/*BED-9247*/} Resolved an issue where an interrupted collector upload could leave a management operation and artifact stranded. BloodHound Enterprise now cancels a running management operation when the client polls for new work and makes operation completion idempotent.
 
