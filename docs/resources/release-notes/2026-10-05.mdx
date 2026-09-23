@@ -1,0 +1,181 @@
+---
+title: 2026-10-05 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-10-05"
+---
+
+import CollectorDeprecationNotice from '/snippets/resources/collector-deprecation-notice.mdx';
+
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-10-05 | v9.8.0 | No release | v2.17.0 | No release |
+
+<CollectorDeprecationNotice />
+
+<Update label="BloodHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9465*/}
+  ## Active Directory Sites support
+
+  Collect and analyze Active Directory Sites data with SharpHound v2.17.0.
+
+  BloodHound now ingests and analyzes Active Directory [Sites](/resources/nodes/site), [SiteServer](/resources/nodes/site-server), and [SiteSubnet](/resources/nodes/site-subnet) objects, including their containment, ACLs, site-linked GPOs, and [ServerIs](/resources/edges/server-is) relationships.
+
+  The API now exposes the following endpoints:
+
+  - **Site**
+    - Entity details: `/api/v2/sites/{object_id}`
+    - Controllers: `/api/v2/sites/{object_id}/controllers`
+    - Linked GPOs: `/api/v2/sites/{object_id}/linked-gpos`
+    - Site servers: `/api/v2/sites/{object_id}/siteservers`
+    - Site subnets: `/api/v2/sites/{object_id}/sitesubnets`
+  - **Site Server:** Entity details at `/api/v2/siteservers/{object_id}`
+  - **Site Subnet:** Entity details at `/api/v2/sitesubnets/{object_id}`
+  - **GPO-to-Site:** Affected Sites at `/api/v2/gpos/{object_id}/sites`
+
+  Related-entity endpoints support list, graph, and count responses.
+
+  <Callout icon="heart" color="#FFB74D">
+    **Community contribution**
+
+    Thank you to [Quentin Roland](https://www.linkedin.com/in/quentin-roland-07b944179/) for contributing this enhancement!
+  </Callout>
+
+  BloodHound Enterprise additionally surfaces the **Tier Zero Computer Identified by Non-Tier Zero Site Server** finding when a non-Tier Zero Site Server references a Tier Zero computer.
+</Update>
+
+<Update label="SharpHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9463, BED-9464*/}
+  ## Active Directory collection coverage
+
+  Collect additional Active Directory structure and metadata with SharpHound v2.17.0.
+
+  SharpHound now collects the Builtin object and models it as a `Container`, including its well-known principal handling.
+
+  Collected Active Directory nodes also expose the first value from the directory object's `objectClass` attribute so you can distinguish the underlying AD class when BloodHound maps an object to a different node kind.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
+  {/*BED-9206, BED-9208, BED-9210*/}
+  ## Custom client identifiers for IWA authentication
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Configure how BloodHound Enterprise resolves SharpHound Enterprise clients from Integrated Windows Authentication (IWA) bearer tokens.
+
+  Administrators can set a tenant-level JWT claim name and an optional per-client **Custom Client Identifier**. BloodHound Enterprise persists the identifier, reads the configured claim (or `sub` when no custom claim is configured), requires an exact non-empty string match, and then applies the existing issuer, audience, signature, and time-based token validation before authenticating the resolved client. See [Configure ADFS for IWA](/install-data-collector/install-sharphound/configure-adfs-iwa) for configuration guidance.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-9718, BED-9240, BED-9153, BED-9154, BED-9147*/}
+  ## Findings Table workflow improvements
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Triage findings more efficiently in the **Findings Table** with clearer state, platform, prioritization, and copy actions.
+
+  The **Findings Prioritization** feature flag is now user-updatable: when prioritization is disabled, the table shows finding severity instead of a rank. Findings also display a **Cross-platform** badge when appropriate, use distinct muted styling and status icons for accepted, remediated, deprecated, and orphaned findings, and provide a floating action-bar copy menu for selected finding asset information. See the [Findings Table](/analyze-data/findings/table-view) documentation for more information.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Accessibility"]}>
+  {/*BED-9549, BED-9547, BED-9541, BED-9537, BED-8612, BED-7224*/}
+  ## Responsive and accessible workflows
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Use key BloodHound Enterprise workflows more reliably at smaller widths, higher zoom levels, and with assistive technology.
+
+  Attack Paths finding rows now reflow their content, the main navigation expands or contracts when the viewport crosses the `xl` breakpoint, and responsive behavior was improved across the Attack Paths graph and information panels. The Manage Clients table preserves semantic cell navigation for JAWS users, table sorting retains keyboard focus, and Explore, Posture, and Privilege Zones expose clearer page headings for screen-reader navigation.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9522*/}
+  ## Cleaner collector scheduling dialogs
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Manage SharpHound, AzureHound, and OpenHound scheduling dialogs from a cleaner shared UI structure on the **Manage Clients** page. The refactor removes duplicated dialog organization and MUI usage while preserving the existing scheduling behavior.
+</Update>
+
+<Update label="SharpHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9538*/}
+  ## Faster support bundle creation
+
+  Build SharpHound Enterprise support bundles faster by skipping recompression of existing `log_archive` zip files. This avoids unnecessary CPU work while preserving the archived logs in the bundle; see [Manage Collector Support Bundles](/collect-data/enterprise-collection/collector-support-bundles) for more information.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["API"]}>
+  {/*BED-9502*/}
+  ## Archived finding timestamps in the API
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Use the `archived_at` field in the Attack Path findings API to distinguish findings that have been archived from active findings. The field is returned as a timestamp when a finding has been archived and is omitted when it has not.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-8949, BED-9077*/}
+  ## More useful Explore search results
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Distinguish duplicate display names in **Explore** search results with the node's distinguished name, and keep node-kind tooltip labels visible above the result list in search and pathfinding results. These changes reduce the need to open several similarly named objects before identifying the correct one.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Administration"]}>
+  {/*BED-8187*/}
+  ## Database Management access control
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Keep the **Database Management** page limited to administrators. Read-only users can no longer discover or open a page that presents destructive data-wipe controls they cannot use.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-8096*/}
+  ## Empty array properties in the Entity Panel
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  See when a collected node property is explicitly configured as an empty array. The Entity Panel now displays `NONE` for empty array values instead of hiding the property, making important states such as empty `EffectiveEKUs` visible during investigation.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Security"]}>
+  {/*BED-8047*/}
+  ## Parameterized PostgreSQL query formatting
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  BloodHound Enterprise now consumes DAWGS v0.9.0, which parameterizes string literals generated for PostgreSQL queries and passes their values separately from the query text. This hardens the Cypher-to-SQL path against string-literal injection while preserving the existing query behavior.
+</Update>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## Fixed Issues
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  ### Administration
+
+  - {/*BED-9247*/} Resolved an issue where an interrupted collector upload could leave a management operation and artifact stranded. BloodHound Enterprise now cancels a running management operation when the client polls for new work and makes operation completion idempotent.
+
+  ### API
+
+  - {/*BED-9345*/} Resolved an issue where Entity Panels failed to render linked nodes after node information was enriched by the API at runtime. The UI now merges the API-enriched node properties needed to render those linked nodes.
+
+  ### Cypher
+
+  - {/*BED-9488*/} Resolved an issue where the Cypher-to-SQL translator could generate invalid SQL for a mixed predicate after a variable-length traversal.
+  - {/*BED-8525*/} Resolved an issue where canceled request contexts could prevent the Cypher query audit log from being created.
+
+  ### Explore
+
+  - {/*BED-9486*/} Resolved an issue where a node's non-display kind could take precedence over its display kind, causing the Entity Panel header to show the wrong icon.
+
+  ### Zone Builder
+
+  - {/*BED-9823*/} Resolved an issue where the node-count table could overlap the zone details description on small screens. The details area now has a scrollable container when space is constrained.
+</Update>
