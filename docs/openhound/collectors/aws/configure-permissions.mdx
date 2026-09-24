@@ -897,6 +897,14 @@ The AWS organization profile must resolve to credentials in the management accou
 </Tab>
 </Tabs>
 
+## Use a dedicated source account
+
+Use a dedicated source account when the collector runs outside the management account. Configure the collector profile to resolve to the source account, then set `source_account`, `management_account_id`, and `management_role_name` as described in [Configure the Collector](/openhound/collectors/aws/collect-data#choose-an-account-collection-strategy).
+
+The source identity needs `sts:AssumeRole` permission for the management role and every member-account collection role. Each of those roles must trust the source identity. The collector assumes the management role for AWS Organizations calls and assumes each member role directly from the source identity.
+
+If you use the StackSet template in the organization-wide procedure, replace its management-account principal in the member-role trust policy with the dedicated source principal. Create or update the management-account role with the same trust relationship and attach the collector read-only policy so it can read AWS Organizations metadata.
+
 ## Next steps
 
 Continue to [Configure the Collector](/openhound/collectors/aws/collect-data#choose-an-account-collection-strategy) and use `managementaccount` as the AWS organization profile name.

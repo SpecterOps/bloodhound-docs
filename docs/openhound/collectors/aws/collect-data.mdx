@@ -48,18 +48,21 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
 
 <Tabs>
   <Tab title="AWS organization profile (recommended)" icon="star">
-    Use an organization profile to enumerate over all member accounts via the AWS management account.
+    Use an organization profile to enumerate all member accounts through the AWS management account. The profile can resolve to the management account or to a dedicated source account.
 
-    This assumes the configured IAM role in each member account. Also used to collect the organization structure, SCPs and RCPs.
+    The collector uses the management-account role to read organization metadata, SCPs, and RCPs. It assumes the configured member role directly from the source identity for each active member account.
 
     | Setting | Required | Default | Description |
     | --- | --- | --- | --- |
     | `profile_name` | Yes | None | Name of the AWS SDK profile used for collection. |
     | `org_role_name` | Yes | - | Name of the IAM role to assume in each active member account. The collector constructs `arn:aws:iam::<account-id>:role/<org_role_name>`. |
     | `org_role_session_name` | No | openhound-aws-org-collector | STS role session name used when assuming the member-account role.          |
-    | `include_management_account` | No | false | Whether to collect account resources from the management account in addition to organization metadata and policies.  |
+    | `include_management_account` | No | false for a management-account profile; true for a dedicated source account | Whether to collect account resources from the management account in addition to organization metadata and policies. |
+    | `source_account` | No | None | Account ID that owns the configured profile identity. Set this to collect from a dedicated source account. |
+    | `management_account_id` | No | None | Management account ID. Set this when the source identity cannot call `organizations:DescribeOrganization`. |
+    | `management_role_name` | No | Value of `org_role_name` | Role assumed in the management account from a dedicated source account. |
 
-    **`secrets.toml`**
+    **Management-account profile**
 
     ```toml title="~/.dlt/secrets.toml"
     [sources.source.aws.credentials]
@@ -69,6 +72,23 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
     include_management_account = true
     ```
 
+    **Dedicated source-account profile**
+
+    The profile must resolve to the account named by `source_account`. The collector assumes the management role to enumerate the organization, then assumes each member role directly from the source identity.
+
+    ```toml title="~/.dlt/secrets.toml"
+    [sources.source.aws.credentials]
+    profile_name = "security-tooling"
+    region_name = "us-east-1"
+    source_account = "999999999999"
+    management_account_id = "111111111111"
+    management_role_name = "ManagementCollectorRole"
+    org_role_name = "OpenHoundCollectorRole"
+    include_management_account = true
+    ```
+
+    If you omit `management_account_id`, the source identity needs `organizations:DescribeOrganization` so the collector can discover the management account.
+
     **Environment variables**
 
     ```bash
@@ -76,6 +96,9 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
     SOURCES__SOURCE__AWS__CREDENTIALS__ORG_ROLE_NAME="OpenHoundCollectorRole"
     SOURCES__SOURCE__AWS__CREDENTIALS__ORG_ROLE_SESSION_NAME="optional_session_name"
     SOURCES__SOURCE__AWS__CREDENTIALS__INCLUDE_MANAGEMENT_ACCOUNT=true
+    SOURCES__SOURCE__AWS__CREDENTIALS__SOURCE_ACCOUNT="999999999999"
+    SOURCES__SOURCE__AWS__CREDENTIALS__MANAGEMENT_ACCOUNT_ID="111111111111"
+    SOURCES__SOURCE__AWS__CREDENTIALS__MANAGEMENT_ROLE_NAME="ManagementCollectorRole"
     ```
   </Tab>
   <Tab title="Single AWS profile">
