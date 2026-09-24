@@ -251,7 +251,7 @@ Before continuing, ensure that a valid `secrets.toml` file is available and cont
   The Compose examples assume that the secrets file is stored in the user's home directory at `~/.dlt/secrets.toml`.
 </Note>
 
-### BETA ONLY
+### Docker Compose
 
 The `openhound-aws` container image is available from the following private ECR repository:
 
@@ -322,6 +322,181 @@ ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws
 
       credentials_aws:
         file: ${HOME}/.aws/credentials
+    ```
+  </Step>
+</Steps>
+
+### Kubernetes
+
+You can deploy the AWS collector with the example [OpenHound Helm chart](https://github.com/SpecterOps/OpenHound/tree/main/deployments/helm/openhound). This example uses the beta `openhound-aws` image from the private registry and assumes that the Kubernetes namespace is `openhound`.
+
+Before you install the chart, create the following resources in the same namespace as the Helm release:
+
+- A registry pull secret named `regcred` containing credentials for the private registry.
+- An `openhound-aws-config` ConfigMap containing `config.toml`.
+- An `openhound-aws-secrets` Secret containing `secrets.toml`.
+- `aws-sdk-config` and `aws-sdk-credentials` Secrets containing the AWS SDK `config` and `credentials` files.
+
+<Warning>
+  Kubernetes Secrets contain sensitive data. Protect the local `secrets.toml` and AWS SDK files, and use a secrets-management workflow appropriate for your environment.
+</Warning>
+
+<Steps>
+  <Step title="Create the Kubernetes configuration">
+    If the namespace does not already exist, create it before creating the configuration resources:
+
+    ```bash
+    kubectl create namespace openhound
+    ```
+
+    Create a `config.toml` file with the non-sensitive runtime settings. The following example increases collection parallelism and explicitly disables S3 collection:
+
+    ```toml title="config.toml"
+    [extract]
+    workers = 32
+    max_parallel_items = 80
+
+    [sources.source.aws.bucket_policy]
+    include = false
+    max_objects = 0
+    ```
+
+    Create the ConfigMap and the Secret that contains the AWS collector and BloodHound Enterprise settings:
+
+    ```bash
+    kubectl create configmap openhound-aws-config \
+      --namespace openhound \
+      --from-file=config.toml=./config.toml
+
+    kubectl create secret generic openhound-aws-secrets \
+      --namespace openhound \
+      --from-file=secrets.toml=./secrets.toml
+    ```
+
+    For organization-wide collection, use the organization profile settings described in [AWS organization profile](#aws-organization-profile-recommended). For example:
+
+    ```toml title="secrets.toml"
+    [sources.source.aws.credentials]
+    profile_name = "<AWS_MANAGEMENT_PROFILE_NAME>"
+    region_name = "eu-north-1"
+    org_role_name = "<AWS_ORGANIZATION_ROLE_NAME>"
+    org_role_session_name = "<AWS_ORGANIZATION_ROLE_SESSION_NAME>"
+    include_management_account = true
+
+    [destination.bloodhoundenterprise]
+    token_key = "<BHE_TOKEN_KEY>"
+    token_id = "<BHE_TOKEN_ID>"
+    url = "https://your-tenant.bhe.io"
+    ```
+
+    <Note>
+      Use the AWS profile names and IAM role settings that match your collection strategy. Keep the BloodHound Enterprise token values in `secrets.toml`; do not commit this file to source control.
+    </Note>
+  </Step>
+
+  <Step title="Mount the AWS SDK files">
+    Create Secrets from the AWS SDK files that the collector will use. The key names must match the `secretKey` values in `values.yaml`:
+
+    ```bash
+    kubectl create secret generic aws-sdk-config \
+      --namespace openhound \
+      --from-file=config=<your_user_dir>/.aws/config
+
+    kubectl create secret generic aws-sdk-credentials \
+      --namespace openhound \
+      --from-file=credentials=<your_user_dir>/.aws/credentials
+    ```
+  </Step>
+
+  <Step title="Create the Helm values file">
+    Create a private-registry pull secret named `regcred` in the `openhound` namespace, then save the following as `values.yaml`. Replace the registry password and any placeholder configuration values with values for your environment.
+
+    ```bash
+    kubectl create secret docker-registry regcred \
+      --namespace openhound \
+      --docker-server=ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws \
+      --docker-username=ecr-proxy \
+      --docker-password=<SPECTEROPS_REGISTRY_PASSWORD>
+    ```
+
+    ```yaml title="values.yaml"
+    image:
+      repository: ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws/openhound/openhound-aws
+      tag: "latest"
+
+    imagePullSecrets:
+      - name: regcred
+
+    env:
+      AWS_CONFIG_FILE: /app/aws/config
+      AWS_SHARED_CREDENTIALS_FILE: /app/aws/credentials
+      LOG_CONTAINER: "true"
+      RUNTIME__LOG_LEVEL: "INFO"
+
+    config:
+      existingConfigMap: openhound-aws-config
+      existingSecret: openhound-aws-secrets
+
+    collector:
+      name: aws
+      extraSecretMounts:
+        sdk-credentials:
+          secretName: aws-sdk-credentials
+          secretKey: credentials
+          mountPath: /app/aws/credentials
+        sdk-config:
+          secretName: aws-sdk-config
+          secretKey: config
+          mountPath: /app/aws/config
+    ```
+  </Step>
+
+  <Step title="Install and verify the chart">
+    Install the chart from the OpenHound repository:
+
+    ```bash
+    helm install openhound-aws \
+      --namespace openhound \
+      --create-namespace \
+      --values values.yaml \
+      <openhound_path>/deployments/helm/openhound
+    ```
+
+    Verify that the collector pod starts and review its logs:
+
+    ```bash
+    kubectl get pods --namespace openhound
+    kubectl logs --namespace openhound -l app.kubernetes.io/name=openhound -f
+    ```
+  </Step>
+
+  <Step title="Enable S3 collection (optional)">
+    To enable S3 collection, update `config.toml` before creating or updating the ConfigMap. For example:
+
+    ```toml title="config.toml"
+    [sources.source.aws.bucket_policy]
+    include = true
+    max_objects = 10
+
+    [[sources.source.aws.bucket_policy.rule]]
+    include = true
+    match_bucket = ".*"
+
+    [[sources.source.aws.bucket_policy.rule]]
+    include = true
+    match_object = ".*"
+    ```
+
+    After changing the file, update the ConfigMap and restart the deployment so the pod reads the new configuration:
+
+    ```bash
+    kubectl create configmap openhound-aws-config \
+      --namespace openhound \
+      --from-file=config.toml=./config.toml \
+      --dry-run=client \
+      --output yaml | kubectl apply --filename -
+
+    kubectl rollout restart deployment/openhound-aws --namespace openhound
     ```
   </Step>
 </Steps>
