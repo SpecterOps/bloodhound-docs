@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Check docs coverage for edges by comparing documented edges in bloodhound-docs
-with EdgeInfoComponents defined in the bloodhound code.
+with the AD and Azure relationship kinds defined in the bloodhound CUE schema.
 
 Outputs two alphabetized manifests and prints a comparison summary.
 
@@ -21,13 +21,38 @@ from typing import Iterable, List, Set, Tuple
 
 DOCS_EDGES_REL = "docs/resources/edges"
 DEFAULT_BH_REL = "../BloodHound"
-HELP_TEXTS_INDEX_REL = "packages/javascript/bh-shared-ui/src/components/HelpTexts/index.tsx"
+CUE_SCHEMA_REL = (
+    "packages/cue/bh/ad/ad.cue",
+    "packages/cue/bh/azure/azure.cue",
+)
 DEFAULT_OUTPUT_REL = "scripts/output"
 
 IGNORED_DOC_FILES = {"overview.mdx", "traversable-edges.mdx"}
 
+# These relationship kinds are present in the graph schema but are internal or
+# composition-oriented and are not published as standalone edge documentation.
+# Keep this list explicit and reviewed when the documentation policy changes.
+NON_DOCUMENTED_RELATIONSHIPS = frozenset(
+    {
+        "ContainsIdentity",
+        "PropagatesACEsTo",
+        "GPOAppliesTo",
+        "CanApplyGPO",
+    }
+)
+
 FRONTMATTER_RE = re.compile(r"^---\s*(.*?)\s*---", re.DOTALL | re.MULTILINE)
 TITLE_LINE_RE = re.compile(r"^title:\s*(?P<title>.+?)\s*$", re.MULTILINE)
+CUE_KIND_DEF_RE = re.compile(
+    r"^(?P<name>[A-Za-z][A-Za-z0-9_]*):\s*types\.#Kind\s*&\s*\{(?P<body>.*?)^\}",
+    re.DOTALL | re.MULTILINE,
+)
+CUE_RELATIONSHIP_LIST_RE = re.compile(
+    r"^RelationshipKinds:\s*\[\s*\n(?P<body>.*?)^\]",
+    re.DOTALL | re.MULTILINE,
+)
+CUE_LIST_ITEM_RE = re.compile(r"^\s*(?P<name>[A-Za-z][A-Za-z0-9_]*)\s*,?\s*$", re.MULTILINE)
+FIELD_RE_TEMPLATE = r"^\s*{field}:\s*\"(?P<value>[^\"]+)\"\s*$"
 
 
 def read_file_text(path: Path) -> str:
@@ -60,31 +85,44 @@ def extract_titles_from_edges(dir_path: Path) -> List[str]:
     return titles
 
 
-def extract_edge_keys_from_code(index_path: Path) -> List[str]:
-    text = read_file_text(index_path)
-    # Find the EdgeInfoComponents object literal
-    start = text.find("const EdgeInfoComponents = {")
-    if start == -1:
-        raise RuntimeError("Could not find 'const EdgeInfoComponents = {' in index.tsx")
-    # Slice from the opening brace
-    brace_start = text.find("{", start)
-    if brace_start == -1:
-        raise RuntimeError("Malformed EdgeInfoComponents declaration")
-    # Collect lines until the closing '};' for this object
-    remainder = text[brace_start + 1 :]
-    lines = remainder.splitlines()
-    keys: List[str] = []
-    for line in lines:
-        if line.strip().startswith("};"):
-            break
-        # Strip inline comments and trailing commas
-        # Match patterns like: "    KeyName: Value,"
-        # Handle keys with hyphens, quotes, and more whitespace variations
-        m = re.match(r'\s*["\']?([A-Za-z0-9_-]+)["\']?\s*:\s*', line)
-        if m:
-            keys.append(m.group(1))
-    keys = sorted(set(keys), key=str.casefold)
-    return keys
+def extract_edge_keys_from_cue(cue_path: Path) -> Set[str]:
+    text = read_file_text(cue_path)
+
+    definitions = {}
+    for match in CUE_KIND_DEF_RE.finditer(text):
+        body = match.group("body")
+        symbol_match = re.search(FIELD_RE_TEMPLATE.format(field="symbol"), body, re.MULTILINE)
+        representation_match = re.search(
+            FIELD_RE_TEMPLATE.format(field="representation"), body, re.MULTILINE
+        )
+        if not symbol_match:
+            continue
+        definitions[match.group("name")] = (
+            symbol_match.group("value"),
+            representation_match.group("value") if representation_match else None,
+        )
+
+    relationship_list = CUE_RELATIONSHIP_LIST_RE.search(text)
+    if not relationship_list:
+        raise RuntimeError(f"Could not find RelationshipKinds in {cue_path}")
+
+    references = [
+        match.group("name") for match in CUE_LIST_ITEM_RE.finditer(relationship_list.group("body"))
+    ]
+    if not references:
+        raise RuntimeError(f"RelationshipKinds is empty or malformed in {cue_path}")
+
+    missing_definitions = sorted(set(references) - definitions.keys(), key=str.casefold)
+    if missing_definitions:
+        raise RuntimeError(
+            f"RelationshipKinds references undefined kinds in {cue_path}: "
+            + ", ".join(missing_definitions)
+        )
+
+    return {
+        definitions[reference][1] or definitions[reference][0]
+        for reference in references
+    }
 
 
 def write_manifest(path: Path, items: Iterable[str]) -> None:
@@ -94,23 +132,13 @@ def write_manifest(path: Path, items: Iterable[str]) -> None:
             f.write(f"{item}\n")
 
 
-def compare_lists(docs: List[str], code: List[str]) -> Tuple[Set[str], Set[str]]:
-    # Create case-insensitive lookup maps
-    docs_lower = {item.lower(): item for item in docs}
-    code_lower = {item.lower(): item for item in code}
-    
-    missing_keys = set(code_lower.keys()) - set(docs_lower.keys())
-    extra_keys = set(docs_lower.keys()) - set(code_lower.keys())
-    
-    # Return original-case items for display
-    missing_in_docs = {code_lower[k] for k in missing_keys}
-    extra_in_docs = {docs_lower[k] for k in extra_keys}
-    
-    return missing_in_docs, extra_in_docs
+def compare_lists(docs: List[str], schema: Set[str]) -> Tuple[Set[str], Set[str]]:
+    docs_set = set(docs)
+    return schema - docs_set, docs_set - schema
 
 
 def main(argv: List[str]) -> int:
-    parser = argparse.ArgumentParser(description="Check Edge docs coverage vs code registry")
+    parser = argparse.ArgumentParser(description="Check edge docs coverage vs the CUE schema")
     parser.add_argument("--bh-root", default=os.environ.get("BH_REPO_ROOT", DEFAULT_BH_REL), help="Path to bloodhound code repo root")
     parser.add_argument("--edges-dir", default=DOCS_EDGES_REL, help="Path to edges docs directory (relative or absolute)")
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_REL, help="Directory to write manifest files")
@@ -126,17 +154,27 @@ def main(argv: List[str]) -> int:
     if not bh_root.is_absolute():
         bh_root = (repo_root / args.bh_root).resolve()
 
-    index_path = bh_root / HELP_TEXTS_INDEX_REL
+    cue_paths = [bh_root / relative_path for relative_path in CUE_SCHEMA_REL]
 
     if not edges_dir.exists():
         print(f"ERROR: edges directory not found: {edges_dir}", file=sys.stderr)
         return 2
-    if not index_path.exists():
-        print(f"ERROR: index.tsx not found: {index_path}", file=sys.stderr)
+    missing_cue_paths = [path for path in cue_paths if not path.exists()]
+    if missing_cue_paths:
+        for path in missing_cue_paths:
+            print(f"ERROR: CUE schema file not found: {path}", file=sys.stderr)
         return 2
 
     docs_titles = extract_titles_from_edges(edges_dir)
-    code_keys = extract_edge_keys_from_code(index_path)
+    schema_keys = set().union(*(extract_edge_keys_from_cue(path) for path in cue_paths))
+
+    unknown_exclusions = NON_DOCUMENTED_RELATIONSHIPS - schema_keys
+    if unknown_exclusions:
+        raise RuntimeError(
+            "Configured non-documented relationships are not present in the CUE schema: "
+            + ", ".join(sorted(unknown_exclusions, key=str.casefold))
+        )
+    schema_keys -= NON_DOCUMENTED_RELATIONSHIPS
 
     # Write manifests
     if not args.no_write:
@@ -144,24 +182,25 @@ def main(argv: List[str]) -> int:
         if not out_dir.is_absolute():
             out_dir = repo_root / out_dir
         write_manifest(out_dir / "edges_docs_manifest.txt", docs_titles)
-        write_manifest(out_dir / "edges_code_manifest.txt", code_keys)
+        write_manifest(out_dir / "edges_schema_manifest.txt", sorted(schema_keys, key=str.casefold))
 
-    missing_in_docs, extra_in_docs = compare_lists(docs_titles, code_keys)
+    missing_in_docs, extra_in_docs = compare_lists(docs_titles, schema_keys)
 
     print("Edge docs coverage check")
     print(f"- Docs edges: {len(docs_titles)}")
-    print(f"- Code edges: {len(code_keys)}")
+    print(f"- Schema edges: {len(schema_keys)}")
+    print(f"- Explicitly excluded schema edges: {len(NON_DOCUMENTED_RELATIONSHIPS)}")
 
     if not missing_in_docs and not extra_in_docs:
-        print("SUCCESS: Docs coverage matches code edges (1:1)")
+        print("SUCCESS: Docs coverage matches schema edges (1:1)")
         return 0
 
     if missing_in_docs:
-        print("WARNING: Edges present in code but missing in docs:")
+        print("WARNING: Schema edges missing in docs:")
         for item in sorted(missing_in_docs, key=str.casefold):
             print(f"  - {item}")
     if extra_in_docs:
-        print("WARNING: Edges present in docs but not in code:")
+        print("WARNING: Docs edges not present in schema:")
         for item in sorted(extra_in_docs, key=str.casefold):
             print(f"  - {item}")
 
