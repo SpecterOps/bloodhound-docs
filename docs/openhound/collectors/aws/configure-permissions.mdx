@@ -19,11 +19,16 @@ Choose the collection strategy that matches the AWS environment you want OpenHou
 | Collection strategy | Use this path when |
 | --- | --- |
 | Single-account collection | The collector collects resources from one AWS account. |
-| Organization-wide collection | The collector collects AWS Organizations metadata and resources from member accounts. |
+| Organization-wide collection with a configured source account | **Recommended.** Set `source_account` to the account ID of the configured profile identity, which assumes the management role and member-account collection roles. |
+| Management account as source | Use this alternative when the collector's profile resolves to the AWS Organizations management account; omit `source_account`. |
 
 <Note>
   For multiple independent AWS accounts, you must repeat the single-account collection configuration for each account.
 </Note>
+
+<Tip>
+  For organization-wide collection, we recommend the configured source-account mode. Start with [Use a configured source account](#use-a-configured-source-account); the management-account-as-source procedure below is an alternative.
+</Tip>
 
 <Tabs>
   <Tab title="Single-account collection">
@@ -72,8 +77,8 @@ Choose the collection strategy that matches the AWS environment you want OpenHou
     ```
   </Tab>
 
-  <Tab title="Organization-wide collection">
-    Use this path when the collector runs from an AWS Organizations management account and assumes a read-only collection role in member accounts. Within the procedure, choose the deployment model tab that matches where the collector runs.
+  <Tab title="Management-account collection (alternative)">
+    Use this alternative when the collector's configured AWS profile resolves to the AWS Organizations management account and assumes a read-only collection role in member accounts. For the recommended configured source-account setup, see [Use a configured source account](#use-a-configured-source-account). Within the procedure, choose the deployment model tab that matches where the collector runs.
 
     ##### Local or external workload
 
@@ -504,8 +509,8 @@ Use this procedure when the AWS collector collects one AWS account.
   </Step>
 </Steps>
   </Tab>
-  <Tab title="Organization-wide collection">
-Use this procedure when the AWS collector runs from the AWS Organizations management account and assumes a read-only collection role in member accounts.
+  <Tab title="Management-account collection (alternative)">
+Use this alternative when the AWS collector profile resolves to the AWS Organizations management account and assumes a read-only collection role in member accounts. For the recommended configured source-account setup, see [Use a configured source account](#use-a-configured-source-account).
 
 <Note>
   Run these steps from the AWS Organizations management account or a delegated administrator account. Before continuing, verify the active AWS identity with `aws sts get-caller-identity`.
@@ -897,15 +902,22 @@ The AWS organization profile must resolve to credentials in the management accou
 </Tab>
 </Tabs>
 
-## Use a dedicated source account
+## Use a configured source account
 
-Use a dedicated source account when the collector runs outside the management account. Configure the collector profile to resolve to the source account, then set `source_account`, `management_account_id`, and `management_role_name` as described in [Configure the Collector](/openhound/collectors/aws/collect-data#choose-an-account-collection-strategy).
+Use a configured source account for organization collection. Configure the collector's AWS profile to resolve to the account that you set as `source_account`, then set `management_account_id` and `management_role_name` as described in [Configure the Collector](/openhound/collectors/aws/collect-data#choose-an-account-collection-strategy). Verify that `aws sts get-caller-identity` reports the same account ID configured as `source_account`.
 
-The source identity needs `sts:AssumeRole` permission for the management role and every member-account collection role. Each of those roles must trust the source identity. The collector assumes the management role for AWS Organizations calls and assumes each member role directly from the source identity.
+The role-assumption path is:
 
-If you use the StackSet template in the organization-wide procedure, replace its management-account principal in the member-role trust policy with the dedicated source principal. Create or update the management-account role with the same trust relationship and attach the collector read-only policy so it can read AWS Organizations metadata.
+1. The source identity assumes the management-account role to read AWS Organizations metadata and collect management-account resources.
+2. The same source identity directly assumes the configured collection role in each active member account.
+
+Grant the source identity `sts:AssumeRole` permission for the management role and the member-account collection roles. Configure both the management role and each member role to trust the source identity. Attach the OpenHound read-only collection policy to the management role and member roles. If `management_role_name` is omitted, it defaults to `org_role_name`.
+
+Use an IAM user for a local or external collector, or the collector workload's IAM role for an AWS-hosted collector. Create or identify that principal in the configured source account—not the management account. Attach the assume-role permissions to this source principal; the management and member-account roles are the roles that need the OpenHound read-only collection policy.
+
+If you use the StackSet template in the management-account-as-source alternative above to deploy member roles, replace its management-account principal in each member-role trust policy with the configured source principal. For those templates, use the configured source account ID—not the management account ID—in the principal ARN. Separately create or update the management-account role so it trusts that source principal and has the read-only permissions needed for AWS Organizations and collection. The source identity must be included in the `sts:AssumeRole` permissions policy for both the management role and member roles; if the management role has a different name from `org_role_name`, add its ARN explicitly.
 
 ## Next steps
 
-Continue to [Configure the Collector](/openhound/collectors/aws/collect-data#choose-an-account-collection-strategy) and use `managementaccount` as the AWS organization profile name.
+Continue to [Configure the Collector](/openhound/collectors/aws/collect-data#choose-an-account-collection-strategy). For the recommended setup, set `source_account` to the configured profile's account ID; choose the management account as the source only if that alternative matches your deployment.
   
