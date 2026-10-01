@@ -20,12 +20,12 @@ To set up your local environment for docs:
 
 ### 1. Write the docs
 
-Write or edit docs in your fork of the BloodHound Docs repository. Before adding or moving a page, use the [information architecture guide](./.github/info-architecture.md) to choose its location and navigation group.
+Write or edit docs in your fork of the BloodHound Docs repository. Before adding or moving a page, use the [information architecture guide](.agents/info-architecture.md) to choose its location and navigation group.
 
 To edit an existing page:
 
 1. Create a branch.
-1. Go to the file you want to edit and make your changes.
+2. Go to the file you want to edit and make your changes.
 
 To add a new page:
 
@@ -54,9 +54,9 @@ When you add, move, or remove a page, update the `docs/docs.json` file in the sa
 
 To edit the docs:
 
-1. Follow the [documentation style guide](./.github/style-guide.md) and [Mintlify guidance](./.github/mintlify-guidance.md) while writing and formatting the page.
+1. Follow the [documentation style guide](.agents/style-guide.md) and [Mintlify guidance](.agents/mintlify-guidance.md) while writing and formatting the page.
 
-1. _(Optional)_ Run the following commands to validate your changes:
+2. _(Optional)_ Run the following commands to validate your changes:
 
    | Command | Description |
    | ------- | ----------- |
@@ -67,7 +67,7 @@ To edit the docs:
 
    If you get stuck on local development, see the [Mintlify documentation](https://mintlify.com/docs/development).
 
-2. Use this checklist to review your docs for quality.
+3. Use this checklist to review your docs for quality.
    
    - **Task-ify page titles and headings**: Where possible, use task-based titles like “Create a data collection schedule” instead of “Creating a data collection schedule”.
 
