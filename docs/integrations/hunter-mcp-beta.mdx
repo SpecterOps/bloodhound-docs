@@ -10,35 +10,57 @@ With Hunter, AI agents can help prioritize active findings, check collection hea
 Your AI agents can connect to BloodHound Hunter MCP as a remote streamable HTTP server with no local installation required. BloodHound Hunter is currently available in a limited closed Beta and must be enabled for your BloodHound Enterprise tenant.
 
 ## Requirements
-- A BloodHound Enterprise deployment with the BloodHound Hunter beta enabled.
-- An active OpenAI Codex subscription approved for use with your BloodHound data.
-- Codex in the ChatGPT desktop app, CLI, or IDE extension, with outbound HTTPS access to your BloodHound Enterprise tenant.
-- An active BloodHound session within your browser.
-- Account used for authentication with Hunter MCP server must have one of the following BloodHound Enterprise roles: User, Power User, or Administrator.
 
-## Connect Codex to Hunter
-1. Start a new Codex chat and enter the prompt below to connect to Hunter MCP.
-    <Prompt description="Connect to Hunter MCP">
-    Connect to the MCP server at `https://<bloodhound-host>/api/v2/huntmaster/mcp` and execute the bloodhound-login prompt presented by the MCP server. Ask me to provide the BloodHound tenant domain to replace `<bloodhound-host>` to be used for this connection.
-    </Prompt>
-2. Codex will present a login URL and a one-time code within your chat window. Open the link in your preferred browser. Sign into BloodHound if necessary, confirm that the page’s code matches the code Codex displayed, and approve access.
-3. Return to the same Codex chat. Codex will poll for approval and refresh Hunter's tools and resources without opening a new MCP transport.
-4. Ask Codex to verify the connection:
+- A BloodHound Enterprise deployment with the BloodHound Hunter beta enabled
+- A supported MCP client approved for use with your BloodHound data
+- Outbound HTTPS access from the selected client to your BloodHound Enterprise tenant
+- A BloodHound Enterprise account with the `User`, `Power User`, or `Administrator` role
+
+## Connect an MCP client
+
+Your Hunter MCP server URL is:
+
+```text
+https://<bloodhound-host>/api/v2/hunter/mcp
+```
+
+Replace `<bloodhound-host>` with your BloodHound Enterprise tenant domain. Hunter publishes OAuth discovery metadata and supports dynamic client registration, so you do not need to create a Connected App or provide a client secret.
+
+Configure the Hunter URL as a remote MCP server by following the documentation for your client:
+
+- [OpenAI Codex MCP documentation](https://developers.openai.com/codex/mcp/)
+- [Claude.ai and Claude Desktop custom connector documentation](https://claude.com/docs/connectors/custom/add-unlisted)
+- [Claude Code MCP documentation](https://code.claude.com/docs/en/mcp#authenticate-with-remote-mcp-servers)
+- [GitHub Copilot and VS Code MCP server documentation](https://code.visualstudio.com/docs/agent-customization/mcp-servers)
+- [OpenCode MCP server documentation](https://opencode.ai/docs/mcp-servers/#oauth)
+
+## Approve and verify the connection
+
+<Steps>
+  <Step title="Approve access in BloodHound">
+    Sign in to BloodHound Enterprise if necessary. Review the **Requesting client** and **Callback URL**, then select **Approve Hunter Access**.
+  </Step>
+  <Step title="Verify Hunter in your client">
+    Start or return to a chat and enter:
+
     <Prompt description="Verify the Hunter MCP connection">
     Call `bloodhound_status`, confirm that Hunter is authenticated, and summarize the available capabilities without querying BloodHound data yet.
     </Prompt>
+  </Step>
+</Steps>
 
+## Workflow example
 
-<Info>If Codex saves the server but does not expose its tools, restart Codex (or the IDE extension) and repeat the connection prompt.</Info>
+Enter the following prompt in your connected client to get a BloodHound environment and risk overview.
 
-## Codex Workflow Example
-Enter the following prompt into OpenAI Codex to get started with a BloodHound environment and risk overview.
 <Prompt description="Get started with Hunter MCP">
 Use Hunter to list the BloodHound environments I can access, summarize their collection health and warnings, and then execute the bloodhound-top-findings prompt for the highest-priority active findings. For the top three findings, explain the ranking, show bounded evidence, and provide the short canonical remediation.
 </Prompt>
-<Info>Codex uses the typed Hunter tools first, retains the identifiers returned by the server, and avoids raw Cypher unless the typed tools cannot answer the question.</Info>
 
-## Additional Prompts to Try in Codex
+<Info>Hunter directs clients to use its typed tools first, retain the identifiers returned by the server, and avoid raw Cypher unless the typed tools cannot answer the question.</Info>
+
+## Additional prompts to try
+
 1. Review your highest-severity findings with reasoning and remediation steps.
     <Prompt description="Prioritize Findings">
     Show my highest-priority active findings, explain why they rank highly, and give me the short remediation for the top three.
@@ -60,7 +82,17 @@ Use Hunter to list the BloodHound environments I can access, summarize their col
     Find bounded shortest attack paths from `<source-id>` to `<target-id>` and create a BloodHound Explore link for the best verified path. Ask me for the `<source-id>` and `<target-id>`.
     </Prompt>
 
+## Manage access
+
+In BloodHound Enterprise, select **Hunter MCP** to manage access associated with your account:
+
+- **Connected Apps** lists manually created and automatically registered MCP clients. Deleting an app disconnects all of its active connections.
+- **Active Connections** lists your current authorizations and their expiration dates. Revoking a connection immediately disconnects that client.
+
+After deleting an app or revoking a connection, repeat the authentication steps in your MCP client to reconnect.
+
 ## Known Restrictions and Operational Limits
+
 <table>
   <thead>
     <tr>
@@ -73,27 +105,28 @@ Use Hunter to list the BloodHound environments I can access, summarize their col
       <td><strong>Authentication model</strong></td>
       <td>
         <ul>
-          <li>Hunter uses its own browser-approval flow; it is not an OAuth 2.0 authorization server. Do not use Codex’s built in MCP login feature for Hunter.</li>
+          <li>Hunter uses OAuth 2.0 Authorization Code with S256 Proof Key for Code Exchange (PKCE).</li>
+          <li>Compatible clients register automatically through dynamic client registration.</li>
+          <li>Hunter does not issue or require client secrets.</li>
         </ul>
       </td>
     </tr>
     <tr>
-      <td><strong>Login and session lifetime</strong></td>
+      <td><strong>Authorization and connection lifetime</strong></td>
       <td>
         <ul>
-          <li>When authenticating, one-time codes expire after 10 minutes.</li>
-          <li>Sessions expire after 30 minutes of inactivity.</li>
-          <li>Sessions expire after 8 hours after login even when active.</li>
-          <li>Logging out of BloodHound in your browser or a change in user permissions during an active session requires reauthentication.</li>
+          <li>Authorization requests and unused authorization codes expire after 10 minutes.</li>
+          <li>MCP clients refresh access automatically. A connection expires 90 days after its original approval and then requires authentication again.</li>
+          <li>Disabled accounts, deleted connected apps, revoked connections, and permission changes take effect on the next MCP request.</li>
         </ul>
       </td>
     </tr>
     <tr>
-      <td><strong>MCP Catalog compatibility</strong></td>
+      <td><strong>MCP client compatibility</strong></td>
       <td>
         <ul>
-          <li>When unauthenticated, Hunter MCP only presents you with the option to check the current status or start a new session by authenticating.</li>
-          <li>If authenticated and your capabilities are still limited, ask Codex to refresh Hunter’s tools and resources within the same chat.</li>
+          <li>Hunter uses remote streamable HTTP and supports the clients listed in the connection instructions.</li>
+          <li>If authentication succeeds but tools are unavailable, check the MCP server status in your client and reconnect it.</li>
         </ul>
       </td>
     </tr>
@@ -101,7 +134,7 @@ Use Hunter to list the BloodHound environments I can access, summarize their col
       <td><strong>Result format</strong></td>
       <td>
         <ul>
-          <li>Hunter returns full tool results as structured data that Codex can inspect, filter, and summarize. The visible text response from the tool is only a brief status message.</li>
+          <li>Hunter returns full tool results as structured data that the client can inspect, filter, and summarize. The visible text response from the tool is only a brief status message.</li>
         </ul>
       </td>
     </tr>
@@ -110,7 +143,6 @@ Use Hunter to list the BloodHound environments I can access, summarize their col
       <td>
         <ul>
           <li>Shared HTTP limit is 55 requests/second per client IP per API process.</li>
-          <li>Accounts are limited to 10 concurrent connections.</li>
           <li>Rate limiting is indicated by a HTTP 429 error.</li>
         </ul>
       </td>
@@ -162,6 +194,13 @@ Use Hunter to list the BloodHound environments I can access, summarize their col
     </tr>
   </tbody>
 </table>
+
+## Troubleshoot a connection
+
+- **Authorization unavailable:** Return to your MCP client and start authentication again. Authorization requests expire after 10 minutes and cannot be reused.
+- **Tools unavailable after approval:** Check the MCP server status in your client and reconnect it if necessary.
+- **Persistent `401 Unauthorized`:** Authenticate again, then check **Hunter MCP > Active Connections** to confirm that the connection exists and has not expired or been revoked. 
+- **`404 Not Found`:** Confirm that the beta is enabled for your tenant and that the server URL ends in `/api/v2/hunter/mcp`.
 
 ## Questions and Support
 If you encounter errors or have other questions while using Hunter MCP, please reach out to [Stephen Hinck](mailto:shinck@specterops.io) or [Connor Mathena](mailto:cmathena@specterops.io).
