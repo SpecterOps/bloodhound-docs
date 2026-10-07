@@ -16,12 +16,12 @@ interpreting OpenHound Entra Agents results.
 [Power Platform connections](https://learn.microsoft.com/en-us/connectors/)
 store the credentials a connector uses to access another service. Apps and
 flows can use these connections, and connection permissions determine who can
-use them. The collector can inventory Dataverse connection references, but its
-least-privilege collection does not read the underlying connection's access
+use them. The collector can read connection references, but a
+least-privilege read-only service principal cannot read the underlying connection's access
 list (who is allowed to use it) or credential details. Collecting
-the list requires optional registration of the collector application as a
-Power Platform management application as no read-only option exists. A management registration
-gives the collector tenant-wide Power Platform administrator capabilities.
+this requires registering the collector application as a
+Power Platform management application. A management registration
+gives the collector tenant-wide read and write Power Platform administrator capabilities.
 
 With the management registration, the collector can:
 
@@ -29,7 +29,13 @@ With the management registration, the collector can:
 - Create `AZAgent_HasConnectionAccess` edges that represent connector ACL assignments.
 - Create `AZAgent_ConnectionAuthenticatedAs` edges that represent a principal's configured authentication on a connector.
 
-The enrichment shows configured connection references, connection ACL assignments, and supported authentication identity evidence. Copilot connector references originate at `AZAgent_ToolInstance`, reached from the agent through non-traversable `AZAgent_HasTool`. This configuration chain does not establish a traversable Copilot capability path or general control of the authenticated identity.
+This allows running Cypher queries like:
+
+- `AZAgent - Configured connection identities`
+- `AZAgent - Configured identities for child flow connections`
+- `AZAgent - Connection access and configured identities`
+- `AZAgent - Connections with unmatched authentication metadata`
+- `AZAgent - Copilot agent access and configured connection identities`
 
 ### Blueprints without collected child identities can be missing
 
