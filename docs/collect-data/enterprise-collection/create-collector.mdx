@@ -56,8 +56,9 @@ When creating a SharpHound Enterprise collector client, you must select the auth
         | **Collection Schedule** | No | Optional configuration options for [scheduling](/collect-data/enterprise-collection/collection-schedule) data collection jobs |
         | **Advanced Options** | No | Optional domain controller targeting<br/><br/>By default, SharpHound automatically selects a Domain Controller for LDAP queries.<br/><br/>Specifying a target will prevent cross-trust collection from working unless the targeted LDAP server can respond for all desired domains |
         | **Authentication** | Yes | Authentication method the client will use:<br/><ul><li>**BHE Authentication**: Traditional API token-based authentication (default)</li><li>**Integrated Windows Authentication**: Windows-based authentication via ADFS</li></ul> |
-        | **Issuer ID** | Yes<br/><br/>(*IWA only*) | The ADFS well-known endpoint URL, typically: `https://adfs.example.com/.well-known/openid-configuration` |
+        | **Issuer Address** | Yes<br/><br/>(*IWA only*) | The ADFS well-known endpoint URL, typically: `https://adfs.example.com/.well-known/openid-configuration` |
         | **Issuer Address Override** | No<br/><br/>(*IWA only*) | An optional override for the token issuer address if your ADFS configuration uses a different issuer URL for token validation |
+        | **Custom Client Identifier** | No<br/><br/>(*IWA only*) | An optional value that BloodHound Enterprise uses to associate the ADFS bearer token with this client when the token identifies the client with a value other than the generated Client ID. The value must exactly match the configured token claim and be unique across clients. Leave blank to use the generated Client ID. |
 
         <Tabs>
           <Tab title="BHE Authentication">
@@ -71,7 +72,9 @@ When creating a SharpHound Enterprise collector client, you must select the auth
           </Tab>
 
           <Tab title="Integrated Windows Authentication">
-          The following screenshot shows the client creation form when **Integrated Windows Authentication** is selected. Note the additional required **Issuer ID** field and optional **Issuer Address Override**.
+          The following screenshot shows the client creation form when **Integrated Windows Authentication** is selected.
+
+          Note the additional required **Issuer Address** field and optional **Issuer Address Override** and **Custom Client Identifier** fields.
             <Frame>
               <img
                 src="/images/data_collectors/create-sharphound-iwa-auth.png"
@@ -113,7 +116,11 @@ When creating a SharpHound Enterprise collector client, you must select the auth
       <Tab title="Integrated Windows Authentication">
         A _Client Configuration Info_ window will appear with the Client ID required to set up ADFS.
 
-        <Note>The Client ID and configuration details are required to [configure ADFS](/install-data-collector/install-sharphound/configure-adfs-iwa) and to [configure](/install-data-collector/install-sharphound/local-configuration) the SharpHound Enterprise collector application in the `settings.json` file.</Note>
+        <Note>
+          The Client ID and configuration details are required to [configure ADFS](/install-data-collector/install-sharphound/configure-adfs-iwa) and to [configure](/install-data-collector/install-sharphound/local-configuration) the SharpHound Enterprise collector application in the `settings.json` file.
+
+          If you entered a Custom Client Identifier, record it for the ADFS claim-rule configuration. The value must be included in the ADFS token's client-identifier claim; do not add it to SharpHound's `settings.json` file.
+        </Note>
 
           <Frame>
             <img
