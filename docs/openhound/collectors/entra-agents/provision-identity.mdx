@@ -1,0 +1,469 @@
+---
+title: Configure Permissions
+description: Provision the Entra Agents collector service principal and configure access to Microsoft services.
+hidden: true
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+Follow this guide to configure Microsoft Entra for OpenHound Entra Agents data collection.
+
+> Do not add these permissions to an AzureHound application or reuse an AzureHound
+> credential. The Agent ID collector is separate from AzureHound.
+
+## Deployment outcome
+
+| Component | Created or configured | Details / Access granted |
+|---|---|---|
+| Collector application and service principal | One single-tenant Entra application registration and its enterprise application | Microsoft Graph application read permissions |
+| Collector credential | One enterprise application client secret | Used by the collector service principal |
+| Azure access | Custom Azure RBAC role assigned at the tenant root management group, or selected subscriptions | [OpenHound Entra Agents ARM Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json) |
+| Foundry agent access | Custom Azure RBAC role assigned at all subscriptions containing Foundry resources or at selected subscriptions | [OpenHound Entra Agents Foundry Agent Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json) |
+| Power Platform access | Tenant-scope Power Platform role assignment to the collector service principal | [Power Platform reader](https://learn.microsoft.com/en-us/power-platform/admin/security/role-based-access-control#built-in-power-platform-roles) |
+| [Optional] [Power Platform connector](https://learn.microsoft.com/en-us/connectors/) details | Register the collector service principal as an Power Platform management application | Tenant-wide Power Platform administrator access; enables edges for connection ACL and configured authentications  |
+| Environment access | One enabled Dataverse Application User in every approved environment | Custom OpenGraph Entra Agents Dataverse Reader role |
+| Environment inventory* | Administrator-exported and reviewed file | Defines environment inventory the collector needs to collect Power Platform environments |
+
+> *New deployments use the Power Platform API with the [Power Platform Reader](https://learn.microsoft.com/en-us/power-platform/admin/security/role-based-access-control#built-in-power-platform-roles) role.
+> Because [Power Platform RBAC does not currently support](https://learn.microsoft.com/en-us/power-platform/admin/programmability-extensibility-overview#known-limitations) the `List Environments for User`
+> endpoint, an administrator must manually export an Environment inventory.
+
+## Prerequisites
+
+- Administrator with permissions to:
+  - Create and consent an Entra application
+  - Create and assign Azure RBAC roles
+  - Assign Power Platform roles
+  - Administer each target Dataverse environment, including the **System Administrator** Dataverse role
+  - List the Azure subscriptions in scope
+- Install Azure CLI and sign in to the target tenant with `az login`.
+- For automated provisioning, install Bash, Python 3.13 or newer for Foundry role sync.
+- PowerShell
+
+## 1. Choose a provisioning route
+
+### Automated base provisioning
+
+The [provisioning script](/openhound/collectors/entra-agents/assets/provision-identity.sh) deploys a collector service principal,
+its Graph permissions, its Power Platform Reader
+assignment and both custom Azure roles.
+
+Download these four files and save them together in the same directory:
+
+- [provision-identity.sh](/openhound/collectors/entra-agents/assets/provision-identity.sh)
+- [sync-foundry-roles.py](/openhound/collectors/entra-agents/assets/sync-foundry-roles.py)
+- [openhound-entra-agents-arm-reader-role.json](/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json)
+- [openhound-entra-agents-foundry-agent-reader-role.json](/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json)
+
+Run the commands below from the directory containing the downloaded files.
+
+By default, it assigns the [OpenHound Entra Agents ARM Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json) role at the tenant root management group and the
+[OpenHound Entra Agents Foundry Agent Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json) role on enabled subscriptions containing AI Services or OpenAI accounts:
+
+```bash
+bash ./provision-identity.sh >> .env
+```
+
+To select subscription scopes instead of automatic Foundry account discovery,
+identify the subscriptions to collect and set `SUBSCRIPTIONS`. The script
+assigns both Azure roles at those subscriptions:
+
+```bash
+SUBSCRIPTIONS="<subscription-id-1> <subscription-id-2>" \
+bash ./provision-identity.sh >> .env
+```
+
+Then complete the manual steps below for which no automated deployment is supported:
+
+- [4. Export and maintain the environment inventory](#4-export-and-maintain-the-environment-inventory)
+- [5. Configure each approved Dataverse environment](#5-configure-each-approved-dataverse-environment)
+- [6. Configure the collector](#6-configure-the-collector)
+- [7. Verify collection](#7-verify-collection)
+
+### Manual provisioning
+
+Complete every section below in order.
+
+## 2. Create the collector application and service principal
+
+### 2.1 Create the application
+
+1. In the [Microsoft Entra admin center](https://entra.microsoft.com/), open
+   **Entra ID** → **App registrations** → **New registration**.
+2. Name it **OpenGraph-AZAgents-Collector-ReadOnly**.
+3. Select **Single tenant only**
+4. Leave the redirect URI empty.
+5. Select **Register**.
+
+![](/openhound/collectors/entra-agents/assets/images/app-registration-creation.png)
+
+6. Record the **Application (client) ID** and **Directory (tenant) ID** from
+   the overview page. They are required in
+   [section 6](#6-configure-the-collector).
+
+![](/openhound/collectors/entra-agents/assets/images/app-registration-details.png)
+
+### 2.2 Grant Microsoft Graph permissions
+
+1. **Navigate to API permissions.** On the collector app registration's
+   **Overview** page, select **API permissions**.
+
+   ![](/openhound/collectors/entra-agents/assets/images/app-registration-api-permissions.png)
+
+2. **Remove the default permission.** If the app registration has the default
+   delegated `User.Read` permission, remove it. The collector uses application
+   permissions.
+
+3. **Add Microsoft Graph application permissions.** Select **Add a permission**,
+   then **Microsoft Graph** and **Application permissions**.
+
+   ![](/openhound/collectors/entra-agents/assets/images/app-add-permission.png)
+
+   ![](/openhound/collectors/entra-agents/assets/images/app-ms-graph.png)
+
+   ![](/openhound/collectors/entra-agents/assets/images/app-ms-graph-application-permissions.png)
+
+4. Search for and select each permission in this table:
+
+   | Permission | Purpose |
+   |---|---|
+   | `Application.Read.All` | Resolve blueprints, applications, credentials, and service principals. |
+   | `User.Read.All` | Read agent-user properties. |
+   | `RoleManagement.Read.Directory` | List activated directory roles for blueprint credential control. |
+   | `AgentIdentity.Read.All` | Read Agent ID identities. |
+   | `AgentIdentityBlueprint.Read.All` | Read Agent ID blueprints. |
+   | `AgentIdentityBlueprintPrincipal.Read.All` | Read blueprint principals. |
+   | `AgentCollection.Read.All` | Read Agent Registry collection metadata. |
+   | `AgentInstance.Read.All` | Read Agent Registry instance metadata. |
+
+5. Select **Add permissions**.
+
+   ![](/openhound/collectors/entra-agents/assets/images/app-add-permission2.png)
+
+6. **Grant admin consent.** Select **Grant admin consent for** your tenant and
+   confirm the prompt. On the **API permissions** page, verify that every
+   requested permission has **Granted** status.
+
+   ![](/openhound/collectors/entra-agents/assets/images/app-grant-consent.png)
+
+   ![](/openhound/collectors/entra-agents/assets/images/app-grant-consent-granted.png)
+
+### 2.3 Create and safely store a collector credential
+
+Open **Certificates & secrets** → **New client secret**, choose an expiry that
+matches your rotation policy, and select **Add**. Securely store the secret **Value**, it is required in
+[section 6](#6-configure-the-collector).
+
+![](/openhound/collectors/entra-agents/assets/images/app-client-secret.png)
+
+### 2.4 Inspect the enterprise application
+
+1. **Open the enterprise application** Back in **Overview** select the application at **Managed application in local directory**
+
+![](/openhound/collectors/entra-agents/assets/images/app-registration-managed-app.png)
+
+2. Record the service-principal **Object ID**, which is for Azure and Power Platform role assignments.
+
+![](/openhound/collectors/entra-agents/assets/images/app-registration-sp-objectid.png)
+
+
+### 2.5 Create and assign the custom ARM role
+
+Use the [OpenHound Entra Agents ARM Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json) role template
+to create the custom role in the Azure portal:
+
+1. In the [Azure Resource Manager](https://portal.azure.com/#servicemenu/Microsoft_Azure_Resources/ResourceManager/overview), open **Management groups** and select the tenant root
+   management group. Copy the **Directory (tenant) ID** for the next step.
+2. Save a copy of the [OpenHound Entra Agents ARM Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json) role template and replace `<tenantRootGroupId>` with
+   the **Directory (tenant) ID**.
+3. On the tenant root management group, open **Access control (IAM)** → **Add**
+   → **Add custom role**. On **Basics**, select **Start from JSON** under
+   **Baseline permissions**, then upload the edited template file.
+4. Review the role and select **Review + create** and **Create**.
+5. For tenant-wide ARM collection, stay on the tenant root management group.
+   To limit collection scope to subscriptions open each in-scope subscription and follow the for the next step for each.
+6. Open **Access control (IAM)** → **Add** → **Add role assignment**. Select
+   **OpenHound Entra Agents ARM Reader**. On **Members**, choose the collector's
+   enterprise application (service principal) from section 2.2. Select
+   **Review + assign** and verify the role appears for that principal at each
+   intended scope.
+
+### 2.6 Create and assign the custom Foundry role
+
+Use the [OpenHound Entra Agents Foundry Agent Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json) role template
+to create the custom role in the Azure portal:
+
+1. In the [Azure Resource Manager](https://portal.azure.com/#servicemenu/Microsoft_Azure_Resources/ResourceManager/overview), open subscriptions containing AI Services or
+   OpenAI accounts. Copy their **Subscription ID** for the next step.
+2. Save a copy of the [OpenHound Entra Agents Foundry Agent Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json) role template and replace `<subscriptionId>` with
+   the **Subscription ID**. If more than one subscription is in scope, add a
+   `/subscriptions/<subscriptionId>`.
+3. On a subscription, open **Access control (IAM)** → **Add** → **Add custom
+   role**. On **Basics**, select **Start from JSON** under **Baseline
+   permissions**, then upload the edited template file.
+4. Review the role and select **Review + create** and **Create**.
+5. Open each in-scope subscription for the next step.
+6. Open **Access control (IAM)** → **Add** → **Add role assignment**. Select
+   **OpenHound Entra Agents Foundry Agent Reader**. On **Members**, choose the
+   collector's enterprise application (service principal) from section 2.2.
+   Select **Review + assign** and verify the role appears for that principal at
+   each intended subscription.
+
+## 3. Assign Power Platform Reader to the collector application
+
+Assign the built-in Power Platform **Reader** role to the collector service
+principal. The administrator performing this step needs Power Platform
+Administrator or Power Platform role-based access-control administrator rights.
+
+>Microsoft does not provide a
+>Power Platform admin center GUI for creating this service-principal role
+>assignment.
+
+1. Replace the two top variables with the tenant ID and enterprise application object ID.
+2. Sign in to the Azure CLI in PowerShell, then run the code:
+
+   ```powershell
+   $tenantId = "<TENANT ID>"
+   $enterpriseApplicationObjectId = "<ENTERPRISE APPLICATION OBJECT ID>"
+
+   # Power Platform Reader GUID https://learn.microsoft.com/en-us/power-platform/admin/security/role-based-access-control#built-in-power-platform-roles
+   $powerPlatformReaderId = "c886ad2e-27f7-4874-8381-5849b8d8a090"
+
+   $ppApiToken = az account get-access-token `
+   --resource https://api.powerplatform.com --query accessToken -o tsv
+   $headers = @{ Authorization = "Bearer $ppApiToken"; "Content-Type" = "application/json" }
+
+   $body = @{
+   principalObjectId = $enterpriseApplicationObjectId
+   principalType = "ApplicationUser"
+   roleDefinitionId = $powerPlatformReaderId
+   scope = "/tenants/$tenantId"
+   } | ConvertTo-Json
+
+   Invoke-RestMethod -Method Post `
+   -Uri "https://api.powerplatform.com/authorization/roleAssignments?api-version=2024-10-01" `
+   -Headers $headers -Body $body
+   ```
+
+### 3.1 [Optional] connection detail and sharing coverage
+
+The collector can read [Power Platform connector](https://learn.microsoft.com/en-us/connectors/) details that lets the collector:
+
+- Enrich [`AZAgent_Connection`](/opengraph/extensions/entraagents/edges/azagent_connection.mdx) nodes.
+- Create [`AZAgent_HasConnectionAccess`](/opengraph/extensions/entraagents/edges/azagent_hasconnectionaccess.mdx) edges that represent connector ACL assignments.
+- Create [`AZAgent_ConnectionAuthenticatedAs`](/opengraph/extensions/entraagents/edges/azagent_connectionauthenticatedas.mdx) edges that represent a principal's configured authentication on a connector.
+
+The enrichment shows configured connection references, connection ACL assignments, and supported authentication identity evidence. Copilot connector references originate at `AZAgent_ToolInstance`, reached from the agent through non-traversable `AZAgent_HasTool`. This configuration chain does not establish a traversable Copilot capability path or general control of the authenticated identity.
+
+To enable these reads, a Power Platform administrator must register the collector application as a [Power Platform management
+application](https://learn.microsoft.com/en-us/power-platform/admin/powershell-create-service-principal):
+
+1. Install the [Power Apps administration PowerShell module](https://learn.microsoft.com/en-us/powershell/powerapps/get-started-powerapps-admin).
+2. Run the below and sign in with an administrator account:
+
+   ```powershell
+   New-PowerAppManagementApp -ApplicationId $collectorClientId
+   ```
+
+3. Run collection again and review the connection coverage messages.
+
+> **Important:** [Microsoft states](https://learn.microsoft.com/en-us/power-platform/admin/powershell-create-service-principal#limitations-of-service-principals)
+> that a Power Platform management application has Power Platform administrator-equivalent
+> capabilities and cannot be limited with granular roles. Those capabilities
+> include changing and deleting Power Platform resources.
+
+The collector attempts Power Apps administrator connection and role-assignment
+reads in each configured environment. Without this optional registration, a
+denied or unavailable administrator API produces an informational coverage
+message.
+
+## 4. Export and maintain the environment inventory
+
+The assigned Power Platform Reader role does not allow the collector service
+principal to list environments due to a [limitation with the Power Platform API
+and RBAC](https://learn.microsoft.com/en-us/power-platform/admin/programmability-extensibility-overview#known-limitations).
+An administrator must therefore create and review the inventory used by the
+collector.
+
+The collector tries the Power Platform API first, then this environment inventory, and lastly a legacy BAP discovery fallback that requires [Power Platform management-app registration](https://learn.microsoft.com/en-us/power-platform/admin/powershell-create-service-principal),
+which Microsoft states gives the application the same permissions as a tenant
+administrator and cannot be limited with granular roles. The legacy BAP fallback is therefore not recommended.
+
+### 4.1 Export the environment inventory
+
+1. Sign in with a different Azure CLI scope as an administrator:
+
+   ```powershell
+   $tenantId = "<TENANT ID>"
+   az login --tenant $tenantId --scope https://api.powerplatform.com//.default
+   ```
+
+2. Download [export-power-platform-environments.ps1](/openhound/collectors/entra-agents/assets/export-power-platform-environments.ps1). From the directory containing the downloaded script, create the `.dlt` output directory and export the inventory to `.dlt/power-platform-environments.json`:
+
+   ```powershell
+   New-Item -ItemType Directory -Path .dlt -Force | Out-Null
+   ./export-power-platform-environments.ps1 -OutputPath .dlt/power-platform-environments.json
+   ```
+
+3. Review the inventory and if an Azure role assignment scope was set remove environments outside
+the scope.
+
+### 4.3 Refresh the inventory after scope changes
+
+Refresh the inventory manually or by running the script every time an environment is onboarded,
+offboarded, renamed, gains Dataverse, or otherwise changes collection scope.
+
+You must also complete section 5 for each newly approved environment before using the refreshed inventory.
+
+## 5. Configure the application for each Dataverse environment
+
+Complete the below sections for each environment in the inventory.
+
+### 5.1 Confirm operator access
+
+The administrator creating the Application User needs **System Administrator**
+inside each target Dataverse environment. Tenant Global Administrator and Power
+Platform Administrator alone do not provide the Dataverse `prvCreateUser`
+privilege.
+
+### 5.2 Create an Application User
+
+1. In [Power Platform admin center](https://admin.powerplatform.microsoft.com/manage/environments),
+   open **Manage**,  **Environments** and select the environment name.
+2. Go to **Settings** → **Users + permissions** → **Application users**. Alternatively use the **Access** card → **S2S apps**.
+3. Select **+ New app user** → **+ Add an app**, find the collector by its
+   application ID, select a business unit, and save it.
+
+### 5.3 Create a custom Dataverse reader role
+
+1. Go to **Settings** → **Users + permissions** → **Security roles**. Alternatively use the **Access** card → **Security roles**.
+2. Select **New role** and fill in the details:
+   - Role Name: `OpenHound Entra Agents Dataverse Reader`
+   - Description: `Read-only role for the OpenGraph BloodHound collector. Grants Read at Organization scope on a fixed list of agent-related tables; no Create/Write/Delete/Append/Assign/Share privileges anywhere.`
+   - Applies to: `OpenGraph Entra Agents Collector`
+   - Summary of Core Table Privileges: `Read (Organization): Bot, BotComponent, ConnectionReference, Connection, Process (Workflow), SystemUser, Team. No write privileges.`
+   - Include App Opener privileges: Leave unchecked
+
+![](/openhound/collectors/entra-agents/assets/images/power-platform-yes-dataverse-reader-role.png)
+
+2. Select **Show all tables**, search for each entry in the below table, and set **Read = Organization** on each:
+
+| Table | Logical name |
+|---|---|
+| Agent or Bot | `bot` |
+| Agent component or Bot Component | `botcomponent` |
+| Connection | `connection` |
+| Connection Reference | `connectionreference` |
+| Process | `workflow` |
+| User | `systemuser` |
+| Team | `team` |
+
+![](/openhound/collectors/entra-agents/assets/images/power-platform-role-permissions.png)
+
+3. Select **Save + close**.
+
+### 5.4 Assign the custom Dataverse reader role
+
+1. Search for and select the custom role, then click **Members**:
+
+![](/openhound/collectors/entra-agents/assets/images/power-platform-members.png)
+
+2. Select **Add people**, search for and select the application user, click **Add**:
+
+![](/openhound/collectors/entra-agents/assets/images/power-platform-members-add.png)
+
+## 6. Configure the collector
+
+Create a `secrets.toml` file for the Entra Agents collector using the following
+example. Replace each placeholder with your own value.
+
+```toml
+[sources.source.entra_id]
+tenant_id = "<DIRECTORY_TENANT_ID>"
+client_id = "<APPLICATION_CLIENT_ID>"
+client_secret = "<CLIENT_SECRET_VALUE>"
+power_platform_environments_file = "/app/.dlt/power-platform-environments.json"
+
+[destination.bloodhoundenterprise]
+token_id = "<BHE_COLLECTOR_TOKEN_ID>"
+token_key = "<BHE_COLLECTOR_TOKEN>"
+url = "https://<YOUR_BHE_TENANT_HOSTNAME>"
+```
+
+- `tenant_id`, `client_id`, and `client_secret` come from the application
+  provisioned in this guide. Use the application client ID, not the enterprise
+  application's object ID, and the client secret **Value**, not its ID.
+- `power_platform_environments_file` is the reviewed inventory from section 4.
+  Set it to the file's path inside the collector container. The example assumes
+  the file is available at `/app/.dlt/power-platform-environments.json`.
+- `token_id` and `token_key` are the **Token ID** and **Token** for an OpenHound
+  [collector client](/collect-data/enterprise-collection/create-collector) in
+  BloodHound Enterprise. They are separate from the Entra application credentials.
+- `url` is your BloodHound Enterprise tenant URL.
+
+Provide the secrets file and reviewed environment inventory to the collector
+using the deployment instructions supplied for the beta.
+
+Do not set `reader_upn` or `auth_mode_matrix` for an application-only deployment.
+
+### Automated base provisioning
+
+The provisioning command saves its output to `.env`. Copy these values into
+the corresponding entries under `[sources.source.entra_id]` in `secrets.toml`:
+
+- `AZ_AGENTS_TENANT_ID` to `tenant_id`
+- `AZ_AGENTS_CLIENT_ID` to `client_id`
+- `AZ_AGENTS_CLIENT_SECRET` to `client_secret`
+
+### Manual provisioning
+
+Use the tenant ID, application client ID, and client secret value saved during
+manual provisioning. Set the environment inventory path as described above.
+
+## 7. Verify collection
+
+<Steps>
+  <Step title="Start the beta collector">
+    Follow the deployment instructions supplied for the beta to start the
+    OpenHound container with the secrets file and reviewed environment inventory.
+  </Step>
+  <Step title="Run a test collection">
+    In BloodHound Enterprise, open **Administration** → **Manage Clients** and
+    confirm the OpenHound collector client is online. Open its action menu,
+    select **On Demand Scan**, and select **Run**.
+  </Step>
+  <Step title="Review the collection result">
+    Check the [Finished Jobs Log](/collect-data/enterprise-collection/monitor#finished-jobs-log)
+    and the collector logs for errors or coverage messages.
+  </Step>
+  <Step title="Check the collected data">
+    Use the [Cypher queries](/openhound/collectors/entra-agents/queries) to check
+    that known agents, flows, and connections in the approved collection scope
+    are present. If expected data is missing, use the troubleshooting table below.
+  </Step>
+</Steps>
+
+## 8. Ongoing operation
+
+- Refresh and review the environment inventory.
+- Add the application and grant it the custom Dataverse role on new environments.
+- Add new subscriptions with AI Services or OpenAI accounts to the custom Azure roles. You can use the
+  [Foundry role sync](/openhound/collectors/entra-agents/assets/sync-foundry-roles.py) script to automate it: run `python ./sync-foundry-roles.py` from the directory containing the downloaded Python script and both JSON role files. The command
+  previews assignments; rerun with `--apply` to add them. If `SUBSCRIPTIONS`
+  limits collection, assign the ARM role at the new subscription too and include
+  it in `SUBSCRIPTIONS` when running the sync. Set `AZ_AGENTS_SP_OBJECT_ID` to
+  select a different service principal. Remove existing assignments separately
+  when a subscription leaves scope.
+
+## 9. Troubleshooting
+
+| What you see | What to check |
+|---|---|
+| `403` during environment discovery | Confirm Power Platform Reader is assigned and that `power_platform_environments_file` points to the reviewed inventory. The static inventory is the supported fallback when SP discovery is denied. |
+| `403 0x80072560` from Dataverse | The Application User is absent, disabled, registered for the wrong application, or missing its read-only role. |
+| `0x80040220` while creating the Application User | The operator lacks Dataverse System Administrator in that environment. |
+| Known agents, flows, or connections are absent | Confirm the environment is retained in the inventory and that the Application User has the custom Dataverse reader role with all documented table reads. |
+| ARM returns `403` | Recheck the custom ARM role at the tenant root or each approved subscription. |
+| Foundry agent list returns `403` | Recheck the Foundry Agent Reader assignment at the relevant subscription. |
+| Foundry role sync cannot list accounts | Confirm the signed-in Azure CLI identity can read the selected subscriptions and list accounts. Set `SUBSCRIPTIONS` to bypass discovery and assign at the IDs supplied. |
+| A device-code prompt appears | Remove `reader_upn` and all `device` entries from `auth_mode_matrix`. |
