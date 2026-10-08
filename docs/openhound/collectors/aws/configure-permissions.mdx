@@ -5,33 +5,24 @@ hidden: true
 ---
 
 import AwsBetaNote from '/snippets/hounds/openhound-aws-beta-note.mdx';
+import CollectionStrategy from '/snippets/hounds/aws-collection-strategy.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
 <AwsBetaNote />
 
-This page explains how to grant the OpenHound AWS collector the read-only AWS permissions it needs for single-account or organization-wide collection.
+This page explains how to grant the OpenHound AWS collector the read-only AWS permissions it needs for single-account, multiple independent-account, or organization collection.
 
 ## Choose a collection strategy
 
-Choose the collection strategy that matches the AWS environment you want OpenHound to collect:
-
-| Collection strategy | Use this path when |
-| --- | --- |
-| Single-account collection | The collector collects resources from one AWS account. |
-| Organization-wide collection with a configured source account | **Recommended.** Set `source_account` to the account ID of the configured profile identity, which assumes the management role and member-account collection roles. |
-| Management account as source | Use this alternative when the collector's profile resolves to the AWS Organizations management account; omit `source_account`. |
+<CollectionStrategy />
 
 <Note>
-  For multiple independent AWS accounts, you must repeat the single-account collection configuration for each account.
+  For multiple independent-account collection, configure one named AWS profile for each account in `profile_names`. Repeat the single-account permission configuration for each account.
 </Note>
 
-<Tip>
-  For organization-wide collection, we recommend the configured source-account mode. Start with [Use a configured source account](#use-a-configured-source-account); the management-account-as-source procedure below is an alternative.
-</Tip>
-
 <Tabs>
-  <Tab title="Single-account collection">
+  <Tab title="Single-account">
     Use this path when the collector uses single-account collection. Within the procedure, choose the deployment model tab that matches where the collector runs.
 
     ##### Local or external workload
@@ -77,8 +68,8 @@ Choose the collection strategy that matches the AWS environment you want OpenHou
     ```
   </Tab>
 
-  <Tab title="Management-account collection (alternative)">
-    Use this alternative when the collector's configured AWS profile resolves to the AWS Organizations management account and assumes a read-only collection role in member accounts. For the recommended configured source-account setup, see [Use a configured source account](#use-a-configured-source-account). Within the procedure, choose the deployment model tab that matches where the collector runs.
+  <Tab title="Organization (management account)">
+    Use this alternative when the collector's configured AWS identity resolves to the AWS organization's management account and assumes a read-only collection role in member accounts.
 
     ##### Local or external workload
 
@@ -165,8 +156,8 @@ Choose the collection strategy that matches the AWS environment you want OpenHou
 
 - AWS CLI v2.32.0 or later installed.
 - Administrator access to the AWS account where you create the collector principal and IAM roles.
-- For organization-wide collection, access to the AWS Organizations management account or a delegated administrator account.
-- For organization-wide collection, CloudFormation StackSets enabled with trusted access for AWS Organizations.
+- For organization collection, access to the AWS Organizations management account or a delegated administrator account.
+- For organization collection, CloudFormation StackSets enabled with trusted access for AWS Organizations.
 - For AWS-hosted collection, a running EC2 instance or EKS cluster that hosts the OpenHound AWS collector.
 
 ## Authenticate to AWS
@@ -321,7 +312,7 @@ Save the following policy document as `openhound-collector-policy.json`. This po
 Click the tab that matches the AWS scope you want OpenHound to collect. Each path includes deployment model tabs for local or external workloads and AWS-hosted workloads.
 
 <Tabs>
-  <Tab title="Single-account collection">
+  <Tab title="Single-account">
 Use this procedure when the AWS collector collects one AWS account.
 
 <Steps>
@@ -509,14 +500,17 @@ Use this procedure when the AWS collector collects one AWS account.
   </Step>
 </Steps>
   </Tab>
-  <Tab title="Management-account collection (alternative)">
-Use this alternative when the AWS collector profile resolves to the AWS Organizations management account and assumes a read-only collection role in member accounts. For the recommended configured source-account setup, see [Use a configured source account](#use-a-configured-source-account).
+  <Tab title="Organization (management account)">
+
+Use this alternative when the AWS collector's identity resolves to the AWS Organizations management account and assumes a read-only collection role in member accounts.
 
 <Note>
   Run these steps from the AWS Organizations management account or a delegated administrator account. Before continuing, verify the active AWS identity with `aws sts get-caller-identity`.
 </Note>
 
-The AWS organization profile must resolve to credentials in the management account with permissions to read AWS Organizations metadata and assume `OpenHoundCollectorRole` in member accounts. If the StackSet target does not include the management account, create `OpenHoundCollectorRole` in the management account with the single-account procedure before you configure the organization profile.
+The AWS identity must resolve to credentials in the management account with permissions to read AWS Organizations metadata and assume `OpenHoundCollectorRole` in member accounts.
+
+Create `OpenHoundCollectorRole` in the management account with the single-account procedure, then deploy the member-account role with StackSets. Do not deploy the member-account StackSet to the management account.
 
 <Steps>
   <Step title="Create or identify the management-account collector principal">
@@ -560,7 +554,7 @@ The AWS organization profile must resolve to credentials in the management accou
                 Statement:
                   - Effect: Allow
                     Principal:
-                      AWS: "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:user/OpenHoundCollectorUser"
+                      AWS: "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/OpenHoundCollectorRole"
                     Action: sts:AssumeRole
               Policies:
                 - PolicyName: OpenHoundCollectorReadOnly
@@ -686,7 +680,7 @@ The AWS organization profile must resolve to credentials in the management accou
                 Statement:
                   - Effect: Allow
                     Principal:
-                      AWS: "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/<WORKLOAD_ROLE_NAME>"
+                      AWS: "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/OpenHoundCollectorRole"
                     Action: sts:AssumeRole
               Policies:
                 - PolicyName: OpenHoundCollectorReadOnly
@@ -813,7 +807,7 @@ The AWS organization profile must resolve to credentials in the management accou
       --regions us-east-1
     ```
   </Step>
-  <Step title="Allow the collector principal to assume member-account roles">
+  <Step title="Allow the management-account role to assume member-account roles">
     Save the following document as `openhound-assume-role.json`.
 
     To restrict role assumption to a specific organization path, replace `<ORG_PATH>` with the AWS Organizations path that contains the target accounts. For example, use `o-exampleorgid/*` for the whole organization, or `o-exampleorgid/r-exampleroot/ou-example-abcdefgh/*` for an OU and child OUs.
@@ -839,31 +833,49 @@ The AWS organization profile must resolve to credentials in the management accou
     }
     ```
 
+    Before the collector can use the `managementaccount` profile, the user or workload identity must also be allowed to assume `OpenHoundCollectorRole` in the management account. Save this document as `openhound-assume-management-role.json`:
+
+    ```json title="openhound-assume-management-role.json"
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Sid": "AssumeManagementCollectorRole",
+          "Effect": "Allow",
+          "Action": "sts:AssumeRole",
+          "Resource": "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/OpenHoundCollectorRole"
+        }
+      ]
+    }
+    ```
+
+    Attach `openhound-assume-management-role.json` to `OpenHoundCollectorUser` for a local or external workload, or to the workload role for an AWS-hosted workload. Then attach `openhound-assume-role.json` to `OpenHoundCollectorRole` so the role session used by the collector can assume member-account roles.
+
     <Tabs>
       <Tab title="Local or external workload">
-        Attach the policy to `OpenHoundCollectorUser`:
+        Attach the member-account assume-role policy to `OpenHoundCollectorRole`:
 
         ```bash
-        aws iam put-user-policy \
-          --user-name OpenHoundCollectorUser \
+        aws iam put-role-policy \
+          --role-name OpenHoundCollectorRole \
           --policy-name OpenHoundAssumeCollectorRole \
           --policy-document file://openhound-assume-role.json
         ```
       </Tab>
       <Tab title="AWS-hosted workload">
-        Attach the policy to the workload role:
+        Attach the member-account assume-role policy to `OpenHoundCollectorRole`:
 
         ```bash
         aws iam put-role-policy \
-          --role-name <WORKLOAD_ROLE_NAME> \
+          --role-name OpenHoundCollectorRole \
           --policy-name OpenHoundAssumeCollectorRole \
           --policy-document file://openhound-assume-role.json
         ```
       </Tab>
     </Tabs>
   </Step>
-  <Step title="Configure the management account profile">
-    Configure the AWS profile that the OpenHound AWS collector uses to collect AWS Organizations metadata and assume the member-account roles.
+  <Step title="Configure the AWS identity">
+    Configure the AWS profile or runtime credentials that the OpenHound AWS collector uses to collect AWS Organizations metadata and assume the member-account roles.
 
     <Tabs>
       <Tab title="Local or external workload">
@@ -873,7 +885,7 @@ The AWS organization profile must resolve to credentials in the management accou
         aws configure --profile openhound-source
         ```
 
-        Then add a management account profile to `~/.aws/config`:
+        Then add a management-account profile to `~/.aws/config`:
 
         ```ini
         [profile managementaccount]
@@ -884,7 +896,7 @@ The AWS organization profile must resolve to credentials in the management accou
         ```
       </Tab>
       <Tab title="AWS-hosted workload">
-        For EC2, add a management account profile that uses the instance metadata credential source:
+        For EC2, add a management-account profile that uses the instance metadata credential source:
 
         ```ini
         [profile managementaccount]
@@ -900,24 +912,161 @@ The AWS organization profile must resolve to credentials in the management accou
   </Step>
 </Steps>
 </Tab>
-</Tabs>
-
-## Use a configured source account
-
-Use a configured source account for organization collection. Configure the collector's AWS profile to resolve to the account that you set as `source_account`, then set `management_account_id` and `management_role_name` as described in [Configure the Collector](/openhound/collectors/aws/collect-data#choose-an-account-collection-strategy). Verify that `aws sts get-caller-identity` reports the same account ID configured as `source_account`.
-
-The role-assumption path is:
+  <Tab title="Organization (source account)" icon="star">
+Use this recommended procedure when the collector's AWS identity is in a dedicated source account. The role-assumption path is:
 
 1. The source identity assumes the management-account role to read AWS Organizations metadata and collect management-account resources.
-2. The same source identity directly assumes the configured collection role in each active member account.
+1. The same source identity directly assumes the configured collection role in each active member account.
 
-Grant the source identity `sts:AssumeRole` permission for the management role and the member-account collection roles. Configure both the management role and each member role to trust the source identity. Attach the OpenHound read-only collection policy to the management role and member roles. If `management_role_name` is omitted, it defaults to `org_role_name`.
+The source identity must resolve to the account ID in `source_account`. If you omit `management_account_id`, it must also be allowed to call `organizations:DescribeOrganization` so the collector can discover the management account.
 
-Use an IAM user for a local or external collector, or the collector workload's IAM role for an AWS-hosted collector. Create or identify that principal in the configured source account—not the management account. Attach the assume-role permissions to this source principal; the management and member-account roles are the roles that need the OpenHound read-only collection policy.
+<Steps>
+  <Step title="Create or identify the source principal">
+    Create or identify the identity that the collector uses in the configured source account. Do not create this principal in the management account.
 
-If you use the StackSet template in the management-account-as-source alternative above to deploy member roles, replace its management-account principal in each member-role trust policy with the configured source principal. For those templates, use the configured source account ID—not the management account ID—in the principal ARN. Separately create or update the management-account role so it trusts that source principal and has the read-only permissions needed for AWS Organizations and collection. The source identity must be included in the `sts:AssumeRole` permissions policy for both the management role and member roles; if the management role has a different name from `org_role_name`, add its ARN explicitly.
+    <Tabs>
+      <Tab title="Local or external workload">
+        Create an IAM user named `OpenHoundCollectorUser` in the source account, or use an existing IAM user:
+
+        ```bash
+        aws iam create-user --user-name OpenHoundCollectorUser
+        aws iam create-access-key --user-name OpenHoundCollectorUser
+        ```
+      </Tab>
+      <Tab title="AWS-hosted workload">
+        Create or identify the IAM role attached to the EC2 instance or EKS pod's service account that runs the collector in the source account. The examples below use `<WORKLOAD_ROLE_NAME>` as the workload role name.
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="Create the management-account role">
+    Create a role named `<MANAGEMENT_ROLE_NAME>` in the management account. Use the same value for `management_role_name` in the collector configuration.
+
+    If you omit `management_role_name`, name this role the same as `org_role_name`. Replace the principal with the source-account principal that runs the collector.
+
+    <Tabs>
+      <Tab title="Local or external workload">
+        Save this trust policy as `management-role-trust.json`:
+
+        ```json title="management-role-trust.json"
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::<SOURCE_ACCOUNT_ID>:user/OpenHoundCollectorUser"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+        ```
+      </Tab>
+      <Tab title="AWS-hosted workload">
+        Save this trust policy as `management-role-trust.json`:
+
+        ```json title="management-role-trust.json"
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::<SOURCE_ACCOUNT_ID>:role/<WORKLOAD_ROLE_NAME>"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+        ```
+      </Tab>
+    </Tabs>
+
+    Attach the `openhound-collector-policy.json` policy from above to the management-account role:
+
+    ```bash
+    aws iam create-role \
+      --role-name <MANAGEMENT_ROLE_NAME> \
+      --assume-role-policy-document file://management-role-trust.json \
+      --max-session-duration 3600
+
+    aws iam put-role-policy \
+      --role-name <MANAGEMENT_ROLE_NAME> \
+      --policy-name OpenHoundCollectorReadOnly \
+      --policy-document file://openhound-collector-policy.json
+    ```
+  </Step>
+  <Step title="Deploy the member-account role with StackSets">
+    Use the `collector-role-stack.yaml` template and StackSets commands in the [Organization collection from the management account](/openhound/collectors/aws/configure-permissions#organization-management-account-2) tab.
+
+    In the member-role trust policy, replace the management-account principal with the source-account principal.
+
+    <Tabs>
+      <Tab title="Local or external workload">
+        Use the source-account IAM user as the principal:
+
+        ```yaml
+        Principal:
+          AWS: "arn:aws:iam::<SOURCE_ACCOUNT_ID>:user/OpenHoundCollectorUser"
+        ```
+      </Tab>
+      <Tab title="AWS-hosted workload">
+        Use the source-account workload role as the principal:
+
+        ```yaml
+        Principal:
+          AWS: "arn:aws:iam::<SOURCE_ACCOUNT_ID>:role/<WORKLOAD_ROLE_NAME>"
+        ```
+      </Tab>
+    </Tabs>
+
+    Keep the OpenHound read-only policy attached to the member-account role. Deploy the role to every active member account that the collector should collect.
+  </Step>
+  <Step title="Allow the source principal to assume both roles">
+    Attach an `sts:AssumeRole` policy to the source principal. Include the management role explicitly and restrict the member-role resource to the organization path you intend to collect.
+
+    ```json title="openhound-assume-role.json"
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Sid": "AssumeManagementCollectorRole",
+          "Effect": "Allow",
+          "Action": "sts:AssumeRole",
+          "Resource": "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/<MANAGEMENT_ROLE_NAME>"
+        },
+        {
+          "Sid": "AssumeMemberCollectorRoles",
+          "Effect": "Allow",
+          "Action": "sts:AssumeRole",
+          "Resource": "arn:aws:iam::*:role/OpenHoundCollectorRole",
+          "Condition": {
+            "ForAnyValue:StringLike": {
+              "aws:ResourceOrgPaths": [
+                "<ORG_PATH>"
+              ]
+            }
+          }
+        }
+      ]
+    }
+    ```
+
+    Attach the policy to `OpenHoundCollectorUser` for a local or external workload, or to the workload role for an AWS-hosted workload.
+  </Step>
+  <Step title="Verify the source identity">
+    Before configuring the collector, verify that the configured profile or runtime credentials resolve to the account ID in `source_account`:
+
+    ```bash
+    aws sts get-caller-identity --profile <SOURCE_PROFILE_NAME>
+    ```
+
+    If the collector uses runtime credentials, run the command from the same workload environment without `--profile`.
+  </Step>
+</Steps>
+  </Tab>
+</Tabs>
 
 ## Next steps
 
-Continue to [Configure the Collector](/openhound/collectors/aws/collect-data#choose-an-account-collection-strategy). For the recommended setup, set `source_account` to the configured profile's account ID; choose the management account as the source only if that alternative matches your deployment.
-  
+Continue to [Configure the Collector](/openhound/collectors/aws/collect-data). For the recommended setup, set `source_account` to the account ID returned by the configured profile or runtime identity.
