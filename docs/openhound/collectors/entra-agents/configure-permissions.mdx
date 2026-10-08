@@ -24,12 +24,12 @@ Both provisioning routes create the following identity, credentials, and access.
 | Component | Created or configured | Details / Access granted |
 |---|---|---|
 | Collector application and service principal | One single-tenant Entra application registration and its enterprise application | Microsoft Graph application read permissions |
-| Collector credential | One enterprise application client secret | Used by the collector service principal |
+| Collector credential | One app registration client secret | Used by the collector service principal |
 | Azure access | Custom Azure RBAC role assigned at the tenant root management group, or selected subscriptions | <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">OpenHound Entra Agents ARM Reader</a> |
 | Foundry agent access | Custom Azure RBAC role assigned at all subscriptions containing Foundry resources or at selected subscriptions | <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">OpenHound Entra Agents Foundry Agent Reader</a> |
 | Power Platform access | Tenant-scope Power Platform role assignment to the collector service principal | [Power Platform reader](https://learn.microsoft.com/en-us/power-platform/admin/security/role-based-access-control#built-in-power-platform-roles) |
 | [Optional] [Power Platform connector](https://learn.microsoft.com/en-us/connectors/) details | Register the collector service principal as an Power Platform management application | Tenant-wide Power Platform administrator access; enables edges for connection ACL and configured authentications  |
-| Environment access | One enabled Dataverse Application User in every approved environment | Custom OpenGraph Entra Agents Dataverse Reader role |
+| Environment access | One enabled Dataverse Application User in every approved environment | Custom `OpenHound Entra Agents Dataverse Reader` role |
 | Environment inventory† | Administrator-exported and reviewed file | Defines environment inventory the collector needs to collect Power Platform environments |
 
 <Info>
@@ -328,7 +328,7 @@ Use provisioning and access errors to identify missing administrator privileges 
 | `403 0x80072560` from Dataverse | The Application User is absent, disabled, registered for the wrong application, or missing its read-only role. |
 | `0x80040220` while creating the Application User | The operator lacks Dataverse System Administrator in that environment. |
 | ARM returns `403` | Recheck the custom ARM role at the tenant root or each approved subscription. |
-| Foundry agent list returns `403` | Recheck the Foundry Agent Reader assignment at the relevant subscription. |
+| Foundry agent list returns `403` | Recheck the `OpenHound Entra Agents Foundry Agent Reader` assignment at the relevant subscription. |
 | Foundry role sync cannot list accounts | Confirm the signed-in Azure CLI identity can read the selected subscriptions and list accounts. Set `SUBSCRIPTIONS` to bypass discovery and assign at the IDs supplied. |
 
 ## Next steps
