@@ -17,8 +17,8 @@ Follow this guide to configure Microsoft Entra for OpenHound Entra Agents data c
 |---|---|---|
 | Collector application and service principal | One single-tenant Entra application registration and its enterprise application | Microsoft Graph application read permissions |
 | Collector credential | One enterprise application client secret | Used by the collector service principal |
-| Azure access | Custom Azure RBAC role assigned at the tenant root management group, or selected subscriptions | [OpenHound Entra Agents ARM Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json) |
-| Foundry agent access | Custom Azure RBAC role assigned at all subscriptions containing Foundry resources or at selected subscriptions | [OpenHound Entra Agents Foundry Agent Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json) |
+| Azure access | Custom Azure RBAC role assigned at the tenant root management group, or selected subscriptions | <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">OpenHound Entra Agents ARM Reader</a> |
+| Foundry agent access | Custom Azure RBAC role assigned at all subscriptions containing Foundry resources or at selected subscriptions | <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">OpenHound Entra Agents Foundry Agent Reader</a> |
 | Power Platform access | Tenant-scope Power Platform role assignment to the collector service principal | [Power Platform reader](https://learn.microsoft.com/en-us/power-platform/admin/security/role-based-access-control#built-in-power-platform-roles) |
 | [Optional] [Power Platform connector](https://learn.microsoft.com/en-us/connectors/) details | Register the collector service principal as an Power Platform management application | Tenant-wide Power Platform administrator access; enables edges for connection ACL and configured authentications  |
 | Environment access | One enabled Dataverse Application User in every approved environment | Custom OpenGraph Entra Agents Dataverse Reader role |
@@ -52,13 +52,13 @@ Download these four files and save them together in the same directory:
 
 - [provision-identity.sh](/openhound/collectors/entra-agents/assets/provision-identity.sh)
 - [sync-foundry-roles.py](/openhound/collectors/entra-agents/assets/sync-foundry-roles.py)
-- [openhound-entra-agents-arm-reader-role.json](/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json)
-- [openhound-entra-agents-foundry-agent-reader-role.json](/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json)
+- <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">openhound-entra-agents-arm-reader-role.json</a>
+- <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">openhound-entra-agents-foundry-agent-reader-role.json</a>
 
 Run the commands below from the directory containing the downloaded files.
 
-By default, it assigns the [OpenHound Entra Agents ARM Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json) role at the tenant root management group and the
-[OpenHound Entra Agents Foundry Agent Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json) role on enabled subscriptions containing AI Services or OpenAI accounts:
+By default, it assigns the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">OpenHound Entra Agents ARM Reader</a> role at the tenant root management group and the
+<a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">OpenHound Entra Agents Foundry Agent Reader</a> role on enabled subscriptions containing AI Services or OpenAI accounts:
 
 ```bash
 bash ./provision-identity.sh >> .env
@@ -76,7 +76,7 @@ bash ./provision-identity.sh >> .env
 Then complete the manual steps below for which no automated deployment is supported:
 
 - [4. Export and maintain the environment inventory](#4-export-and-maintain-the-environment-inventory)
-- [5. Configure each approved Dataverse environment](#5-configure-each-approved-dataverse-environment)
+- [5. Configure the application for each Dataverse environment](#5-configure-the-application-for-each-dataverse-environment)
 - [6. Configure the collector](#6-configure-the-collector)
 - [7. Verify collection](#7-verify-collection)
 
@@ -169,12 +169,12 @@ matches your rotation policy, and select **Add**. Securely store the secret **Va
 
 ### 2.5 Create and assign the custom ARM role
 
-Use the [OpenHound Entra Agents ARM Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json) role template
+Use the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">OpenHound Entra Agents ARM Reader</a> role template
 to create the custom role in the Azure portal:
 
 1. In the [Azure Resource Manager](https://portal.azure.com/#servicemenu/Microsoft_Azure_Resources/ResourceManager/overview), open **Management groups** and select the tenant root
    management group. Copy the **Directory (tenant) ID** for the next step.
-2. Save a copy of the [OpenHound Entra Agents ARM Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json) role template and replace `<tenantRootGroupId>` with
+2. Save a copy of the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">OpenHound Entra Agents ARM Reader</a> role template and replace `<tenantRootGroupId>` with
    the **Directory (tenant) ID**.
 3. On the tenant root management group, open **Access control (IAM)** → **Add**
    → **Add custom role**. On **Basics**, select **Start from JSON** under
@@ -190,12 +190,12 @@ to create the custom role in the Azure portal:
 
 ### 2.6 Create and assign the custom Foundry role
 
-Use the [OpenHound Entra Agents Foundry Agent Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json) role template
+Use the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">OpenHound Entra Agents Foundry Agent Reader</a> role template
 to create the custom role in the Azure portal:
 
 1. In the [Azure Resource Manager](https://portal.azure.com/#servicemenu/Microsoft_Azure_Resources/ResourceManager/overview), open subscriptions containing AI Services or
    OpenAI accounts. Copy their **Subscription ID** for the next step.
-2. Save a copy of the [OpenHound Entra Agents Foundry Agent Reader](/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json) role template and replace `<subscriptionId>` with
+2. Save a copy of the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">OpenHound Entra Agents Foundry Agent Reader</a> role template and replace `<subscriptionId>` with
    the **Subscription ID**. If more than one subscription is in scope, add a
    `/subscriptions/<subscriptionId>`.
 3. On a subscription, open **Access control (IAM)** → **Add** → **Add custom
@@ -249,9 +249,9 @@ Administrator or Power Platform role-based access-control administrator rights.
 
 The collector can read [Power Platform connector](https://learn.microsoft.com/en-us/connectors/) details that lets the collector:
 
-- Enrich [`AZAgent_Connection`](/opengraph/extensions/entraagents/edges/azagent_connection.mdx) nodes.
-- Create [`AZAgent_HasConnectionAccess`](/opengraph/extensions/entraagents/edges/azagent_hasconnectionaccess.mdx) edges that represent connector ACL assignments.
-- Create [`AZAgent_ConnectionAuthenticatedAs`](/opengraph/extensions/entraagents/edges/azagent_connectionauthenticatedas.mdx) edges that represent a principal's configured authentication on a connector.
+- Enrich `AZAgent_Connection` nodes.
+- Create `AZAgent_HasConnectionAccess` edges that represent connector ACL assignments.
+- Create `AZAgent_ConnectionAuthenticatedAs` edges that represent a principal's configured authentication on a connector.
 
 The enrichment shows configured connection references, connection ACL assignments, and supported authentication identity evidence. Copilot connector references originate at `AZAgent_ToolInstance`, reached from the agent through non-traversable `AZAgent_HasTool`. This configuration chain does not establish a traversable Copilot capability path or general control of the authenticated identity.
 
@@ -295,7 +295,7 @@ administrator and cannot be limited with granular roles. The legacy BAP fallback
 
    ```powershell
    $tenantId = "<TENANT ID>"
-   az login --tenant $tenantId --scope https://api.powerplatform.com//.default
+   az login --tenant $tenantId --scope https://api.powerplatform.com/.default
    ```
 
 2. Download [export-power-platform-environments.ps1](/openhound/collectors/entra-agents/assets/export-power-platform-environments.ps1). From the directory containing the downloaded script, create the `.dlt` output directory and export the inventory to `.dlt/power-platform-environments.json`:
@@ -308,7 +308,7 @@ administrator and cannot be limited with granular roles. The legacy BAP fallback
 3. Review the inventory and if an Azure role assignment scope was set remove environments outside
 the scope.
 
-### 4.3 Refresh the inventory after scope changes
+### 4.2 Refresh the inventory after scope changes
 
 Refresh the inventory manually or by running the script every time an environment is onboarded,
 offboarded, renamed, gains Dataverse, or otherwise changes collection scope.

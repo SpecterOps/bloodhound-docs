@@ -6,7 +6,7 @@
 #
 #   az login --tenant <tenant-guid> `
 #     --scope https://api.powerplatform.com//.default
-#   ./docs/deployment/export-power-platform-environments.ps1 `
+#   ./export-power-platform-environments.ps1 `
 #     -OutputPath .dlt/power-platform-environments.json
 #
 # The output includes every visible environment. Review and remove environments

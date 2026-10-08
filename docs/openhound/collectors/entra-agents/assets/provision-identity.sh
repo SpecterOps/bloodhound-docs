@@ -31,7 +31,7 @@ if ! az account show >/dev/null 2>&1; then
 fi
 if [[ -t 1 && "${FORCE_TTY:-}" != "1" ]]; then
   err "This script emits a client secret to stdout. Redirect it to an approved secret file."
-  err "Example: bash docs/deployment/provision-identity.sh >> .env"
+  err "Example: bash ./provision-identity.sh >> .env"
   exit 2
 fi
 
