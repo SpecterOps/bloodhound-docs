@@ -15,7 +15,7 @@ The following custom Cypher queries can be imported into BloodHound to enhance v
 
 ## AZAgent - A2A endpoints connected to Foundry agents
 
-Lists Foundry agents and the external Agent2Agent endpoints connected to them. The graph does not represent the external endpoints' downstream identities or permissions. Research reference: AP10 - A2A Cross-Agent Escalation, query Q21 in Agents_EntraID/docs/research/analysis/04-attack-paths.md.
+Lists Foundry agents and the external Agent2Agent endpoints connected to them. The graph does not represent the external endpoints' downstream identities or permissions. Research reference: AP10 - A2A Cross-Agent Escalation, query Q21.
 
 ```cypher
 MATCH p = (agent:AZAgent_FoundryAgent)-[r:AZAgent_A2AConnection]->(ep:AZAgent_ExternalA2AEndpoint)
@@ -34,7 +34,7 @@ RETURN p
 
 ## AZAgent - Blueprint agent users with a mailbox or OneDrive
 
-Lists agent identity blueprints, their child identities, and associated agent users marked as having a mailbox or OneDrive. The current collector does not populate these flags, and the graph does not represent access to the mailbox or OneDrive resources. Research reference: AP14 - Agent User Mailbox/OneDrive Access, query Q26 in Agents_EntraID/docs/research/analysis/04-attack-paths.md.
+Lists agent identity blueprints, their child identities, and associated agent users marked as having a mailbox or OneDrive. The current collector does not populate these flags, and the graph does not represent access to the mailbox or OneDrive resources. Research reference: AP14 - Agent User Mailbox/OneDrive Access, query Q26.
 
 ```cypher
 MATCH p = (bp:AZAgent_Blueprint)-[:AZAgent_BlueprintOwns]->(ai:AZAgent_Identity)-[:AZAgent_HasAgentUser]->(au:AZAgent_AgentUser)
@@ -111,7 +111,7 @@ LIMIT 1000
 
 ## AZAgent - Copilot agent paths to resource-delegated child flow connections
 
-Lists user-to-Copilot-agent paths that reach child flows using resource-delegated connections. Requires delegation-mode metadata, which the current Power Platform collector does not populate. Research reference: AP7 - Child Flow Context Loss, query Q15 in Agents_EntraID/docs/research/analysis/04-attack-paths.md.
+Lists user-to-Copilot-agent paths that reach child flows using resource-delegated connections. Requires delegation-mode metadata, which the current Power Platform collector does not populate. Research reference: AP7 - Child Flow Context Loss, query Q15.
 
 ```cypher
 MATCH p = (user:AZUser)-[:AZAgent_CanInvoke]->(agent:AZAgent_CopilotAgent)-[:AZAgent_DelegatesToFlow]->(parent:AZAgent_Flow)-[:AZAgent_DelegatesToFlow]->(child:AZAgent_Flow)-[:AZAgent_FlowUsesConnection]->(conn:AZAgent_Connection)
@@ -122,7 +122,7 @@ LIMIT 1000
 
 ## AZAgent - Copilot agents using streamable HTTP MCP servers
 
-Lists Copilot agents connected to MCP servers using streamable HTTP transport. Research reference: AP11 - MCP Cross-Server Influence, query Q22 in Agents_EntraID/docs/research/analysis/04-attack-paths.md.
+Lists Copilot agents connected to MCP servers using streamable HTTP transport. Research reference: AP11 - MCP Cross-Server Influence, query Q22.
 
 ```cypher
 MATCH p = (agent:AZAgent_CopilotAgent)-[:AZAgent_ConnectsToMCP]->(mcp:AZAgent_MCPServer)
@@ -133,7 +133,7 @@ LIMIT 1000
 
 ## AZAgent - Directory roles assigned to blueprint identities
 
-Lists agent identity blueprints, the service principals backing their child identities, and directory roles assigned to those service principals. Research reference: AP17 - Cross-Graph Blueprint to Azure RBAC, query Q30 in Agents_EntraID/docs/research/analysis/04-attack-paths.md.
+Lists agent identity blueprints, the service principals backing their child identities, and directory roles assigned to those service principals. Research reference: AP17 - Cross-Graph Blueprint to Azure RBAC, query Q30.
 
 ```cypher
 MATCH p = (bp:AZAgent_Blueprint)-[:AZAgent_BlueprintOwns]->(ai:AZAgent_Identity)-[:AZAgent_IdentityIsServicePrincipal]->(sp:AZServicePrincipal)-[:AZHasRole]->(role:AZRole)
@@ -153,7 +153,7 @@ LIMIT 1000
 
 ## AZAgent - Foundry account roles and project connections
 
-Lists users with selected account-level roles on Cognitive Services-backed Foundry projects, together with the projects' connections. Research reference: AP6 - Foundry RBAC Bypass, query Q11 in Agents_EntraID/docs/research/analysis/04-attack-paths.md.
+Lists users with selected account-level roles on Cognitive Services-backed Foundry projects, together with the projects' connections. Research reference: AP6 - Foundry RBAC Bypass, query Q11.
 
 ```cypher
 MATCH p = (user:AZUser)-[role:AZAgent_HasAccountRole]->(project:AZAgent_FoundryProject)-[:AZAgent_ProjectContainsConnection]->(conn:AZAgent_Connection)
@@ -176,7 +176,7 @@ LIMIT 1000
 
 ## AZAgent - Foundry project roles and agent identities
 
-Lists users with selected Foundry project roles, agents in those projects, and the service principals backing the agents' resolved identities. Research reference: AP16 - Project Agent Compromise via Shared Identity, query Q28 in Agents_EntraID/docs/research/analysis/04-attack-paths.md.
+Lists users with selected Foundry project roles, agents in those projects, and the service principals backing the agents' resolved identities. Research reference: AP16 - Project Agent Compromise via Shared Identity, query Q28.
 
 ```cypher
 MATCH p = (user:AZUser)-[r:AZAgent_HasProjectRole]->(project:AZAgent_FoundryProject)-[:AZAgent_ProjectContainsAgent]->(agent:AZAgent_FoundryAgent)-[:AZAgent_HasIdentity]->(identity:AZAgent_Identity)-[:AZAgent_IdentityIsServicePrincipal]->(sp:AZServicePrincipal)
@@ -239,7 +239,7 @@ LIMIT 1000
 
 ## AZAgent - Service principals backing blueprint identities
 
-Lists agent identity blueprints, their child identities, and the Entra service principals backing those identities. Research reference: AP3 - Blueprint Mass Impersonation, query Q05 in Agents_EntraID/docs/research/analysis/04-attack-paths.md.
+Lists agent identity blueprints, their child identities, and the Entra service principals backing those identities. Research reference: AP3 - Blueprint Mass Impersonation, query Q05.
 
 ```cypher
 MATCH p = (bp:AZAgent_Blueprint)-[:AZAgent_BlueprintOwns]->(ai:AZAgent_Identity)-[:AZAgent_IdentityIsServicePrincipal]->(sp:AZServicePrincipal)
