@@ -1,5 +1,5 @@
 ---
-title: Collector Limitations
+title: Collector limitations
 description: Understand coverage gaps and interpretation limits for Entra Agents collection.
 hidden: true
 ---
@@ -35,7 +35,7 @@ collector application as a Power Platform management application.
 With the management registration, the collector can:
 
 - Enrich `AZAgent_Connection` nodes.
-- Create `AZAgent_HasConnectionAccess` edges that represent connector ACL assignments.
+- Create `AZAgent_HasConnectionAccess` edges that represent connection access-control list (ACL) assignments.
 - Create `AZAgent_ConnectionAuthenticatedAs` edges that represent a principal's configured authentication on a connector.
 
 This enables the following Cypher queries:
@@ -77,7 +77,7 @@ lets an agent owner give users permission to chat with an agent without giving
 them permission to edit it. The collector's coverage is:
 
 - **Collected:** co-author access. Public-agent access is represented separately.
-- **Not collected:** Viewer-only user-to-agent permissions in the `CanInvoke` edge.
+- **Not collected:** Viewer-only user-to-agent permissions in the `AZAgent_CanInvoke` edge.
 
 The graph can therefore omit people who are allowed to chat with an authenticated
 agent, and paths that depend on that access can be missed.
@@ -116,12 +116,12 @@ Copilot Studio agents can use connector actions to access other services. The
 collector reads these actions from Dataverse and represents each configured
 action as an `AZAgent_ToolInstance` node linked to its agent. When it can resolve
 the connection reference, it links the tool to the connection through the
-`UsesConnection` edge.
+`AZAgent_UsesConnection` edge.
 
 Collection supports the following action types, including disabled actions:
 
 - **Connector actions:** `InvokeConnectorTaskAction`.
-- **MCP external-tool actions:** `InvokeExternalAgentTaskAction` with
+- **Model Context Protocol (MCP) external-tool actions:** `InvokeExternalAgentTaskAction` with
   `ModelContextProtocolMetadata`.
 
 These results show the configuration observed in the agent's authoring data.
@@ -139,16 +139,16 @@ When interpreting tool instances:
   connection does not establish that a caller or editor can execute the tool.
 - **Attack paths:** the `AZAgent_HasTool` edge is non-traversable, so the graph
   does not provide an attack path from a Copilot agent through its tools to
-  their connections. `UsesConnection` currently has traversability for Foundry only.
+  their connections. `AZAgent_UsesConnection` currently has traversability for Foundry only.
 
 ## Connection authentication identity limits
 
 The non-traversable `AZAgent_ConnectionAuthenticatedAs` edge binds a principal to a connection,
-but has currently limited support for binding:
+but currently supports only the following authentication types:
 
-- **`AZUser`:** supportes Entra user OAuth.
-- **`AZServicePrincipal`:** supportes client-secret or client-certificate
-  authentication. Reported client and tenant IDs, the collector attempts to resolve to a service
+- **`AZUser`:** supports Entra user OAuth.
+- **`AZServicePrincipal`:** supports client-secret or client-certificate
+  authentication. The collector attempts to resolve reported client and tenant IDs to a service
   principal.
 
 Supported connector and tool examples depend on the selected authentication
@@ -177,6 +177,6 @@ Foundry agents can call tools using either:
 The authentication mode determines whose permissions the tool uses. See
 Microsoft's [Foundry agent identity guidance](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agent-identity).
 
-The BloodHound graph model defines `FoundryAgent -> ActsAs -> AZServicePrincipal`.
+The BloodHound graph model defines `AZAgent_FoundryAgent -> AZAgent_ActsAs -> AZServicePrincipal`.
 The collector does not emit this relationship, so collected results do not
 include these identity-level traversal paths.
