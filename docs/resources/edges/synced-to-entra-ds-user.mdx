@@ -1,0 +1,44 @@
+---
+title: SyncedToEntraDSUser
+description: The Entra user is synchronized to a corresponding Microsoft Entra Domain Services user.
+---
+
+<img
+  noZoom
+  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise and CE"
+/>
+
+This relationship indicates that the Entra user and the Microsoft Entra Domain Services (Entra DS) user are the same identity across the Entra ID and managed domain boundary.
+
+The Entra DS user is created from the Entra user during synchronization and can be correlated through the BloodHound `aadobjectid` property, collected from the LDAP attribute `msDS-aadObjectId`. Password changes in Entra ID generate and synchronize the password material required for the Entra DS user to authenticate.
+
+BloodHound does not consider whether the Entra user is a B2B external identity when creating this relationship. A B2B external identity will be synchronized to Entra DS but cannot authenticate to the managed domain by design.
+
+For cloud-only users, Entra ID does not generate the NT hash required by Entra DS until a password change occurs while the managed domain is active. A newly synchronized cloud-only user may exist in Entra DS but remain unusable until the password is changed in Entra ID.
+
+## Abuse Info
+
+An attacker may authenticate as the Entra DS user using the Entra user's credentials. For a cloud-only user that has not changed its password while the managed domain is active, changing the Entra user's password and waiting for Entra DS synchronization to complete generates the password material required for authentication.
+
+### Procedure
+
+1. Obtain the Entra user's current password, or use the control represented by the path to change or reset it to a known value.
+2. If the account is cloud-only and has not completed a qualifying password change while the managed domain is active, perform that change. When a reset operation permits it, set `forceChangePasswordNextSignIn` to `false`; otherwise complete the required interactive password change before proceeding.
+3. Wait for the legacy Kerberos and NTLM password material to synchronize. Do not treat the AD user's existence alone as proof that its credential is usable; poll with a harmless authentication attempt when `pwdLastSet` or equivalent synchronization evidence is unavailable.
+4. Authenticate with the Entra UPN and the changed password through Kerberos, NTLM, LDAP, or a domain logon.
+
+## Opsec Considerations
+
+Authenticating as the Entra DS user may create Windows Logon Events and entries in log solutions if Azure Monitor Diagnostic settings are enabled for Entra DS. Changing the Entra user's password may also create Entra ID audit logs.
+
+## Edge Schema
+
+Source: [AZUser](/resources/nodes/az-user)<br />
+Destination: [User](/resources/nodes/user)<br />
+Traversable: **Yes**
+
+## References
+
+- [How objects and credentials are synchronized in a Microsoft Entra Domain Services managed domain](https://learn.microsoft.com/en-us/entra/identity/domain-services/synchronization)
+- [MITRE ATT&CK T1078.002: Valid Accounts - Domain Accounts](https://attack.mitre.org/techniques/T1078/002/)

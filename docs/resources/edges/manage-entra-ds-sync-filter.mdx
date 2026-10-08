@@ -1,0 +1,56 @@
+---
+title: ManageEntraDSSyncFilter
+description: The Domain Controller Services service principal can add groups to the active filtered synchronization scope.
+---
+
+<img
+  noZoom
+  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise and CE"
+/>
+
+BloodHound emits this relationship from the service principal associated through `AZRunsAs` with Domain Controller Services application ID `2565bd9d-da50-47d4-8b85-4c97f669dc36`. The service principal and [AZEntraDS](/resources/nodes/az-entra-ds) must belong to the same tenant, and the resource must currently have:
+
+```text
+filteredSync = Enabled
+syncScope = All
+```
+
+The destination is the RID 513 Domain Users group in the Domain identified by [EntraDSFor](/resources/edges/entra-ds-for).
+
+## Abuse Info
+
+### Procedure
+
+1.  Select an attacker-controlled Entra **security group** containing an attacker-controlled user as a direct member. Do not use a direct user app-role assignment or a nested group; Entra DS does not honor either case for this synchronization path.
+2.  In the target tenant, find the service principal with `appId=2565bd9d-da50-47d4-8b85-4c97f669dc36`. Read its `appRoles` and select the enabled role whose display name is `User`.
+3.  Using the user or other directory context that controls the source service principal, create the group entitlement with Microsoft Graph:
+
+    ```http
+    POST https://graph.microsoft.com/v1.0/servicePrincipals/{service-principal-object-id}/appRoleAssignedTo
+    Content-Type: application/json
+
+    {
+      "principalId": "{attacker-group-object-id}",
+      "resourceId": "{service-principal-object-id}",
+      "appRoleId": "{user-app-role-id}"
+    }
+    ```
+
+4.  Wait for Entra DS to add the group to `CN=ScopedGroups,OU=AADDSSyncState,...` and synchronize the group and its direct user members. If the controlled user is cloud-only and lacks usable legacy password material, change its password while Entra DS is active and wait for the password to synchronize.
+
+## Opsec Considerations
+
+App-role assignments and group membership changes generate Microsoft Entra audit activity. Subsequent use of the synchronized identity can generate managed-domain authentication events.
+
+## Edge Schema
+
+Source: [AZServicePrincipal](/resources/nodes/az-service-principal)<br />
+Destination: [Group](/resources/nodes/group)<br />
+Traversable: **Yes**
+
+## References
+
+- [Configure scoped synchronization](https://learn.microsoft.com/en-us/entra/identity/domain-services/scoped-synchronization)
+- [Microsoft Entra Domain Services synchronization](https://learn.microsoft.com/en-us/entra/identity/domain-services/synchronization)
+- [Microsoft Graph appRoleAssignedTo resource](https://learn.microsoft.com/en-us/graph/api/resources/approleassignment)
