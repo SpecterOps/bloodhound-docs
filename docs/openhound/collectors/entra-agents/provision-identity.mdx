@@ -44,7 +44,7 @@ Follow this guide to configure Microsoft Entra for OpenHound Entra Agents data c
 - For automated provisioning, install Bash, Python 3.13 or newer for Foundry role sync.
 - PowerShell
 
-## 1. Choose a provisioning route
+## Choose a provisioning route
 
 ### Automated base provisioning
 
@@ -79,18 +79,18 @@ bash ./provision-identity.sh >> .env
 
 Then complete the manual steps below for which no automated deployment is supported:
 
-- [4. Export and maintain the environment inventory](#4-export-and-maintain-the-environment-inventory)
-- [5. Configure the application for each Dataverse environment](#5-configure-the-application-for-each-dataverse-environment)
-- [6. Configure the collector](#6-configure-the-collector)
-- [7. Verify collection](#7-verify-collection)
+- [Export and maintain the environment inventory](#export-and-maintain-the-environment-inventory)
+- [Configure the application for each Dataverse environment](#configure-the-application-for-each-dataverse-environment)
+- [Configure the collector](#configure-the-collector)
+- [Verify collection](#verify-collection)
 
 ### Manual provisioning
 
 Complete every section below in order.
 
-## 2. Create the collector application and service principal
+## Create the collector application and service principal
 
-### 2.1 Create the application
+### Create the application
 
 1. In the [Microsoft Entra admin center](https://entra.microsoft.com/), open
    **Entra ID** → **App registrations** → **New registration**.
@@ -103,11 +103,11 @@ Complete every section below in order.
 
 6. Record the **Application (client) ID** and **Directory (tenant) ID** from
    the overview page. They are required in
-   [section 6](#6-configure-the-collector).
+   [Configure the collector](#configure-the-collector).
 
 ![](/openhound/collectors/entra-agents/assets/images/app-registration-details.png)
 
-### 2.2 Grant Microsoft Graph permissions
+### Grant Microsoft Graph permissions
 
 1. **Navigate to API permissions.** On the collector app registration's
    **Overview** page, select **API permissions**.
@@ -152,15 +152,15 @@ Complete every section below in order.
 
    ![](/openhound/collectors/entra-agents/assets/images/app-grant-consent-granted.png)
 
-### 2.3 Create and safely store a collector credential
+### Create and safely store a collector credential
 
 Open **Certificates & secrets** → **New client secret**, choose an expiry that
 matches your rotation policy, and select **Add**. Securely store the secret **Value**, it is required in
-[section 6](#6-configure-the-collector).
+[Configure the collector](#configure-the-collector).
 
 ![](/openhound/collectors/entra-agents/assets/images/app-client-secret.png)
 
-### 2.4 Inspect the enterprise application
+### Inspect the enterprise application
 
 1. **Open the enterprise application** Back in **Overview** select the application at **Managed application in local directory**
 
@@ -171,7 +171,7 @@ matches your rotation policy, and select **Add**. Securely store the secret **Va
 ![](/openhound/collectors/entra-agents/assets/images/app-registration-sp-objectid.png)
 
 
-### 2.5 Create and assign the custom ARM role
+### Create and assign the custom ARM role
 
 Use the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">OpenHound Entra Agents ARM Reader</a> role template
 to create the custom role in the Azure portal:
@@ -188,11 +188,11 @@ to create the custom role in the Azure portal:
    To limit collection scope to subscriptions open each in-scope subscription and follow the for the next step for each.
 6. Open **Access control (IAM)** → **Add** → **Add role assignment**. Select
    **OpenHound Entra Agents ARM Reader**. On **Members**, choose the collector's
-   enterprise application (service principal) from section 2.2. Select
+   enterprise application (service principal) recorded above. Select
    **Review + assign** and verify the role appears for that principal at each
    intended scope.
 
-### 2.6 Create and assign the custom Foundry role
+### Create and assign the custom Foundry role
 
 Use the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">OpenHound Entra Agents Foundry Agent Reader</a> role template
 to create the custom role in the Azure portal:
@@ -209,11 +209,11 @@ to create the custom role in the Azure portal:
 5. Open each in-scope subscription for the next step.
 6. Open **Access control (IAM)** → **Add** → **Add role assignment**. Select
    **OpenHound Entra Agents Foundry Agent Reader**. On **Members**, choose the
-   collector's enterprise application (service principal) from section 2.2.
+   collector's enterprise application (service principal) recorded above.
    Select **Review + assign** and verify the role appears for that principal at
    each intended subscription.
 
-## 3. Assign Power Platform Reader to the collector application
+## Assign Power Platform Reader to the collector application
 
 Assign the built-in Power Platform **Reader** role to the collector service
 principal. The administrator performing this step needs Power Platform
@@ -249,7 +249,7 @@ Administrator or Power Platform role-based access-control administrator rights.
    -Headers $headers -Body $body
    ```
 
-### 3.1 [Optional] connection detail and sharing coverage
+### [Optional] connection detail and sharing coverage
 
 The collector can read [Power Platform connector](https://learn.microsoft.com/en-us/connectors/) details that lets the collector:
 
@@ -281,7 +281,7 @@ reads in each configured environment. Without this optional registration, a
 denied or unavailable administrator API produces an informational coverage
 message.
 
-## 4. Export and maintain the environment inventory
+## Export and maintain the environment inventory
 
 The assigned Power Platform Reader role does not allow the collector service
 principal to list environments due to a [limitation with the Power Platform API
@@ -293,7 +293,7 @@ The collector tries the Power Platform API first, then this environment inventor
 which Microsoft states gives the application the same permissions as a tenant
 administrator and cannot be limited with granular roles. The legacy BAP fallback is therefore not recommended.
 
-### 4.1 Export the environment inventory
+### Export the environment inventory
 
 1. Sign in with a different Azure CLI scope as an administrator:
 
@@ -312,25 +312,25 @@ administrator and cannot be limited with granular roles. The legacy BAP fallback
 3. Review the inventory and if an Azure role assignment scope was set remove environments outside
 the scope.
 
-### 4.2 Refresh the inventory after scope changes
+### Refresh the inventory after scope changes
 
 Refresh the inventory manually or by running the script every time an environment is onboarded,
 offboarded, renamed, gains Dataverse, or otherwise changes collection scope.
 
-You must also complete section 5 for each newly approved environment before using the refreshed inventory.
+Also [configure the application for each newly approved Dataverse environment](#configure-the-application-for-each-dataverse-environment) before using the refreshed inventory.
 
-## 5. Configure the application for each Dataverse environment
+## Configure the application for each Dataverse environment
 
 Complete the below sections for each environment in the inventory.
 
-### 5.1 Confirm operator access
+### Confirm operator access
 
 The administrator creating the Application User needs **System Administrator**
 inside each target Dataverse environment. Tenant Global Administrator and Power
 Platform Administrator alone do not provide the Dataverse `prvCreateUser`
 privilege.
 
-### 5.2 Create an Application User
+### Create an Application User
 
 1. In [Power Platform admin center](https://admin.powerplatform.microsoft.com/manage/environments),
    open **Manage**,  **Environments** and select the environment name.
@@ -338,7 +338,7 @@ privilege.
 3. Select **+ New app user** → **+ Add an app**, find the collector by its
    application ID, select a business unit, and save it.
 
-### 5.3 Create a custom Dataverse reader role
+### Create a custom Dataverse reader role
 
 1. Go to **Settings** → **Users + permissions** → **Security roles**. Alternatively use the **Access** card → **Security roles**.
 2. Select **New role** and fill in the details:
@@ -366,7 +366,7 @@ privilege.
 
 3. Select **Save + close**.
 
-### 5.4 Assign the custom Dataverse reader role
+### Assign the custom Dataverse reader role
 
 1. Search for and select the custom role, then click **Members**:
 
@@ -376,7 +376,7 @@ privilege.
 
 ![](/openhound/collectors/entra-agents/assets/images/power-platform-members-add.png)
 
-## 6. Configure the collector
+## Configure the collector
 
 Create a `secrets.toml` file for the Entra Agents collector using the following
 example. Replace each placeholder with your own value.
@@ -397,7 +397,7 @@ url = "https://<YOUR_BHE_TENANT_HOSTNAME>"
 - `tenant_id`, `client_id`, and `client_secret` come from the application
   provisioned in this guide. Use the application client ID, not the enterprise
   application's object ID, and the client secret **Value**, not its ID.
-- `power_platform_environments_file` is the reviewed inventory from section 4.
+- `power_platform_environments_file` is the reviewed [environment inventory](#export-and-maintain-the-environment-inventory).
   Set it to the file's path inside the collector container. The example assumes
   the file is available at `/app/.dlt/power-platform-environments.json`.
 - `token_id` and `token_key` are the **Token ID** and **Token** for an OpenHound
@@ -424,7 +424,7 @@ the corresponding entries under `[sources.source.entra_id]` in `secrets.toml`:
 Use the tenant ID, application client ID, and client secret value saved during
 manual provisioning. Set the environment inventory path as described above.
 
-## 7. Verify collection
+## Verify collection
 
 <Steps>
   <Step title="Start the beta collector">
@@ -447,7 +447,7 @@ manual provisioning. Set the environment inventory path as described above.
   </Step>
 </Steps>
 
-## 8. Ongoing operation
+## Ongoing operation
 
 - Refresh and review the environment inventory.
 - Add the application and grant it the custom Dataverse role on new environments.
@@ -459,7 +459,7 @@ manual provisioning. Set the environment inventory path as described above.
   select a different service principal. Remove existing assignments separately
   when a subscription leaves scope.
 
-## 9. Troubleshooting
+## Troubleshooting
 
 | What you see | What to check |
 |---|---|
