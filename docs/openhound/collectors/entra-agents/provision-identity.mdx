@@ -54,219 +54,215 @@ Before you begin, ensure that you have the tools and administrator access below.
 
 Use the provisioning script for the base deployment, or create the same identity and permissions manually. Both routes require the environment setup and collector configuration below.
 
-### Automated base provisioning
+<Tabs>
+  <Tab title="Automated base provisioning">
+    The [provisioning script](/openhound/collectors/entra-agents/assets/provision-identity.sh) deploys a collector service principal,
+    its Graph permissions, its Power Platform Reader
+    assignment and both custom Azure roles.
 
-The [provisioning script](/openhound/collectors/entra-agents/assets/provision-identity.sh) deploys a collector service principal,
-its Graph permissions, its Power Platform Reader
-assignment and both custom Azure roles.
+    <Steps>
+      <Step title="Download the provisioning files">
+        Download these four files and save them together in the same directory:
 
-<Steps>
-  <Step title="Download the provisioning files">
-    Download these four files and save them together in the same directory:
+        - [provision-identity.sh](/openhound/collectors/entra-agents/assets/provision-identity.sh)
+        - [sync-foundry-roles.py](/openhound/collectors/entra-agents/assets/sync-foundry-roles.py)
+        - <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">openhound-entra-agents-arm-reader-role.json</a>
+        - <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">openhound-entra-agents-foundry-agent-reader-role.json</a>
+      </Step>
+      <Step title="Run base provisioning">
+        Run the commands below from the directory containing the downloaded files.
 
-    - [provision-identity.sh](/openhound/collectors/entra-agents/assets/provision-identity.sh)
-    - [sync-foundry-roles.py](/openhound/collectors/entra-agents/assets/sync-foundry-roles.py)
-    - <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">openhound-entra-agents-arm-reader-role.json</a>
-    - <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">openhound-entra-agents-foundry-agent-reader-role.json</a>
-  </Step>
-  <Step title="Run base provisioning">
-    Run the commands below from the directory containing the downloaded files.
+        By default, it assigns the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">OpenHound Entra Agents ARM Reader</a> role at the tenant root management group and the
+        <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">OpenHound Entra Agents Foundry Agent Reader</a> role on enabled subscriptions containing AI Services or OpenAI accounts:
 
-    By default, it assigns the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">OpenHound Entra Agents ARM Reader</a> role at the tenant root management group and the
-    <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">OpenHound Entra Agents Foundry Agent Reader</a> role on enabled subscriptions containing AI Services or OpenAI accounts:
+        ```bash
+        bash ./provision-identity.sh >> .env
+        ```
 
-    ```bash
-    bash ./provision-identity.sh >> .env
-    ```
+        To select subscription scopes instead of automatic Foundry account discovery,
+        identify the subscriptions to collect and set `SUBSCRIPTIONS`. The script
+        assigns both Azure roles at those subscriptions:
 
-    To select subscription scopes instead of automatic Foundry account discovery,
-    identify the subscriptions to collect and set `SUBSCRIPTIONS`. The script
-    assigns both Azure roles at those subscriptions:
+        ```bash
+        SUBSCRIPTIONS="<subscription-id-1> <subscription-id-2>" \
+        bash ./provision-identity.sh >> .env
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Manual provisioning">
+    Create the collector identity and grant its base permissions in the order below.
 
-    ```bash
-    SUBSCRIPTIONS="<subscription-id-1> <subscription-id-2>" \
-    bash ./provision-identity.sh >> .env
-    ```
-  </Step>
-</Steps>
+    ### Create the collector application and service principal
 
-Then complete the manual steps below for which no automated deployment is supported:
+    Create a dedicated identity for the collector, then grant Microsoft Graph and Azure access. Keep the application client ID, tenant ID, service-principal object ID, and client secret for the remaining steps.
 
-- [Export and maintain the environment inventory](#export-and-maintain-the-environment-inventory)
-- [Configure the application for each Dataverse environment](#configure-the-application-for-each-dataverse-environment)
-- [Configure the collector](#configure-the-collector)
-- [Verify collection](#verify-collection)
+    <Steps>
+      <Step title="Create the application">
+        1. In the [Microsoft Entra admin center](https://entra.microsoft.com/), open
+           **Entra ID** → **App registrations** → **New registration**.
+        2. Name it **OpenGraph-AZAgents-Collector-ReadOnly**.
+        3. Select **Single tenant only**
+        4. Leave the redirect URI empty.
+        5. Select **Register**.
 
-## Manual provisioning
+        ![Collector application registration](/openhound/collectors/entra-agents/assets/images/app-registration-creation.png)
 
-Create the collector identity and grant its base permissions in the order below. Then complete the environment setup and collector configuration sections that follow.
+        6. Record the **Application (client) ID** and **Directory (tenant) ID** from
+           the overview page. They are required in
+           [Configure the collector](#configure-the-collector).
 
-### Create the collector application and service principal
+        ![Application client ID and tenant ID](/openhound/collectors/entra-agents/assets/images/app-registration-details.png)
+      </Step>
+      <Step title="Grant Microsoft Graph permissions">
+        1. **Navigate to API permissions.** On the collector app registration's
+           **Overview** page, select **API permissions**.
 
-Create a dedicated identity for the collector, then grant Microsoft Graph and Azure access. Keep the application client ID, tenant ID, service-principal object ID, and client secret for the remaining steps.
+           ![Collector application API permissions](/openhound/collectors/entra-agents/assets/images/app-registration-api-permissions.png)
 
-<Steps>
-  <Step title="Create the application">
-    1. In the [Microsoft Entra admin center](https://entra.microsoft.com/), open
-       **Entra ID** → **App registrations** → **New registration**.
-    2. Name it **OpenGraph-AZAgents-Collector-ReadOnly**.
-    3. Select **Single tenant only**
-    4. Leave the redirect URI empty.
-    5. Select **Register**.
+        2. **Remove the default permission.** If the app registration has the default
+           delegated `User.Read` permission, remove it. The collector uses application
+           permissions.
 
-    ![Collector application registration](/openhound/collectors/entra-agents/assets/images/app-registration-creation.png)
+        3. **Add Microsoft Graph application permissions.** Select **Add a permission**,
+           then **Microsoft Graph** and **Application permissions**.
 
-    6. Record the **Application (client) ID** and **Directory (tenant) ID** from
-       the overview page. They are required in
-       [Configure the collector](#configure-the-collector).
+           ![Add an API permission](/openhound/collectors/entra-agents/assets/images/app-add-permission.png)
 
-    ![Application client ID and tenant ID](/openhound/collectors/entra-agents/assets/images/app-registration-details.png)
-  </Step>
-  <Step title="Grant Microsoft Graph permissions">
-    1. **Navigate to API permissions.** On the collector app registration's
-       **Overview** page, select **API permissions**.
+           ![Microsoft Graph API selection](/openhound/collectors/entra-agents/assets/images/app-ms-graph.png)
 
-       ![Collector application API permissions](/openhound/collectors/entra-agents/assets/images/app-registration-api-permissions.png)
+           ![Microsoft Graph application permissions](/openhound/collectors/entra-agents/assets/images/app-ms-graph-application-permissions.png)
 
-    2. **Remove the default permission.** If the app registration has the default
-       delegated `User.Read` permission, remove it. The collector uses application
-       permissions.
+        4. Search for and select each permission in this table:
 
-    3. **Add Microsoft Graph application permissions.** Select **Add a permission**,
-       then **Microsoft Graph** and **Application permissions**.
+           | Permission | Purpose |
+           |---|---|
+           | `Application.Read.All` | Resolve blueprints, applications, credentials, and service principals. |
+           | `User.Read.All` | Read agent-user properties. |
+           | `RoleManagement.Read.Directory` | List activated directory roles for blueprint credential control. |
+           | `AgentIdentity.Read.All` | Read Agent ID identities. |
+           | `AgentIdentityBlueprint.Read.All` | Read Agent ID blueprints. |
+           | `AgentIdentityBlueprintPrincipal.Read.All` | Read blueprint principals. |
+           | `AgentCollection.Read.All` | Read Agent Registry collection metadata. |
+           | `AgentInstance.Read.All` | Read Agent Registry instance metadata. |
 
-       ![Add an API permission](/openhound/collectors/entra-agents/assets/images/app-add-permission.png)
+        5. Select **Add permissions**.
 
-       ![Microsoft Graph API selection](/openhound/collectors/entra-agents/assets/images/app-ms-graph.png)
+           ![Select the required application permissions](/openhound/collectors/entra-agents/assets/images/app-add-permission2.png)
 
-       ![Microsoft Graph application permissions](/openhound/collectors/entra-agents/assets/images/app-ms-graph-application-permissions.png)
+        6. **Grant admin consent.** Select **Grant admin consent for** your tenant and
+           confirm the prompt. On the **API permissions** page, verify that every
+           requested permission has **Granted** status.
 
-    4. Search for and select each permission in this table:
+           ![Grant tenant administrator consent](/openhound/collectors/entra-agents/assets/images/app-grant-consent.png)
 
-       | Permission | Purpose |
-       |---|---|
-       | `Application.Read.All` | Resolve blueprints, applications, credentials, and service principals. |
-       | `User.Read.All` | Read agent-user properties. |
-       | `RoleManagement.Read.Directory` | List activated directory roles for blueprint credential control. |
-       | `AgentIdentity.Read.All` | Read Agent ID identities. |
-       | `AgentIdentityBlueprint.Read.All` | Read Agent ID blueprints. |
-       | `AgentIdentityBlueprintPrincipal.Read.All` | Read blueprint principals. |
-       | `AgentCollection.Read.All` | Read Agent Registry collection metadata. |
-       | `AgentInstance.Read.All` | Read Agent Registry instance metadata. |
+           ![Application permissions with consent granted](/openhound/collectors/entra-agents/assets/images/app-grant-consent-granted.png)
+      </Step>
+      <Step title="Create and safely store a collector credential">
+        Open **Certificates & secrets** → **New client secret**, choose an expiry that
+        matches your rotation policy, and select **Add**. Securely store the secret **Value**, it is required in
+        [Configure the collector](#configure-the-collector).
 
-    5. Select **Add permissions**.
+        ![Collector client secret](/openhound/collectors/entra-agents/assets/images/app-client-secret.png)
+      </Step>
+      <Step title="Inspect the enterprise application">
+        1. **Open the enterprise application** Back in **Overview** select the application at **Managed application in local directory**
 
-       ![Select the required application permissions](/openhound/collectors/entra-agents/assets/images/app-add-permission2.png)
+        ![Link to the collector enterprise application](/openhound/collectors/entra-agents/assets/images/app-registration-managed-app.png)
 
-    6. **Grant admin consent.** Select **Grant admin consent for** your tenant and
-       confirm the prompt. On the **API permissions** page, verify that every
-       requested permission has **Granted** status.
+        2. Record the service-principal **Object ID**, which is for Azure and Power Platform role assignments.
 
-       ![Grant tenant administrator consent](/openhound/collectors/entra-agents/assets/images/app-grant-consent.png)
+        ![Collector service-principal object ID](/openhound/collectors/entra-agents/assets/images/app-registration-sp-objectid.png)
+      </Step>
+      <Step title="Create and assign the custom ARM role">
+        Use the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">OpenHound Entra Agents ARM Reader</a> role template
+        to create the custom role in the Azure portal:
 
-       ![Application permissions with consent granted](/openhound/collectors/entra-agents/assets/images/app-grant-consent-granted.png)
-  </Step>
-  <Step title="Create and safely store a collector credential">
-    Open **Certificates & secrets** → **New client secret**, choose an expiry that
-    matches your rotation policy, and select **Add**. Securely store the secret **Value**, it is required in
-    [Configure the collector](#configure-the-collector).
+        1. In the [Azure Resource Manager](https://portal.azure.com/#servicemenu/Microsoft_Azure_Resources/ResourceManager/overview), open **Management groups** and select the tenant root
+           management group. Copy the **Directory (tenant) ID** for the next step.
+        2. Save a copy of the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">OpenHound Entra Agents ARM Reader</a> role template and replace `<tenantRootGroupId>` with
+           the **Directory (tenant) ID**.
+        3. On the tenant root management group, open **Access control (IAM)** → **Add**
+           → **Add custom role**. On **Basics**, select **Start from JSON** under
+           **Baseline permissions**, then upload the edited template file.
+        4. Review the role and select **Review + create** and **Create**.
+        5. For tenant-wide ARM collection, stay on the tenant root management group.
+           To limit collection scope to subscriptions open each in-scope subscription and follow the for the next step for each.
+        6. Open **Access control (IAM)** → **Add** → **Add role assignment**. Select
+           **OpenHound Entra Agents ARM Reader**. On **Members**, choose the collector's
+           enterprise application (service principal) recorded above. Select
+           **Review + assign** and verify the role appears for that principal at each
+           intended scope.
+      </Step>
+      <Step title="Create and assign the custom Foundry role">
+        Use the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">OpenHound Entra Agents Foundry Agent Reader</a> role template
+        to create the custom role in the Azure portal:
 
-    ![Collector client secret](/openhound/collectors/entra-agents/assets/images/app-client-secret.png)
-  </Step>
-  <Step title="Inspect the enterprise application">
-    1. **Open the enterprise application** Back in **Overview** select the application at **Managed application in local directory**
+        1. In the [Azure Resource Manager](https://portal.azure.com/#servicemenu/Microsoft_Azure_Resources/ResourceManager/overview), open subscriptions containing AI Services or
+           OpenAI accounts. Copy their **Subscription ID** for the next step.
+        2. Save a copy of the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">OpenHound Entra Agents Foundry Agent Reader</a> role template and replace `<subscriptionId>` with
+           the **Subscription ID**. If more than one subscription is in scope, add a
+           `/subscriptions/<subscriptionId>`.
+        3. On a subscription, open **Access control (IAM)** → **Add** → **Add custom
+           role**. On **Basics**, select **Start from JSON** under **Baseline
+           permissions**, then upload the edited template file.
+        4. Review the role and select **Review + create** and **Create**.
+        5. Open each in-scope subscription for the next step.
+        6. Open **Access control (IAM)** → **Add** → **Add role assignment**. Select
+           **OpenHound Entra Agents Foundry Agent Reader**. On **Members**, choose the
+           collector's enterprise application (service principal) recorded above.
+           Select **Review + assign** and verify the role appears for that principal at
+           each intended subscription.
+      </Step>
+    </Steps>
 
-    ![Link to the collector enterprise application](/openhound/collectors/entra-agents/assets/images/app-registration-managed-app.png)
+    ### Assign Power Platform Reader to the collector application
 
-    2. Record the service-principal **Object ID**, which is for Azure and Power Platform role assignments.
+    Assign the built-in Power Platform **Reader** role to the collector service
+    principal. The administrator performing this step needs Power Platform
+    Administrator or Power Platform role-based access-control administrator rights.
 
-    ![Collector service-principal object ID](/openhound/collectors/entra-agents/assets/images/app-registration-sp-objectid.png)
-  </Step>
-  <Step title="Create and assign the custom ARM role">
-    Use the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">OpenHound Entra Agents ARM Reader</a> role template
-    to create the custom role in the Azure portal:
+    >Microsoft does not provide a
+    >Power Platform admin center GUI for creating this service-principal role
+    >assignment.
 
-    1. In the [Azure Resource Manager](https://portal.azure.com/#servicemenu/Microsoft_Azure_Resources/ResourceManager/overview), open **Management groups** and select the tenant root
-       management group. Copy the **Directory (tenant) ID** for the next step.
-    2. Save a copy of the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-arm-reader-role.json" download="openhound-entra-agents-arm-reader-role.json">OpenHound Entra Agents ARM Reader</a> role template and replace `<tenantRootGroupId>` with
-       the **Directory (tenant) ID**.
-    3. On the tenant root management group, open **Access control (IAM)** → **Add**
-       → **Add custom role**. On **Basics**, select **Start from JSON** under
-       **Baseline permissions**, then upload the edited template file.
-    4. Review the role and select **Review + create** and **Create**.
-    5. For tenant-wide ARM collection, stay on the tenant root management group.
-       To limit collection scope to subscriptions open each in-scope subscription and follow the for the next step for each.
-    6. Open **Access control (IAM)** → **Add** → **Add role assignment**. Select
-       **OpenHound Entra Agents ARM Reader**. On **Members**, choose the collector's
-       enterprise application (service principal) recorded above. Select
-       **Review + assign** and verify the role appears for that principal at each
-       intended scope.
-  </Step>
-  <Step title="Create and assign the custom Foundry role">
-    Use the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">OpenHound Entra Agents Foundry Agent Reader</a> role template
-    to create the custom role in the Azure portal:
+    <Steps>
+      <Step title="Set the tenant and service-principal IDs">
+        Replace the tenant ID and enterprise application object ID placeholders in the command below with the values recorded above.
+      </Step>
+      <Step title="Assign the Reader role">
+        Sign in to the Azure CLI in PowerShell, then run the code:
 
-    1. In the [Azure Resource Manager](https://portal.azure.com/#servicemenu/Microsoft_Azure_Resources/ResourceManager/overview), open subscriptions containing AI Services or
-       OpenAI accounts. Copy their **Subscription ID** for the next step.
-    2. Save a copy of the <a href="/openhound/collectors/entra-agents/assets/openhound-entra-agents-foundry-agent-reader-role.json" download="openhound-entra-agents-foundry-agent-reader-role.json">OpenHound Entra Agents Foundry Agent Reader</a> role template and replace `<subscriptionId>` with
-       the **Subscription ID**. If more than one subscription is in scope, add a
-       `/subscriptions/<subscriptionId>`.
-    3. On a subscription, open **Access control (IAM)** → **Add** → **Add custom
-       role**. On **Basics**, select **Start from JSON** under **Baseline
-       permissions**, then upload the edited template file.
-    4. Review the role and select **Review + create** and **Create**.
-    5. Open each in-scope subscription for the next step.
-    6. Open **Access control (IAM)** → **Add** → **Add role assignment**. Select
-       **OpenHound Entra Agents Foundry Agent Reader**. On **Members**, choose the
-       collector's enterprise application (service principal) recorded above.
-       Select **Review + assign** and verify the role appears for that principal at
-       each intended subscription.
-  </Step>
-</Steps>
+        ```powershell
+        $tenantId = "<TENANT ID>"
+        $enterpriseApplicationObjectId = "<ENTERPRISE APPLICATION OBJECT ID>"
 
-### Assign Power Platform Reader to the collector application
+        # Power Platform Reader GUID https://learn.microsoft.com/en-us/power-platform/admin/security/role-based-access-control#built-in-power-platform-roles
+        $powerPlatformReaderId = "c886ad2e-27f7-4874-8381-5849b8d8a090"
 
-Assign the built-in Power Platform **Reader** role to the collector service
-principal. The administrator performing this step needs Power Platform
-Administrator or Power Platform role-based access-control administrator rights.
+        $ppApiToken = az account get-access-token `
+        --resource https://api.powerplatform.com --query accessToken -o tsv
+        $headers = @{ Authorization = "Bearer $ppApiToken"; "Content-Type" = "application/json" }
 
->Microsoft does not provide a
->Power Platform admin center GUI for creating this service-principal role
->assignment.
+        $body = @{
+        principalObjectId = $enterpriseApplicationObjectId
+        principalType = "ApplicationUser"
+        roleDefinitionId = $powerPlatformReaderId
+        scope = "/tenants/$tenantId"
+        } | ConvertTo-Json
 
-<Steps>
-  <Step title="Set the tenant and service-principal IDs">
-    Replace the tenant ID and enterprise application object ID placeholders in the command below with the values recorded above.
-  </Step>
-  <Step title="Assign the Reader role">
-    Sign in to the Azure CLI in PowerShell, then run the code:
+        Invoke-RestMethod -Method Post `
+        -Uri "https://api.powerplatform.com/authorization/roleAssignments?api-version=2024-10-01" `
+        -Headers $headers -Body $body
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
 
-    ```powershell
-    $tenantId = "<TENANT ID>"
-    $enterpriseApplicationObjectId = "<ENTERPRISE APPLICATION OBJECT ID>"
+After either route, complete the shared setup below. You can also enable optional connection enrichment regardless of the provisioning route.
 
-    # Power Platform Reader GUID https://learn.microsoft.com/en-us/power-platform/admin/security/role-based-access-control#built-in-power-platform-roles
-    $powerPlatformReaderId = "c886ad2e-27f7-4874-8381-5849b8d8a090"
-
-    $ppApiToken = az account get-access-token `
-    --resource https://api.powerplatform.com --query accessToken -o tsv
-    $headers = @{ Authorization = "Bearer $ppApiToken"; "Content-Type" = "application/json" }
-
-    $body = @{
-    principalObjectId = $enterpriseApplicationObjectId
-    principalType = "ApplicationUser"
-    roleDefinitionId = $powerPlatformReaderId
-    scope = "/tenants/$tenantId"
-    } | ConvertTo-Json
-
-    Invoke-RestMethod -Method Post `
-    -Uri "https://api.powerplatform.com/authorization/roleAssignments?api-version=2024-10-01" `
-    -Headers $headers -Body $body
-    ```
-  </Step>
-</Steps>
-
-#### [Optional] connection detail and sharing coverage
+## Optional connection detail and sharing coverage
 
 The collector can read [Power Platform connector](https://learn.microsoft.com/en-us/connectors/) details that lets the collector:
 
@@ -441,19 +437,22 @@ using the deployment instructions supplied for the beta.
 
 Do not set `reader_upn` or `auth_mode_matrix` for an application-only deployment.
 
-### Automated base provisioning
+Use the tab for your provisioning route to identify the Entra application credentials:
 
-The provisioning command saves its output to `.env`. Copy these values into
-the corresponding entries under `[sources.source.entra_id]` in `secrets.toml`:
+<Tabs>
+  <Tab title="Automated base provisioning">
+    The provisioning command saves its output to `.env`. Copy these values into
+    the corresponding entries under `[sources.source.entra_id]` in `secrets.toml`:
 
-- `AZ_AGENTS_TENANT_ID` to `tenant_id`
-- `AZ_AGENTS_CLIENT_ID` to `client_id`
-- `AZ_AGENTS_CLIENT_SECRET` to `client_secret`
-
-### Manual provisioning
-
-Use the tenant ID, application client ID, and client secret value saved during
-manual provisioning. Set the environment inventory path as described above.
+    - `AZ_AGENTS_TENANT_ID` to `tenant_id`
+    - `AZ_AGENTS_CLIENT_ID` to `client_id`
+    - `AZ_AGENTS_CLIENT_SECRET` to `client_secret`
+  </Tab>
+  <Tab title="Manual provisioning">
+    Use the tenant ID, application client ID, and client secret value saved during
+    manual provisioning. Set the environment inventory path as described above.
+  </Tab>
+</Tabs>
 
 ## Verify collection
 
