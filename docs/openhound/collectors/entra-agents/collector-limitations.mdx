@@ -10,12 +10,10 @@ import EntraAgentsBetaNote from '/snippets/hounds/openhound-entra-agents-beta-no
 
 <EntraAgentsBetaNote />
 
-This page summarizes the known coverage gaps that matter when
-interpreting OpenHound Entra Agents results.
+The following collector limitations affect the coverage and interpretation of
+OpenHound Entra Agents results.
 
-## Coverage and interpretation limits
-
-### Connection sharing and credential details require higher collector permissions
+## Connection sharing and credential details require higher collector permissions
 
 [Power Platform connections](https://learn.microsoft.com/en-us/connectors/)
 store the credentials a connector uses to access another service. Apps and
@@ -41,7 +39,7 @@ This allows running Cypher queries like:
 - `AZAgent - Connections with unmatched authentication metadata`
 - `AZAgent - Copilot agent access and configured connection identities`
 
-### Blueprints without collected child identities can be missing
+## Blueprints without collected child identities can be missing
 
 The collector derives [agent identity blueprint](https://learn.microsoft.com/en-us/entra/agent-id/key-concepts#agent-identity-blueprint)
 inventory (`AZAgent_Blueprint`)
@@ -54,7 +52,7 @@ relationships. The absence of a blueprint
 node does not establish that the blueprint does not exist or that no principal
 can add credentials to it.
 
-### App-only blueprint credential administration is not collected
+## App-only blueprint credential administration is not collected
 
 [Microsoft Graph application permissions](https://learn.microsoft.com/en-us/graph/permissions-overview#application-permissions)
 can let service principals (`AZServicePrincipal`)
@@ -69,7 +67,7 @@ application-role grants. Existing user
 role relationships do not cover this service-principal access, so blueprint
 credential-administration paths through those grants can be missed.
 
-### Copilot Studio Viewer access can be missing
+## Copilot Studio Viewer access can be missing
 
 [Copilot Studio](https://learn.microsoft.com/en-us/microsoft-copilot-studio/admin-share-bots)
 lets an agent owner give users permission to chat with an agent without giving
@@ -80,7 +78,7 @@ It does collect co-author access, and represents public-agent access
 separately. As a result, the graph can omit people who are allowed to chat with
 an authenticated agent, and paths that depend on that access can be missed.
 
-### Public-agent invocation paths from individual users can be missing
+## Public-agent invocation paths from individual users can be missing
 
 The collector represents [public Copilot Studio agent](https://learn.microsoft.com/en-us/microsoft-copilot-studio/configuration-end-user-authentication#no-authentication)
 access (`AZAgent_CopilotAgent`)
@@ -92,7 +90,7 @@ individual user can miss access to a public agent even though that user can
 invoke it. The tenant-level relationship records public access, but does not
 provide an invocation path from every user.
 
-### Power Automate run-only access is not collected
+## Power Automate run-only access is not collected
 
 The graph model defines an
 `AZAgent_RunOnly`
@@ -107,7 +105,7 @@ connections can be missed. Collected flow nodes currently report
 `hasrunonly=false`; this value does not establish that the flow has no run-only
 permissions.
 
-### Copilot Studio tool instances do not confirm runtime access
+## Copilot Studio tool instances do not confirm runtime access
 
 Copilot Studio agents can use connector actions to access other services. The
 collector reads these actions from Dataverse and
@@ -135,7 +133,7 @@ When interpreting tool instances:
   edge is non-traversable, so the graph does not provide an attack path from a
   Copilot agent through its tools to their connections. `UsesConnection` currently has traversability for Foundry only.
 
-### Connection authentication identity limits
+## Connection authentication identity limits
 
 `ConnectionAuthenticatedAs` is non-traversable and does not represent general compromise of a user or service principal. User matching uses administrator-reported `accountName` against an existing `AZUser.userprincipalname` when selected authentication and connector-definition evidence establish supported Entra user OAuth. The definition lookup is app-only, cached once per environment/connector, and optional: failures preserve connection inventory and validated defaults. Recognized provider identifiers are `aad`, `aadcertificate`, `office365usercertificate`, and `sharepointonlinecertificateV2`; the provider alone is insufficient when a definition mixes authentication modes. Office 365 Users and Azure Resource Manager (`shared_arm` and the existing `shared_azurearm` identifier) have validated user defaults. SharePoint cloud OAuth requires its canonical definition and no observed gateway or alternate authentication selection. A Microsoft connector name or arbitrary OAuth mode does not establish an Entra user identity.
 
@@ -145,7 +143,7 @@ Supported selected application-secret and certificate definitions require report
 
 Tool configuration does not prove token health, operation permissions, caller-controlled inputs, or runtime credential use. Connection edit access also does not establish permission to use the connection or change its target without reauthentication. Configured service-principal authentication is limited by the connector's operations and target permissions just as configured user authentication is; neither identity edge implies general control.
 
-### Microsoft Foundry tool identity may be unknown
+## Microsoft Foundry tool identity may be unknown
 
 Foundry agents can call tools using a user's delegated access (on-behalf-of,
 or OBO) or an agent or project identity. The authentication mode determines
