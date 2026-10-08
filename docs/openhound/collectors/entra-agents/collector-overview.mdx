@@ -12,9 +12,7 @@ import EntraAgentsBetaNote from '/snippets/hounds/openhound-entra-agents-beta-no
 
 OpenHound Entra Agents is a read-only collector for Microsoft Entra Agent ID,
 Copilot Studio, Power Platform connections and flows, Azure AI Foundry, MCP
-servers, and external Agent2Agent (A2A) endpoints. It brings agent identities,
-ownership, permissions, and configured connections into BloodHound to support
-investigations across these services.
+servers, and external Agent2Agent (A2A) endpoints.
 
 <Note>
   The collector extends the Azure graph and connects agent data to AzureHound
@@ -25,13 +23,13 @@ investigations across these services.
 ## What the collector collects
 
 - Microsoft Entra agent identities, their associated blueprints and blueprint
-  principals, agent users, owners, sponsors, and directory roles that permit
+  principals, agent users, owners, sponsors, and built-in directory roles that permit
   blueprint credential administration.
 - Copilot Studio agents, ownership, co-author access, public-agent invocation,
   configured connector and MCP tools, and delegation to other agents and flows.
 - Power Platform connection references and their use by agents and flows.
 - Connection sharing permissions and supported configured authentication
-  identities, when the optional Power Platform management registration is enabled.
+  identities (requires the optional [Power Platform management registration](/openhound/collectors/entra-agents/provision-identity#3-1-optional-connection-detail-and-sharing-coverage)).
 - Power Automate flow metadata, ownership, connection references, and child-flow
   relationships.
 - Azure AI Foundry projects and agents, associated identities, project
@@ -40,7 +38,9 @@ investigations across these services.
   agent configurations.
 
 Collection coverage depends on the collector's permissions and the environments
-and projects it can access. See [Collector limitations](/openhound/collectors/entra-agents/collector-limitations)
+and projects it can access.
+
+See [Collector limitations](/openhound/collectors/entra-agents/collector-limitations)
 for coverage gaps and guidance on interpreting the results.
 
 ## Collection options
@@ -53,14 +53,10 @@ Choose how to run collection:
 
 | Collection option | Use this option to |
 | --- | --- |
-| Automated scheduled collection | Run OpenHound as a service to collect and ingest data on a schedule configured for your [OpenHound client](/collect-data/enterprise-collection/create-collector) in BloodHound Enterprise. |
-| On-demand collection | Trigger an [on-demand scan](/collect-data/enterprise-collection/on-demand-scan) from BloodHound Enterprise when you need fresh data outside the configured schedule. The OpenHound service must be running. |
-| Manual collection | Run the collector yourself, then convert the raw data into OpenGraph JSON files for manual upload to BloodHound Enterprise. Use this option for one-time collections or to inspect the output before ingestion. |
+| Automated BHE-integrated collection | Run OpenHound as a service to collect and ingest data on a schedule configured for your [OpenHound client](/collect-data/enterprise-collection/create-collector) in BloodHound Enterprise. |
+| Manual collection | Run the collector with `uv run openhound collect entra_id ./openhound-raw`, then convert the raw data into OpenGraph JSON files for manual upload with `uv run openhound convert entra_id ./openhound-raw/entra_id ./openhound-opengraph`. |
 
-All options require the collector's service principal and permissions for the
-services and environments you want to collect.
-
-## Documentation
+## Next steps
 
 - [Configure permissions](/openhound/collectors/entra-agents/provision-identity): provision the
   service principal and configure access to the services and environments in scope.
