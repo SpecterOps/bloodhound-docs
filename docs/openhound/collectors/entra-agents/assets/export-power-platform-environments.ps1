@@ -5,7 +5,7 @@
 # Administrator signed in to Azure CLI:
 #
 #   az login --tenant <tenant-guid> `
-#     --scope https://api.powerplatform.com//.default
+#     --scope https://api.powerplatform.com/.default
 #   ./export-power-platform-environments.ps1 `
 #     -OutputPath .dlt/power-platform-environments.json
 #
@@ -19,7 +19,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
+$azCommand = Get-Command az -ErrorAction SilentlyContinue
+if (-not $azCommand) {
     throw "Azure CLI ('az') is not installed or not on PATH."
 }
 
@@ -30,23 +31,33 @@ if ($LASTEXITCODE -ne 0) {
 $account = $accountJson | ConvertFrom-Json
 
 $apiUrl = "https://api.powerplatform.com/environmentmanagement/environments?api-version=2022-03-01-preview"
-$environmentJson = (& az rest `
-    --method get `
-    --resource https://api.powerplatform.com `
-    --url $apiUrl `
-    --output json) -join [Environment]::NewLine
+$environments = [Collections.Generic.List[object]]::new()
+$azUsesBatch = $azCommand.Source -match '\.(cmd|bat)$'
+do {
+    # Windows batch launchers need explicit quotes around URLs containing '&'.
+    $requestUrl = if ($azUsesBatch) { '"' + $apiUrl + '"' } else { $apiUrl }
+    $environmentJson = (& az rest `
+        --method get `
+        --resource https://api.powerplatform.com `
+        --url $requestUrl `
+        --output json) -join [Environment]::NewLine
 
-if ($LASTEXITCODE -ne 0) {
-    throw @"
-Modern Power Platform environment discovery failed.
+    if ($LASTEXITCODE -ne 0) {
+        throw @"
+Modern Power Platform environment discovery failed. No inventory was written.
 Refresh the resource-specific sign-in and retry:
-az login --tenant $($account.tenantId) --scope https://api.powerplatform.com//.default
+az login --tenant $($account.tenantId) --scope https://api.powerplatform.com/.default
 "@
-}
+    }
 
-$response = $environmentJson | ConvertFrom-Json
+    $response = $environmentJson | ConvertFrom-Json
+    foreach ($environment in $response.value) {
+        $environments.Add($environment)
+    }
+    $apiUrl = $response.'@odata.nextLink'
+} while ($apiUrl)
 $inventory = @(
-    $response.value | ForEach-Object {
+    $environments | ForEach-Object {
         [ordered]@{
             environment_id = $_.id
             display_name    = if ($_.displayName) { $_.displayName } else { $_.id }
