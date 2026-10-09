@@ -40,9 +40,15 @@ The beta accepts one AWS access key pair for each collection plan:
 - **Access Key ID** identifies the AWS credential.
 - **Secret Access Key** authenticates the credential.
 
-When you create a plan, the Jobs Engine sends the secret value to AWS Secrets Manager and stores a reference to it. The collector jobs database stores reference metadata, not the secret value. BloodHound Enterprise does not read the secret value back, and the edit form shows only the saved key identifier. The managed OpenHound collector reads the configured secret directly from AWS Secrets Manager when it performs collection.
+When you create a plan successfully, the Jobs Engine sends the secret value to AWS Secrets Manager and stores a reference to it. The collector jobs database stores reference metadata, not the secret value. BloodHound Enterprise does not read the secret value back, and the edit form shows only the saved key identifier. The managed OpenHound collector reads the configured secret directly from AWS Secrets Manager when it performs collection.
 
-The Jobs Engine writes and deletes customer secrets when those lifecycle operations are invoked. The managed OpenHound collector has read-only access to the secret. The design does not provide an in-place credential edit operation during the beta.
+The Jobs Engine is responsible for customer-secret lifecycle operations. The managed OpenHound collector has read-only access to the secret. The design does not provide an in-place credential edit operation during the beta, and secret deletion may require the SpecterOps-supported process.
+
+{/*
+<Note>
+  Customer-facing secret deletion and lifecycle cleanup are still in progress. Confirm the target release before publishing self-service deletion steps.
+</Note>
+*/}
 
 The **Configuration** field is for non-secret collection settings. Do not paste an AWS secret access key, BHE token, or other credential material into the JSON configuration. Use the separate **Authentication** section for the AWS access key pair.
 
@@ -83,11 +89,23 @@ BloodHound Enterprise displays basic collection errors and plan results. The acc
 
 Managed OpenHound uploads collected data to your BloodHound Enterprise tenant for processing and graph analysis. BloodHound Enterprise's normal data retention and deletion controls apply to the ingested graph data; review [Data reconciliation and retention](/collect-data/enterprise-collection/data-retention) for those controls.
 
-Managed collection job history is separate from graph data and contains job metadata and outcome details, not the AWS secret value. The collector-job design treats outcome history as immutable and retains it for 90 days in phase 1. The retention period is not customer-configurable.
+Managed collection job history is separate from graph data and contains job metadata and outcome details, not the AWS secret value. The current beta does not expose a customer-configurable retention setting. Contact your SpecterOps account team for the current job-history retention period.
+
+{/*
+<Note>
+  Planned phase 1 behavior: collector job history is immutable and retained for 90 days. Publish this only after the history-retention worker is available in the target release.
+</Note>
+*/}
 
 ## Understand tenant isolation
 
-Managed collection credentials use tenant-scoped secret paths and IAM resource keys. Each secret path is prefixed with the owning tenant's codename. This design separates responsibilities: BloodHound Enterprise and the Jobs Engine manage the credential lifecycle, while the collector reads the credential to perform collection. The security ADR identifies zero cross-tenant secret access and removal of orphaned secrets as operational success outcomes.
+Managed collection credentials use tenant-scoped secret storage and IAM controls according to the deployment configuration. BloodHound Enterprise and the Jobs Engine manage the credential lifecycle, while the collector reads the credential to perform collection. The security design targets zero cross-tenant secret access and removal of orphaned secrets as operational outcomes.
+
+{/*
+<Note>
+  The target architecture uses tenant-prefixed secret paths and cross-tenant IAM isolation. Confirm the deployed secret-name format before publishing it as a customer-visible guarantee.
+</Note>
+*/}
 
 ## Meet your responsibilities
 
