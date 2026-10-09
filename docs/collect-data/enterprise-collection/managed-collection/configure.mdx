@@ -1,6 +1,6 @@
 ---
 title: Configure managed collection
-description: Configure an AWS collection plan and daily schedule for Managed Collection in BloodHound Enterprise.
+description: Configure a collection plan and daily schedule for Managed Collection in BloodHound Enterprise.
 hidden: true
 ---
 
@@ -8,138 +8,94 @@ import ManagedCollectorsBetaNote from '/snippets/feature-beta.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-<ManagedCollectorsBetaNote />
+<ManagedCollectorsBetaNote feature="Managed Collection" />
 
-Use a collection plan to define the AWS credentials, collection scope, and optional schedule for a managed OpenHound collector. After the beta is enabled in your tenant, save the plan, use on-demand collection, and review its history indicators to validate the credential and confirm collection activity.
+Use a collection plan to define the AWS credentials, collection scope, and optional schedule for Managed Collection.
 
-## Prepare your AWS environment
+After the beta is enabled in your tenant, save the plan, use on-demand collection, and review its history indicators to validate the credential and confirm collection activity.
 
-Before you configure a plan, complete the following prerequisites:
+## Prerequisites
 
-- Your BloodHound Enterprise tenant has Managed Collection enabled by SpecterOps.
-- You are signed in with an account that has `CollectionManageJobs` permission to create, edit, schedule, run, or delete collection plans. To view job history without managing plans, you need `CollectionReadJobs` permission.
+Before you configure a collection plan, confirm that the following prerequisites are met:
+
+- Your BloodHound Enterprise tenant has Managed Collection enabled by SpecterOps and your account has the Administrator role.
 - You have an AWS access key ID and secret access key for a collection principal.
-- The collection principal has the required read-only permissions for your target AWS account or organization. Follow [Configure AWS permissions](/openhound/collectors/aws/configure-permissions).
+- The collection principal has the required [read-only permissions](/openhound/collectors/aws/configure-permissions) for your target AWS account or organization.
 - You know the AWS account and collection scope that the plan should use.
 
-<Note>
-  Managed Collection runs the collector for you. Do not install a self-deployed OpenHound collector for this workflow. Use the self-deployed [AWS collector documentation](/openhound/collectors/aws/overview) when you need to operate OpenHound in your own environment.
-</Note>
-
 <Warning>
-  The beta uses an AWS access key and secret access key. Cross-account IAM role assumption through AWS Security Token Service (STS) is not a Managed Collection beta authentication option. Confirm support for your intended AWS scope with your SpecterOps account team before you configure a plan.
+  The beta uses an AWS access key and secret access key. Cross-account IAM role assumption through AWS Security Token Service (STS) is not a Managed Collection beta authentication option.
+
+  Confirm support for your intended AWS scope with your SpecterOps account team before you configure a plan.
 </Warning>
 
 ## Configure a collection plan
 
-<Note>
-  The beta form now submits credentials, schedules, and collection plans. The workflow remains feature-gated and is still being rolled out to selected tenants. Contact your SpecterOps account team if the page or save action is unavailable.
-</Note>
-
-When the workflow is enabled, the beta form creates an AWS plan. The **Service** control is not user-selectable; new plans use the AWS collection job type. The current build displays that service as **AWS Collection**. The **Authentication Type** field is fixed to access-key authentication.
-
-Use the following procedure:
+A collection plan tells BloodHound Enterprise what to collect from your cloud environment and when. It combines your service credentials, collection scope, and a schedule so data gathering runs automatically.
 
 <Steps>
   <Step title="Open managed collection">
-    Open **Administration** > **Data Collection** > **Managed Collection**, then select **New Collection**.
+    In the left navigation menu, got to **Administration** > **Data Collection** > **Managed Collection** and click **New Collection**.
   </Step>
 
   <Step title="Enter plan details">
-    Enter a plan **Name** and confirm that **Service** is the AWS collection service.
+    In the **Details** section, enter a **Name** for the collection plan.
+
+    <Note>
+      The **Service** field defaults to **AWS Collection** and cannot be changed.
+    </Note>
   </Step>
 
   <Step title="Add authentication">
-    In **Authentication**, confirm that **Authentication Type** is **Access Key**, then provide the **Access Key ID** and **Secret Access Key**. BloodHound Enterprise saves the credential separately and does not display the secret value again.
+    In the **Authentication** section, provide your AWS **Access Key ID** and **Secret Access Key**.
+
+    <Note>
+      The **Authentication Type** field defaults to **Access Key** and cannot be changed.
+    </Note>
+
+    Your credentials are encrypted and stored securely. BloodHound Enterprise does not display the secret value again. 
+    
+    You cannot edit authentication settings after saving. See [Replace a credential](/collect-data/enterprise-collection/managed-collection/configure#replace-a-credential) for more information.
+
+    <Warning>
+      Keep credentials, BHE tokens, and other secret values out of **Configuration**. Enter only the non-secret JSON settings required by the collection job; authentication credentials are handled in the separate **Authentication** section.
+    </Warning>
   </Step>
 
   <Step title="Enter the configuration">
-    In **Configuration**, paste the JSON object that defines the collection job. New plans start with `{}`; replace it with the object required by the AWS collector. Use the linked [AWS collector documentation](/openhound/collectors/aws/collect-data#aws-organization-profile-recommended) for the supported schema, required fields, and examples. The field accepts a JSON object, not a TOML file, array, or scalar value. The form checks JSON syntax and that the value is an object; it does not confirm that the AWS settings are semantically valid or that the credential has the required permissions. Match the collection scope to the permissions in [Configure AWS permissions](/openhound/collectors/aws/configure-permissions).
+    In the **Configuration** section, paste the JSON object that defines the collection job.
+
+    The expected structure is specific to the collector type. See the [AWS collector documentation](/openhound/collectors/aws/collect-data#aws-organization-profile-recommended) for the schema, required fields, and examples.
+
+    {/* TODO: Add example JSON object for AWS collection configuration */}
+
+    The field accepts a JSON object, not a TOML file, array, or scalar value. The form checks JSON syntax and that the value is an object; it does not confirm that the AWS settings are semantically valid or that the credential has the required permissions. Match the collection scope to the permissions in [Configure AWS permissions](/openhound/collectors/aws/configure-permissions).
   </Step>
 
   <Step title="Configure a schedule">
-    If you want automatic collection on a new plan, enter a **Schedule Name** and select a **Start Time**. New schedules use a daily frequency. The menu provides every hour from **12:00am** through **11:00pm** in one-hour increments. BloodHound Enterprise displays the selected time in your detected local timezone and shows the corresponding GMT offset; the schedule is stored as a UTC recurrence. When you edit an existing schedule, the form displays its supported frequency and preserves an existing recurrence when you leave the start time unchanged.
+    If you want automatic daily collection on a new plan, enter a **Schedule Name** and select a **Start Time**.
+
+    <Note>
+      The **Frequency** field defaults to **Daily** and cannot be changed.
+    </Note>
+
+    The **Start Time** menu provides every hour from **12:00am** through **11:00pm** in one-hour increments. BloodHound Enterprise displays the selected time in your detected local timezone and shows the corresponding GMT offset. The schedule is stored as a UTC recurrence.
+
+    <Frame>
+      <img src="/images/data_collectors/managed-collection/config-schedule.png" alt="Default view of the Schedule section on the New Collection configuration page" />
+    </Frame>
   </Step>
 
   <Step title="Save the plan">
-    Select **Save**. BloodHound Enterprise validates all sections, saves the required records, displays a success notification, and returns you to the **Collection Plans** page.
+    When finished configuring the collection plan, click **Save** in the top-right corner of the page.
+    
+    BloodHound Enterprise validates all sections, saves the required records, displays a success notification, and returns you to the **Collection Plans** page.
   </Step>
 </Steps>
-
-<Note>
-  For a new plan, saving occurs in stages: credentials, the optional schedule, and then the collection plan. When you edit a plan, the page updates the schedule only when needed and then updates the collection plan. If a later request fails, the page retains the successful earlier results so you can select **Save** again without recreating them. Record the visible error if the retry fails.
-</Note>
-
-{/*
-<Note>
-  Save-failure cleanup is still in progress. Do not document automatic removal of credentials or schedules created by an earlier stage until that behavior is available in the target release.
-</Note>
-*/}
-
-<Note>
-  The Managed Collection beta is still being rolled out. If the configuration, schedule, or save action is unavailable in your tenant, contact your SpecterOps account team. Do not create a self-deployed collector client as a substitute for this workflow.
-</Note>
-
-## Review collection plans
-
-After you save a plan, the **Collection Plans** page displays it as a tile. A tile can show:
-
-- The plan name.
-- Its schedule, or **No schedule set** when it has no schedule.
-- The latest run time, or **Not run yet** when the plan has not produced a completed run.
-- The latest result: **Success**, **Warning**, **Failed**, or **Cancelled**. **Warning** means the job completed only partially.
-
-The edit page submits changes to the plan name and Configuration JSON field. You can also update the existing schedule or add a schedule where supported. Authentication settings remain immutable after a credential is saved. Changes apply to future jobs. A job that BloodHound Enterprise already created uses the configuration captured when that job was created.
-
-Select **History** on a plan tile to open job history. The history view shows Job ID, Started at, Completed at, and Run Result. Use the Run Results filter, sort the Started at or Completed at columns, and hover a failed or warning result to view its failure reason.
-
-{/*
-<Note>
-  The job-history drawer experience is still in progress. Keep the current History dialog workflow until the target release includes the drawer implementation.
-</Note>
-*/}
-
-The beta does not provide a separate test-connection action. A saved credential is used when a collection job executes, so **Not run yet** does not confirm that the credential or AWS permissions are valid. Select **Run** to queue an on-demand collection. A successful queue notification does not indicate terminal completion; wait for the latest tile or History result, then use [Troubleshoot managed collection](/collect-data/enterprise-collection/managed-collection/troubleshoot) if it fails or shows **Warning**.
-
-## Replace an AWS credential
-
-Managed Collection does not edit a saved secret in place. Deleting a plan removes its profile and schedule links but does not revoke the AWS key or automatically delete the secret reference. Do not use plan deletion alone as credential rotation. During the beta, secret-reference deletion may require the SpecterOps-supported process.
-
-{/*
-<Note>
-  Customer-facing secret deletion and lifecycle cleanup are still in progress. Confirm the target release before documenting self-service secret deletion or automatic cleanup steps.
-</Note>
-*/}
-
-Create a new plan with the replacement access key pair, confirm that the new plan collects successfully, revoke the old AWS key according to your organization's credential policy, and follow the SpecterOps-provided process for removing the old secret reference.
-
-<Warning>
-  Never paste a secret access key into a ticket, log, screenshot, or support bundle. BloodHound Enterprise does not display the saved secret value after the credential is created.
-</Warning>
-
-<Warning>
-  Keep credentials, BHE tokens, and other secret values out of **Configuration**. Enter only the non-secret JSON settings required by the collection job; authentication credentials are handled in the separate **Authentication** section.
-</Warning>
-
-## Delete a collection plan
-
-Delete a plan when you no longer need it or when you have replaced its credentials. Deleting a plan does not revoke the AWS key or automatically delete its secret reference.
-
-<Steps>
-  <Step title="Open the plan actions">
-    On **Collection Plans**, find the plan and select **Delete**.
-  </Step>
-
-  <Step title="Confirm deletion">
-    Review the confirmation dialog and confirm the deletion. The plan is removed from the collection plan list and future scheduled jobs are no longer created from it. Linked schedule records survive profile deletion in the collector-job design.
-  </Step>
-</Steps>
-
-Jobs that BloodHound Enterprise already created are independent snapshots. Deleting or editing the plan does not rewrite a job that is already queued or running. Revoking the credential used by a queued or running job can still cause that job to fail.
 
 ## Run a collection on demand
 
-On-demand collection is the quickest beta method for validating a saved AWS credential because the beta does not provide a separate test-connection action.
+On-demand collection is the quickest method for validating a saved credential because the beta does not provide a separate test-connection action.
 
 <Steps>
   <Step title="Queue the collection">
@@ -147,11 +103,62 @@ On-demand collection is the quickest beta method for validating a saved AWS cred
   </Step>
 
   <Step title="Review the result">
-    Review the plan's latest run and result in the tile or **History**. A failed or warning run indicates that you should check the AWS credential, collection scope, and required permissions before you create a schedule.
+    Review the plan's latest run and result in the tile or **History**.
+
+    A **Failed** or **Warning** status indicates that you should check the AWS credential, collection scope, and required permissions before you create a schedule.
+
+    If **Run** does not queue a job, record the plan name, time of the attempt, and visible error text, then contact your SpecterOps account team. Do not include credential values.
   </Step>
 </Steps>
 
-If **Run** does not queue a job, record the plan name, time of the attempt, and visible error text, then contact your SpecterOps account team. Do not include credential values.
+## Review collection plans
+
+After you save a plan, the **Collection Plans** page displays it as a tile. A tile can show:
+
+| Tile field | What it shows |
+| --- | --- |
+| Plan name | The name of the collection plan |
+| Schedule | The schedule (or **No schedule set** when the plan has no schedule) |
+| Latest run time | The latest run time (or **Not run yet** when the plan has not produced a completed run) |
+| Latest result | The result of the latest job:<ul><li>**No schedule set**: The plan has no schedule.</li><li>**Not run yet**: The plan has no completed collection history.</li><li>**Success**: The latest job completed successfully.</li><li>**Warning**: The latest job completed only partially.</li><li>**Failed**: The latest job ended with an error. The current tile shows the outcome and timestamp, but not the full failure metadata.</li><li>**Cancelled**: The latest job was cancelled before completion.</li><li>**Disabled**: The schedule is paused.</li></ul> |
+
+Select **History** on a plan tile to open job history. The history view shows Job ID, Started at, Completed at, and Run Result. Use the Run Results filter, sort the Started at or Completed at columns, and hover a failed or warning result to view its failure reason.
+
+{/* TODO: The job-history drawer experience is still in progress. Keep the current History dialog workflow until the target release includes the drawer implementation */}
+
+## Replace a credential
+
+{/* TODO: Customer-facing secret deletion and lifecycle cleanup are still in progress. Confirm the target release before documenting self-service secret deletion or automatic cleanup steps. */}
+If you need to replace a credential, you must [create a new collection plan](/collect-data/enterprise-collection/managed-collection/configure#configure-a-collection-plan) with the replacement access key pair. You cannot edit the existing plan to update a credential.
+
+Deleting a collection plan removes its profile and schedule links but does not revoke the AWS key or automatically delete the secret reference.
+
+You should manually revoke the AWS key according to your organization's credential policy and contact your SpecterOps account team to remove the secret reference from the Managed Collection service. Revoking the credential used by a queued or running job can still cause that job to fail.
+
+## Delete a collection plan
+
+Delete a collection plan when you no longer need it or when you [replace a credential](/collect-data/enterprise-collection/managed-collection/configure#replace-a-credential) it uses.
+
+Managed Collection jobs that BloodHound Enterprise created before the plan's deletion are independent snapshots. Deleting or editing the plan does not rewrite a job that is already queued or running.
+
+<Note>
+  Deleting a plan does not revoke the AWS key or automatically delete its secret reference in the Managed Collection service.
+</Note>
+
+<Steps>
+  <Step title="Open the plan actions">
+    On the **Collection Plans** page, find the plan and select **Delete**.
+  </Step>
+
+  <Step title="Confirm deletion">
+    Review the confirmation dialog and confirm the deletion.
+
+    The plan is removed from the collection plan list and future scheduled jobs are no longer created from it.
+    
+    Linked schedule records survive profile deletion on the **Finished Jobs Log** page.
+    {/* TODO: Need to confirm Finished Jobs Log. */}
+  </Step>
+</Steps>
 
 ## Next steps
 

@@ -1,6 +1,6 @@
 ---
 title: Troubleshoot managed collection
-description: Diagnose common AWS Managed Collection configuration, scheduling, and collection failures.
+description: Diagnose common Managed Collection configuration, scheduling, and collection failures.
 hidden: true
 ---
 
@@ -10,27 +10,35 @@ import ManagedCollectorsBetaNote from '/snippets/feature-beta.mdx';
 
 <ManagedCollectorsBetaNote />
 
-Use this page to identify whether a managed collection problem comes from beta availability, AWS authentication, permissions, scheduling, or the managed collection service. The BHE UI supports plan save and queue operations, but the feature is tenant-gated and collection processing occurs in the managed service. Record the plan name, time of the attempt, visible result, and error text before you contact your SpecterOps account team.
+Use this page to identify whether a Managed Collection problem originates from beta availability, AWS authentication, permissions, scheduling, or the Managed Collection service.
+
+The BloodHound Enterprise user interface supports collection plan save and queue operations, but the feature is tenant-gated and collection processing occurs in the managed service. Record the plan name, time of the attempt, visible result, and error text before you contact your SpecterOps account team.
 
 ## Check beta availability
 
-If **Managed Collection** is not present under **Administration** > **Data Collection**, the `managed_openhound_collection` feature is not enabled for your tenant. The feature is SpecterOps-managed, disabled by default, and not user-updatable. Contact your account team to confirm beta access.
+If **Managed Collection** is not present under **Administration** > **Data Collection**, the `managed_openhound_collection` feature is not enabled for your tenant.
+
+The feature is SpecterOps-managed, disabled by default, and not user-updatable. Contact your account team to confirm beta access.
 
 ## Understand beta health signals
 
-The beta exposes collection-plan activity and the latest job result in the **Collection Plans** page. It does not expose a separate managed-worker health panel to customer users. If several plans stop producing results, provide the plan names and expected run times to your SpecterOps account team so they can review managed-service health and detailed logs.
+The beta exposes collection plan activity and the latest job result in the **Collection Plans** page. It does not expose a separate managed-worker health panel.
+
+If several plans stop producing results, provide the plan names and expected run times to your SpecterOps account team so they can review collection health and detailed logs.
 
 ## Review collection results
 
 On **Collection Plans**, inspect the plan tile and its schedule:
 
-- **No schedule set** means the plan will not create recurring jobs.
-- **Not run yet** means the plan has no completed collection history.
-- **Success** means the latest job completed successfully.
-- **Warning** means the latest job completed only partially. Select **History** to inspect the result and failure reason.
-- **Failed** means the latest job ended with an error. The current tile shows the outcome and timestamp, but not the full failure metadata.
-- **Cancelled** means the latest job was cancelled before completion.
-- **Disabled** next to a schedule means the schedule is paused.
+| Status | Meaning |
+| --- | --- |
+| **No schedule set** | The plan will not create recurring jobs. |
+| **Not run yet** | The plan has no completed collection history. |
+| **Success** | The latest job completed successfully. |
+| **Warning** | The latest job completed only partially. Select **History** to inspect the result and failure reason. |
+| **Failed** | The latest job ended with an error. The current tile shows the outcome and timestamp, but not the full failure metadata. |
+| **Cancelled** | The latest job was cancelled before completion. |
+| **Disabled** | The schedule is paused. |
 
 Select **History** on the plan tile to open job history. Use the Run Results filter to narrow the list, sort by Started at or Completed at, and hover a failed or warning result to view its failure reason.
 
@@ -38,17 +46,19 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
 
 ## Resolve common issues
 
+{/* TODO: Detailed scheduler, worker-health, and job-retention diagnostics are still in progress. Keep support guidance focused on the plan tile, History results, and visible errors until those diagnostics are available. */}
+
 <AccordionGroup>
   <Accordion title="The AWS credential is rejected">
-    **Likely cause:** The access key ID or secret access key is incorrect, inactive, expired, or not available to the managed OpenHound collector.
+    **Likely cause:** The access key ID or secret access key is incorrect, inactive, expired, or not available to the Managed Collection service.
 
-    **Action:** Verify the key pair in AWS without sharing the secret value. Confirm that the key is active and that the plan uses the correct access key ID. Managed Collection does not edit a saved credential in place; create a new plan with the replacement key pair. Deleting the old plan does not revoke the old AWS key or automatically delete its secret reference.
+    **Action:** Verify the key pair in AWS without sharing the secret value and confirm that the key is active. If the credential must be replaced, follow [Replace a credential](/collect-data/enterprise-collection/managed-collection/configure#replace-a-credential). Deleting the old plan does not revoke the old AWS key or automatically delete its secret reference.
   </Accordion>
 
   <Accordion title="The configuration JSON is rejected">
-    **Likely cause:** The Configuration field contains malformed JSON or a valid JSON value that is not an object, such as an array, string, number, or `null`.
+    **Likely cause:** The **Configuration** field contains malformed JSON or a valid JSON value that is not an object, such as an array, string, number, or `null`.
 
-    **Action:** Enter a JSON object in **Configuration** and correct the validation message shown by the form. Selecting **Save** with invalid configuration displays the error and does not create or update credentials, schedules, or the plan. The form checks JSON syntax and that the value is an object; if the JSON is accepted but collection fails, review the AWS collector schema, collection scope, and required permissions. Do not include credentials or tokens in the configuration.
+    **Action:** Follow [Enter the configuration](/collect-data/enterprise-collection/managed-collection/configure#configure-a-collection-plan) to correct the JSON object and validation message. If the JSON is accepted but collection fails, review the AWS collector schema, collection scope, and required permissions. Do not include credentials or tokens in the configuration.
   </Accordion>
 
   <Accordion title="The collection lacks AWS permissions">
@@ -60,11 +70,11 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
   <Accordion title="The plan has no collection results">
     **Likely cause:** The plan has no schedule, the schedule is disabled, or the scheduled job has not been processed yet.
 
-    **Action:** Confirm that the plan displays an active schedule and that it is not marked **Disabled**. If the schedule is correct and no result appears after the scheduled window, record the plan name and expected run time and contact your account team.
+    **Action:** Confirm that the plan displays an active schedule and that it is not marked **Disabled**. If the schedule is correct and no result appears after the scheduled window, record the plan name and expected run time and contact your SpecterOps account team.
   </Accordion>
 
-  <Accordion title="The managed collection service appears unavailable">
-    **Likely cause:** The managed worker is not processing jobs, or several plans are affected by a service-level problem. Customer users see plan results, not the managed worker's detailed health state.
+  <Accordion title="The Managed Collection service appears unavailable">
+    **Likely cause:** The managed worker is not processing jobs, or several plans are affected by a service-level problem. You can see collection plan results, not the managed worker's health state or detailed logs.
 
     **Action:** Confirm that the affected plans have active schedules and record the expected run times. If several plans are affected, contact your SpecterOps account team with the affected plan names and timestamps so they can review service health and detailed logs.
   </Accordion>
@@ -72,7 +82,7 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
   <Accordion title="The schedule time is unexpected">
     **Likely cause:** The form displays local time and the GMT offset, while the recurrence is stored in UTC.
 
-    **Action:** Edit the plan and review the detected timezone and GMT offset shown below **Start Time**. Select the desired start time again and save the plan.
+    **Action:** Follow [Configure a schedule](/collect-data/enterprise-collection/managed-collection/configure#configure-a-collection-plan) to review the detected timezone, GMT offset, and saved recurrence. Select the desired start time again and save the plan.
   </Accordion>
 
   <Accordion title="The collection is incomplete or shows Warning">
@@ -88,9 +98,9 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
   </Accordion>
 
   <Accordion title="A network allowlist blocks collection">
-    **Likely cause:** Your AWS or network controls do not allow the managed collection traffic path.
+    **Likely cause:** Your AWS or network controls do not allow the Managed Collection traffic path.
 
-    **Action:** Request the current managed-collection egress IP range and change-notification process from your SpecterOps account team. Do not infer the range from a self-deployed collector's address.
+    **Action:** Request the current Managed Collection egress IP range and change notification process from your SpecterOps account team. Do not infer the range from a self-deployed collector's address.
   </Accordion>
 
   <Accordion title="A save or run action does not complete">
@@ -100,24 +110,20 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
   </Accordion>
 </AccordionGroup>
 
-{/*
-<Note>
-  Detailed scheduler, worker-health, and job-retention diagnostics are still in progress. Keep support guidance focused on the plan tile, History results, and visible errors until those diagnostics are available.
-</Note>
-*/}
-
 ## Preserve evidence for support
 
-Provide the following non-secret details when you request help:
+Provide the following non-secret details when you request support:
 
-- Tenant name or identifier through your approved support channel.
-- Collection plan name.
-- AWS collection scope.
-- Expected schedule and detected timezone.
-- Time of the attempted or scheduled run.
-- Result shown in BloodHound Enterprise and the complete visible error text.
+- Tenant name
+- Collection plan name
+- AWS collection scope
+- Expected schedule and detected timezone
+- Time of the attempted or scheduled run
+- Result shown in BloodHound Enterprise and the complete visible error text
 
-Do not provide an access key secret, secret access key, or any other credential material.
+<Warning>
+  Do not provide an access key secret, secret access key, or any other credential material.
+</Warning>
 
 ## Next steps
 

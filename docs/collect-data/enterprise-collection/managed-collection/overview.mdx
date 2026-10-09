@@ -1,6 +1,6 @@
 ---
 title: Managed Collection overview
-description: Learn how Managed Collection simplifies data collection in BloodHound Enterprise.
+description: Learn how the Managed Collection service simplifies data collection in BloodHound Enterprise.
 hidden: true
 ---
 
@@ -10,19 +10,19 @@ import ManagedCollectorsBetaNote from '/snippets/feature-beta.mdx';
 
 <ManagedCollectorsBetaNote feature="Managed Collection"/>
 
-**Managed Collection** is a cloud-hosted solution that lets you collect data without deploying or maintaining collector infrastructure in your environment. It reduces the time required to start a collection and the amount of daily validation and troubleshooting needed to keep it running.
+Managed Collection is a cloud-hosted solution that lets you collect data without deploying or maintaining collector infrastructure in your environment. It reduces the time required to start a collection and the amount of daily validation and troubleshooting needed to keep it running.
 
-You configure credentials, collection plans, and schedules in BloodHound Enterprise while SpecterOps operates the collector infrastructure.
+You configure credentials, collection plans, and schedules in BloodHound Enterprise while SpecterOps operates and maintains the collector infrastructure.
 
 <Note>
-  Self-deployed collectors remain a fully supported option when you must operate collector infrastructure in your own environment. Managed collection is a cloud-hosted convenience, not a requirement for collecting a supported platform.
+  Self-deployed collectors remain a fully supported option when you must operate collector infrastructure in your own environment. Managed Collection is a cloud-hosted convenience, not a requirement for collecting a supported platform.
 
-  See the [managed vs self-hosted collection](/collect-data/enterprise-collection/managed-collection/overview#managed-vs-self-hosted-collection) for more details.
+  See [managed vs self-hosted collection](/collect-data/enterprise-collection/managed-collection/overview#managed-vs-self-hosted-collection) for more details.
 </Note>
 
 ## Beta scope
 
-The beta supports the following capabilities:
+The Managed Collection beta supports the following capabilities:
 
 | Capability | Beta behavior |
 | --- | --- |
@@ -31,25 +31,25 @@ The beta supports the following capabilities:
 | Authentication | AWS access key and secret access key (`auth_key`) |
 | Collection plans | Multiple plans supported; each plan describes one AWS collection configuration |
 | Schedule | One optional daily schedule per plan in the beta UI |
-| Cross-account authentication | AWS role assumption through STS is not supported |
+| Cross-account authentication | AWS role assumption through Security Token Service (STS) is not supported |
 
 ## Key concepts
 
-Before diving into the workflow, it's important to understand the key concepts used in managed collection:
+Before diving into the workflow, it's important to understand the following key concepts:
 
 | Term | Definition |
 | --- | --- |
 | **Collector** | A piece of software designed to collect attack path data from your environment. Current collectors include SharpHound, AzureHound, and OpenHound. Managed Collection uses OpenHound.|
 | **Managed collector** | A cloud-hosted collector service that SpecterOps deploys, operates, and maintains. |
 | **Self-hosted collector** | A collector that you install, configure, deploy, operate, and maintain in your own infrastructure. SharpHound, AzureHound, and OpenHound can perform self-hosted collection. |
-| **Collection plan** | A configuration that tells BloodHound Enterprise what to collect, which credential to use, and when to create collection jobs. You can use a plan to queue an on-demand job or create a schedule for daily automatic collection.  |
+| **Collection plan** | A managed collector configuration that tells BloodHound Enterprise what to collect, which credential to use, and when to create collection jobs. You can use a plan to queue an on-demand job or create a schedule for daily automatic collection.  |
 | **Job** | A unit of work for a collector to execute. A job defines what data should be collected and from where. |
-| **On-demand collection** | A job execution mode in which a user manually queues a job instead of relying on a schedule. |
+| **On-demand collection** | A job execution mode in which you manually queue a job instead of relying on a schedule. |
 | **Schedule collection** (or schedule) | Defines when or how often a particular job should be queued. |
 
 ## Workflow
 
-The following diagram shows the high-level managed collection workflow. BloodHound Enterprise stores credential references and job configuration separately from the credential material.
+The following diagram shows the high-level Managed Collection workflow. BloodHound Enterprise stores credential references and job configuration separately from the credential material.
 
 ```mermaid
 sequenceDiagram
@@ -82,9 +82,11 @@ BloodHound Enterprise provides the profile, schedule, secret, queue, and job his
 
 ## Collection credentials
 
-Managed Collection uses an external secret store for AWS credentials. BloodHound Enterprise keeps a reference and an operator-visible key identifier, but does not return the secret value after it is saved. The Managed Collector service reads the credential when it needs to run a job.
+Managed collection uses an external secret store for AWS credentials. BloodHound Enterprise keeps a reference and an operator-visible key identifier, but does not return the secret value after it is saved. The Managed Collection service reads the credential when it needs to run a job.
 
-Use an AWS principal with only the read permissions required for the resources you collect. Review [Configure AWS permissions](/openhound/collectors/aws/configure-permissions) before you create a plan.
+<Note>
+  Use an AWS principal with only the read permissions required for the resources you collect. Review [Configure AWS permissions](/openhound/collectors/aws/configure-permissions) before you create a plan.
+</Note>
 
 ## Managed vs self-hosted collection
 
@@ -92,14 +94,13 @@ The following table provides a comparison of managed versus self-hosted collecti
 
 | Area | Managed collection | Self-hosted collection |
 | --- | --- | --- |
-| Deployment | SpecterOps deploys and operates the managed OpenHound service | You deploy and operate the collector in your environment |
+| Deployment | SpecterOps deploys and operates the OpenHound collector | You deploy and operate a collector in your environment |
 | Maintenance | SpecterOps manages the collector runtime and upgrades | You manage the runtime, upgrades, and troubleshooting |
 | Credentials | BloodHound Enterprise stores a reference to credentials held in the managed service's external secret store | You choose and operate the credential store for your collector |
 | Network path | Collection traffic originates from the managed service | Collection traffic originates from your collector host |
-| Best fit | You want collection without customer-managed infrastructure | Your network or governance policy requires customer-operated collection |
+| Best fit | You want collection without the burden of managing infrastructure | Your network or governance policy requires customer-operated collection |
 
 ## Next steps
 
-- [Configure a managed collection plan](/collect-data/enterprise-collection/managed-collection/configure)
-- [Review managed collection security and compliance](/collect-data/enterprise-collection/managed-collection/security-and-compliance)
-- [Troubleshoot managed collection](/collect-data/enterprise-collection/managed-collection/troubleshoot)
+- [Configure a collection plan](/collect-data/enterprise-collection/managed-collection/configure)
+- [Review Managed Collection security and compliance](/collect-data/enterprise-collection/managed-collection/security-and-compliance)
