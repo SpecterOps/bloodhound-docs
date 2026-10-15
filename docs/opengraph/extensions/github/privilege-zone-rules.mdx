@@ -31,7 +31,7 @@ GitHub App installations scoped to all repositories in the organization that hav
 Zone: Tier Zero
 
 ```cypher
-MATCH (n:GH_AppInstallation {repository_selection:'all'})
+MATCH (n:GH_AppInstallation)-[:GH_CanAccess]->(:GH_Scope {scope_type:'repository', scope:'all'})
 WHERE ANY(permission IN n.permissions WHERE permission IN ['contents:write', 'administration:write', 'workflows:write', 'actions:write'])
 RETURN n
 ```
@@ -45,7 +45,7 @@ GitHub App definitions whose installations have repository-control write permiss
 Zone: Tier Zero
 
 ```cypher
-MATCH (n:GH_App)-[:GH_InstalledAs]->(i:GH_AppInstallation {repository_selection:'all'})
+MATCH (n:GH_App)-[:GH_InstalledAs]->(i:GH_AppInstallation)-[:GH_CanAccess]->(:GH_Scope {scope_type:'repository', scope:'all'})
 WHERE ANY(permission IN i.permissions WHERE permission IN ['contents:write', 'administration:write', 'workflows:write', 'actions:write'])
 RETURN n
 ```
@@ -124,7 +124,7 @@ Fine-grained personal access tokens scoped to all repositories in the organizati
 Zone: Tier Zero
 
 ```cypher
-MATCH (n:GH_PersonalAccessToken {repository_selection:'all'})
+MATCH (n:GH_PersonalAccessToken)-[:GH_CanAccess]->(:GH_Scope {scope_type:'repository', scope:'all'})
 WHERE ANY(permission IN n.repository_permissions WHERE permission IN ['contents:write', 'administration:write', 'workflows:write', 'actions:write'])
 RETURN n
 ```

@@ -1,6 +1,6 @@
 ---
 title: 'GH_Contains'
-description: 'Container relationship for organizational hierarchy (org contains secrets/variables, repo contains secrets/variables, environment contains secrets/variables)'
+description: 'Container relationship for GitHub resource hierarchy, including organization-owned scopes'
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
@@ -26,6 +26,7 @@ description: 'Container relationship for organizational hierarchy (org contains 
 | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | GH_Contains | [GH_SecretScanningAlert](/opengraph/extensions/github/nodes/gh_secretscanningalert) |
 | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | GH_Contains | [GH_PersonalAccessToken](/opengraph/extensions/github/nodes/gh_personalaccesstoken) |
 | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | GH_Contains | [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole) |
+| [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | GH_Contains | [GH_ClassicPersonalAccessToken](/opengraph/extensions/github/nodes/gh_classicpersonalaccesstoken) |
 | [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | GH_Contains | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) |
 | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | GH_Contains | [GH_EnvironmentVariable](/opengraph/extensions/github/nodes/gh_environmentvariable) |
 | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | GH_Contains | [GH_BranchProtectionRule](/opengraph/extensions/github/nodes/gh_branchprotectionrule) |
@@ -39,12 +40,14 @@ description: 'Container relationship for organizational hierarchy (org contains 
 | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | GH_Contains | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
 | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | GH_Contains | [GH_Workflow](/opengraph/extensions/github/nodes/gh_workflow) |
 | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | GH_Contains | [GH_EnvironmentSecret](/opengraph/extensions/github/nodes/gh_environmentsecret) |
+| [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | GH_Contains | [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) |
 
 ```mermaid
 flowchart LR
     GH_AppInstallation["GH_AppInstallation"]
     GH_Branch["GH_Branch"]
     GH_BranchProtectionRule["GH_BranchProtectionRule"]
+    GH_ClassicPersonalAccessToken["GH_ClassicPersonalAccessToken"]
     GH_DeployKey["GH_DeployKey"]
     GH_Enterprise["GH_Enterprise"]
     GH_EnterpriseRole["GH_EnterpriseRole"]
@@ -67,10 +70,12 @@ flowchart LR
     GH_RepoSecret["GH_RepoSecret"]
     GH_Repository["GH_Repository"]
     GH_RepoVariable["GH_RepoVariable"]
+    GH_Scope["GH_Scope"]
     GH_SecretScanningAlert["GH_SecretScanningAlert"]
     GH_Workflow["GH_Workflow"]
     GH_WorkflowJob["GH_WorkflowJob"]
     GH_WorkflowStep["GH_WorkflowStep"]
+    GH_Enterprise -- GH_Contains --> GH_ClassicPersonalAccessToken
     GH_Enterprise -- GH_Contains --> GH_EnterpriseRole
     GH_Enterprise -- GH_Contains --> GH_EnterpriseRunnerGroup
     GH_Enterprise -- GH_Contains --> GH_EnterpriseTeam
@@ -86,6 +91,7 @@ flowchart LR
     GH_Organization -- GH_Contains --> GH_OrgVariable
     GH_Organization -- GH_Contains --> GH_PersonalAccessToken
     GH_Organization -- GH_Contains --> GH_PersonalAccessTokenRequest
+    GH_Organization -- GH_Contains --> GH_Scope
     GH_Organization -- GH_Contains --> GH_SecretScanningAlert
     GH_OrgRunnerGroup -- GH_Contains --> GH_OrgRunner
     GH_Repository -- GH_Contains --> GH_Branch
@@ -103,12 +109,13 @@ flowchart LR
 
 ## General Information
 
-The non-traversable GH_Contains edge represents structural containment within the GitHub resource hierarchy. The enterprise contains enterprise teams, roles, managed users, runner groups, and enterprise runners through their groups. The organization serves as a top-level container for users, teams, repositories, roles, secrets, app installations, personal access tokens, and organization runner groups. Native organization runner groups contain organization runners. Repositories contain branches, workflows, branch protection rules, environments, repo-level secrets and variables, and repository-scoped runners. Environments contain environment branch policies, environment-scoped secrets, and environment-scoped variables. This edge is created by the collector to establish the resource hierarchy and is not traversable because containment alone does not imply privilege escalation.
+The non-traversable GH_Contains edge represents structural containment within the GitHub resource hierarchy. The enterprise contains enterprise teams, roles, managed users, classic personal access tokens, runner groups, and enterprise runners through their groups. The organization serves as a top-level container for users, teams, repositories, roles, scopes, secrets, app installations, fine-grained personal access tokens, and organization runner groups. Native organization runner groups contain organization runners. Repositories contain branches, workflows, branch protection rules, environments, repo-level secrets and variables, and repository-scoped runners. Environments contain environment branch policies, environment-scoped secrets, and environment-scoped variables. This edge is created by the collector to establish the resource hierarchy and is not traversable because containment alone does not imply privilege escalation.
 
 ## Edge Schema
 
 | Source | Destination | Traversable |
 | --- | --- | --- |
+| [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | [GH_ClassicPersonalAccessToken](/opengraph/extensions/github/nodes/gh_classicpersonalaccesstoken) | `false` |
 | [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | `false` |
 | [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | [GH_EnterpriseRunnerGroup](/opengraph/extensions/github/nodes/gh_enterpriserunnergroup) | `false` |
 | [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | [GH_EnterpriseTeam](/opengraph/extensions/github/nodes/gh_enterpriseteam) | `false` |
@@ -125,6 +132,7 @@ The non-traversable GH_Contains edge represents structural containment within th
 | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable) | `false` |
 | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | [GH_PersonalAccessToken](/opengraph/extensions/github/nodes/gh_personalaccesstoken) | `false` |
 | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | [GH_PersonalAccessTokenRequest](/opengraph/extensions/github/nodes/gh_personalaccesstokenrequest) | `false` |
+| [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) | `false` |
 | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | [GH_SecretScanningAlert](/opengraph/extensions/github/nodes/gh_secretscanningalert) | `false` |
 | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) | `false` |
 | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | [GH_BranchProtectionRule](/opengraph/extensions/github/nodes/gh_branchprotectionrule) | `false` |
@@ -143,60 +151,64 @@ The non-traversable GH_Contains edge represents structural containment within th
 ```mermaid
 graph LR
     n0["GH_Enterprise"]
-    n1["GH_EnterpriseRole"]
-    n2["GH_EnterpriseRunnerGroup"]
-    n3["GH_EnterpriseTeam"]
-    n4["GH_Organization"]
-    n5["GH_EnterpriseRunner"]
-    n6["GH_Environment"]
-    n7["GH_EnvironmentBranchPolicy"]
-    n8["GH_EnvironmentSecret"]
-    n9["GH_EnvironmentVariable"]
-    n10["GH_OrgRunnerGroup"]
-    n11["GH_OrgRunner"]
-    n12["GH_AppInstallation"]
-    n13["GH_OrgRole"]
-    n14["GH_OrgSecret"]
-    n15["GH_OrgVariable"]
-    n16["GH_PersonalAccessToken"]
-    n17["GH_PersonalAccessTokenRequest"]
-    n18["GH_SecretScanningAlert"]
-    n19["GH_Repository"]
-    n20["GH_Branch"]
-    n21["GH_BranchProtectionRule"]
-    n22["GH_DeployKey"]
-    n23["GH_RepoRunner"]
-    n24["GH_RepoSecret"]
-    n25["GH_RepoVariable"]
-    n26["GH_Workflow"]
-    n27["GH_WorkflowJob"]
-    n28["GH_WorkflowStep"]
+    n1["GH_ClassicPersonalAccessToken"]
+    n2["GH_EnterpriseRole"]
+    n3["GH_EnterpriseRunnerGroup"]
+    n4["GH_EnterpriseTeam"]
+    n5["GH_Organization"]
+    n6["GH_EnterpriseRunner"]
+    n7["GH_Environment"]
+    n8["GH_EnvironmentBranchPolicy"]
+    n9["GH_EnvironmentSecret"]
+    n10["GH_EnvironmentVariable"]
+    n11["GH_OrgRunnerGroup"]
+    n12["GH_OrgRunner"]
+    n13["GH_AppInstallation"]
+    n14["GH_OrgRole"]
+    n15["GH_OrgSecret"]
+    n16["GH_OrgVariable"]
+    n17["GH_PersonalAccessToken"]
+    n18["GH_PersonalAccessTokenRequest"]
+    n19["GH_Scope"]
+    n20["GH_SecretScanningAlert"]
+    n21["GH_Repository"]
+    n22["GH_Branch"]
+    n23["GH_BranchProtectionRule"]
+    n24["GH_DeployKey"]
+    n25["GH_RepoRunner"]
+    n26["GH_RepoSecret"]
+    n27["GH_RepoVariable"]
+    n28["GH_Workflow"]
+    n29["GH_WorkflowJob"]
+    n30["GH_WorkflowStep"]
     n0 -.->|GH_Contains| n1
     n0 -.->|GH_Contains| n2
     n0 -.->|GH_Contains| n3
     n0 -.->|GH_Contains| n4
-    n2 -.->|GH_Contains| n5
-    n6 -.->|GH_Contains| n7
-    n6 -.->|GH_Contains| n8
-    n6 -.->|GH_Contains| n9
-    n10 -.->|GH_Contains| n11
-    n4 -.->|GH_Contains| n12
-    n4 -.->|GH_Contains| n13
-    n4 -.->|GH_Contains| n10
-    n4 -.->|GH_Contains| n14
-    n4 -.->|GH_Contains| n15
-    n4 -.->|GH_Contains| n16
-    n4 -.->|GH_Contains| n17
-    n4 -.->|GH_Contains| n18
-    n19 -.->|GH_Contains| n20
-    n19 -.->|GH_Contains| n21
-    n19 -.->|GH_Contains| n22
-    n19 -.->|GH_Contains| n6
-    n19 -.->|GH_Contains| n23
-    n19 -.->|GH_Contains| n24
-    n19 -.->|GH_Contains| n25
-    n19 -.->|GH_Contains| n18
-    n19 -.->|GH_Contains| n26
-    n26 -.->|GH_Contains| n27
-    n27 -.->|GH_Contains| n28
+    n0 -.->|GH_Contains| n5
+    n3 -.->|GH_Contains| n6
+    n7 -.->|GH_Contains| n8
+    n7 -.->|GH_Contains| n9
+    n7 -.->|GH_Contains| n10
+    n11 -.->|GH_Contains| n12
+    n5 -.->|GH_Contains| n13
+    n5 -.->|GH_Contains| n14
+    n5 -.->|GH_Contains| n11
+    n5 -.->|GH_Contains| n15
+    n5 -.->|GH_Contains| n16
+    n5 -.->|GH_Contains| n17
+    n5 -.->|GH_Contains| n18
+    n5 -.->|GH_Contains| n19
+    n5 -.->|GH_Contains| n20
+    n21 -.->|GH_Contains| n22
+    n21 -.->|GH_Contains| n23
+    n21 -.->|GH_Contains| n24
+    n21 -.->|GH_Contains| n7
+    n21 -.->|GH_Contains| n25
+    n21 -.->|GH_Contains| n26
+    n21 -.->|GH_Contains| n27
+    n21 -.->|GH_Contains| n20
+    n21 -.->|GH_Contains| n28
+    n28 -.->|GH_Contains| n29
+    n29 -.->|GH_Contains| n30
 ```
