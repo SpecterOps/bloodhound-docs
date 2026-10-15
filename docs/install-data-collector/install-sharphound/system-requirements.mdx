@@ -55,6 +55,7 @@ SharpHound Enterprise needs outbound access to your BloodHound Enterprise tenant
 | [Privileged collection](/collect-data/enterprise-collection/privileged-collection) | SMB/RPC `445/TCP` | All in-scope domain-joined Windows systems | Required for host-based privileged collection |
 | [Privileged collection](/collect-data/enterprise-collection/privileged-collection) | SMB/RPC `135/TCP` | All in-scope domain-joined Windows systems | Required for NTLM relay-based collection |
 | [DC Registry and CA Registry collection](/collect-data/sharphound-data-permissions) | SMB/RPC `445/TCP` | All domain controllers and domain-joined CAs | Required for registry-based collection |
+| Azure VM identity during AD Structure collection | WMI `135/TCP` or SMB/Remote Registry `445/TCP` | Domain-joined Windows computers | SharpHound tries WMI first and Remote Registry as a fallback |
 
 <Note>
   Expected network bandwidth for privileged collection is approximately `60-100 kB` per collection.
@@ -82,6 +83,7 @@ We recommend following [SharpHound Enterprise Service Hardening](/manage-bloodho
 | [Certificate Services](/collect-data/sharphound-data-permissions#certificate-services) | `Authenticated Users` can collect most ADCS LDAP data | Already least-privileged by default for LDAP-collected certificate services data |
 | [CA Registry](/collect-data/sharphound-data-permissions#ca-registry) | `Authenticated Users` can collect CA registry data when AD CS is installed | No additional delegation is typically required |
 | [DC Registry](/collect-data/sharphound-data-permissions#dc-registry) | Local `Administrators` on domain controllers | Delegate access via Group Policy or registry configuration for required paths |
+| [Azure VM identity](/collect-data/sharphound-data-permissions#azure-vm-identity) | Permissions for WMI or Remote Registry on target computers | Delegate the Azure registry path for the Remote Registry fallback; verify WMI permissions separately |
 
 <Note>
   If Active Directory tombstoning is enabled, the service account must also have [read permissions](https://learn.microsoft.com/en-us/troubleshoot/windows-server/identity/non-administrators-view-deleted-object-container) on the deleted objects container.
