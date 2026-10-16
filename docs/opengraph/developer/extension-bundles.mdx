@@ -1,0 +1,207 @@
+---
+title: Package an extension bundle
+sidebarTitle: Extension Bundles
+description: Package an OpenGraph extension schema and supported assets into an extension bundle.
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+
+Package your OpenGraph extension definition schema, Privilege Zone rules, and saved queries in an **extension bundle** to install them together. An extension bundle is a ZIP archive supported in BloodHound v9.9.0 and later.
+
+<Note>
+  Bundle availability depends on the extension author and BloodHound version. Use a published bundle when one is available for your version. For installation instructions, see [Manage extensions](/opengraph/extensions/manage).
+</Note>
+
+## Bundle composition
+
+A bundle supports three components:
+
+- **Extension definition schema**: Defines the extension's graph structure and any findings and remediation guidance.
+- **Privilege Zone rules**: Identify principals that belong to a zone. Bundles support only the built-in Tier Zero zone.
+- **Saved queries**: Help you explore the extension's data.
+
+| Component | Requirement | Installation behavior | Alternative without a bundle |
+| --- | --- | --- | --- |
+| `schema.json` | Required in both BloodHound Enterprise and BloodHound Community Edition. | Provides the same functionality as a schema-only JSON installation. | Upload the schema as a JSON file. |
+| `pz_rules.json` | Required if `schema.json` contains `relationship_findings`, which defines findings for BloodHound Enterprise. Otherwise optional. | Installs Privilege Zone rules together, without a separate OpenHound workflow. | Maintain Privilege Zone rules in OpenHound until you migrate the extension to a bundle. |
+| `saved_queries.json` | Optional in both BloodHound Enterprise and BloodHound Community Edition. | Installs read-only queries organized by `platform` and `category`. | Maintain saved queries in OpenHound or import them in bulk. OpenHound makes queries public automatically. Imported queries belong to the importing user, who must make them public manually. Neither method organizes queries by `platform` or `category`. |
+
+To migrate an existing extension, update your publishing workflow to package its components in a bundle. See [Migrate an extension](#migrate-an-extension).
+
+## Installation behavior
+
+BloodHound Enterprise and BloodHound Community Edition accept ZIP bundles through `PUT /api/v2/extensions`.
+
+BloodHound installs all bundle components together. If any component fails to install, BloodHound rolls back all changes and returns error messages. No partial installation remains.
+
+<Note>
+  Test the complete bundle at least once, even if you test individual components during development. An error in any component causes the entire installation to fail.
+</Note>
+
+If tier management is disabled, BloodHound skips Privilege Zone rules during installation. You can omit `pz_rules.json` when the schema does not require it.
+
+## ZIP archive structure
+
+Place each component at the root of the ZIP archive. Use the exact file names shown here:
+
+<Tree>
+  <Tree.Folder name="<extension-name>-v<version>.zip" defaultOpen>
+    <Tree.File name="schema.json" />
+    <Tree.File name="pz_rules.json" />
+    <Tree.File name="saved_queries.json" />
+  </Tree.Folder>
+</Tree>
+
+Follow these archive requirements:
+
+- Place each component at the archive root, using the exact file names shown above. BloodHound rejects nested files, documentation, checksums, and other extra files.
+- Include `schema.json` in every bundle. See [Bundle composition](#bundle-composition) for the requirements for `pz_rules.json` and `saved_queries.json`.
+- Include each component at most once. BloodHound rejects duplicate component names.
+- Keep each component at or below the 10 MB decompressed size limit.
+- Keep optional components separate from `schema.json`. BloodHound rejects a bundled `schema.json` that embeds `pz_rules` or `queries`.
+
+If you omit a component when updating a bundle, BloodHound removes any existing extension-managed assets of that type.
+
+Use the existing extension definition schema format for `schema.json`. A schema-only bundle is valid if the file contains the required `schema`, `node_kinds`, and `relationship_kinds` fields and does not define `relationship_findings`.
+
+<Note>
+  If `schema.json` defines relationship findings, include `pz_rules.json` with at least one valid rule.
+
+  This requirement applies even when tier management is disabled. In that case, BloodHound accepts the bundle but skips the Privilege Zone rules during installation or update.
+</Note>
+
+## Privilege Zone rules
+
+In `pz_rules.json`, define a JSON object with a top-level `pz_rules` array containing one or more Privilege Zone rules.
+
+For each rule:
+
+- Provide a stable `key`, a display name, and exactly one Cypher seed: an object that specifies the query used to identify principals.
+- Set the seed's `type` to `2` and provide the Cypher query in its `value` field. Bundles support only Cypher-based rules.
+- Optionally, set `enabled` and `allow_disable`. Both default to `true`.
+
+BloodHound associates each rule with its extension and assigns the rule to Tier Zero. Bundles do not support other zones.
+
+When you update the bundle, BloodHound uses each rule's `key` to match existing rules. It updates matching rules with the values from the bundle and removes rules you omit. Uninstalling the extension also removes its rules.
+
+```json title="pz_rules.json"
+{
+  "pz_rules": [
+    {
+      "key": "GH_tier_zero_principals",
+      "name": "GitHub: Tier Zero principals",
+      "description": "Identifies GitHub principals assigned to Tier Zero.",
+      "enabled": true,
+      "allow_disable": true,
+      "seeds": [
+        {
+          "type": 2,
+          "value": "MATCH (n:GH_User) WHERE n.tier = 0 RETURN n"
+        }
+      ]
+    }
+  ]
+}
+```
+
+<ResponseField name="pz_rules" type="array" required>
+  Array of Privilege Zone rules. Include at least one valid rule when `schema.json` defines relationship findings.
+</ResponseField>
+<ResponseField name="pz_rules[].key" type="string" required>
+  Stable identifier that BloodHound uses to match the rule during extension updates. Use a nonempty value that is unique within the component and contains the extension's namespace prefix, such as `GH_`.
+</ResponseField>
+<ResponseField name="pz_rules[].name" type="string" required>
+  Unique display name for the Privilege Zone rule. Provide a value that is not empty or whitespace-only.
+</ResponseField>
+<ResponseField name="pz_rules[].description" type="string">
+  Optional description of the rule's purpose or the principals it identifies.
+</ResponseField>
+<ResponseField name="pz_rules[].enabled" type="boolean">
+  Whether the rule is enabled. Defaults to `true`. When enabled, the rule assigns matching principals to Tier Zero.
+</ResponseField>
+<ResponseField name="pz_rules[].allow_disable" type="boolean">
+  Whether users can disable the rule. Defaults to `true`.
+</ResponseField>
+<ResponseField name="pz_rules[].seeds" type="array" required>
+  Array containing exactly one Cypher seed object that identifies the principals for the rule.
+</ResponseField>
+<ResponseField name="pz_rules[].seeds[].type" type="integer" required>
+  Seed type. Use `2` for a Cypher-based rule, the only supported type.
+</ResponseField>
+<ResponseField name="pz_rules[].seeds[].value" type="string" required>
+  Cypher query that identifies principals for zone assignment. Provide a nonempty, valid Cypher query.
+</ResponseField>
+
+## Saved queries
+
+In `saved_queries.json`, define a JSON object with a top-level `queries` array containing one or more saved queries. Use `queries` as the array key.
+
+For each query:
+
+- Provide a stable `query_key`, a display name, and a Cypher query.
+- Optionally, provide a `description` and `category`.
+
+BloodHound associates each query with its extension and makes it public and read-only. The extension name supplies the `platform` filter option. If you provide a `category`, BloodHound adds it to the `category` filter options.
+
+When you update the bundle, BloodHound uses each query's `query_key` to match existing queries. It updates matching queries with the values from the bundle and removes queries you omit. Omitting `saved_queries.json` removes all existing saved queries associated with the extension. Uninstalling the extension also removes its queries.
+
+<Note>
+  You cannot modify or delete extension-managed saved queries through the saved query APIs. Update them through a new extension bundle.
+</Note>
+
+```json title="saved_queries.json"
+{
+  "queries": [
+    {
+      "query_key": "GH_github_critical_repositories",
+      "name": "GitHub: Critical repositories",
+      "query": "MATCH (n:GH_Repository) WHERE n.critical = true RETURN n",
+      "description": "Lists repositories marked as critical.",
+      "category": "Critical Assets"
+    }
+  ]
+}
+```
+
+<ResponseField name="queries" type="array" required>
+  Array of saved queries. Include at least one query when you include `saved_queries.json`.
+</ResponseField>
+<ResponseField name="queries[].query_key" type="string" required>
+  Stable identifier that BloodHound uses to match the query during extension updates. Use a nonempty value that is unique within the component and contains the extension's namespace prefix, such as `GH_`.
+</ResponseField>
+<ResponseField name="queries[].name" type="string" required>
+  Display name for the saved query. Provide a nonempty value that is unique within the component.
+</ResponseField>
+<ResponseField name="queries[].query" type="string" required>
+  Cypher query to save. Provide a nonempty, valid Cypher query.
+</ResponseField>
+<ResponseField name="queries[].description" type="string">
+  Optional description of the saved query.
+</ResponseField>
+<ResponseField name="queries[].category" type="string">
+  Optional category used to organize the saved query.
+</ResponseField>
+
+## Migrate an extension
+
+BloodHound continues to support schema-only extensions. To include the supported assets with your schema, update your publishing workflow to produce an extension bundle.
+
+Increment the extension version when you migrate. Publish a new version rather than replacing an existing version's files with a bundle.
+
+<Steps>
+  <Step title="Prepare the components">
+    Update each component to meet the requirements on this page.
+  </Step>
+  <Step title="Update your publishing workflow">
+    Configure your workflow to create a ZIP archive with the [required structure](#zip-archive-structure).
+  </Step>
+  <Step title="Test the complete bundle">
+    Test both manual and embedded installation workflows with all components present. Confirm that the extension and its assets install successfully.
+  </Step>
+  <Step title="Update the collector">
+    If your extension uses an OpenHound collector, prepare a collector version update that removes the outdated extension artifacts.
+  </Step>
+  <Step title="Publish the update">
+    Publish the new extension version and any updated OpenHound collector. For embedded extensions, place the updated artifacts in the embedded extension Amazon S3 bucket before the next BloodHound build.
+  </Step>
+</Steps>
