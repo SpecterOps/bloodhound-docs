@@ -1,46 +1,48 @@
 ---
 title: Package an extension bundle
 sidebarTitle: Extension Bundles
-description: Internal guidance for packaging OpenGraph extension bundles for BloodHound.
+description: Package an OpenGraph extension schema and supported assets into an extension bundle.
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
 
-<Warning>
-  This is internal guidance for SpecterOps extension authors. It describes the current v9.8.0 implementation state. The implementation supports all three bundle components, but GitHub, Okta, and Jamf are not yet published as bundle artifacts.
-</Warning>
+Starting in v9.9.0, BloodHound supports **extension bundles**: ZIP archives that package an OpenGraph extension definition schema with supported extension assets. A bundle provides one artifact for installing the extension and its managed assets.
 
-An **extension bundle** is a ZIP archive that packages an OpenGraph extension definition schema with the extension-managed assets that BloodHound installs with it.
+<Note>
+  Bundle availability depends on the extension author and BloodHound version. Use a published bundle when one is available for your version. For installation instructions, see [Manage extensions](/opengraph/extensions/manage).
+</Note>
 
-The bundle gives one extension one installable artifact and gives the platform a single source of truth for the extension's schema and managed assets.
+## Bundle composition
 
-## Implementation status
+Each bundle contains the artifacts necessary for BloodHound to interpret and process extension-specific data. This currently includes the following components:
 
-The ZIP parser is implemented in the [`PUT /api/v2/extensions`](https://bloodhound.specterops.io/reference/opengraph-experimental/upserts-the-opengraph-extension) upload path for Community and Enterprise. The BloodHound Enterprise startup loader also accepts ZIP bundles.
+- **Extension Definition Schema**: Defines the extension's expected graph structure, as well as any findings and remediation if included.
+- **Privilege Zone rules**: Rules that determine which principals are identified as belonging to a given zone. Currently, bundles will only support assignment to the built-in Tier Zero zone.
+- **Saved Queries**: Contextually relevant queries that are provided to empower users to explore and better understand an extension's data.
 
-<Warning>
-  Bundle support is available through the extension API and, for BloodHound Enterprise, the embedded extension startup loader. An extension's release and publication workflow must still be updated before that extension can adopt a ZIP artifact.
-</Warning>
+Migrating an existing extension to use bundles requires extension authors to update their publication workflow to handle consolidating artifacts into bundles as components.
 
-| Component | Current implementation state | Author action for v9.8.0 |
-|---|---|---|
-| `schema.json` | Required and installed through the API and startup loader. | Keep the extension definition schema as the bundle's required component. |
-| `pz_rules.json` | Parsed and reconciled with the extension through the API and BHE startup loader. When the `tier_management_engine` feature flag is disabled, the rules are skipped. | Include the component when the extension manages Privilege Zone rules and the target deployment has tier management enabled. |
-| `saved_queries.json` | Parsed and reconciled with the extension through the API and BHE startup loader. Extension-managed queries are public and read-only. | Include the component when the extension manages saved queries. |
+| Component | Bundle Required? | Impact | Non-Bundle Alternative |
+| --- | --- | --- | --- |
+| `schema.json` | Required for both Enterprise and Community bundles. | No functional difference from schema-only JSON installation. | Backwards compatibility for direct JSON upload instead of ZIP bundles. |
+| `pz_rules.json` | Required if the `schema.json` file contains the `relationship_findings` section (indicating BHE usage). Otherwise, optional for community-oriented bundles. | Supports bulk installation of Privilege Zone rules without the need for OpenHound workflow. | Privilege Zone rules should be maintained in OpenHound until the extension migrates to use bundles. |
+| `saved_queries.json` | Optional for both Enterprise and Community bundles. | Extension-installed queries are organized by `platform` and `category` and are marked read-only. | Saved Queries should be maintained in OpenHound until the extension migrates to use bundles. Alternatively, queries can be bulk imported.<br/><br/>If managed by OpenHound, the queries become public automatically. If imported, the queries are owned by the importing user and must be made public manually.<br/><br/>Neither approach organizes the queries by `platform` nor `category`. |
 
-The implementation supports schema, Privilege Zone rules, and saved queries in one bundle. The current BHE publication artifacts for GitHub, Okta, and Jamf remain JSON files, so their bundle adoption is a release-process decision rather than a parser limitation.
+## Installation process
 
-Do not change the production GitHub, Okta, or Jamf artifacts from JSON to ZIP until each extension's publication workflow has been updated and the resulting artifact has been verified through every supported consumer.
+The ZIP parser is implemented in the `PUT /api/v2/extensions` upload path for Community and Enterprise.
 
-{/* TODO: Confirm the release-specific bundle adoption matrix for GitHub, Okta, and Jamf before publishing this page as external guidance. */}
+Extension bundles require success to be all-or-nothing to be considered fully installed. If any component fails to install, BloodHound will roll back all previous changes and return the appropriate error messages. This guarantees that an extension installation is self-consistent, with no partial installation states or misconfigurations.
 
-{/* TODO(BED-9833): Update the upload workflow when ZIP support reaches the released OpenGraph Management UI. The checked-out main branch currently exposes JSON-only file upload in that UI. */}
+<Note>
+  While it can be useful to test individual components incrementally as you build an extension or bundle, be sure to test the final extension bundle artifact with all components present at least once. An error in any component can cause the entire installation to fail.
+</Note>
 
-An upload that returns success confirms that the bundle was accepted and its contents were processed. If tier management is disabled, a supplied `pz_rules.json` component is skipped; verify the installed extension and managed assets after installation.
+If tier management is disabled, any Privilege Zone rules are skipped during installation. If the `pz_rules.json` component is not required and omitted, there is no impact.
 
 ## ZIP archive structure
 
-Place the recognized component files at the root of the ZIP archive:
+Place each component at the root of the ZIP archive. Use the exact file names shown here:
 
 <Tree>
   <Tree.Folder name="<extension-name>-v<version>.zip" defaultOpen>
@@ -52,35 +54,46 @@ Place the recognized component files at the root of the ZIP archive:
 
 The following rules apply to the archive:
 
-- `schema.json` is required.
-
-- `pz_rules.json` and `saved_queries.json` are optional. If a component is omitted from an extension update, reconciliation removes the existing extension-managed assets of that type.
-
-- Use the exact root-level file names. Nested files, documentation files, checksums, and other extra files are rejected as unexpected components.
-
+- Each component file must be located in the archive's root directory.
+- File names must match this specification exactly to be recognized as the expected component and processed accordingly.
+- Nested files, documentation files, checksums, and other extra files are rejected as unexpected components.
+- The `schema.json` file is always required.
+- The `pz_rules.json` and `saved_queries.json` files are potentially optional (see exact requirements above).
+- If a component is omitted from an extension bundle, reconciliation removes any existing extension-managed assets of that type.
 - Include each component at most once. Duplicate component names are rejected.
+- Keep each recognized component at or below the 10 MB decompressed component limit.
+- Keep the optional components separate from the `schema.json` file. A `schema.json` file that embeds `pz_rules` or `queries` is rejected when it is uploaded as part of a bundle.
 
-- For the BHE API, keep each recognized component at or below the 10 MiB decompressed component limit.
-
-- Keep the optional components separate from `schema.json`. A `schema.json` file that embeds `pz_rules` or `queries` is rejected when it is uploaded as part of a bundle.
-
-The schema itself keeps the existing [extension definition schema](https://bloodhound.specterops.io/opengraph/developer/graph-definition) format. A minimal schema-only bundle is valid when `schema.json` contains the required `schema`, `node_kinds`, `relationship_kinds`, and any applicable `environments` and `relationship_findings` definitions.
+The schema itself keeps the existing extension definition schema format. A minimal schema-only bundle is valid when the `schema.json` file contains the required `schema`, `node_kinds`, and `relationship_kinds` and does not contain `relationship_findings` definitions.
 
 <Note>
-  If `schema.json` declares relationship findings, both the API and the BHE startup loader require `pz_rules.json` with at least one rule.
+  If the `schema.json` file declares relationship findings, the API requires the `pz_rules.json` file with at least one valid rule included.
 
-  This requirement applies even when the target deployment has tier management disabled. In that case, the bundle can be accepted but the PZ rules are skipped during upsert.
+  This requirement applies even when tier management is disabled. In that case, BloodHound accepts the bundle but skips the Privilege Zone rules during upsert.
 </Note>
 
-## Privilege Zone rule contract
+## Privilege Zone rules
 
-The current parser contract for `pz_rules.json` is a single JSON object containing a `pz_rules` array. Each rule requires a stable `key`, a name, and exactly one Cypher seed. `enabled` and `allow_disable` are optional and default to `true`.
+The `pz_rules.json` component file contains a single JSON object with a top-level `pz_rules` array that contains one or more Privilege Zone rule objects within.
+
+Rules governing creation:
+
+- Each rule requires a stable `key`, a display name, and exactly one Cypher seed. `enabled` and `allow_disable` are optional and default to `true`.
+- Extension bundles only support cypher-based rules, containing a single seed indicated by `"type": 2`. The relevant query is then provide as the seed's `value`.
+- Extension bundled rules are automatically aligned to the Tier Zero zone. Aligning rules to other zones is not supported at this time.
+- Each rule created from an extension bundle is aligned to the extension that created it.
+
+Rules governing modification and removal:
+
+- When an extension is uninstalled, all rules aligned to it are also subsequently removed.
+- If a specific rule (identified by the `key`) is omitted during any future updates, that rule will be removed from BloodHound when the bundle is upserted and reconciliation occurs.
+- If a rule is included in the bundle with a given `key` but any of the information differs, the rule in BloodHound will be updated with the latest information from the bundle.
 
 ```json title="pz_rules.json"
 {
   "pz_rules": [
     {
-      "key": "github-tier-zero-principals",
+      "key": "GH_tier_zero_principals",
       "name": "GitHub: Tier Zero principals",
       "description": "Identifies GitHub principals assigned to Tier Zero.",
       "enabled": true,
@@ -96,71 +109,79 @@ The current parser contract for `pz_rules.json` is a single JSON object containi
 }
 ```
 
-<Note>
-  OpenHound currently uses a different rule-file contract. Its [`PrivilegeZone` model](https://github.com/SpecterOps/OpenHound/blob/main/src/openhound/core/models/privilege_zone.py#L9-L18) requires `zone`, `enabled`, `allow_disable`, and `cypher`. Its [BloodHound destination](https://github.com/SpecterOps/OpenHound/blob/main/src/openhound/destinations/bloodhound/destination.py#L89-L102) maps those fields to rule definitions.
-
-  Do not copy those fields into this component. The bundle contract uses `key`, `enabled`, and `allow_disable`; it does not use `auto_certify`.
-</Note>
-
 <ResponseField name="pz_rules" type="array" required>
-  Array of bundle Privilege Zone rule objects. Include at least one rule when `schema.json` declares relationship findings. BloodHound enforces this requirement in [bundle validation](https://github.com/SpecterOps/bloodhound-enterprise/blob/main/bhce/cmd/api/src/api/v2/opengraphschema.go#L142-L148).
+  Array of bundle Privilege Zone rule objects. Must contain at least one valid rule object when `schema.json` defines relationship findings. BloodHound enforces this requirement in bundle validation.
 </ResponseField>
 <ResponseField name="pz_rules[].key" type="string" required>
-  Stable identifier used to reconcile the rule on later extension upserts. The value cannot be empty or duplicated in the component.
+  Stable identifier used to reconcile the rule on later extension upserts. The value cannot be empty or duplicated in the component, and must contain the extension's namespace prefix (e.g. `GH_`).
 </ResponseField>
 <ResponseField name="pz_rules[].name" type="string" required>
-  Unique name for the Privilege Zone rule. The value cannot be empty or whitespace-only.
+  Unique display name for the Privilege Zone rule. The value cannot be empty or whitespace-only.
 </ResponseField>
 <ResponseField name="pz_rules[].description" type="string">
   Optional description of the rule's purpose or the principals it identifies.
 </ResponseField>
 <ResponseField name="pz_rules[].enabled" type="boolean">
-  Optional enabled state. Defaults to `true` when omitted.
+  Optional enabled state. Defaults to `true` when omitted. When enabled, principals identified by the rule are aligned to the parent zone (currently only Tier Zero).
 </ResponseField>
 <ResponseField name="pz_rules[].allow_disable" type="boolean">
   Optional setting that controls whether users can disable the rule. Defaults to `true` when omitted.
 </ResponseField>
 <ResponseField name="pz_rules[].seeds" type="array" required>
-  Exactly one seed object that identifies the principals included by the rule.
+  Array containing exactly one cypher-based seed object that identifies the principals specified by the rule.
 </ResponseField>
 <ResponseField name="pz_rules[].seeds[].type" type="integer" required>
-  Seed type. Use `2` for a Cypher query that returns seed objects.
+  Type of Privilege Zone rule. Only cypher-based rules (indicated by `"type": 2`) are supported at this time.
 </ResponseField>
 <ResponseField name="pz_rules[].seeds[].value" type="string" required>
-  Cypher query used to identify the seed objects. The value cannot be empty and must parse as valid Cypher.
+  Cypher query used to specify the principals for zone alignment. The value cannot be empty and must parse as valid Cypher.
 </ResponseField>
 
-{/* TODO(BED-9972): Confirm whether rule keys must be prefixed with the extension namespace. The current implementation requires non-empty, component-unique keys but does not enforce namespace prefixes. */}
+## Saved queries
 
-## Saved queries contract
-
-The current parser recognizes `saved_queries.json` as an object with a top-level `queries` array—not a top-level `saved_queries` property.
-
-The upsert path associates created queries with the extension, makes them public and read-only, and reconciles the submitted set. Omitting the component produces an empty query set, so an update removes existing extension-associated queries.
+The `saved_queries.json` component file contains a single JSON object with a top-level `queries` array that contains one or more saved query objects within.
 
 <Note>
-  Extension-managed saved queries cannot be modified or deleted through the Saved Query APIs. Update them by submitting a new extension bundle.
+  The top-level array object uses a `queries` key and not `saved_queries`.
+</Note>
+
+The installation process uses an upsert approach. It associates these queries with the extension, making them publicly viewable and read-only, and reconciles the submitted set based on each `query_key`. Omitting the `saved_queries.json` component is treated like an empty query set, so an update removes existing saved queries associated with that extension.
+
+Rules governing creation:
+
+- Each query requires a stable `query_key`, a display name, and a cypher query. `description` and `category` are optional.
+- Each query created from an extension bundle is aligned to the extension that created it. The extension name is used for the `platform` filter option.
+- If a `category` is provided, that option will be included in the `category` filter list.
+
+Rules governing modification and removal:
+
+- When an extension is uninstalled, all queries aligned to it are also subsequently removed.
+- If a specific query (identified by the `query_key`) is omitted during any future updates, that query will be removed from BloodHound when the bundle is upserted and reconciliation occurs.
+- If a query is included in the bundle with a given `query_key` but any of the information differs, the query in BloodHound will be updated with the latest information from the bundle.
+
+<Note>
+  Extension-managed saved queries are protected assets and cannot be modified or deleted through the Saved Query APIs. They can only be updated via a new extension bundle.
 </Note>
 
 ```json title="saved_queries.json"
 {
   "queries": [
     {
-      "query_key": "github-critical-repositories",
+      "query_key": "GH_github_critical_repositories",
       "name": "GitHub: Critical repositories",
       "query": "MATCH (n:GH_Repository) WHERE n.critical = true RETURN n",
       "description": "Lists repositories marked as critical.",
-      "category": "GitHub"
+      "category": "Critical Assets"
     }
   ]
 }
 ```
 
 <ResponseField name="queries" type="array" required>
-  Array of saved query objects.
+  Array of saved query objects. Must contain at least one query object if saved queries are an included component.
 </ResponseField>
 <ResponseField name="queries[].query_key" type="string" required>
-  Stable, unique identifier for the saved query within the extension. The value cannot be empty or duplicated in the component.
+  Stable, unique identifier for the saved query within the extension. The value cannot be empty or duplicated in the component, and must contain the extension's namespace prefix (e.g. GH_).
 </ResponseField>
 <ResponseField name="queries[].name" type="string" required>
   Display name for the saved query. The value cannot be empty or duplicated in the component.
@@ -175,23 +196,23 @@ The upsert path associates created queries with the extension, makes them public
   Optional category used to organize the saved query.
 </ResponseField>
 
-{/* TODO(BED-9897): Confirm whether the released API includes `extension` as a saved-query list scope. The checked-out parent main branch predates that change. */}
+<Note>
+  The aligned extension's name is used for the Saved Query UI's platform filter.
+</Note>
 
-## Prepare GitHub, Okta, and Jamf for adoption
+## Extension migration
 
-Until each extension's publication workflow is updated to produce a bundle, keep its current source layout and publication flow:
+Backwards compatibility is being maintained for schema-only extensions; however, full OpenGraph integration within BloodHound will require extensions to be formatted as extension bundles going forward.
 
-- Keep `extension/schema.json` as the source schema.
-- Keep the existing `extension/privilege_zone_rules` files and `extension/saved_searches` files for the manual extension installation workflows.
-- Do not replace the standalone files with a ZIP artifact in the BHE extension artifact pipeline.
+Steps that extension authors should take to migrate an extension to use an extension bundle:
 
-Extension asset upload is required only for the schema-only workflow. If a bundle includes `pz_rules.json` or `saved_queries.json`, those managed assets are installed and reconciled through the bundle; do not upload them separately.
+1. Update each bundle component to conform to the new standards outlined above.
+1. Update extension publishing workflows to create the extension bundle artifact with the zip archive structure specified.
+1. Test installation of the complete extension bundle.
+    - Make sure to test both manual and embedded installation workflows
+1. Prepare a version update for any OpenHound collector to remove the outdated extension artifacts.
+1. Publish the updated extension version and any updated OpenHound collector. Make sure the updated artifacts are located in the embedded extension S3 bucket for the next BH build cycle.
 
-When an extension's release process is ready, generate a ZIP whose root contains the schema and any finalized managed components. Test the same ZIP through both consumers:
-
-1. Upload it through `PUT /api/v2/extensions` with an accepted ZIP content type.
-1. Load it through the BHE embedded extension directory used by the startup loader.
-1. Verify the installed extension version and confirm that Privilege Zone rules and saved queries reconcile on both first install and update.
-1. Update the `bhe-extensions` publication artifact and the BHE Dockerfile versioned artifact references together.
-
-{/* TODO: Confirm whether the extension publication pipeline should reject bundles whose optional components are present while tier management is disabled. */}
+<Note>
+  When migrating an extension to use bundles, make sure to increment the version number as part of the process. The migration should be a version update, and not merely a replacement for the format.
+</Note>
