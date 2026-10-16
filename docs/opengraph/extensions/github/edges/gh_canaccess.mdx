@@ -1,6 +1,6 @@
 ---
 title: 'GH_CanAccess'
-description: 'Personal access token, app installation, or deploy key can access this repository or organization'
+description: 'Personal access token, app installation, or deploy key can access this repository, reusable repository scope, or organization'
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
@@ -15,6 +15,8 @@ description: 'Personal access token, app installation, or deploy key can access 
 | [GH_PersonalAccessToken](/opengraph/extensions/github/nodes/gh_personalaccesstoken) | GH_CanAccess | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) |
 | [GH_AppInstallation](/opengraph/extensions/github/nodes/gh_appinstallation) | GH_CanAccess | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) |
 | [GH_PersonalAccessToken](/opengraph/extensions/github/nodes/gh_personalaccesstoken) | GH_CanAccess | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) |
+| [GH_AppInstallation](/opengraph/extensions/github/nodes/gh_appinstallation) | GH_CanAccess | [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) |
+| [GH_PersonalAccessToken](/opengraph/extensions/github/nodes/gh_personalaccesstoken) | GH_CanAccess | [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) |
 
 ```mermaid
 flowchart LR
@@ -23,24 +25,29 @@ flowchart LR
     GH_Organization["GH_Organization"]
     GH_PersonalAccessToken["GH_PersonalAccessToken"]
     GH_Repository["GH_Repository"]
+    GH_Scope["GH_Scope"]
     GH_AppInstallation -- GH_CanAccess --> GH_Repository
+    GH_AppInstallation -- GH_CanAccess --> GH_Scope
     GH_DeployKey -- GH_CanAccess --> GH_Repository
     GH_PersonalAccessToken -- GH_CanAccess --> GH_Organization
     GH_PersonalAccessToken -- GH_CanAccess --> GH_Repository
+    GH_PersonalAccessToken -- GH_CanAccess --> GH_Scope
 ```
 
 ## General Information
 
-The non-traversable GH_CanAccess edge indicates that a personal access token, app installation, or deploy key has been granted access to a repository or organization. This edge represents the scope of access granted to a non-human credential rather than a direct attack path, providing visibility into which repositories are reachable through that credential. It is non-traversable because credential access does not transitively extend to other principals.
+The non-traversable GH_CanAccess edge indicates that a personal access token, app installation, or deploy key has been granted access to a repository, reusable scope, or organization. All-repository app installations and PATs point to an organization-scoped [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) with `scope_type=repository` instead of repeating an edge to every repository. This edge represents access scope rather than a direct attack path.
 
 ## Edge Schema
 
 | Source | Destination | Traversable |
 | --- | --- | --- |
 | [GH_AppInstallation](/opengraph/extensions/github/nodes/gh_appinstallation) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | `false` |
+| [GH_AppInstallation](/opengraph/extensions/github/nodes/gh_appinstallation) | [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) | `false` |
 | [GH_DeployKey](/opengraph/extensions/github/nodes/gh_deploykey) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | `false` |
 | [GH_PersonalAccessToken](/opengraph/extensions/github/nodes/gh_personalaccesstoken) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | `false` |
 | [GH_PersonalAccessToken](/opengraph/extensions/github/nodes/gh_personalaccesstoken) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | `false` |
+| [GH_PersonalAccessToken](/opengraph/extensions/github/nodes/gh_personalaccesstoken) | [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) | `false` |
 
 ## Diagram
 
@@ -48,11 +55,14 @@ The non-traversable GH_CanAccess edge indicates that a personal access token, ap
 graph LR
     n0["GH_AppInstallation"]
     n1["GH_Repository"]
-    n2["GH_DeployKey"]
-    n3["GH_PersonalAccessToken"]
-    n4["GH_Organization"]
+    n2["GH_Scope"]
+    n3["GH_DeployKey"]
+    n4["GH_PersonalAccessToken"]
+    n5["GH_Organization"]
     n0 -.->|GH_CanAccess| n1
-    n2 -.->|GH_CanAccess| n1
-    n3 -.->|GH_CanAccess| n4
+    n0 -.->|GH_CanAccess| n2
     n3 -.->|GH_CanAccess| n1
+    n4 -.->|GH_CanAccess| n5
+    n4 -.->|GH_CanAccess| n1
+    n4 -.->|GH_CanAccess| n2
 ```

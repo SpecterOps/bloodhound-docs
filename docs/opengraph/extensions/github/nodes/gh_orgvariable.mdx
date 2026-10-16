@@ -8,7 +8,7 @@ icon: '/images/extensions/github/gh_orgvariable.png'
 
 ## General Information
 
-Represents an organization-level GitHub Actions variable. Organization variables can be scoped to all repositories, only private/internal repositories, or a specific set of selected repositories. The visibility property determines how [GH_HasVariable](/opengraph/extensions/github/edges/gh_hasvariable) edges are resolved to repository nodes. Unlike secrets, variable values are readable via the API.
+Represents an organization-level GitHub Actions variable. All and private/internal visibility uses shared organization-variable [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) nodes; arbitrary selected visibility uses direct [GH_HasVariable](/opengraph/extensions/github/edges/gh_hasvariable) relationships from repositories. Unlike secrets, variable values are readable via the API.
 
 ## Properties
 
@@ -33,12 +33,14 @@ graph LR
     n0["GH_Organization"]
     n1["GH_OrgVariable"]
     n2["GH_Repository"]
-    n3["GH_WorkflowJob"]
-    n4["GH_WorkflowStep"]
+    n3["GH_Scope"]
+    n4["GH_WorkflowJob"]
+    n5["GH_WorkflowStep"]
     n0 -.->|GH_Contains| n1
     n2 -->|GH_HasVariable| n1
-    n3 -.->|GH_UsesVariable| n1
+    n3 -->|GH_ScopedTo| n1
     n4 -.->|GH_UsesVariable| n1
+    n5 -.->|GH_UsesVariable| n1
 ```
 
 ## Edges
@@ -53,10 +55,12 @@ flowchart LR
     GH_Organization["GH_Organization"]
     GH_OrgVariable["GH_OrgVariable"]
     GH_Repository["GH_Repository"]
+    GH_Scope["GH_Scope"]
     GH_WorkflowJob["GH_WorkflowJob"]
     GH_WorkflowStep["GH_WorkflowStep"]
     GH_Organization -- GH_Contains --> GH_OrgVariable
     GH_Repository -- GH_HasVariable --> GH_OrgVariable
+    GH_Scope -- GH_ScopedTo --> GH_OrgVariable
     GH_WorkflowJob -- GH_UsesVariable --> GH_OrgVariable
     GH_WorkflowStep -- GH_UsesVariable --> GH_OrgVariable
 ```
@@ -67,6 +71,7 @@ flowchart LR
 | --------- | ----------------- | ----------- |
 | [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
 | [GH_HasVariable](/opengraph/extensions/github/edges/gh_hasvariable) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ✅ |
+| [GH_ScopedTo](/opengraph/extensions/github/edges/gh_scopedto) | [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) | ✅ |
 | [GH_UsesVariable](/opengraph/extensions/github/edges/gh_usesvariable) | [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob), [GH_WorkflowStep](/opengraph/extensions/github/nodes/gh_workflowstep) | ❌ |
 
 ### Outbound Edges
