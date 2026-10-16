@@ -35,26 +35,13 @@ This information includes:
 
 Reference: [Current Object Properties collected by SharpHound](https://github.com/SpecterOps/SharpHoundCommon/blob/68a68c6eab5375b46f975274b16ff1acdc35dc48/src/CommonLib/LdapQueries/CommonProperties.cs).
 
-**Collection Method:** SharpHound collects the directory portion of this information utilizing signed LDAP queries against a domain controller in the domain. When enabled, Azure VM identity collection also reads the target computer's Windows registry; see [Azure VM identity](#azure-vm-identity).
+**Collection Method:** SharpHound collects this information utilizing signed LDAP queries against a domain controller in the domain.
 
 **Default Permissions:** By default, all `Authenticated Users` may query almost all data from Active Directory utilized by BloodHound via LDAP. Higher privileges are required for other objects, see **Least-Privileged Option**.
 
 **Least-Privileged Option:** For information on how to collect all objects with least privilege, see [Least-Privileged Collection - AD Structure Data](/collect-data/enterprise-collection/least-privileged-collection#ad-structure-data).
 
 **Additional Data Sources:** (Optional) Deleted Objects Container: SharpHound can read the contents of the Deleted Objects container (also known as the AD Recycle Bin). By default, SharpHound cannot read the Deleted Objects container, but read access can be delegated. Collecting deleted objects affects data retention behavior in BloodHound Enterprise, see [Active Directory Recycle Bin](/collect-data/enterprise-collection/data-retention#active-directory-recycle-bin) for details. For delegation configuration, see [Least-Privileged Collection - AD Structure Data](/collect-data/enterprise-collection/least-privileged-collection#ad-structure-data).
-
-### Azure VM identity
-
-SharpHound can correlate an Active Directory Computer object with its Azure VM by collecting the guest VM identifier from domain-joined Windows computers. The identifier is stored in the `VmId` value under `HKLM\SOFTWARE\Microsoft\Windows Azure`.
-
-**Collection Method:** When `AzureRegistry` is selected, SharpHound tries WMI registry access first and Remote Registry as a fallback. BloodHound Enterprise includes this collection with AD Structure collection. A successful value is normalized to lowercase and written to the Computer object's `azvmid` property. A missing value does not stop collection and does not provide a usable identifier.
-
-**Network Requirements:** The collector needs access to the target computer over WMI's `135/TCP` or, when WMI is unavailable, SMB/Remote Registry over `445/TCP`.
-
-**Default Permissions:** The service account must be permitted to use the selected remote registry strategy. In typical Windows configurations, remote registry reads require local `Administrators` membership on the target computer.
-
-**Least-Privileged Option:** See [Azure VM Registry](/collect-data/enterprise-collection/least-privileged-collection#azure-vm-registry) for Remote Registry delegation guidance.
-
 
 ## Local Groups / NTLM
 
@@ -72,6 +59,18 @@ Members of the following groups are enumerated:
 **Default Permissions:** By default, computers beginning with Windows 10 version 1607 and Windows Server 2016 require `Administrator` access to perform `Remote SAM` operations.
 
 **Least-Privileged Option:** This setting may be overridden with Group Policy to allow non-administrative collection. For detailed configuration steps using the "Network access: Restrict clients allowed to make remote calls to SAM" setting, see [Least-Privileged Collection - Local Group Membership](/collect-data/enterprise-collection/least-privileged-collection#local-group-membership).
+
+### Azure VM identity
+
+SharpHound can correlate an Active Directory Computer object with its Azure VM by collecting the guest VM identifier from domain-joined Windows computers. The identifier is stored in the `VmId` value under `HKLM\SOFTWARE\Microsoft\Windows Azure`.
+
+**Collection Method:** When `AzureRegistry` is selected, SharpHound tries WMI registry access first and Remote Registry as a fallback. BloodHound Enterprise includes this collection with Local Groups collection. A successful value is normalized to lowercase and written to the Computer object's `azvmid` property. A missing value does not stop collection and does not provide a usable identifier.
+
+**Network Requirements:** The collector needs access to the target computer over WMI's `135/TCP` or, when WMI is unavailable, SMB/Remote Registry over `445/TCP`.
+
+**Default Permissions:** The service account must be permitted to use the selected remote registry strategy. In typical Windows configurations, remote registry reads require local `Administrators` membership on the target computer.
+
+**Least-Privileged Option:** See [Azure VM Registry](/collect-data/enterprise-collection/least-privileged-collection#azure-vm-registry) for Remote Registry delegation guidance.
 
 
 ### User Rights Assignments

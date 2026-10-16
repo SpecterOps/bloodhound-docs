@@ -8,12 +8,12 @@ SharpHound collects data from domain-joined systems utilizing SMB/RPC on port 44
 
 This article can assist in troubleshooting why a local collection is not successful for all systems in scope.
 
-Azure VM identity collection runs during Enterprise AD Structure collection. SharpHound reads `HKLM\SOFTWARE\Microsoft\Windows Azure\VmId` from each Computer target and writes a successful value to the Computer object's `azvmid` property in lowercase. It tries WMI first and Remote Registry as a fallback, so this operation can require access to `135/TCP` or `445/TCP` even when the job does not collect Local Groups or Sessions.
+Azure VM identity collection runs during Enterprise Local Groups collection. SharpHound reads `HKLM\SOFTWARE\Microsoft\Windows Azure\VmId` from each Computer target and writes a successful value to the Computer object's `azvmid` property in lowercase. It tries WMI first and Remote Registry as a fallback, so this operation can require access to `135/TCP` or `445/TCP` when the job collects Local Groups.
 
 ## Computer status logfile
 The computer status logfile, named `compstatus.csv` contains information about the collection results for each system in the collection's scope.
 
-* SharpHound Enterprise: Generates one `compstatus.csv` per collection job that emits computer status events, including AD Structure jobs that attempt Azure VM identity collection, and stores it within the `log_archive` directory on the SharpHound Enterprise server. The default location for this is `%APPDATA%\\Roaming\\BloodHound Enterprise` - that is, App Data for the service account running the SharpHound Enterprise service. However, you may override this location within `settings.json`, see [SharpHound Enterprise Local Configuration](/install-data-collector/install-sharphound/local-configuration).
+* SharpHound Enterprise: Generates one `compstatus.csv` per collection job that emits computer status events, including Local Groups jobs that attempt Azure VM identity collection, and stores it within the `log_archive` directory on the SharpHound Enterprise server. The default location for this is `%APPDATA%\\Roaming\\BloodHound Enterprise` - that is, App Data for the service account running the SharpHound Enterprise service. However, you may override this location within `settings.json`, see [SharpHound Enterprise Local Configuration](/install-data-collector/install-sharphound/local-configuration).
 
 
 * SharpHound Community Edition: Will generate `compstatus.csv` when run with the `DumpComputerStatus` flag.
@@ -55,7 +55,7 @@ First, SharpHound queries a Domain Controller to list every enabled computer obj
 
 ### Azure VM identity
 
-For each Computer object in an Enterprise Structure collection, SharpHound attempts the Azure registry read. Strategy failures can appear in `compstatus.csv` with task names such as `ReadAzureRegistryData - DotNetWmiRegistryStrategy` or `ReadAzureRegistryData - RemoteRegistryStrategy`. A completed registry operation with no `VmId` value is not a collection failure, but it does not provide a usable `azvmid`. If both strategies fail, collection continues without a usable Azure VM identifier; inspect the collector log and the status entries for the underlying access or connectivity error.
+For each Computer object in an Enterprise Local Groups collection, SharpHound attempts the Azure registry read. Strategy failures can appear in `compstatus.csv` with task names such as `ReadAzureRegistryData - DotNetWmiRegistryStrategy` or `ReadAzureRegistryData - RemoteRegistryStrategy`. A completed registry operation with no `VmId` value is not a collection failure, but it does not provide a usable `azvmid`. If both strategies fail, collection continues without a usable Azure VM identifier; inspect the collector log and the status entries for the underlying access or connectivity error.
 
 ### ComputerAvailability
 
