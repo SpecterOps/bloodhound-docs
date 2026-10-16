@@ -14,6 +14,14 @@ For repositories with active workflows, the collector records the applicable def
 
 The `branch_count` and `environment_count` properties preserve GitHub-reported totals from the repository GraphQL response. These values can be compared to collected [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) and [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) children to identify incomplete collection before relying on branch- or environment-dependent analysis.
 
+Every repository is linked from its organization's reusable repository/all [GH_Scope](/opengraph/extensions/github/nodes/gh_scope). Private and internal repositories are also linked from repository/private_or_internal. This supports compact one- or two-hop access queries without repeating one [GH_CanAccess](/opengraph/extensions/github/edges/gh_canaccess) edge per credential and repository.
+
+Repositories also point to runner_group/all [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) nodes through [GH_IsEligibleFor](/opengraph/extensions/github/edges/gh_iseligiblefor); private and internal repositories additionally point to runner_group/private_or_internal. Those scopes enumerate canonical runner groups through [GH_ScopedTo](/opengraph/extensions/github/edges/gh_scopedto), while groups with arbitrary selected repository policies remain direct.
+
+Organization secrets and variables with canonical all/private visibility are similarly reached through organization_secret and organization_variable scopes. Repository-owned, environment-owned, and arbitrarily selected organization assets remain direct targets.
+
+Runner, secret, and variable boundary edges are emitted only when the organization has a matching canonical target, so empty scopes do not add per-repository edges.
+
 ## Properties
 
 | Property | Type | Description |
@@ -93,8 +101,9 @@ graph LR
     n12["GH_RepoRunner"]
     n13["GH_RepoSecret"]
     n14["GH_RepoVariable"]
-    n15["GH_SecretScanningAlert"]
-    n16["GH_Workflow"]
+    n15["GH_Scope"]
+    n16["GH_SecretScanningAlert"]
+    n17["GH_Workflow"]
     n0 -.->|GH_CanAccess| n1
     n2 -.->|GH_CanAccess| n1
     n3 -->|GH_Owns| n1
@@ -175,8 +184,12 @@ graph LR
     n1 -->|GH_HasSecret| n13
     n1 -.->|GH_Contains| n14
     n1 -->|GH_HasVariable| n14
-    n1 -.->|GH_Contains| n15
+    n1 -->|GH_HasSecret| n15
+    n1 -->|GH_HasVariable| n15
+    n1 -.->|GH_IsEligibleFor| n15
     n1 -.->|GH_Contains| n16
+    n1 -.->|GH_Contains| n17
+    n15 -->|GH_ScopedTo| n1
 ```
 
 ## Edges
@@ -203,6 +216,7 @@ flowchart LR
     GH_RepoSecret["GH_RepoSecret"]
     GH_Repository["GH_Repository"]
     GH_RepoVariable["GH_RepoVariable"]
+    GH_Scope["GH_Scope"]
     GH_SecretScanningAlert["GH_SecretScanningAlert"]
     GH_Workflow["GH_Workflow"]
     GH_AppInstallation -- GH_CanAccess --> GH_Repository
@@ -284,9 +298,13 @@ flowchart LR
     GH_Repository -- GH_Contains --> GH_Workflow
     GH_Repository -- GH_HasSecret --> GH_OrgSecret
     GH_Repository -- GH_HasSecret --> GH_RepoSecret
+    GH_Repository -- GH_HasSecret --> GH_Scope
     GH_Repository -- GH_HasVariable --> GH_OrgVariable
     GH_Repository -- GH_HasVariable --> GH_RepoVariable
+    GH_Repository -- GH_HasVariable --> GH_Scope
     GH_Repository -- GH_IsEligibleFor --> GH_OrgRunnerGroup
+    GH_Repository -- GH_IsEligibleFor --> GH_Scope
+    GH_Scope -- GH_ScopedTo --> GH_Repository
 ```
 
 ### Inbound Edges
@@ -345,6 +363,7 @@ flowchart LR
 | [GH_ResolveDependabotAlerts](/opengraph/extensions/github/edges/gh_resolvedependabotalerts) | [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | ❌ |
 | [GH_ResolveSecretScanningAlerts](/opengraph/extensions/github/edges/gh_resolvesecretscanningalerts) | [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | ❌ |
 | [GH_RunOrgMigration](/opengraph/extensions/github/edges/gh_runorgmigration) | [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | ❌ |
+| [GH_ScopedTo](/opengraph/extensions/github/edges/gh_scopedto) | [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) | ✅ |
 | [GH_SetInteractionLimits](/opengraph/extensions/github/edges/gh_setinteractionlimits) | [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | ❌ |
 | [GH_SetIssueType](/opengraph/extensions/github/edges/gh_setissuetype) | [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | ❌ |
 | [GH_SetMilestone](/opengraph/extensions/github/edges/gh_setmilestone) | [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | ❌ |
@@ -364,9 +383,9 @@ flowchart LR
 | [GH_CanDeployToEnvironment](/opengraph/extensions/github/edges/gh_candeploytoenvironment) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | ✅ |
 | [GH_CanUseRunner](/opengraph/extensions/github/edges/gh_canuserunner) | [GH_OrgRunnerGroup](/opengraph/extensions/github/nodes/gh_orgrunnergroup), [GH_RepoRunner](/opengraph/extensions/github/nodes/gh_reporunner) | ✅ |
 | [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch), [GH_BranchProtectionRule](/opengraph/extensions/github/nodes/gh_branchprotectionrule), [GH_DeployKey](/opengraph/extensions/github/nodes/gh_deploykey), [GH_Environment](/opengraph/extensions/github/nodes/gh_environment), [GH_RepoRunner](/opengraph/extensions/github/nodes/gh_reporunner), [GH_RepoSecret](/opengraph/extensions/github/nodes/gh_reposecret), [GH_RepoVariable](/opengraph/extensions/github/nodes/gh_repovariable), [GH_SecretScanningAlert](/opengraph/extensions/github/nodes/gh_secretscanningalert), [GH_Workflow](/opengraph/extensions/github/nodes/gh_workflow) | ❌ |
-| [GH_HasSecret](/opengraph/extensions/github/edges/gh_hassecret) | [GH_OrgSecret](/opengraph/extensions/github/nodes/gh_orgsecret), [GH_RepoSecret](/opengraph/extensions/github/nodes/gh_reposecret) | ✅ |
-| [GH_HasVariable](/opengraph/extensions/github/edges/gh_hasvariable) | [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable), [GH_RepoVariable](/opengraph/extensions/github/nodes/gh_repovariable) | ✅ |
-| [GH_IsEligibleFor](/opengraph/extensions/github/edges/gh_iseligiblefor) | [GH_OrgRunnerGroup](/opengraph/extensions/github/nodes/gh_orgrunnergroup) | ❌ |
+| [GH_HasSecret](/opengraph/extensions/github/edges/gh_hassecret) | [GH_OrgSecret](/opengraph/extensions/github/nodes/gh_orgsecret), [GH_RepoSecret](/opengraph/extensions/github/nodes/gh_reposecret), [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) | ✅ |
+| [GH_HasVariable](/opengraph/extensions/github/edges/gh_hasvariable) | [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable), [GH_RepoVariable](/opengraph/extensions/github/nodes/gh_repovariable), [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) | ✅ |
+| [GH_IsEligibleFor](/opengraph/extensions/github/edges/gh_iseligiblefor) | [GH_OrgRunnerGroup](/opengraph/extensions/github/nodes/gh_orgrunnergroup), [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) | ❌ |
 
 ## Properties
 
