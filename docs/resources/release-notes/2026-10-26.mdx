@@ -30,56 +30,75 @@ sidebarTitle: "2026-10-26"
   {/*BED-9763*/}
   ## Collect Azure VM IDs from Windows computers
 
-  SharpHound now collects the Azure VM guest ID (`VmId`) from Windows computers and stores it in the Active Directory computer's `azvmid` property. Use this value to correlate a domain-joined computer with its Azure VM identity.
-</Update>
+  Correlate domain-joined Windows computers with their [Azure VM identity](/collect-data/sharphound-data-permissions#azure-vm-identity) using the Azure guest VM ID (`VmId`).
 
-<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
-  {/*BED-9130*/}
-  ## Control graph direction and spacing
-
-  Choose whether the Explore graph flows left, right, up, or down, and adjust horizontal and vertical spacing. These controls help you arrange complex graphs so their relationships are easier to inspect.
+  When [`AzureRegistry`](/collect-data/ce-collection/sharphound-flags) collection is enabled, SharpHound reads the ID from domain-joined Windows computers and stores it in the Active Directory computer's `azvmid` property.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["API"]}>
   {/*BED-10037*/}
   ## Faster object ID searches
 
-  The `/api/v2/search` endpoint now matches `objectid` values exactly, including uppercase and lowercase variants, while name searches remain fuzzy. This improves search performance and honors the result limit whether or not results are filtered by ETAC.
+  The [`/api/v2/search`](/reference/search/search-for-objects) endpoint now matches `objectid` values exactly, including uppercase and lowercase variants, while name searches remain fuzzy. 
+
+  This improves search performance (most notably on the **Explore** page) and honors the result limit whether or not results are filtered by [Environment Targeted Access Control (ETAC)](/manage-bloodhound/auth/environment-targeted-access-control).
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["API"]}>
   {/*BED-10051*/}
   ## Accurate audit log counts for date ranges
 
-  The Audit Logs API now applies the requested date range, including its documented 365-day default, to both the returned events and the `count`, so pagination totals match the results. It also returns HTTP 400 when the `after` value is later than the `before` value.
+  The [`/api/v2/audit`](/reference/audit/list-audit-logs) endpoint now applies the requested date range (including its documented 365-day default) to both the returned events and the `count`, so pagination totals match the results.
+
+  <Note>
+    It also returns HTTP 400 when the `after` value is later than the `before` value.
+  </Note>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-9940*/}
+
+  ## Distinguish non-traversable graph edges
+
+  Easily distinguish between [traversable and non-traversable](/resources/edges/traversable-edges) edges in the graph.
+  
+  The graph on the **Explore** page now uses dashed lines for non-traversable edges, making it easier to distinguish them from edges that can be traversed.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["PostgreSQL"]}>
   {/*BED-8495*/}
   ## Additional PostgreSQL storage optimization
 
-  The PostgreSQL **Optimizing** phase now includes additional storage optimization steps. These steps help reclaim index bloat and keep graph query performance consistent over time.
+  The **Optimize** stage of the [data pipeline](/analyze-data/findings/analysis#when-analysis-runs) now includes additional PostgreSQL storage optimization steps.
+
+  These steps help reclaim index bloat and keep graph query performance consistent over time.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["PostgreSQL"]}>
   {/*BED-9997*/}
   ## Faster ingest reconciliation
 
-  Improved graph edge cleanup uses index scans instead of table scans when deleting edges with a node. This reduces database work during ingest reconciliation and helps maintain ingest throughput.
-</Update>
+  Improved graph edge cleanup uses index scans instead of table scans when deleting edges with a node.
 
-<Update label="BloodHound" description="Enhancement" tags={["PostgreSQL"]}>
-  {/*BED-9971*/}
-  ## Run PostgreSQL optimization independently
-
-  The **Optimize** pipeline step no longer waits for an analysis run. This helps keep PostgreSQL statistics current and query plans efficient, including in environments where analysis has not run recently.
+  This reduces database work during ingest reconciliation and helps maintain ingest throughput.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Post-Processing"]}>
   {/*BED-9943*/}
-  ## More efficient post-processed edges
+  ## Analysis Performance Improvements
 
-  All remaining post-processed edges now use the newer DCA processing path, retiring the legacy delete-and-recreate method. This reduces database churn and analysis time.
+  All [post-processed](/analyze-data/findings/analysis#show-post-processed-edges) edges now use optimized processing logic, significantly reducing time in analysis and improving overall performance.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-9130*/}
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  ## Control graph direction and spacing
+
+  Choose whether the graph on the **Explore** page flows left, right, up, or down, and adjust horizontal and vertical spacing.
+
+  These [new controls](/analyze-data/explore/graph-controls#graph-direction) help you arrange complex graphs so their relationships are easier to inspect.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
@@ -88,9 +107,9 @@ sidebarTitle: "2026-10-26"
 
   ## Findings Prioritization Improvements
 
-  Findings Prioritization now accounts for each finding's shortest traversable path from its target to Tier Zero. The score avoids multiplying by zero for impact or exposure, so findings with zero values are not incorrectly collapsed to the same score.
+  [Findings Prioritization](/analyze-data/findings/table-view#prioritize-findings) now considers proximity to Tier Zero alongside exposure, impact, and starting objects. Findings targeting objects in or near Tier Zero receive a stronger priority signal, helping you identify larger remediation opportunities.
 
-  BloodHound calculates hop count for open and accepted findings, using the configured maximum when no path is found or the path exceeds that maximum. Tier Zero membership is represented by a synthetic zone node for this analysis.
+  During analysis, BloodHound Enterprise uses a synthetic [Zone](/resources/nodes/zone) node to calculate the shortest traversable path from each finding's target to Tier Zero. Findings without a path to Tier Zero (or with a path beyond the maximum traversal depth) use a maximum-hop fallback and are de-prioritized.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
@@ -99,16 +118,11 @@ sidebarTitle: "2026-10-26"
 
   ## Export Findings Table results
 
-  Download the currently filtered findings list from the Findings Table as a CSV file to review or share results outside BloodHound.
-</Update>
-
-<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
-  {/*BED-9940*/}
-  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
-
-  ## Distinguish non-traversable graph edges
-
-  In Explore, non-traversable edges now use dashed lines, making it easier to distinguish them from edges that can be traversed.
+  [Export findings](/analyze-data/findings/table-view#export-findings) to a CSV file, including all findings that match the current filters and sort order (up to 200,000 findings).
+  
+  <Note>
+    When **Findings Prioritization** is enabled, the export also includes the prioritization score and rank.
+  </Note>
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
@@ -117,7 +131,7 @@ sidebarTitle: "2026-10-26"
 
   ## Identify new findings
 
-  The Findings Table marks findings added in the past 24 hours with a **New** tag, helping you spot recently surfaced results during triage.
+  The [Findings Table](/analyze-data/findings/table-view#identify-new-findings) marks findings added in the past 24 hours with a <Badge color="purple">New</Badge> badge, helping you spot recently surfaced results during triage.
 </Update>
 
 ## Fixed Issues
