@@ -2,6 +2,8 @@
 
 This document describes the style, format, and conventions we use to create BloodHound release notes.
 
+When generating release notes from Jira exports, follow the repository [release-notes skill `/.agents/skills/generate-release-notes/SKILL.md` for CSV parsing, issue-to-commit verification, parent grouping, and summary and navigation updates.
+
 ## Summary
 
 - Each release gets an H2 heading with the release date

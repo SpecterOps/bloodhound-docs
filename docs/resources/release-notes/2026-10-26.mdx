@@ -1,0 +1,142 @@
+---
+title: 2026-10-26 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-10-26"
+---
+
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-10-26 | v9.9.0 | No release | v2.17.1 | No release |
+
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+<Update label="BloodHound" description="New Feature" tags={["OpenGraph"]}>
+  {/*BED-9897, BED-9497, BED-9498, BED-9322, BED-9319*/}
+  ## OpenGraph Extension Bundles
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Install OpenGraph extensions with their Tier Zero Privilege Zone rules and saved queries in one bundle workflow.
+
+  Extension managed saved queries show their source and category, remain read-only through the Saved Query APIs, and are reconciled through the extension lifecycle. Extension installation logs now report validation and upsert outcomes, including created or updated schema entities.
+</Update>
+
+<Update label="SharpHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9763*/}
+  ## Collect Azure VM IDs from Windows computers
+
+  SharpHound now collects the Azure VM guest ID (`VmId`) from Windows computers and stores it in the Active Directory computer's `azvmid` property. Use this value to correlate a domain-joined computer with its Azure VM identity.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-9130*/}
+  ## Control graph direction and spacing
+
+  Choose whether the Explore graph flows left, right, up, or down, and adjust horizontal and vertical spacing. These controls help you arrange complex graphs so their relationships are easier to inspect.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["API"]}>
+  {/*BED-10037*/}
+  ## Faster object ID searches
+
+  The `/api/v2/search` endpoint now matches `objectid` values exactly, including uppercase and lowercase variants, while name searches remain fuzzy. This improves search performance and honors the result limit whether or not results are filtered by ETAC.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["API"]}>
+  {/*BED-10051*/}
+  ## Accurate audit log counts for date ranges
+
+  The Audit Logs API now applies the requested date range, including its documented 365-day default, to both the returned events and the `count`, so pagination totals match the results. It also returns HTTP 400 when the `after` value is later than the `before` value.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["PostgreSQL"]}>
+  {/*BED-8495*/}
+  ## Additional PostgreSQL storage optimization
+
+  The PostgreSQL **Optimizing** phase now includes additional storage optimization steps. These steps help reclaim index bloat and keep graph query performance consistent over time.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["PostgreSQL"]}>
+  {/*BED-9997*/}
+  ## Faster ingest reconciliation
+
+  Improved graph edge cleanup uses index scans instead of table scans when deleting edges with a node. This reduces database work during ingest reconciliation and helps maintain ingest throughput.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["PostgreSQL"]}>
+  {/*BED-9971*/}
+  ## Run PostgreSQL optimization independently
+
+  The **Optimize** pipeline step no longer waits for an analysis run. This helps keep PostgreSQL statistics current and query plans efficient, including in environments where analysis has not run recently.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Post-Processing"]}>
+  {/*BED-9943*/}
+  ## More efficient post-processed edges
+
+  All remaining post-processed edges now use the newer DCA processing path, retiring the legacy delete-and-recreate method. This reduces database churn and analysis time.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-9772, BED-9379, BED-8938, BED-8916*/}
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  ## Findings Prioritization Improvements
+
+  Findings Prioritization now accounts for each finding's shortest traversable path from its target to Tier Zero. The score avoids multiplying by zero for impact or exposure, so findings with zero values are not incorrectly collapsed to the same score.
+
+  BloodHound calculates hop count for open and accepted findings, using the configured maximum when no path is found or the path exceeds that maximum. Tier Zero membership is represented by a synthetic zone node for this analysis.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-9138*/}
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  ## Export Findings Table results
+
+  Download the currently filtered findings list from the Findings Table as a CSV file to review or share results outside BloodHound.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-9940*/}
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  ## Distinguish non-traversable graph edges
+
+  In Explore, non-traversable edges now use dashed lines, making it easier to distinguish them from edges that can be traversed.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-8946*/}
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  ## Identify new findings
+
+  The Findings Table marks findings added in the past 24 hours with a **New** tag, helping you spot recently surfaced results during triage.
+</Update>
+
+## Fixed Issues
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## API
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+  {/*BED-9830*/} Fixed an issue where finding types with only remediated findings were missing from the Findings Table filter options.
+
+  {/*BED-9780*/} Fixed an issue where a second `OPTIONAL MATCH` clause could be treated as required, causing Cypher queries to omit expected results.
+
+  ## Search and performance
+
+  {/*BED-7066*/} Domain lookup now passes the requested result limit to the graph database, avoiding work on large result sets that the API would later truncate.
+
+  {/*BED-7367*/} Fixed a concurrency issue that could corrupt path segment sizes while graph paths were being processed in parallel.
+
+  ## Findings Table
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  {/*BED-10023*/} Fixed findings filter dropdown text and hover styling in light mode, and restored the cell hover effect in dark mode.
+</Update>
