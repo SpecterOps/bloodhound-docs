@@ -8,25 +8,23 @@ description: Package an OpenGraph extension schema and supported assets into an 
 
 Package your OpenGraph extension definition schema, Privilege Zone rules, and saved queries in an **extension bundle** to install them together. An extension bundle is a ZIP archive supported in BloodHound v9.9.0 and later.
 
-<Note>
-  Bundle availability depends on the extension author and BloodHound version. Use a published bundle when one is available for your version. For installation instructions, see [Manage extensions](/opengraph/extensions/manage).
-</Note>
+This page is intended primarily for extension developers. Unless otherwise noted, the guidance below covers developing and packaging a bundle; users and administrators should see [Manage extensions](/opengraph/extensions/manage) for installation and management workflows.
 
 ## Bundle composition
 
 A bundle supports three components:
 
-- **Extension definition schema**: Defines the extension's graph structure and any findings and remediation guidance.
+- **Extension definition schema**: Defines the extension's graph structure, with findings and remediation guidance (if included).
 - **Privilege Zone rules**: Identify principals that belong to a zone. Bundles support only the built-in Tier Zero zone.
-- **Saved queries**: Help you explore the extension's data.
+- **Saved queries**: Help you explore and understand the extension's data with contextually relevant queries.
 
 | Component | Requirement | Installation behavior | Alternative without a bundle |
 | --- | --- | --- | --- |
 | `schema.json` | Required in both BloodHound Enterprise and BloodHound Community Edition. | Provides the same functionality as a schema-only JSON installation. | Upload the schema as a JSON file. |
-| `pz_rules.json` | Required if `schema.json` contains `relationship_findings`, which defines findings for BloodHound Enterprise. Otherwise optional. | Installs Privilege Zone rules together, without a separate OpenHound workflow. | Maintain Privilege Zone rules in OpenHound until you migrate the extension to a bundle. |
-| `saved_queries.json` | Optional in both BloodHound Enterprise and BloodHound Community Edition. | Installs read-only queries organized by `platform` and `category`. | Maintain saved queries in OpenHound or import them in bulk. OpenHound makes queries public automatically. Imported queries belong to the importing user, who must make them public manually. Neither method organizes queries by `platform` or `category`. |
+| `pz_rules.json` | Required if `schema.json` contains `relationship_findings`, which defines findings for BloodHound Enterprise. Otherwise optional. | Installs Privilege Zone rules together, without a separate OpenHound workflow. | Installs Privilege Zone rules from OpenHound, if available.<br/><br/>Otherwise, developers should provide rules for users to recreate in their environment. |
+| `saved_queries.json` | Optional in both BloodHound Enterprise and BloodHound Community Edition. | Installs read-only queries organized by `platform` and `category`. | Install saved queries from OpenHound, if available. Otherwise, developers should provide queries for bulk import.<br/><br/>Saved queries will be editable and either public (OpenHound) or private (non-OpenHound) by default.<br/><br/>Neither method organizes queries by `platform` or `category`. |
 
-To migrate an existing extension, update your publishing workflow to package its components in a bundle. See [Migrate an extension](#migrate-an-extension).
+To migrate an existing extension, update your publishing workflow to package its components in a bundle. See [Migrate an extension](/opengraph/developer/extension-bundles#migrate-an-extension).
 
 ## Installation behavior
 
@@ -37,8 +35,6 @@ BloodHound installs all bundle components together. If any component fails to in
 <Note>
   Test the complete bundle at least once, even if you test individual components during development. An error in any component causes the entire installation to fail.
 </Note>
-
-If tier management is disabled, BloodHound skips Privilege Zone rules during installation. You can omit `pz_rules.json` when the schema does not require it.
 
 ## ZIP archive structure
 
@@ -55,7 +51,7 @@ Place each component at the root of the ZIP archive. Use the exact file names sh
 Follow these archive requirements:
 
 - Place each component at the archive root, using the exact file names shown above. BloodHound rejects nested files, documentation, checksums, and other extra files.
-- Include `schema.json` in every bundle. See [Bundle composition](#bundle-composition) for the requirements for `pz_rules.json` and `saved_queries.json`.
+- Include `schema.json` in every bundle. See [Bundle composition](/opengraph/developer/extension-bundles#bundle-composition) for the requirements for `pz_rules.json` and `saved_queries.json`.
 - Include each component at most once. BloodHound rejects duplicate component names.
 - Keep each component at or below the 10 MB decompressed size limit.
 - Keep optional components separate from `schema.json`. BloodHound rejects a bundled `schema.json` that embeds `pz_rules` or `queries`.
@@ -66,8 +62,6 @@ Use the existing extension definition schema format for `schema.json`. A schema-
 
 <Note>
   If `schema.json` defines relationship findings, include `pz_rules.json` with at least one valid rule.
-
-  This requirement applies even when tier management is disabled. In that case, BloodHound accepts the bundle but skips the Privilege Zone rules during installation or update.
 </Note>
 
 ## Privilege Zone rules
@@ -96,7 +90,7 @@ When you update the bundle, BloodHound uses each rule's `key` to match existing 
       "seeds": [
         {
           "type": 2,
-          "value": "MATCH (n:GH_User) WHERE n.tier = 0 RETURN n"
+          "value": "MATCH (n:GH_User) RETURN n"
         }
       ]
     }
@@ -134,6 +128,12 @@ When you update the bundle, BloodHound uses each rule's `key` to match existing 
 
 ## Saved queries
 
+<Tip>
+  As an extension developer, you should plan to consolidate your queries under as few categories as possible and clearly determine the category nomenclature. Providing too many categories can make it difficult for users to find what they are looking for in BloodHound.
+
+  The `category` field is a generic string, so you can specify any value. You should be careful not to make duplicative categories with spelling variations.
+</Tip>
+
 In `saved_queries.json`, define a JSON object with a top-level `queries` array containing one or more saved queries. Use `queries` as the array key.
 
 For each query:
@@ -141,12 +141,12 @@ For each query:
 - Provide a stable `query_key`, a display name, and a Cypher query.
 - Optionally, provide a `description` and `category`.
 
-BloodHound associates each query with its extension and makes it public and read-only. The extension name supplies the `platform` filter option. If you provide a `category`, BloodHound adds it to the `category` filter options.
+BloodHound associates each query with its extension and makes it public and read-only. The extension name supplies the `platform` filter option. When you include a category value in `saved_queries.json`, BloodHound adds it to the category filter options.
 
 When you update the bundle, BloodHound uses each query's `query_key` to match existing queries. It updates matching queries with the values from the bundle and removes queries you omit. Omitting `saved_queries.json` removes all existing saved queries associated with the extension. Uninstalling the extension also removes its queries.
 
 <Note>
-  You cannot modify or delete extension-managed saved queries through the saved query APIs. Update them through a new extension bundle.
+  Users (including administrators) cannot modify or delete extension-managed saved queries through the saved query APIs. To modify, extension developers must publish an update. To remove, administrators must uninstall the extension.
 </Note>
 
 ```json title="saved_queries.json"
@@ -184,24 +184,21 @@ When you update the bundle, BloodHound uses each query's `query_key` to match ex
 
 ## Migrate an extension
 
-BloodHound continues to support schema-only extensions. To include the supported assets with your schema, update your publishing workflow to produce an extension bundle.
+BloodHound continues to support schema-only extensions. To include the supported assets with your schema, package them in an extension bundle.
 
-Increment the extension version when you migrate. Publish a new version rather than replacing an existing version's files with a bundle.
+Increment the extension version when you migrate, and keep the existing version's files unchanged.
 
 <Steps>
   <Step title="Prepare the components">
     Update each component to meet the requirements on this page.
   </Step>
-  <Step title="Update your publishing workflow">
-    Configure your workflow to create a ZIP archive with the [required structure](#zip-archive-structure).
+  <Step title="Create the ZIP archive">
+    Create a ZIP archive with the [required components](/opengraph/developer/extension-bundles#zip-archive-structure).
   </Step>
   <Step title="Test the complete bundle">
-    Test both manual and embedded installation workflows with all components present. Confirm that the extension and its assets install successfully.
+    Test installation with all components present. Confirm that the extension and its assets install successfully.
   </Step>
-  <Step title="Update the collector">
-    If your extension uses an OpenHound collector, prepare a collector version update that removes the outdated extension artifacts.
-  </Step>
-  <Step title="Publish the update">
-    Publish the new extension version and any updated OpenHound collector. For embedded extensions, place the updated artifacts in the embedded extension Amazon S3 bucket before the next BloodHound build.
+  <Step title="Make the updated version available">
+    Commit the updated extension bundle or make it available through your distribution method.
   </Step>
 </Steps>
