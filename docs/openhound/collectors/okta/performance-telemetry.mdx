@@ -1,0 +1,140 @@
+---
+title: Performance Telemetry
+description: Configure and interpret OpenHound Okta collection performance telemetry.
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+Use optional collection performance telemetry to diagnose and tune OpenHound Okta collection performance.
+
+Telemetry is disabled by default and does not change the collection scope, schedule, Okta permissions, or number of Okta requests. When enabled, the collector writes bounded, value-free JSONL diagnostics for endpoint latency, HTTP outcomes, retries, quota observations, concurrency, pacing, pagination, and row counts.
+
+## Configure Telemetry
+
+Add the following section to `config.toml`:
+
+```toml title="config.toml"
+[sources.source.okta.telemetry]
+enabled = true
+output_directory = "./telemetry"
+reporting_interval_seconds = 60
+max_file_bytes = 10485760
+max_interval_records = 1440
+queue_capacity = 16
+```
+
+Set `output_directory` outside the raw collection output directory. The collector rejects a nested location so the telemetry file is not treated as collection data or uploaded with it.
+
+Run the Okta collection normally. The same configuration applies to interactive, scheduled, and containerized collections. Each collection writes one file named `openhound-okta-<opaque-run-id>.jsonl` in the configured output directory.
+
+## Review Telemetry Records
+
+Each JSONL line is an independently parseable record. The file starts with a `run_start` record, followed by periodic `interval` records, and normally ends with a `run_summary` record. Interrupted or incomplete collections retain records that were flushed before the interruption.
+
+## Telemetry Settings
+
+You can set the following values in `config.toml` or with the equivalent environment variable. Environment variables take precedence over `config.toml`.
+
+Replace \{PREFIX\} with `SOURCES__SOURCE__OKTA__TELEMETRY` in the environment variables below.
+
+<table style={{ width: "100%", tableLayout: "fixed" }}>
+  <colgroup>
+    <col style={{ width: "25%" }} />
+    <col style={{ width: "32%" }} />
+    <col style={{ width: "10%" }} />
+    <col style={{ width: "33%" }} />
+  </colgroup>
+  <thead>
+    <tr>
+      <th>Parameter Name</th>
+      <th>Environment&nbsp;Variable</th>
+      <th>Default</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>enabled</code></td>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__ENABLED"}</code></td>
+      <td><code>false</code></td>
+      <td>Enables telemetry. No telemetry file is created when this is <code>false</code> or omitted.</td>
+    </tr>
+    <tr>
+      <td><code>output_directory</code></td>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__OUTPUT_DIRECTORY"}</code></td>
+      <td><code>./telemetry</code></td>
+      <td>Directory for the JSONL file. It must be outside the raw collection output directory.</td>
+    </tr>
+    <tr>
+      <td><code>reporting_interval_seconds</code></td>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__REPORTING_INTERVAL_SECONDS"}</code></td>
+      <td><code>60</code></td>
+      <td>Interval at which the collector flushes aggregated diagnostic records. Must be greater than zero.</td>
+    </tr>
+    <tr>
+      <td><code>max_file_bytes</code></td>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__MAX_FILE_BYTES"}</code></td>
+      <td><code>10485760</code></td>
+      <td>Maximum telemetry file size. Must be at least <code>65536</code> bytes.</td>
+    </tr>
+    <tr>
+      <td><code>max_interval_records</code></td>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__MAX_INTERVAL_RECORDS"}</code></td>
+      <td><code>1440</code></td>
+      <td>Maximum number of interval records. Must be at least <code>1</code>.</td>
+    </tr>
+    <tr>
+      <td><code>queue_capacity</code></td>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__QUEUE_CAPACITY"}</code></td>
+      <td><code>16</code></td>
+      <td>Maximum number of records waiting for export. Must be at least <code>2</code>.</td>
+    </tr>
+  </tbody>
+</table>
+
+The collector bounds telemetry memory, queue depth, interval records, and file size. If the telemetry destination is unavailable, the exporter fails, or a limit is reached, the collection continues. The diagnostic records indicate dropped records, truncation, or exporter failure; an incomplete telemetry summary does not mean that the Okta collection failed.
+
+## Telemetry Metrics
+
+Telemetry separates the following measurements so you can identify where collection time is spent:
+
+<table style={{ width: "100%", tableLayout: "fixed" }}>
+  <colgroup>
+    <col style={{ width: "25%" }} />
+    <col style={{ width: "75%" }} />
+  </colgroup>
+  <thead>
+    <tr>
+      <th>Measurement</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>http_execution</code></td>
+      <td>Measures request execution through response-body transfer. It excludes JSON decoding and downstream DLT row conversion.</td>
+    </tr>
+    <tr>
+      <td><code>slot_wait</code></td>
+      <td>Measures time waiting for the Okta endpoint-family concurrency slot.</td>
+    </tr>
+    <tr>
+      <td><code>proactive_pacing_wait</code></td>
+      <td>Measures waits caused by pacing against observed quota headers.</td>
+    </tr>
+    <tr>
+      <td><code>retry_backoff_wait</code></td>
+      <td>Measures the actual wait before a retry. Retry delay totals are also recorded by retry category.</td>
+    </tr>
+  </tbody>
+</table>
+
+The summary records the effective DLT extraction settings (`extract_workers` and `extract_max_parallel_items`) and the effective Okta performance settings, including page sizes, endpoint concurrency, retry window, and rate-limit reserve.
+
+Page and row counts describe data yielded by Okta pagination; they do not confirm that DLT committed the rows to the raw collection.
+
+<Warning>
+  Telemetry uses normalized endpoint templates and excludes credentials, tenant hostnames, raw URLs, cursors, object identifiers, response bodies, profiles, and exception text.
+
+  Store the JSONL files as diagnostic artifacts and do not place them under the raw collection directory.
+</Warning>

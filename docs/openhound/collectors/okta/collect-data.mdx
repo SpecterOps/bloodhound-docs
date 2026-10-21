@@ -1,86 +1,85 @@
 ---
-title: Configure the Collector
-description: Configure the OpenHound Okta collector to gather data from your Okta organization.
+title: "Configure the Collector"
+description: "Configure the OpenHound Okta collector to gather data from your Okta organization."
 ---
 
 import RunAndCollect from '/snippets/hounds/openhound-run-and-collect.mdx';
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img
+  noZoom
+  src="/assets/enterprise-AND-community-edition-pill-tag.svg"
+  alt="Applies to BloodHound Enterprise and CE"
+/>
 
 This page covers configuring the OpenHound Okta collector for your Okta organization.
 
-To prevent OpenHound from consuming your full organization-wide Okta rate limit, [configure a client-specific rate limit](https://developer.okta.com/docs/reference/rl2-token-oauth/) for the OAuth service application or API token used by the collector. OpenHound honors Okta rate-limit responses and retries each HTTP request up to 10 times with increasing delays.
+<Note>
+  The OpenHound setup instructions for BloodHound Community Edition also apply to BloodHound Enterprise users.
+</Note>
 
 ## Prerequisites
 
-* OpenHound installed with the Okta collector included. Follow the OpenHound [installation](/openhound/community) instructions to set up OpenHound for BloodHound Community Edition. The Okta collector is included by default in the OpenHound container image.
-* An Okta account with permissions to access the Okta API. See the options below for recommended roles and permissions.
-
-<Note>The OpenHound setup instructions for BloodHound Community Edition also apply to BloodHound Enterprise users, for now.</Note>
+- OpenHound installed with the Okta collector included. Follow the OpenHound [installation](/openhound/community) instructions to set up OpenHound for BloodHound Community Edition. The Okta collector is included by default in the OpenHound container image.
+- An Okta account with permissions to access the Okta API. See the options below for recommended roles and permissions.
 
 ### OAuth 2.0 Service Application (Recommended)
 
 Register the OpenHound Okta collector as a [service application](/openhound/collectors/okta/okta-app-registration) in Okta.
 
-Grant the application limited read-only permissions, then configure authentication with either a symmetric client secret or an asymmetric RSA public/private key pair.
-
-Use an RSA public/private key pair when possible, because it provides stronger security than a symmetric client secret.
+Grant the application limited read-only permissions, then configure authentication with either a symmetric client secret or an asymmetric RSA public/private key pair. Prefer the RSA keys whenever possible for stronger security.
 
 ### API Token (SSWS)
 
 The OpenHound Okta collector can also authenticate using API tokens (also known as SSWS tokens) associated with specific Okta Super Administrator accounts.
-This is the least secure option, but the easiest one to set up.
+ This is the least secure option, but the easiest one to set up.
 
 ## Configure OpenHound
 
 The following OpenHound configuration parameters are required to run the Okta collector. These can either be set
-via the `[sources.source.okta.credentials]` section of the secrets file or via environment variables using the `SOURCES__OKTA__CREDENTIALS` prefix.
+ via the `[sources.source.okta.credentials]` section of the secrets file or via environment variables using the `SOURCES__OKTA__CREDENTIALS` prefix.
 
-### Option 1: Service Application with JSON key file
+### Option 1: Service Application with JSON Key File
 
-Use this option when you store the Okta private key in a file. Set `private_key_path` to the path of the complete private key JSON that Okta displays when you generate the key pair.
+Use this option when you prefer to store the Okta private key in a file. Set `private_key_path` to the path of the complete private key JSON that Okta displays when you generate the key pair.
 
-| Parameter Name | Environment Variable            | Description                                                                        |
-|----------------|---------------------------------|------------------------------------------------------------------------------------|
-| `base_url`     | \{PREFIX\}__BASE_URL | The base URL of the Okta organization. For example: `https://spectoropspreview.oktapreview.com`. |
-| `client_id`     | \{PREFIX\}__CLIENT_ID | The client ID of the Okta service application used to authenticate to the Okta API. |
-| `private_key_path` | \{PREFIX\}__PRIVATE_KEY_PATH | The path to the private key (.json) used for authentication. |
+| Parameter Name | Environment Variable | Description |
+| --- | --- | --- |
+| `base_url` | \{PREFIX\}\_\_BASE\_URL | The base URL of the Okta organization. For example: `https://spectoropspreview.oktapreview.com`. |
+| `client_id` | \{PREFIX\}\_\_CLIENT\_ID | The client ID of the Okta service application used to authenticate to the Okta API. |
+| `private_key_path` | \{PREFIX\}\_\_PRIVATE\_KEY\_PATH | The path to the private key (.json) used for authentication. |
 
 **Example Configuration**
 
 ```toml title="secrets.toml"
 [sources.source.okta.credentials]
-base_url = "https://mytenant.oktapreview.com"
-client_id = "myclientid"
-private_key_path = "/path/to/private/key.json"
+base_url = "https://<mytenant>.oktapreview.com"
+client_id = "<client-id>"
+private_key_path = "<path-to-private-key-json>"
 ```
 
-### Option 2: Service Application with base64-encoded JSON key string
+### Option 2: Service Application with Base64-Encoded JSON Key String
 
-Use this option when you store the Okta private key in a text-based secret.
+Use this option when you prefer not to store the Okta private key in a standalone file.
 
-| Parameter Name | Environment Variable            | Description                                                                        |
-|----------------|---------------------------------|------------------------------------------------------------------------------------|
-| `base_url`     | \{PREFIX\}__BASE_URL | The base URL of the Okta organization. For example: `https://spectoropspreview.oktapreview.com`. |
-| `client_id`     | \{PREFIX\}__CLIENT_ID | The client ID of the Okta service application used to authenticate to the Okta API. |
-| `private_key_b64` | \{PREFIX\}__PRIVATE_KEY_B64 | The private key (.json) encoded as a base64 string.  |
+| Parameter Name | Environment Variable | Description |
+| --- | --- | --- |
+| `base_url` | \{PREFIX\}\_\_BASE\_URL | The base URL of the Okta organization. For example: `https://spectoropspreview.oktapreview.com`. |
+| `client_id` | \{PREFIX\}\_\_CLIENT\_ID | The client ID of the Okta service application used to authenticate to the Okta API. |
+| `private_key_b64` | \{PREFIX\}\_\_PRIVATE\_KEY\_B64 | The private key in JSON format encoded as a base64 string. |
 
 **Example Configuration**
 
 ```toml title="secrets.toml"
 [sources.source.okta.credentials]
-base_url = "https://mytenant.oktapreview.com"
-client_id = "myclientid"
+base_url = "https://<mytenant>.oktapreview.com"
+client_id = "<client-id>"
 private_key_b64 = "<base64-encoded-complete-okta-private-key-json>"
 ```
 
 Set `private_key_b64` to the base64-encoded contents of the complete private key JSON that Okta displays when you generate the key pair.
+ The JSON has the following general structure. The values below are placeholders and are not a usable key.
 
-The private key JSON includes the key identifier (`kid`). Keep this property in the JSON; you do not retrieve or configure `kid` separately. The collector uses it to identify the signing key when it requests an access token.
-
-The private key JSON has the following general structure. The values below are placeholders and are not a usable key.
-
-```json nocopy=true
+```json
 {
   "kty": "RSA",
   "kid": "<key-id-generated-by-okta>",
@@ -96,128 +95,35 @@ The private key JSON has the following general structure. The values below are p
 ```
 
 <Warning>
-  Keep the complete private key JSON and its base64-encoded value secret. Okta displays the private key only when you generate it. If you do not have the JSON, generate and register a new key pair as described in the [Okta app registration guide](/openhound/collectors/okta/okta-app-registration).
+  Keep the complete private key JSON confidential. Okta displays the private key only when you generate it. If you no longer have the JSON, generate and register a new key pair as described in the [Okta app registration guide](/openhound/collectors/okta/okta-app-registration).
 </Warning>
 
 ### Option 3: API Token (SSWS)
 
 Use this option when you want to authenticate with an API token (SSWS) associated with a specific Okta Super Administrator account.
 
-| Parameter Name | Environment Variable            | Description                                                                        |
-|----------------|---------------------------------|------------------------------------------------------------------------------------|
-| `base_url`     | \{PREFIX\}__BASE_URL | The base URL of the Okta organization. For example: `https://spectoropspreview.oktapreview.com`. |
-| `token` | \{PREFIX\}__TOKEN | The API token (SSWS) used for authentication. |
+| Parameter Name | Environment Variable | Description |
+| --- | --- | --- |
+| `base_url` | \{PREFIX\}\_\_BASE\_URL | The base URL of the Okta organization. For example: `https://spectoropspreview.oktapreview.com`. |
+| `token` | \{PREFIX\}\_\_TOKEN | The API token (SSWS) used for authentication. |
 
 **Example Configuration**
 
 ```toml title="secrets.toml"
 [sources.source.okta.credentials]
-base_url = "https://mytenant.oktapreview.com"
+base_url = "https://<mytenant>.oktapreview.com"
 token = "<api-token>"
 ```
 
-## Pagination settings
-
-The Okta collector requests explicit page sizes for resources that support large result sets. You can tune these defaults with the following DLT source configuration environment variables:
-
-| Environment variable | Default | Purpose |
-| --- | ---: | --- |
-| `SOURCES__SOURCE__OKTA__APPLICATION_USERS_PAGE_SIZE` | `500` | Application users per page, from 1 through 500 |
-| `SOURCES__SOURCE__OKTA__GROUPS_PAGE_SIZE` | `200` | Expanded groups per page, from 1 through 200 |
-| `SOURCES__SOURCE__OKTA__APPLICATION_GROUP_ASSIGNMENTS_PAGE_SIZE` | `200` | Application-group assignments per page, from 20 through 200 |
-| `SOURCES__SOURCE__OKTA__GROUP_PUSH_MAPPINGS_PAGE_SIZE` | `1000` | Group push mappings per page, from 1 through 1,000 |
-| `SOURCES__SOURCE__OKTA__IDENTITY_PROVIDER_USERS_PAGE_SIZE` | `200` | Identity-provider users per page, from 1 through 200 |
-| `SOURCES__SOURCE__OKTA__ENDPOINT_CONCURRENCY` | `2` | Maximum simultaneous requests per endpoint family |
-| `SOURCES__SOURCE__OKTA__RATE_LIMIT_MAX_ELAPSED_SECONDS` | `900` | Maximum elapsed retry window for an individual 429 request |
-| `SOURCES__SOURCE__OKTA__RATE_LIMIT_REMAINING_RESERVE` | `1` | Requests held in reserve when pacing against a rate-limit window |
-
-Application-group assignments are collected from each application's public assignment endpoint, and the collector retains Okta's assignment timestamp, priority, and profile field names without publishing assignment profile values to the graph.
-
-<Note>
-  If the initial expanded group page repeatedly times out on large Okta tenants, the collector retries that first page with successively halved page sizes before failing. With the default `GROUPS_PAGE_SIZE` of 200, that fallback sequence is 200, then 100, then 50.
-</Note>
-
-## Performance telemetry
-
-Use optional collection performance telemetry to diagnose and tune Okta collection performance.
-
-Telemetry is disabled by default and does not change the collection scope, schedule, Okta permissions, or number of Okta requests.
-
-When enabled, the collector writes bounded, value-free JSONL diagnostics for endpoint latency, HTTP outcomes, retries, quota observations, concurrency, pacing, pagination, and row counts.
-
-<Steps>
-  <Step title="Configure telemetry">
-
-    Add the following section to `config.toml`:
-
-    ```toml title="config.toml"
-    [sources.source.okta.telemetry]
-    enabled = true
-    output_directory = "./telemetry"
-    reporting_interval_seconds = 60
-    max_file_bytes = 10485760
-    max_interval_records = 1440
-    queue_capacity = 16
-    ```
-
-    `output_directory` must be outside the raw collection output directory.
-
-    The collector rejects a nested location so the telemetry file is not treated as collection data or uploaded with it.
-
-  </Step>
-  <Step title="Run the collection">
-
-    Run the Okta collection normally. The same configuration applies to interactive, scheduled, and containerized collections.
-
-    Each collection writes one file named `openhound-okta-<opaque-run-id>.jsonl` in the configured output directory.
-
-  </Step>
-  <Step title="Review the diagnostics">
-
-    Each JSONL line is an independently parseable record.
-
-    The file starts with a `run_start` record, followed by periodic `interval` records, and normally ends with a `run_summary` record. Interrupted or incomplete collections retain records that were flushed before the interruption.
-
-  </Step>
-</Steps>
-
-### Telemetry settings
-
-You can set the following values in `config.toml` or with the equivalent environment variable. Environment variables take precedence over `config.toml`.
-
-| TOML key | Environment variable | Default | Description |
-| --- | --- | ---: | --- |
-| `enabled` | `SOURCES__SOURCE__OKTA__TELEMETRY__ENABLED` | `false` | Enables telemetry. No telemetry file is created when this is `false` or omitted. |
-| `output_directory` | `SOURCES__SOURCE__OKTA__TELEMETRY__OUTPUT_DIRECTORY` | `./telemetry` | Directory for the JSONL file. It must be outside the raw collection output directory. |
-| `reporting_interval_seconds` | `SOURCES__SOURCE__OKTA__TELEMETRY__REPORTING_INTERVAL_SECONDS` | `60` | Interval at which the collector flushes aggregated diagnostic records. Must be greater than zero. |
-| `max_file_bytes` | `SOURCES__SOURCE__OKTA__TELEMETRY__MAX_FILE_BYTES` | `10485760` | Maximum telemetry file size. Must be at least `65536` bytes. |
-| `max_interval_records` | `SOURCES__SOURCE__OKTA__TELEMETRY__MAX_INTERVAL_RECORDS` | `1440` | Maximum number of interval records. Must be at least `1`. |
-| `queue_capacity` | `SOURCES__SOURCE__OKTA__TELEMETRY__QUEUE_CAPACITY` | `16` | Maximum number of records waiting for export. Must be at least `2`. |
-
-The collector bounds telemetry memory, queue depth, interval records, and file size. If the telemetry destination is unavailable, the exporter fails, or a limit is reached, the collection continues.
-
-The diagnostic records indicate dropped records, truncation, or exporter failure; an incomplete telemetry summary does not mean that the Okta collection failed.
-
-### Telemetry metrics
-
-Telemetry separates the following measurements so you can identify where collection time is spent:
-
-| Measurement | Description |
-| --- | --- |
-| `http_execution` | Measures request execution through response-body transfer. It excludes JSON decoding and downstream DLT row conversion. |
-| `slot_wait` | Measures time waiting for the Okta endpoint-family concurrency slot. |
-| `proactive_pacing_wait` | Measures waits caused by pacing against observed quota headers. |
-| `retry_backoff_wait` | Measures the actual wait before a retry. Retry delay totals are also recorded by retry category. |
-
-The summary records the effective DLT extraction settings (`extract_workers` and `extract_max_parallel_items`) and the effective Okta performance settings, including page sizes, endpoint concurrency, retry window, and rate-limit reserve.
-
-Page and row counts describe data yielded by Okta pagination; they do not confirm that DLT committed the rows to the raw collection.
-
 <Warning>
-  Telemetry uses normalized endpoint templates and excludes credentials, tenant hostnames, raw URLs, cursors, object identifiers, response bodies, profiles, and exception text.
-
-  Store the JSONL files as diagnostic artifacts and do not place them under the raw collection directory.
+  We do not recommend this authentication method. However, if you decide to use it, keep the API token confidential.
 </Warning>
+
+## Advanced Settings
+
+For guidance on large organizations, collection scope, and concurrency, see [Large Environment Settings](/openhound/collectors/okta/large-environment-settings).
+
+To diagnose and tune collection performance with optional telemetry, see [Performance Telemetry](/openhound/collectors/okta/performance-telemetry).
 
 ## Running OpenHound and Collecting Data
 

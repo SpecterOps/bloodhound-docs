@@ -1,0 +1,171 @@
+---
+title: Large Environment Settings
+description: Reduce Okta collection volume and tune concurrency for large organizations.
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+Full collection of MFA factors and application-user assignments has been observed to require millions of API requests in large Okta organizations. Collections of this size can take a long time because Okta applies strict rate limits to different API endpoints as well as limits on concurrent requests. In addition, requests that return large result sets, such as expanded group collection, have been observed to time out repeatedly in large Okta organizations and eventually fail, leaving the affected data missing from the collection.
+
+## Limit Collection Scope
+
+By default, the collector collects MFA factors for all users and application-user assignments for all applications. Use the following settings under `[sources.source.okta]` in `config.toml`, or their environment variables using the `SOURCES__SOURCE__OKTA` prefix, to significantly reduce request volume:
+
+<table style={{ width: "100%", tableLayout: "fixed" }}>
+  <colgroup>
+    <col style={{ width: "32%" }} />
+    <col style={{ width: "40%" }} />
+    <col style={{ width: "28%" }} />
+  </colgroup>
+  <thead>
+    <tr>
+      <th>Parameter Name</th>
+      <th>Environment&nbsp;Variable</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>limit_user_mfa_collection</code></td>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__LIMIT_USER_MFA_COLLECTION"}</code></td>
+      <td>Collect MFA factors only for users with role assignments.</td>
+    </tr>
+    <tr>
+      <td><code>limit_app_user_collection</code></td>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__LIMIT_APP_USER_COLLECTION"}</code></td>
+      <td>Collect application-user assignments only for the collector's built-in set of application types.</td>
+    </tr>
+    <tr>
+      <td><code>app_user_collection_app_ids</code></td>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__APP_USER_COLLECTION_APP_IDS"}</code></td>
+      <td>Additional Okta application IDs to collect when <code>limit_app_user_collection</code> is <code>true</code>.</td>
+    </tr>
+  </tbody>
+</table>
+
+For example, to enable both limits:
+
+```toml title="config.toml"
+[sources.source.okta]
+limit_user_mfa_collection = true
+limit_app_user_collection = true
+app_user_collection_app_ids = ["0oa1a2B3c4D5e6F7g8h9", "0oa9h8G7f6E5d4C3b2a1"]
+```
+
+## Tune Extraction Concurrency
+
+Increasing workers or concurrent requests can improve throughput when capacity is available, but cannot bypass Okta's API rate limits. Try overriding the default [extract parameters](/openhound/configuration#extract-parameters) for Okta:
+
+```toml title="config.toml"
+[sources.source.okta.extract]
+workers = 40
+max_parallel_items = 80
+```
+
+The collector also applies the following request controls under `[sources.source.okta]`:
+
+<table style={{ width: "100%", tableLayout: "fixed" }}>
+  <colgroup>
+    <col style={{ width: "40%" }} />
+    <col style={{ width: "28%" }} />
+    <col style={{ width: "9%" }} />
+    <col style={{ width: "23%" }} />
+  </colgroup>
+  <thead>
+    <tr>
+      <th>Parameter Name</th>
+      <th>Environment&nbsp;Variable</th>
+      <th>Default</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>endpoint_concurrency</code></td>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__ENDPOINT_CONCURRENCY"}</code></td>
+      <td><code>32</code></td>
+      <td>Maximum simultaneous requests per API endpoint.</td>
+    </tr>
+    <tr>
+      <td><code>org_concurrency</code></td>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__ORG_CONCURRENCY"}</code></td>
+      <td><code>32</code></td>
+      <td>Maximum simultaneous requests across all endpoints.</td>
+    </tr>
+    <tr>
+      <td><code>rate_limit_max_elapsed_seconds</code></td>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__RATE_LIMIT_MAX_ELAPSED_SECONDS"}</code></td>
+      <td><code>900</code></td>
+      <td>Maximum elapsed retry window for an individual HTTP 429 request.</td>
+    </tr>
+    <tr>
+      <td><code>rate_limit_remaining_reserve</code></td>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__RATE_LIMIT_REMAINING_RESERVE"}</code></td>
+      <td><code>1</code></td>
+      <td>Requests held in reserve when pacing against a rate-limit window.</td>
+    </tr>
+  </tbody>
+</table>
+
+Keep concurrency within your organization's [endpoint-specific rate limits](https://developer.okta.com/docs/reference/rate-limits/) and [concurrency limits](https://developer.okta.com/docs/reference/rl2-concurrency/), which default to 75 simultaneous transactions, and account for other applications using the API. Retain a [client-specific rate limit](https://developer.okta.com/docs/reference/rl2-token-oauth/) to avoid consuming the organization's full quota.
+
+Use [performance telemetry](/openhound/collectors/okta/performance-telemetry) to see the effective settings and whether a collection is limited by worker capacity or by Okta rate limits. Note that the collector slows down before exhausting rate-limit quotas, so a collection can be quota-bound even without HTTP 429 responses.
+
+## Tune Page Sizes
+
+<Note>
+  These are advanced settings. The default page sizes should work well for most environments.
+</Note>
+
+Because requests that return large result sets, such as expanded group collection, have been observed to time out repeatedly and eventually fail in large Okta organizations, the collector requests explicit page sizes for these resources. You can tune the default page sizes with the following environment variables using the `SOURCES__SOURCE__OKTA` prefix:
+
+<table style={{ width: "100%", tableLayout: "fixed" }}>
+  <colgroup>
+    <col style={{ width: "48%" }} />
+    <col style={{ width: "10%" }} />
+    <col style={{ width: "42%" }} />
+  </colgroup>
+  <thead>
+    <tr>
+      <th>Environment&nbsp;Variable</th>
+      <th>Default</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__APPLICATIONS_PAGE_SIZE"}</code></td>
+      <td><code>200</code></td>
+      <td>Applications per page, from 1 through 200.</td>
+    </tr>
+    <tr>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__APPLICATION_USERS_PAGE_SIZE"}</code></td>
+      <td><code>500</code></td>
+      <td>Application users per page, from 1 through 500.</td>
+    </tr>
+    <tr>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__GROUPS_PAGE_SIZE"}</code></td>
+      <td><code>200</code></td>
+      <td>Groups per page, from 1 through 200.</td>
+    </tr>
+    <tr>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__APPLICATION_GROUP_ASSIGNMENTS_PAGE_SIZE"}</code></td>
+      <td><code>200</code></td>
+      <td>Application-group assignments per page, from 20 through 200.</td>
+    </tr>
+    <tr>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__GROUP_PUSH_MAPPINGS_PAGE_SIZE"}</code></td>
+      <td><code>1000</code></td>
+      <td>Group push mappings per page, from 1 through 1,000.</td>
+    </tr>
+    <tr>
+      <td style={{ overflowWrap: "anywhere" }}><code>{"{PREFIX}__IDENTITY_PROVIDER_USERS_PAGE_SIZE"}</code></td>
+      <td><code>200</code></td>
+      <td>Identity-provider users per page, from 1 through 200.</td>
+    </tr>
+  </tbody>
+</table>
+
+<Note>
+  If the initial expanded group page repeatedly times out on large Okta tenants, the collector retries that first page with successively halved page sizes before failing. With the default `GROUPS_PAGE_SIZE` of 200, that fallback sequence is 200, then 100, then 50.
+</Note>
