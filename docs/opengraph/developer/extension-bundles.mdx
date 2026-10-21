@@ -21,14 +21,14 @@ A bundle supports three components:
 | Component | Requirement | Installation behavior | Alternative without a bundle |
 | --- | --- | --- | --- |
 | `schema.json` | Required in both BloodHound Enterprise and BloodHound Community Edition. | Provides the same functionality as a schema-only JSON installation. | Upload the schema as a JSON file. |
-| `pz_rules.json` | Required if `schema.json` contains `relationship_findings`, which defines findings for BloodHound Enterprise. Otherwise optional. | Installs Privilege Zone rules together, without a separate OpenHound workflow. | Installs Privilege Zone rules from OpenHound, if available.<br/><br/>Otherwise, developers should provide rules for users to recreate in their environment. |
+| `pz_rules.json` | Required if `schema.json` contains `relationship_findings`, which defines findings for BloodHound Enterprise. Otherwise optional. | Installs Privilege Zone rules together, without a separate OpenHound workflow. | Install Privilege Zone rules from OpenHound, if available.<br/><br/>Otherwise, developers should provide rules for users to recreate in their environment. |
 | `saved_queries.json` | Optional in both BloodHound Enterprise and BloodHound Community Edition. | Installs read-only queries organized by `platform` and `category`. | Install saved queries from OpenHound, if available. Otherwise, developers should provide queries for bulk import.<br/><br/>Saved queries will be editable and either public (OpenHound) or private (non-OpenHound) by default.<br/><br/>Neither method organizes queries by `platform` or `category`. |
 
 To migrate an existing extension, update your publishing workflow to package its components in a bundle. See [Migrate an extension](/opengraph/developer/extension-bundles#migrate-an-extension).
 
 ## Installation behavior
 
-BloodHound Enterprise and BloodHound Community Edition accept ZIP bundles through `PUT /api/v2/extensions`.
+BloodHound Enterprise and BloodHound Community Edition accept ZIP bundles through [`PUT /api/v2/extensions`](/reference/opengraph-experimental/upserts-the-opengraph-extension). See the [OpenGraph API index](/opengraph/developer/api) for related operations and how general saved-query endpoints apply to extension-managed queries.
 
 BloodHound installs all bundle components together. If any component fails to install, BloodHound rolls back all changes and returns error messages. No partial installation remains.
 
@@ -143,12 +143,12 @@ For each query:
 - Provide a stable `query_key`, a display name, and a Cypher query.
 - Optionally, provide a `description` and `category`.
 
-BloodHound associates each query with its extension and makes it public and read-only. The extension name supplies the `platform` filter option. When you include a category value in `saved_queries.json`, BloodHound adds it to the category filter options.
+BloodHound associates each query with its extension and makes it public and read-only. In the [Saved Queries section of the Explore page](/analyze-data/explore/cypher-search#search-and-filter), the extension name determines the option shown in the **Platforms** filter, and each query's `category` value determines an option shown in the **Categories** filter.
 
 When you update the bundle, BloodHound uses each query's `query_key` to match existing queries. It updates matching queries with the values from the bundle and removes queries you omit. Omitting `saved_queries.json` removes all existing saved queries associated with the extension. Uninstalling the extension also removes its queries.
 
 <Note>
-  Users (including administrators) cannot modify or delete extension-managed saved queries through the saved query APIs. To modify, extension developers must publish an update. To remove, administrators must uninstall the extension.
+  To modify a query, publish a bundle update with the changes. To remove it, omit it from the bundle.
 </Note>
 
 ```json title="saved_queries.json"
@@ -188,7 +188,7 @@ When you update the bundle, BloodHound uses each query's `query_key` to match ex
 
 BloodHound continues to support schema-only extensions. To include the supported assets with your schema, package them in an extension bundle.
 
-Increment the extension version when you migrate, and keep the existing version's files unchanged.
+Increment the extension version when you migrate.
 
 <Steps>
   <Step title="Prepare the components">
