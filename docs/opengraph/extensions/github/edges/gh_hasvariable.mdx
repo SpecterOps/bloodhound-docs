@@ -1,6 +1,6 @@
 ---
 title: 'GH_HasVariable'
-description: 'Repository or environment has access to this variable'
+description: 'Repository or environment has access to this variable or organization-variable scope'
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
@@ -13,6 +13,7 @@ description: 'Repository or environment has access to this variable'
 |-------|-----------|-------|
 | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | GH_HasVariable | [GH_RepoVariable](/opengraph/extensions/github/nodes/gh_repovariable) |
 | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | GH_HasVariable | [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable) |
+| [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | GH_HasVariable | [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) |
 | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | GH_HasVariable | [GH_EnvironmentVariable](/opengraph/extensions/github/nodes/gh_environmentvariable) |
 
 ```mermaid
@@ -22,14 +23,16 @@ flowchart LR
     GH_OrgVariable["GH_OrgVariable"]
     GH_Repository["GH_Repository"]
     GH_RepoVariable["GH_RepoVariable"]
+    GH_Scope["GH_Scope"]
     GH_Environment -- GH_HasVariable --> GH_EnvironmentVariable
     GH_Repository -- GH_HasVariable --> GH_OrgVariable
     GH_Repository -- GH_HasVariable --> GH_RepoVariable
+    GH_Repository -- GH_HasVariable --> GH_Scope
 ```
 
 ## General Information
 
-The traversable GH_HasVariable edge represents the relationship between a repository or environment and the variables accessible within that context. This edge shows which variables are available in which scopes. Repositories can have access to both organization-level variables (scoped by visibility to all, private, or selected repositories) and repository-level variables defined directly on the repo, while environments expose their own environment-scoped variables to jobs that target them. This edge is traversable because any principal that can execute a workflow in the relevant context may be able to read variable values at runtime, and variables may contain configuration data useful for lateral movement such as deployment URLs, service names, or environment identifiers.
+The traversable GH_HasVariable edge represents the relationship between a repository or environment and the variables accessible within that context. Canonical all/private organization-variable availability is factored through a [GH_Scope](/opengraph/extensions/github/nodes/gh_scope); selected organization variables and repository/environment variables remain direct.
 
 ## Edge Schema
 
@@ -38,6 +41,7 @@ The traversable GH_HasVariable edge represents the relationship between a reposi
 | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | [GH_EnvironmentVariable](/opengraph/extensions/github/nodes/gh_environmentvariable) | `true` |
 | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable) | `true` |
 | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | [GH_RepoVariable](/opengraph/extensions/github/nodes/gh_repovariable) | `true` |
+| [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) | `true` |
 
 ## Diagram
 
@@ -48,7 +52,9 @@ graph LR
     n2["GH_Repository"]
     n3["GH_OrgVariable"]
     n4["GH_RepoVariable"]
+    n5["GH_Scope"]
     n0 -->|GH_HasVariable| n1
     n2 -->|GH_HasVariable| n3
     n2 -->|GH_HasVariable| n4
+    n2 -->|GH_HasVariable| n5
 ```
