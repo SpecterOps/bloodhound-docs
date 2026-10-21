@@ -11,6 +11,7 @@ These instructions apply to BloodHound Community Edition and BloodHound Enterpri
   - `.agents/mintlify-guidance.md` when adding or changing Mintlify components or layout.
   - `.agents/validation.md` before handing off documentation changes.
   - `.agents/skills/update-openapi-spec/SKILL.md` when updating the API reference from a release-specific OpenAPI specification.
+  - `.agents/skills/generate-release-notes/SKILL.md` when generating release notes from Jira exports.
 - When a subtree contains a more specific `AGENTS.md`, follow it in addition to these instructions.
 
 ## Verify product behavior
