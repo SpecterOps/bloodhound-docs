@@ -2,7 +2,7 @@
 
 This document describes the style, format, and conventions we use to create BloodHound release notes.
 
-When generating release notes from Jira exports, follow the repository [release-notes skill `/.agents/skills/generate-release-notes/SKILL.md` for CSV parsing, issue-to-commit verification, parent grouping, and summary and navigation updates.
+When generating release notes from Jira exports, follow the repository release-notes skill `/.agents/skills/generate-release-notes/SKILL.md` for CSV parsing, issue-to-commit verification, parent grouping, and summary and navigation updates.
 
 ## Summary
 
@@ -61,7 +61,7 @@ See the [detailed release notes for the 2026-03-23 release](/resources/release-n
 Order all `<Update>` entries using the following precedence rules:
 
 1. If the release includes a major milestone announcement such as General Availability, that entry may appear first.
-2. Otherwise, group by update type first: New Feature -> Enhancement -> Breaking Change -> Fixed Issues.
+2. Otherwise, group by update type first: Breaking Change -> New Feature -> Enhancement -> Fixed Issues.
 3. Within each update type, place updates that apply to both Community and Enterprise first.
 4. Keep Enterprise-only updates grouped together and place that group after shared updates for the same update type.
 5. Within each applicability group, prioritize by reader impact or value in this order:

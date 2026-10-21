@@ -17,11 +17,11 @@ sidebarTitle: "2026-10-26"
   {/*BED-9897, BED-9497, BED-9498, BED-9322, BED-9319*/}
   ## Extension bundles
 
-  An extension bundle packages an OpenGraph extension's schema with supported assets, such as saved queries and Privilege Zone rules.
+  An extension bundle packages an OpenGraph extension's schema with supported components, such as saved queries and Privilege Zone rules.
   
-  Admins can install these components together in a single upload, streamlining the process of making an extension's assets available to users.
+  Admins can install an extension with a single file and have all the necessary components put in the correct place for a streamlined installation experience.
 
-  - **Administrators:** Upload a bundle to [install an extension](/opengraph/extensions/manage) and its supported assets together.
+  - **Administrators:** Upload a bundle to [install an extension](/opengraph/extensions/manage) and its supported components together.
   - **Users:** Explore extension data using its [saved queries](/analyze-data/explore/cypher-search/search) and apply its Privilege Zone [rules](/analyze-data/privilege-zones/rules).
   - **Extension developers:** Learn how to [package](/opengraph/developer/extension-bundles) an extension's schema and supported assets for administrators to install together.
 </Update>
@@ -36,12 +36,14 @@ sidebarTitle: "2026-10-26"
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["API"]}>
-  {/*BED-10037*/}
-  ## Faster object ID searches
+  {/*BED-10037, BED-7066*/}
+  ## Faster object searches
 
-  The [`/api/v2/search`](/reference/search/search-for-objects) endpoint now matches `objectid` values exactly, including uppercase and lowercase variants, while name searches remain fuzzy. 
+  The [`/api/v2/search`](/reference/search/search-for-objects) endpoint now matches `objectid` values exactly, including uppercase and lowercase variants, while name searches remain fuzzy.
+  
+  It passes the requested result limit to the graph database for domain lookups and honors the limit when results are filtered by [Environment Targeted Access Control (ETAC)](/manage-bloodhound/auth/environment-targeted-access-control).
 
-  This improves search performance (most notably on the **Explore** page) and honors the result limit whether or not results are filtered by [Environment Targeted Access Control (ETAC)](/manage-bloodhound/auth/environment-targeted-access-control).
+  These changes improve search performance, especially on the **Explore** page, and reduce unnecessary work on large result sets.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["API"]}>
@@ -74,20 +76,13 @@ sidebarTitle: "2026-10-26"
   These steps help reclaim index bloat and keep graph query performance consistent over time.
 </Update>
 
-<Update label="BloodHound" description="Enhancement" tags={["PostgreSQL"]}>
-  {/*BED-9997*/}
-  ## Faster ingest reconciliation
-
-  Improved graph edge cleanup uses index scans instead of table scans when deleting edges with a node.
-
-  This reduces database work during ingest reconciliation and helps maintain ingest throughput.
-</Update>
-
 <Update label="BloodHound" description="Enhancement" tags={["Post-Processing"]}>
   {/*BED-9943*/}
-  ## Analysis Performance Improvements
+  ## Analysis performance improvements
 
   All [post-processed](/analyze-data/findings/analysis#show-post-processed-edges) edges now use optimized processing logic, significantly reducing time in analysis and improving overall performance.
+
+  Post-processed edges no longer display the **Last Seen by BloodHound** field in Entity panels.
 </Update>
 
 <Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
@@ -105,7 +100,7 @@ sidebarTitle: "2026-10-26"
   {/*BED-9772, BED-9379, BED-8938, BED-8916*/}
   <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
 
-  ## Findings Prioritization Improvements
+  ## Findings Prioritization improvements
 
   [Findings Prioritization](/analyze-data/findings/table-view#prioritize-findings) now considers proximity to Tier Zero alongside exposure, impact, and starting objects. Findings targeting objects in or near Tier Zero receive a stronger priority signal, helping you identify larger remediation opportunities.
 
@@ -134,14 +129,23 @@ sidebarTitle: "2026-10-26"
   The [Findings Table](/analyze-data/findings/table-view#identify-new-findings) marks findings added in the past 24 hours with a <Badge color="purple">New</Badge> badge, helping you spot recently surfaced results during triage.
 </Update>
 
-## Fixed Issues
+<Update label="BloodHound" description="Enhancement" tags={["PostgreSQL"]}>
+  {/*BED-9997*/}
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  ## Faster ingest reconciliation
+
+  Updated the node-table trigger that cascade-deletes edges connected to a deleted node to use index scans instead of table scans.
+
+  This reduces database work during ingest reconciliation and helps maintain ingest throughput.
+</Update>
+
+## Fixed issues
 
 <Update label="BloodHound" tags={["Fixed Issues"]}>
   ## Search and performance
 
   - {/*BED-9780*/} Resolved an issue where a second `OPTIONAL MATCH` clause could be treated as required, causing Cypher queries to omit expected results.
-
-  - {/*BED-7066*/} Resolved an issue where domain lookup did not pass the requested result limit to the graph database, causing unnecessary work on large result sets that the API later truncated.
 
   - {/*BED-7367*/} Resolved an issue where parallel graph path processing could corrupt path segment sizes.
 
