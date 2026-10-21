@@ -12,7 +12,7 @@ import ManagedCollectorsBetaNote from '/snippets/feature-beta.mdx';
 
 Use this page to identify whether a Managed Collection problem originates from beta availability, AWS authentication, permissions, scheduling, or the Managed Collection service.
 
-The BloodHound Enterprise user interface supports collection plan save and queue operations, but the feature is tenant-gated and collection processing occurs in the managed service. Record the plan name, time of the attempt, visible result, and error text before you contact your SpecterOps account team.
+The BloodHound Enterprise user interface supports collection plan create, edit, and queue operations, but the feature is tenant-gated and collection processing occurs in the managed service. Record the plan name, time of the attempt, visible result, and error text before you contact your SpecterOps account team.
 
 ## Check beta availability
 
@@ -35,18 +35,20 @@ On **Collection Plans**, inspect the plan tile and its schedule:
 | **No schedule set** | The plan will not create recurring jobs. |
 | **Not run yet** | The plan has no completed collection history. |
 | **Success** | The latest job completed successfully. |
-| **Warning** | The latest job completed only partially. Select **History** to inspect the result and failure reason. |
+| **Partial Success** | The latest job completed only partially. Select **History** to inspect the result and failure reason. |
 | **Failed** | The latest job ended with an error. The current tile shows the outcome and timestamp, but not the full failure metadata. |
 | **Cancelled** | The latest job was cancelled before completion. |
 | **Disabled** | The schedule is paused. |
 
-Select **History** on the plan tile to open job history. Use the Run Results filter to narrow the list, sort by Started at or Completed at, and hover a failed or warning result to view its failure reason.
+Click **History** on the plan tile to open its history drawer. Use the **Run Results** filter to narrow the list, sort by Started at or Completed at, and hover a failed or partial success result to view its failure reason.
+
+<Note>
+  Managed Collection history is self-contained. These jobs do not appear on the **Administration** > **Manage Clients** or **Administration** > **Finished Jobs Log** pages.
+</Note>
 
 If the page cannot load a schedule or latest result, use the page's **Retry** action. If the problem persists, record the plan name and the error message.
 
 ## Resolve common issues
-
-{/* TODO: Detailed scheduler, worker-health, and job-retention diagnostics are still in progress. Keep support guidance focused on the plan tile, History results, and visible errors until those diagnostics are available. */}
 
 <AccordionGroup>
   <Accordion title="The AWS credential is rejected">
@@ -85,10 +87,10 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
     **Action:** Follow [Configure a schedule](/collect-data/enterprise-collection/managed-collection/configure#configure-a-collection-plan) to review the detected timezone, GMT offset, and saved recurrence. Select the desired start time again and save the plan.
   </Accordion>
 
-  <Accordion title="The collection is incomplete or shows Warning">
+  <Accordion title="The collection is incomplete or shows Partial Success">
     **Likely cause:** The AWS principal does not have read access to all resources in the configured scope, the scope excludes the resources you expect, or the latest job completed only partially.
 
-    **Action:** Confirm the AWS account or organization scope and review the required read-only policy. Use the AWS permissions page to check service-specific permissions, select **History**, and inspect the failure reason for the warning or failed result. Review the next collection result after correcting the scope or permissions.
+    **Action:** Confirm the AWS account or organization scope and review the required read-only policy. Use the AWS permissions page to check service-specific permissions, select **History**, and inspect the failure reason for the partial success or failed result. Review the next collection result after correcting the scope or permissions.
   </Accordion>
 
   <Accordion title="The credential is close to expiration">
