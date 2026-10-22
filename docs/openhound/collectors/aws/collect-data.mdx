@@ -31,6 +31,14 @@ The AWS collector needs different settings based on the collection strategy you 
 
 `profile_name` is optional. If you omit it from `secrets.toml` (or leave `SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME` unset), the collector uses the AWS identity available to its runtime. With a configured source account, that identity must resolve to the account ID in `source_account`. When the management account is the source, the runtime identity must resolve to the management account.
 
+These settings describe two separate choices: the runtime authentication mode determines how the collector gets its initial AWS credentials, while the organization collection strategy determines which account roles it assumes after that. `profile_name` is the name of an AWS shared-config profile. `source_account` is an AWS account ID, not a profile name. In AWS shared config, `source_profile` is a separate AWS option that names another profile in an AssumeRole chain; it is not the collector's `source_account` setting.
+
+For organization collection, the collector can generate an AWS config file from the active accounts returned by AWS Organizations. It writes the required management role profile when needed and a profile for each active member account, using AWS shared-config AssumeRole profiles so boto3 handles role sessions and refresh. In organization-root mode, member profiles use the generated management profile as their `source_profile`. In explicit source-account mode, member profiles use the runtime's SDK-supported credential source: EC2 instance metadata, ECS container credentials, environment credentials, or a named profile. Named profiles retain their referenced profile chain and SSO session settings. For IRSA, the collector uses the web identity token projected into the pod and links generated profiles through the appropriate source profile. This avoids requiring users to enter one profile per account.
+
+The generated `config` file and its timestamped backups are kept in `${XDG_CONFIG_HOME}/openhound/aws` or `~/.config/openhound/aws` by default. Set `generated_config_dir` to choose another directory. Generation is enabled by default for organization collection; set `auto_generate_config = false` to use a supplied AWS config with the expected profile names (`openhound-management` and `openhound-account-<account-id>`). When a generated config already exists, disabling generation reuses it so reviewed edits are honored. To use a different hardcoded config, set `config_file` to its path. Set `stop_after_config_generation = true` to stop after writing the file for inspection. The collector only manages files in its generated-config directory and does not overwrite the normal `~/.aws/config` or credentials file.
+
+`runtime_auth_mode` accepts `auto`, `web_identity`, or `default_chain`. `auto` selects IRSA when its role ARN and token file are available and otherwise uses boto3's normal credential provider chain. `web_identity` requires those IRSA inputs. `default_chain` delegates credential discovery to boto3. `config_file` and `credentials_file` optionally select AWS shared files for the runtime session; `region_name` is an optional override and otherwise follows AWS SDK region resolution.
+
 <Warning>
   The beta must use the `openhound-aws` container image from the private ECR repository described in the [beta-only deployment example](/openhound/collectors/aws/collect-data#beta-only). The public `openhound` image does not support AWS collection.
 </Warning>
@@ -48,12 +56,12 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
     | Setting | Required | Default | Description |
     | --- | --- | --- | --- |
     | `profile_name` | No | Runtime identity | Name of the AWS SDK profile used for collection. If omitted, use the identity available to the runtime. |
-    | `org_role_name` | Yes | - | Name of the IAM role to assume in each active member account. The collector constructs `arn:aws:iam::<account-id>:role/<org_role_name>`. |
+    | `org_role_name` | Yes | - | Name of the IAM role to assume in each active member account. The collector constructs `arn:aws:iam::<account-id>:role/<org_role_name>`. This is the target collection role, not the runtime identity or its AWS profile. |
     | `org_role_session_name` | No | `openhound-aws-org-collection` | STS role session name used when assuming organization roles. |
     | `include_management_account` | No | true | Whether to collect account resources from the management account in addition to organization metadata and policies. |
-    | `source_account` | Yes | None | Account ID that the configured or runtime AWS identity must resolve to. |
+    | `source_account` | Yes | None | AWS account ID that the configured or runtime AWS identity must resolve to. This identifies the account supplying credentials for direct member-role assumptions; it is not an AWS profile name. |
     | `management_account_id` | No | None | Management account ID. If omitted, the source identity must be allowed to call `organizations:DescribeOrganization` so the collector can discover it. |
-    | `management_role_name` | No | Value of `org_role_name` | Name of the role assumed in the management account. |
+    | `management_role_name` | No | Value of `org_role_name` | Name of the role assumed in the management account for Organizations access. This is distinct from the member-account target role named by `org_role_name`. |
 
     The collector assumes the management role from the source identity to read AWS Organizations metadata, then assumes the member-account collection role directly from the source identity. Management-account resources are included by default in this mode.
 
