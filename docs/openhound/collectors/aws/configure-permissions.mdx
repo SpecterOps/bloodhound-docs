@@ -154,11 +154,17 @@ This page explains how to grant the OpenHound AWS collector the read-only AWS pe
 
 ## Prerequisites
 
-- AWS CLI v2.32.0 or later installed.
+- An administrative workstation with AWS CLI v2.32.0 or later installed.
 - Administrator access to the AWS account where you create the collector principal and IAM roles.
 - For organization collection, access to the AWS Organizations management account or a delegated administrator account.
 - For organization collection, CloudFormation StackSets enabled with trusted access for AWS Organizations.
 - For AWS-hosted collection, a running EC2 instance or EKS cluster that hosts the OpenHound AWS collector.
+
+<Note>
+  Run the AWS CLI commands on this page from an administrative workstation with access to the required AWS accounts. The OpenHound collector uses the AWS SDK at runtime, not the AWS CLI.
+
+  If the collector uses a named AWS profile, make the resulting `~/.aws/config` and `~/.aws/credentials` files available on the collector host. The Docker Compose [deployment example](/openhound/collectors/aws/collect-data#deployment-examples) mounts these files into the collector container. If the collector uses EC2 or EKS runtime credentials, omit `profile_name` and configure the workload identity instead.
+</Note>
 
 ## Authenticate to AWS
 
@@ -841,6 +847,8 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
       <Step title="Configure the AWS identity">
         Configure the AWS profile or runtime credentials that the OpenHound AWS collector uses to collect AWS Organizations metadata and assume the member-account roles.
 
+        When `aws configure` prompts for **Default region name**, enter an AWS region enabled for the account. Use the same value for `region` in the AWS profile and `region_name` in the collector configuration. The collector uses `region_name` to select the region for regional resource collection.
+
         <Tabs>
           <Tab title="Local or external workload">
             Create a source profile with the access keys from the `OpenHoundCollectorUser` user:
@@ -856,7 +864,7 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             role_arn = arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/OpenHoundCollectorRole
             source_profile = openhound-source
             role_session_name = OpenHoundCollector
-            region = us-east-2
+            region = <AWS_REGION>
             ```
           </Tab>
           <Tab title="AWS-hosted workload">
@@ -867,7 +875,7 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             role_arn = arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/OpenHoundCollectorRole
             credential_source = Ec2InstanceMetadata
             role_session_name = OpenHoundCollector
-            region = us-east-2
+            region = <AWS_REGION>
             ```
 
             For EKS, configure the pod service account role with your normal EKS IAM role workflow, then expose the profile or default AWS SDK credentials to the collector container.
@@ -1044,7 +1052,7 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             role_arn = arn:aws:iam::<ACCOUNT_ID>:role/OpenHoundCollectorRole
             source_profile = openhound-source
             role_session_name = OpenHoundCollector
-            region = us-east-2
+            region = <AWS_REGION>
             ```
           </Tab>
           <Tab title="AWS-hosted workload">
@@ -1055,7 +1063,7 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             role_arn = arn:aws:iam::<ACCOUNT_ID>:role/OpenHoundCollectorRole
             credential_source = Ec2InstanceMetadata
             role_session_name = OpenHoundCollector
-            region = us-east-2
+            region = <AWS_REGION>
             ```
 
             For EKS, configure the pod service account role with your normal EKS IAM role workflow, then expose the profile or default AWS SDK credentials to the collector container.
@@ -1068,4 +1076,4 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
 
 ## Next steps
 
-Continue to [Configure the Collector](/openhound/collectors/aws/collect-data). For the recommended setup, set `source_account` to the account ID returned by the configured profile or runtime identity.
+Continue to [Configure the Collector](/openhound/collectors/aws/collect-data). For the recommended setup, set `source_account` to the account ID returned by the configured profile or runtime identity. Set `region_name` to the AWS region you want the collector to scan.

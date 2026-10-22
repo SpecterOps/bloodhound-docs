@@ -29,7 +29,9 @@ The AWS collector needs different settings based on the collection strategy you 
 | `secrets.toml` file | `[sources.source.aws.credentials]` section |
 | Environment variables | `SOURCES__SOURCE__AWS__CREDENTIALS` prefix |
 
-`profile_name` is optional. If you omit it from `secrets.toml` (or leave `SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME` unset), the collector uses the AWS identity available to its runtime. With a configured source account, that identity must resolve to the account ID in `source_account`. When the management account is the source, the runtime identity must resolve to the management account.
+The `profile_name` setting is optional. If you omit it from the `secrets.toml` file (or leave `SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME` unset), the collector uses the AWS identity available to its runtime. With a configured source account, that identity must resolve to the account ID in `source_account`. When the management account is the source, the runtime identity must resolve to the management account.
+
+The `region_name` setting selects the AWS region used for regional resource collection. It defaults to `us-east-1`. Set it to another enabled region, such as `us-west-2`, when collecting from that region. The current beta selects one region per configuration; it does not automatically collect regional resources from every AWS region. When you use a named AWS profile, set the same value for the profile's `region` setting and `region_name` in the collector configuration.
 
 <Warning>
   The beta must use the `openhound-aws` container image from the private ECR repository described in the [beta-only deployment example](/openhound/collectors/aws/collect-data#beta-only). The public `openhound` image does not support AWS collection.
@@ -48,6 +50,7 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
     | Setting | Required | Default | Description |
     | --- | --- | --- | --- |
     | `profile_name` | No | Runtime identity | Name of the AWS SDK profile used for collection. If omitted, use the identity available to the runtime. |
+    | `region_name` | No | `us-east-1` | AWS region used for regional resource collection. The current beta selects one region per configuration. |
     | `org_role_name` | Yes | - | Name of the IAM role to assume in each active member account. The collector constructs `arn:aws:iam::<account-id>:role/<org_role_name>`. |
     | `org_role_session_name` | No | `openhound-aws-org-collection` | STS role session name used when assuming organization roles. |
     | `include_management_account` | No | true | Whether to collect account resources from the management account in addition to organization metadata and policies. |
@@ -86,7 +89,7 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
     ```toml title="~/.dlt/secrets.toml"
     [sources.source.aws.credentials]
     profile_name = "security-tooling"
-    region_name = "us-east-1"
+    region_name = "<AWS_REGION>"
     source_account = "999999999999"
     management_account_id = "111111111111"
     management_role_name = "ManagementCollectorRole"
@@ -99,7 +102,7 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
 
     ```bash
     SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME="security-tooling"
-    SOURCES__SOURCE__AWS__CREDENTIALS__REGION_NAME="us-east-1"
+    SOURCES__SOURCE__AWS__CREDENTIALS__REGION_NAME="<AWS_REGION>"
     SOURCES__SOURCE__AWS__CREDENTIALS__SOURCE_ACCOUNT="999999999999"
     SOURCES__SOURCE__AWS__CREDENTIALS__MANAGEMENT_ACCOUNT_ID="111111111111"
     SOURCES__SOURCE__AWS__CREDENTIALS__MANAGEMENT_ROLE_NAME="ManagementCollectorRole"
@@ -112,6 +115,7 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
     | Setting | Required | Default | Description |
     | --- | --- | --- | --- |
     | `profile_name` | No | Runtime identity | Name of the AWS SDK profile used for collection. If omitted, use the identity available to the runtime. The identity must resolve to the management account. |
+    | `region_name` | No | `us-east-1` | AWS region used for regional resource collection. The current beta selects one region per configuration. |
     | `org_role_name` | Yes | - | Name of the IAM role to assume in each active member account. The collector constructs `arn:aws:iam::<account-id>:role/<org_role_name>`. |
     | `org_role_session_name` | No | `openhound-aws-org-collection` | STS role session name used when assuming organization roles. |
     | `include_management_account` | No | false | Whether to collect account resources from the management account in addition to organization metadata and policies. |
@@ -121,8 +125,13 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
     ```toml title="~/.dlt/secrets.toml"
     [sources.source.aws.credentials]
     profile_name = "managementaccount"
+    region_name = "<AWS_REGION>"
     org_role_name = "OpenHoundCollectorRole"
     ```
+
+    <Note>
+      The `managementaccount` value is an example local AWS profile name. You can use any profile name, but it must match `profile_name` in the collector configuration. `<MANAGEMENT_ACCOUNT_ID>` is the AWS account ID used in the role ARN; it is not required to be the profile name.
+    </Note>
 
     `include_management_account` defaults to `false` in this mode. Set it to `true` to collect management-account resources.
 
@@ -130,6 +139,7 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
 
     ```bash
     SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME="managementaccount"
+    SOURCES__SOURCE__AWS__CREDENTIALS__REGION_NAME="<AWS_REGION>"
     SOURCES__SOURCE__AWS__CREDENTIALS__ORG_ROLE_NAME="OpenHoundCollectorRole"
     ```
   </Tab>
@@ -139,18 +149,21 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
     | Setting | Required | Default | Description |
     | --- | --- | --- | --- |
     | `profile_name` | No | Runtime identity | Name of the AWS SDK profile used for collection. If omitted, use the identity available to the runtime. |
+    | `region_name` | No | `us-east-1` | AWS region used for regional resource collection. The current beta selects one region per configuration. |
 
     **`secrets.toml`**
 
     ```toml title="~/.dlt/secrets.toml"
     [sources.source.aws.credentials]
     profile_name = "production"
+    region_name = "<AWS_REGION>"
     ```
 
     **Environment variables**
 
     ```bash
     SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME=production
+    SOURCES__SOURCE__AWS__CREDENTIALS__REGION_NAME="<AWS_REGION>"
     ```
   </Tab>
   <Tab title="Multiple independent-accounts">
@@ -159,18 +172,21 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
     | Setting | Required | Default | Description |
     | --- | --- | --- | --- |
     | `profile_names` | Yes | None | Names of the AWS SDK profiles used for collection. |
+    | `region_name` | No | `us-east-1` | AWS region used for regional resource collection for each configured profile. The current beta selects one region per configuration. |
 
     **`secrets.toml`**
 
     ```toml title="~/.dlt/secrets.toml"
     [sources.source.aws.credentials]
     profile_names = ["production", "testing"]
+    region_name = "<AWS_REGION>"
     ```
 
     **Environment variables**
 
     ```bash
     SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAMES='["production","testing"]'
+    SOURCES__SOURCE__AWS__CREDENTIALS__REGION_NAME="<AWS_REGION>"
     ```
   </Tab>
 </Tabs>
@@ -229,6 +245,7 @@ url = "https://your-tenant.bhe.io"
 
 [sources.source.aws.credentials]
 profile_name = "<AWS_PROFILE_NAME>"
+region_name = "<AWS_REGION>"
 
 [sources.source.aws.bucket_policy]
 include = false
@@ -245,6 +262,7 @@ url = "https://your-tenant.bhe.io"
 
 [sources.source.aws.credentials]
 profile_name = "<AWS_PROFILE_NAME>"
+region_name = "<AWS_REGION>"
 
 [sources.source.aws.bucket_policy]
 include = true
@@ -273,6 +291,7 @@ profile_names = [
   "<AWS_PROFILE_NAME_2>",
   "<AWS_PROFILE_NAME_3>"
 ]
+region_name = "<AWS_REGION>"
 
 [sources.source.aws.bucket_policy]
 include = false
@@ -289,6 +308,7 @@ url = "https://your-tenant.bhe.io"
 
 [sources.source.aws.credentials]
 profile_name = "<AWS_SOURCE_PROFILE_NAME>"
+region_name = "<AWS_REGION>"
 source_account = "<AWS_SOURCE_ACCOUNT_ID>"
 management_account_id = "<AWS_MANAGEMENT_ACCOUNT_ID>"
 management_role_name = "ManagementCollectorRole"
@@ -313,6 +333,7 @@ url = "https://your-tenant.bhe.io"
 
 [sources.source.aws.credentials]
 profile_name = "<AWS_MANAGEMENT_PROFILE_NAME>"
+region_name = "<AWS_REGION>"
 org_role_name = "OpenHoundCollectorRole"
 org_role_session_name = "OpenHoundCollectorSession"
 include_management_account = true
