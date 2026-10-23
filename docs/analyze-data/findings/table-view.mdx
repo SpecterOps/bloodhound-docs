@@ -57,6 +57,20 @@ Before you can use the **Findings Table**, you must have the following:
     If [Environment Targeted Access Control (ETAC)](/manage-bloodhound/auth/environment-targeted-access-control) is enabled on your tenant, it can limit which findings and environments appear for your account. Two users can see different rows for the same filters depending on their access.
   </Note>
 
+## Identify new findings
+
+To quickly identify new findings, look for a purple <Badge color="purple">New</Badge> badge in the **First Seen** column of the **Findings Table**. The table displays the badge when a finding's **First Seen** timestamp is within the past 24 hours.
+
+<Frame>
+  <img src="/images/attack-paths/whats-new-badge.png" alt="The New badge in the Findings Table" />
+</Frame>
+
+The badge replaces the timestamp for the duration of that window. After 24 hours, the table displays the formatted **First Seen** date again.
+
+<Note>
+  The **New** state is calculated from the **First Seen** timestamp and is not provided by the API. A finding recreated after it was archived can display both **New** and **Regression**.
+</Note>
+
 ## Take action on a finding
 
 Select a finding to open an action menu and continue your investigation or remediation workflow.
@@ -113,6 +127,32 @@ You can sort by each visible table column and resize column width. Sorting reord
 - Sort by **First Seen** to distinguish newer findings from findings that have persisted across analysis runs.
 - Sort by **Last Seen** to review the most recently updated findings for the current filters.
 
+## Export findings
+
+Export the findings that match the current filters and sort order to a CSV file.
+
+<Tip>
+  The export includes all matching findings, not only the rows currently loaded in the table.
+</Tip>
+
+<Steps>
+  <Step title="Configure the table">
+    Apply filters and sorting to define the findings you want to export.
+  </Step>
+
+  <Step title="Download the findings">
+    Select the download icon next to the findings count.
+
+    BloodHound saves the file as `findings_YYYY-MM-DD.csv`.
+    
+    <Note>
+      When [Findings Prioritization](/analyze-data/findings/table-view#prioritize-findings) is enabled, the file also includes the prioritization score and rank.
+    </Note>
+  </Step>
+</Steps>
+
+The export supports a maximum of **200,000 findings**. If the current result set exceeds this limit, refine the results with filters before downloading. The download icon is unavailable when no findings match, while the result count is loading, or when the table cannot load its results.
+
 ## Prioritize findings
 
 **Findings Prioritization** helps you decide where to start when many findings compete for attention. It supplements severity with additional risk signals and provides a ranked starting queue for investigation and remediation.
@@ -133,11 +173,22 @@ BloodHound Enterprise calculates a prioritization score during analysis, then co
 
 Findings with the same score receive the same rank, and the next rank skips the positions occupied by the tie. For example, if two findings tie for second place, the ranks are 1, 2, 2, 4; not 1, 2, 2, 3.
 
-A higher-ranked finding represents a stronger combination of underlying factors present in the enterprise's graph data.
+A higher-ranked finding represents a stronger combination of the following factors present in the enterprise's graph data:
+
+| Factor | Definition |
+| --- | --- |
+| **Exposure** | A risk measurement that quantifies the extent to which principals can reach a privileged asset through one or more Attack Paths.<br/><br/>It encompasses all principals upstream of a finding's source, including any principals that can reach the source through intermediaries. |
+| **Impact** | A risk measurement that quantifies potential blast radius if a finding is abused. |
+| **Starting objects** | The number of graph objects represented by the finding's target principal. A group, for example, can represent more starting objects than a single user or computer. |
+| **Proximity to Tier Zero** | The shortest traversable path from the target principal to Tier Zero. Findings targeting objects in or near Tier Zero receive a stronger priority signal than findings targeting objects farther away.<br/><br/>Findings without a path to Tier Zero, or with a path beyond the maximum traversal depth, use a maximum-hop fallback and are deprioritized. |
+
+BloodHound calculates proximity during analysis when **Findings Prioritization** is enabled. It uses an analysis-generated [Zone](/resources/nodes/zone) node for Tier Zero to calculate this distance.
+
+The table displays the resulting rank. A target already in Tier Zero receives the strongest proximity signal.
 
 ### Rank and operational context
 
-A finding can rank above another finding with the same—or even higher—severity when its combined exposure, impact, and start-object breadth indicate a larger remediation opportunity.
+A finding can rank above another finding with the same—or even higher—severity when its combined exposure, impact, starting-object breadth, and proximity to Tier Zero indicate a larger remediation opportunity.
 
 Use the rank to create a starting queue, then apply operational context before you act, such as:
 
@@ -155,7 +206,7 @@ Use the rank to create a starting queue, then apply operational context before y
 
 BloodHound recalculates prioritization during analysis. The rank does not update dynamically between analysis runs.
 
-A finding's rank can change after analysis when graph data, exposure, impact, starting objects, or the set of open and accepted findings changes. Review the latest analysis before using a rank to plan remediation.
+A finding's rank can change after analysis when graph data, exposure, impact, starting objects, proximity to Tier Zero, or the set of open and accepted findings changes. Review the latest analysis before using a rank to plan remediation.
 
 <Note>
   If BloodHound has not calculated a rank for a finding, the **Risk** column displays `-`. For example, archived findings do not have a rank.
