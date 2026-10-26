@@ -9,7 +9,9 @@ import SearchIssueWarning from '/snippets/opengraph/search-issue.mdx';
 
 After [uploading data](/get-started/quickstart/community-edition-quickstart#get-data-into-bloodhound) to BloodHound, use the **Explore** page to search for objects and visualize their relationships. The graph displays <Tooltip headline="nodes" tip="Part of the graph construct and refers to an entity in the network, such as a user, computer, group, or domain. Two nodes can be connected by an edge." cta="See the docs" href="/resources/nodes/overview">nodes</Tooltip> and <Tooltip headline="edges" tip="Part of the graph construct and refers to a relationship between two nodes, such as group membership or session information." cta="See the docs" href="/resources/edges/overview">edges</Tooltip>, helping you understand your environment and identify potential attack paths.
 
-<Note>If your account uses [Environment Targeted Access Control (ETAC)](/manage-bloodhound/auth/environment-targeted-access-control), search results and graph data are limited to the environments you can access.</Note>
+<Note>
+  If your account uses [Environment Targeted Access Control (ETAC)](/manage-bloodhound/auth/environment-targeted-access-control), search results and graph data are limited to the environments you can access.
+</Note>
 
 BloodHound supports multiple data sources, including Active Directory, Azure (Entra ID), and other identity services through [OpenGraph](/opengraph/overview).
 
@@ -35,7 +37,9 @@ The **Explore** page provides the following methods for searching for objects an
 
 Which method you choose depends on your specific use case and what you're trying to accomplish. This page describes each of the search methods in more detail and provides guidance on when to use each one.
 
-<Tip>You can interact with objects in the [graph](#graph-view) and customize the view to explore the data more effectively, regardless of which search method you use.</Tip>
+<Tip>
+  You can interact with objects in the [graph](/analyze-data/explore/search#graph-view) and customize the view to explore the data more effectively, regardless of which search method you use.
+</Tip>
 
 ## Search
 
@@ -105,7 +109,7 @@ For example, you can find all paths from a user named "bob" to a group containin
 </Tip>
 
 <Frame>
-  <img src="/images/explore/search-pathfinding.gif" alt="A view showing how to search for paths from a user named bob to groups containing the word domain admins in the Explore page" />
+  <img src="/images/explore/search-pathfinding.gif" alt="An animated view showing how to search for paths from a user named bob to groups containing the word domain admins in the Explore page" />
 </Frame>
 
 To build a path through multiple nodes, select a start node and one or more destination nodes. You can rearrange the destination nodes to set the order in which BloodHound traverses them. BloodHound finds the shortest path between each consecutive pair and combines the results into one graph.
@@ -132,7 +136,11 @@ Cypher is a powerful query language for graph databases. It enables you to manip
 
 ## Graph view
 
-The graph on the **Explore** page provides a visual representation of the objects in your data based on your search criteria. You can interact with the graph by clicking on nodes and edges to view detailed information about them in the **Entity** panel, and by using various visualization options to customize the graph view.
+The graph on the **Explore** page provides a visual representation of the objects in your data based on your search criteria. You can interact with the graph by clicking on nodes and edges to view detailed information about them in the **Entity** panel, and by using the [graph controls](/analyze-data/explore/graph-controls) to adjust the graph's appearance, export graph data, and search the current results.
+
+<Tip>
+  Solid lines represent [traversable edges](/resources/edges/traversable-edges#traversable-edges), and dashed lines represent non-traversable edges. This visual distinction helps you identify which relationships BloodHound can use for pathfinding.
+</Tip>
 
 The following example shows a graph based on the example in the [Pathfinding](/analyze-data/explore/search#pathfinding) section above, which finds paths from a user named "bob" to a group named "domain admins".
 
@@ -182,7 +190,9 @@ Right-click on any node in the graph to access the context menu. Options in the 
 
 The **Entity** panel on the **Explore** page displays detailed object properties and relationships. The information is displayed in an accordion format based on the selected node or edge, which can vary depending on your data source.
 
-<Note>For built-in node and edge types (AD/AZ), BloodHound displays structured data organized into the accordions described below. For OpenGraph data, BloodHound displays all values from the [`properties`](/opengraph/developer/nodes) object as a flat list, without the structured accordions.</Note>
+<Note>
+  For built-in node and edge types (AD/AZ), BloodHound displays structured data organized into the accordions described below. For OpenGraph data, BloodHound displays all values from the [`properties`](/opengraph/developer/nodes) object as a flat list, without the structured accordions.
+</Note>
 
 For nodes, expanding each accordion reveals more detail and dynamically updates the graph. For example, expanding the **Sessions** accordion shows all computers where the node has active sessions and updates the graph.
 
@@ -210,117 +220,3 @@ BloodHound displays the following information in the **Entity** panel when you c
 | **References** | Links to publicly available resources used to create the above information |
 
 <Tip>This information is also available for each edge in the [reference](/resources/edges/overview) documentation.</Tip>
-
-### Visualization options
-
-Use the graph visualization options at the bottom of the **Explore** page to customize how the graph is displayed based on your preferences. This can be useful for large, complex graphs with many nodes and edges.
-
-Layout behavior depends on whether you explicitly choose a layout:
-
-| Scenario | No layout selected | Layout explicitly selected |
-|---|---|---|
-| Default results | Uses <Tooltip tip="Enterprise: Stacked, Community: Sequential">edition default</Tooltip> | Keeps your selected layout for future results and sessions.<br/><br/>Click the selected layout again to clear it and return to default. |
-| Multi-node<br/>Cypher results<br/>(no edges) | Uses **Table** layout | Keeps your selected layout; does not use **Table** |
-| After closing **Table** | Uses <Tooltip tip="Enterprise: Stacked, Community: Sequential">edition default</Tooltip> | Returns to your previously selected layout |
-
-<Frame>
-  <img src="/images/explore/graph-viz-options.svg" alt="A view showing the graph visualization options on the Explore page" style={{ width:"70%", display:"block", margin:"0 auto" }} />
-</Frame>
-
-1. **Reset graph view**—Restore the graph view to its default layout and zoom level
-
-1. **Hide Labels**—Toggle the visibility of labels on nodes and edges to reduce clutter and focus on the structure of the graph (also useful for obfuscating sensitive information before sharing graph images)
-
-1. **Layout**—Choose from the following layout options to organize the graph visually:
-
-    <Tabs>
-      <Tab title="Organic">
-
-        <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
-
-        Uses a force-directed layout algorithm to position objects based on their relationships, creating a natural and intuitive view of the graph.
-
-        <Frame>
-          <img
-            src="/images/explore/graph-layout-organic.png"
-            alt="A view showing the Organic graph layout option on the Explore page"
-          />
-        </Frame>
-      </Tab>
-      <Tab title="Stacked">
-
-        <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
-
-        The default layout for BloodHound Enterprise.
-
-        Combines hierarchical layering with grid arrangement, organizing objects left to right in ranked layers while arranging multiple nodes within each layer in a structured grid pattern.
-
-        <Frame>
-          <img
-            src="/images/explore/graph-layout-stacked.png"
-            alt="A view showing the Stacked graph layout option on the Explore page"
-          />
-        </Frame>
-      </Tab>
-      <Tab title="Sequential">
-        The default layout for BloodHound Community.
-
-        Uses a hierarchical layout algorithm that organizes objects from left to right in ranked layers based on their relationships, ideal for visualizing directional paths and dependencies.
-
-        <Frame>
-          <img
-            src="/images/explore/graph-layout-sequential.png"
-            alt="A view showing the Sequential graph layout option on the Explore page"
-            style={{ width:"50%" }}
-          />
-        </Frame>
-      </Tab>
-      <Tab title="Standard">
-        Uses a balanced force-directed algorithm that pulls connected nodes together while maintaining spacing between unconnected nodes, creating an evenly distributed layout.
-
-        <Frame>
-          <img
-            src="/images/explore/graph-layout-standard.png"
-            alt="A view showing the Standard graph layout option on the Explore page"
-          />
-        </Frame>
-      </Tab>
-      <Tab title="Table">
-        Displays objects in a tabular format, showing properties in rows and columns for easy comparison.
-
-        The **Table** layout is available for Cypher searches only and is useful for searching and sorting large sets of data. When no layout is selected, BloodHound automatically opens this layout for Cypher results that return multiple nodes and no edges.
-
-        <Frame>
-          <img
-            src="/images/explore/graph-layout-table.png"
-            alt="A view showing the Table graph layout option on the Explore page"
-          />
-        </Frame>
-
-        The table includes the following columns by default:
-
-        | Column         | Description                                      |
-        |----------------|--------------------------------------------------|
-        | **Node Type**  | The type of the object (node label)              |
-        | **Name**       | The name of the object                           |
-        | **Object ID**  | The unique identifier of the object              |
-        | **Tier Zero**  | Indicates if the object is part of the Tier Zero privilege zone |
-
-        <Tip>
-        - Click the <Icon icon="ellipsis-vertical" /> (ellipsis) icon in each row to access the [context menu](#context-menu) for that object.
-        - Resize columns to view more or less information as needed by clicking and dragging the edges of the column dividers (or double-clicking the column dividers to auto-size).
-        </Tip>
-
-        The table layout provides the following options:
-
-        - **Search**—Quickly identify specific objects among the nodes displayed in the graph
-
-        - **Export**—Download the current graph view as a CSV file for further analysis or sharing
-
-        - **Expand**—Maximize the graph view to fill the screen for better visibility
-
-        - **Columns**—Search, add/remove, sort, reorder, reset column size, reset defaults, and pin columns in the table layout
-      </Tab>
-    </Tabs>
-
-<Note>Graph visualization options are available across all search methods. The **Table** layout is available for Cypher searches only.</Note>
