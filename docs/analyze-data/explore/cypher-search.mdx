@@ -3,6 +3,8 @@ title: Search with Cypher
 description: Start exploring BloodHound's prebuilt Cypher queries to uncover relationships and gain deeper insights into your environment.
 ---
 
+import EarlyAccessAccessNote from '/snippets/feature-flag-user-managed.mdx';
+
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE" />
 
 ## Purpose
@@ -171,6 +173,55 @@ RETURN n
 
   BloodHound represents Tier Zero membership with the `Tag_Tier_Zero` label, so label matching is the supported and preferred approach.
 </Warning>
+
+### Query Zone nodes
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }} />
+
+[Zone](/resources/nodes/zone) nodes are synthetic nodes that represent Privilege Zones in the graph. Use Cypher in **Explore** to find a zone, inspect its members, or find paths to it.
+
+<EarlyAccessAccessNote feature="Findings Prioritization" />
+
+After enabling **Findings Prioritization**, wait for analysis to finish. Analysis generates the `Zone` nodes and their `MemberOfZone` relationships.
+
+#### Find a Zone node
+
+Match a zone by its `name` property. For example, to find Tier Zero:
+
+```cql
+MATCH (zone:Zone {name: 'Tier Zero'})
+RETURN zone
+```
+
+Replace `Tier Zero` with the name of the zone you want to query.
+
+#### Find an object's zone
+
+`MemberOfZone` relationships point from a member node to its Zone node. For example, to return Azure Logic Apps and their zones:
+
+```cql
+MATCH (member:AZLogicApp)-[:MemberOfZone]->(zone:Zone)
+RETURN member, zone
+```
+
+Replace `AZLogicApp` with the node label you want to inspect.
+
+#### Find a path to a zone
+
+Use the Zone node as the destination in a pathfinding query. For example:
+
+```cql
+MATCH p=({name: "node name"})-[*]->(:Zone {name: "zone name"})
+RETURN p LIMIT 1;
+```
+
+Replace `node name` and `zone name` with the starting object's name and destination zone.
+
+To see all objects that have a path to a specific zone, use the `neighbor` query.
+
+<Note>
+  Use a `LIMIT` clause to restrict the number of results returned when using the `neighbor` query to avoid performance issues with large result sets.
+</Note>
 
 ### Elements of the graph database
 
