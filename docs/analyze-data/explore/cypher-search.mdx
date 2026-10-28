@@ -171,7 +171,7 @@ RETURN n
 <Warning>
   Do not search for Tier Zero objects by inspecting `system_tags` properties with patterns such as `coalesce(n.system_tags, [])`. Support for this pattern is temporary and will be deprecated in a future release.
 
-  BloodHound represents Tier Zero membership with the `Tag_Tier_Zero` label, so label matching is the supported and preferred approach.
+  BloodHound represents each zone with its own case-sensitive label based on the zone name. For example, the `PCI Enclave` zone has the `Tag_PCI_Enclave` label. Use the zone's label to query its members; for Tier Zero, use `Tag_Tier_Zero`.
 </Warning>
 
 ### Query Zone nodes
@@ -182,7 +182,7 @@ RETURN n
 
 <EarlyAccessAccessNote feature="Findings Prioritization" />
 
-After enabling **Findings Prioritization**, wait for analysis to finish. Analysis generates the `Zone` nodes and their `MemberOfZone` relationships.
+After enabling **Findings Prioritization**, wait for analysis to finish. Analysis generates the `Zone` nodes and their [`MemberOfZone`](/resources/edges/member-of-zone) relationships. `MemberOfZone` is a non-traversable edge that denotes zone membership; it does not represent an attack path.
 
 #### Find a Zone node
 
@@ -212,12 +212,26 @@ Use the Zone node as the destination in a pathfinding query. For example:
 
 ```cql
 MATCH p=({name: "node name"})-[*]->(:Zone {name: "zone name"})
-RETURN p LIMIT 1;
+RETURN p
+LIMIT 1
 ```
 
 Replace `node name` and `zone name` with the starting object's name and destination zone.
 
-To see all objects that have a path to a specific zone, use the `neighbor` query.
+#### Find external objects connected to a zone
+
+Use the `neighbor` pattern to leverage the `MemberOfZone` edge and find external objects that have connections to members of a specific zone.
+
+For example:
+
+```cql
+MATCH p=(neighbor)-[*2]->(:Zone {name:'zone name'})
+WHERE NOT (neighbor:zone_tag)
+RETURN p
+LIMIT 500
+```
+
+Replace `zone name` with the name of the zone you want to inspect.
 
 <Note>
   Use a `LIMIT` clause to restrict the number of results returned when using the `neighbor` query to avoid performance issues with large result sets.
