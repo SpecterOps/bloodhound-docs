@@ -1,0 +1,70 @@
+---
+title: "AWS_EC2Instance"
+description: "AWS EC2 Instance identity, collected properties, and AWS graph relationships."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<Note>
+AWS is in beta for BloodHound Enterprise. This reference covers the unreleased v0.0.4 schema; behavior may change before release.
+</Note>
+
+An Amazon EC2 virtual machine instance, with its instance type, state, VPC/subnet placement, security groups, and attached IAM instance profile.
+
+## Identifier
+
+The node identifier is the resource ARN in `arn`.
+
+## Properties
+
+Types below describe collected values. `null` means the value can be unavailable; it does not make the AWS resource optional. Collection scope and API responses determine which metadata is available.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `str` | Collector-generated name used to identify the resource in context. |
+| `displayname` | `str` | Resource label shown in the graph. |
+| `arn` | `str or null` | AWS Resource Name used as the node identifier. |
+| `account_id` | `str or null` | AWS account associated with the resource; nullable in the shared model. |
+| `region` | `str or null` | AWS region, or `global` for resources without a regional scope. |
+| `environmentid` | `str` | Account root ARN identifying the OpenGraph environment. |
+| `instance_id` | `str` | Native EC2 instance identifier. |
+| `launch_time` | `str or null` | Timestamp when the instance was launched. |
+| `instance_type` | `str or null` | EC2 instance type. |
+| `state` | `str or null` | Current EC2 instance state name. |
+| `vpc_id` | `str or null` | VPC identifier containing the instance. |
+| `subnet_id` | `str or null` | Subnet identifier containing the instance. |
+| `image_id` | `str or null` | AMI identifier used to launch the instance. |
+| `private_ip` | `str or null` | Primary private IPv4 address. |
+| `public_ip` | `str or null` | Public IPv4 address, when assigned. |
+| `iam_instance_profile_arn` | `str or null` | Attached IAM instance profile ARN, when present. |
+| `tags` | `list[str] or null` | EC2 tags attached to the instance. |
+| `security_groups` | `str or null` | Security groups attached to the instance. |
+
+## Relationships
+
+These tables cover relationships emitted for this kind by the AWS collector. Other extensions can define additional relationships.
+
+### Inbound
+
+| Edge | Source kind | Traversable |
+| --- | --- | --- |
+| [AWS_CanAssociateIAMInstanceProfile](/opengraph/extensions/aws/edges/aws_canassociateiaminstanceprofile) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanCreateImage](/opengraph/extensions/aws/edges/aws_cancreateimage) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanCreateSnapshot](/opengraph/extensions/aws/edges/aws_cancreatesnapshot) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanDisassociateIAMInstanceProfile](/opengraph/extensions/aws/edges/aws_candisassociateiaminstanceprofile) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanGetPasswordData](/opengraph/extensions/aws/edges/aws_cangetpassworddata) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanModifyEC2InstanceAttribute](/opengraph/extensions/aws/edges/aws_canmodifyec2instanceattribute) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | Yes |
+| [AWS_CanReplaceIAMInstanceProfileAssociation](/opengraph/extensions/aws/edges/aws_canreplaceiaminstanceprofileassociation) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanTerminateInstances](/opengraph/extensions/aws/edges/aws_canterminateinstances) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | Yes |
+| [AWS_EC2CanVolumeSwap](/opengraph/extensions/aws/edges/aws_ec2canvolumeswap) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | Yes |
+| [AWS_SSMCanSendCommand](/opengraph/extensions/aws/edges/aws_ssmcansendcommand) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | Yes |
+| [AWS_SSMCanStartSession](/opengraph/extensions/aws/edges/aws_ssmcanstartsession) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | Yes |
+
+### Outbound
+
+| Edge | Destination kind | Traversable |
+| --- | --- | --- |
+| [AWS_RunsAs](/opengraph/extensions/aws/edges/aws_runsas) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | Yes |
+
+[AWS schema](/opengraph/extensions/aws/schema)

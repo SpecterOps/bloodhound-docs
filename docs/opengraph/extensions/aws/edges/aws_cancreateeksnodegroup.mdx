@@ -1,0 +1,31 @@
+---
+title: "AWS_CanCreateEKSNodegroup"
+description: "AWS_CanCreateEKSNodegroup direction, traversability, and interpretation in the AWS schema."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<Note>
+AWS is in beta for BloodHound Enterprise. This reference covers the unreleased v0.0.4 schema; behavior may change before release.
+</Note>
+
+Principal can call eks:CreateNodegroup on at least one collected EKS cluster (the action authorizes against the cluster resource, so it is evaluated per existing cluster). Wave-0 primitive feeding the pass_role_via_eks_node_group composite to pass a node IAM role.
+
+## Edge schema
+
+| Source kind | Destination kind |
+| --- | --- |
+| [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) |
+| [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) |
+
+**Traversable:** No. This relationship supplies structural or permission evidence and does not independently form an Attack Path step.
+
+## Interpretation
+
+Authorization is evaluated on at least one existing cluster, but the emitted destination is its account. This is non-traversable creation evidence. Passing a node role also requires the EKS node-group PassRole route.
+
+## Evaluation limits
+
+This edge represents the collector's model of collected authorization and resource state. It does not prove that every runtime request succeeds. Inspect unresolved `conditions` and `trust_policy_conditions` when present; `has_conditions` and `has_trust_policy_conditions` indicate retained evidence. Composite edges can include `methods` or `composite_components` describing their derivation.
+
+[AWS schema](/opengraph/extensions/aws/schema)

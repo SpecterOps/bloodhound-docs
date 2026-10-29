@@ -1,0 +1,61 @@
+---
+title: "AWS_EKSCluster"
+description: "AWS EKS Cluster identity, collected properties, and AWS graph relationships."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<Note>
+AWS is in beta for BloodHound Enterprise. This reference covers the unreleased v0.0.4 schema; behavior may change before release.
+</Note>
+
+An Amazon EKS (managed Kubernetes) cluster, including its Kubernetes version, API endpoint, cluster IAM role, and OIDC issuer used for IRSA.
+
+## Identifier
+
+The node identifier is the resource ARN in `arn`.
+
+## Properties
+
+Types below describe collected values. `null` means the value can be unavailable; it does not make the AWS resource optional. Collection scope and API responses determine which metadata is available.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `str` | Collector-generated name used to identify the resource in context. |
+| `displayname` | `str` | Resource label shown in the graph. |
+| `arn` | `str or null` | AWS Resource Name used as the node identifier. |
+| `account_id` | `str or null` | AWS account associated with the resource; nullable in the shared model. |
+| `region` | `str or null` | AWS region, or `global` for resources without a regional scope. |
+| `environmentid` | `str` | Account root ARN identifying the OpenGraph environment. |
+| `version` | `str or null` | Kubernetes version running on the EKS cluster. |
+| `status` | `str or null` | Current EKS cluster status. |
+| `endpoint` | `str or null` | Kubernetes API server endpoint. |
+| `role_arn` | `str or null` | IAM role ARN used by the EKS control plane. |
+| `platform_version` | `str or null` | EKS platform version running on the cluster. |
+| `oidc_issuer` | `str or null` | OIDC issuer URL configured for IAM roles for service accounts. |
+| `tags` | `list[str] or null` | AWS tags formatted as `key=value` strings. |
+
+## Interpretation
+
+IRSA and Pod Identity edges summarize workload access from the cluster to IAM roles. Review the service-account scope and trust conditions before interpreting access for a particular workload. Kubernetes node kinds belong to a separate extension and are outside this AWS schema inventory.
+
+## Relationships
+
+These tables cover relationships emitted for this kind by the AWS collector. Other extensions can define additional relationships.
+
+### Inbound
+
+| Edge | Source kind | Traversable |
+| --- | --- | --- |
+| [AWS_CanCreateAndAssociateEKSAccessEntry](/opengraph/extensions/aws/edges/aws_cancreateandassociateeksaccessentry) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | Yes |
+| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | Yes |
+
+### Outbound
+
+| Edge | Destination kind | Traversable |
+| --- | --- | --- |
+| [AWS_CanAssumeRoleViaIRSA](/opengraph/extensions/aws/edges/aws_canassumeroleviairsa) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | Yes |
+| [AWS_CanAssumeRoleViaPodIdentity](/opengraph/extensions/aws/edges/aws_canassumeroleviapodidentity) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | Yes |
+| [AWS_ClusterHasNodeGroup](/opengraph/extensions/aws/edges/aws_clusterhasnodegroup) | [AWS_EKSNodeGroup](/opengraph/extensions/aws/nodes/aws_eksnodegroup) | Yes |
+
+[AWS schema](/opengraph/extensions/aws/schema)

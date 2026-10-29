@@ -1,0 +1,236 @@
+---
+title: "Schema"
+description: "AWS extension schema: node kinds, edge kinds, and traversability for the Enterprise beta."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<Note>
+AWS is in beta for BloodHound Enterprise. This reference covers the unreleased v0.0.4 schema; behavior may change before release.
+</Note>
+
+The AWS extension models accounts, IAM identities, resources, and their authorization relationships. Use this reference to interpret the graph produced by the [AWS collector](/openhound/collectors/aws/overview).
+
+## Metadata
+
+| Field | Value |
+| --- | --- |
+| name | `SOAWS` |
+| display_name | `AWS` |
+| version | `v0.0.4` |
+| namespace | `AWS` |
+| Environment kind | `AWS_Account` |
+| Platform (`source_kind`) | `AWS` |
+
+This unreleased integration reference contains **22 node kinds** and **169 edge kinds**: **36 traversable** and **133 non-traversable**. It does not establish compatibility with a released BloodHound version.
+
+## How to read the schema
+
+Edge direction runs from the source node to the destination node. Traversable edges can participate in Attack Paths; non-traversable edges retain structural or permission evidence. An IAM allow statement alone does not establish an unconditional Attack Path. The collector evaluates policies and can retain unresolved conditions on edges. Review the edge detail page and collected evidence before interpreting a capability.
+
+Creation capabilities can end at an account because the resource does not exist yet. S3 object-operation edges can end at a bucket to describe its modeled object namespace, or at a collected object; a bucket endpoint does not assert access to every key.
+
+## Nodes
+
+| Node kind | Display name | Description |
+| --- | --- | --- |
+| [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | AWS Account | An AWS account within an organization or standalone |
+| [AWS_CloudFormationStack](/opengraph/extensions/aws/nodes/aws_cloudformationstack) | AWS CloudFormation Stack | An AWS CloudFormation stack that provisions and manages a collection of AWS resources |
+| [AWS_CloudFormationStackSet](/opengraph/extensions/aws/nodes/aws_cloudformationstackset) | AWS CloudFormation StackSet | An AWS CloudFormation StackSet that deploys stacks across multiple accounts and regions via an administration/execution role pair |
+| [AWS_EC2Instance](/opengraph/extensions/aws/nodes/aws_ec2instance) | AWS EC2 Instance | An Amazon EC2 virtual machine instance, with its instance type, state, VPC/subnet placement, security groups, and attached IAM instance profile. |
+| [AWS_EKSCluster](/opengraph/extensions/aws/nodes/aws_ekscluster) | AWS EKS Cluster | An Amazon EKS (managed Kubernetes) cluster, including its Kubernetes version, API endpoint, cluster IAM role, and OIDC issuer used for IRSA. |
+| [AWS_EKSNodeGroup](/opengraph/extensions/aws/nodes/aws_eksnodegroup) | AWS EKS Node Group | An EKS managed node group — a pool of EC2 worker instances backing a cluster, sharing a node IAM role, AMI type, capacity type, and scaling configuration. |
+| [AWS_Group](/opengraph/extensions/aws/nodes/aws_group) | AWS IAM Group | An IAM group that aggregates users for shared policy attachment |
+| [AWS_InlinePolicy](/opengraph/extensions/aws/nodes/aws_inlinepolicy) | AWS Inline Policy | An inline IAM policy attached to an AWS IAM user, group, or role |
+| [AWS_KMSKey](/opengraph/extensions/aws/nodes/aws_kmskey) | AWS KMS Key | An AWS KMS customer master key used for encryption, decryption, and key management |
+| [AWS_LambdaFunction](/opengraph/extensions/aws/nodes/aws_lambdafunction) | AWS Lambda Function | An AWS Lambda function with code, configuration, execution role, and resource policy |
+| [AWS_OIDCProvider](/opengraph/extensions/aws/nodes/aws_oidcprovider) | AWS OIDC Provider | An OpenID Connect identity provider for web identity federation |
+| [AWS_Organization](/opengraph/extensions/aws/nodes/aws_organization) | AWS Organization | An AWS Organization—top-level container for accounts, SCPs, and RCPs |
+| [AWS_Policy](/opengraph/extensions/aws/nodes/aws_policy) | AWS IAM Managed Policy | A standalone (AWS-managed or customer-managed) IAM policy that can be attached to principals |
+| [AWS_Resource](/opengraph/extensions/aws/nodes/aws_resource) | AWS Resource | A generic AWS resource discovered through AWS Resource Explorer |
+| [AWS_ResourceControlPolicy](/opengraph/extensions/aws/nodes/aws_resourcecontrolpolicy) | AWS Resource Control Policy | An Organizations RCP that restricts resource-level permissions across member accounts |
+| [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | AWS IAM Role | An IAM role that can be assumed by trusted principals via STS |
+| [AWS_S3Bucket](/opengraph/extensions/aws/nodes/aws_s3bucket) | AWS S3 Bucket | An Amazon S3 bucket with bucket policy, ACL, and public access settings |
+| [AWS_S3Object](/opengraph/extensions/aws/nodes/aws_s3object) | AWS S3 Object | An object (key) stored within an S3 bucket, identified by its s3:::bucket/key ARN and carrying size, storage class, ETag, and last-modified metadata. |
+| [AWS_SAMLProvider](/opengraph/extensions/aws/nodes/aws_samlprovider) | AWS SAML Provider | A SAML 2.0 identity provider configured for federated access to AWS |
+| [AWS_SSMParameter](/opengraph/extensions/aws/nodes/aws_ssmparameter) | AWS SSM Parameter | An AWS Systems Manager Parameter Store parameter containing configuration data or secrets |
+| [AWS_ServiceControlPolicy](/opengraph/extensions/aws/nodes/aws_servicecontrolpolicy) | AWS Service Control Policy | An Organizations SCP that restricts permissions across member accounts |
+| [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | AWS IAM User | An IAM user principal with long-term credentials |
+
+## Edges
+
+| Relationship kind | Traversable | Description |
+| --- | --- | --- |
+| [AWS_AttachedTo](/opengraph/extensions/aws/edges/aws_attachedto) | No | Managed policy is attached to a principal |
+| [AWS_CanAddClientIDToOIDCProvider](/opengraph/extensions/aws/edges/aws_canaddclientidtooidcprovider) | No | Principal can call iam:AddClientIDToOpenIDConnectProvider to add a client ID to an OIDC provider |
+| [AWS_CanAddLambdaPermission](/opengraph/extensions/aws/edges/aws_canaddlambdapermission) | No | Principal can call lambda:AddPermission to grant another account or service invoke access to a Lambda function |
+| [AWS_CanAddUserToGroup](/opengraph/extensions/aws/edges/aws_canaddusertogroup) | No | Principal can call iam:AddUserToGroup to add a user to an IAM group |
+| [AWS_CanAssociateIAMInstanceProfile](/opengraph/extensions/aws/edges/aws_canassociateiaminstanceprofile) | No | Principal can call ec2:AssociateIamInstanceProfile to attach an IAM instance profile to an EC2 instance |
+| [AWS_CanAssumeRole](/opengraph/extensions/aws/edges/aws_canassumerole) | Yes | Principal can call sts:AssumeRole to assume a role (dual authorization: IAM policy + trust policy) |
+| [AWS_CanAssumeRoleViaIRSA](/opengraph/extensions/aws/edges/aws_canassumeroleviairsa) | Yes | Data-derived edge from an EKS cluster to an IAM role whose trust policy references the cluster's OIDC provider (IAM Roles for Service Accounts). Traversable because a Kubernetes admin can run a pod using the annotated service account, and the IRSA webhook injects the role's web-identity credentials into the pod. |
+| [AWS_CanAssumeRoleViaPodIdentity](/opengraph/extensions/aws/edges/aws_canassumeroleviapodidentity) | Yes | Data-derived edge from an EKS cluster to an IAM role mapped via an EKS Pod Identity association. Traversable because a Kubernetes admin can run a pod using the mapped service account, and the EKS Pod Identity Agent injects the role's credentials automatically. |
+| [AWS_CanAssumeRoleWithSAML](/opengraph/extensions/aws/edges/aws_canassumerolewithsaml) | Yes | Principal can call sts:AssumeRoleWithSAML to assume a role via SAML federation |
+| [AWS_CanAssumeRoleWithWebIdentity](/opengraph/extensions/aws/edges/aws_canassumerolewithwebidentity) | Yes | Principal can call sts:AssumeRoleWithWebIdentity to assume a role via OIDC federation |
+| [AWS_CanAttachGroupPolicy](/opengraph/extensions/aws/edges/aws_canattachgrouppolicy) | No | Principal can call iam:AttachGroupPolicy to attach a managed policy to a group |
+| [AWS_CanAttachRolePolicy](/opengraph/extensions/aws/edges/aws_canattachrolepolicy) | No | Principal can call iam:AttachRolePolicy to attach a managed policy to a role |
+| [AWS_CanAttachRolePolicyWildcard](/opengraph/extensions/aws/edges/aws_canattachrolepolicywildcard) | No | Principal can call iam:AttachRolePolicy against the wildcard resource arn:aws:iam::&#123;account&#125;:role/* — authority to attach a managed policy to any role, including yet-to-be-created ones. Wave-0 primitive feeding the CreateAndPassAdminRole composite. |
+| [AWS_CanAttachUserPolicy](/opengraph/extensions/aws/edges/aws_canattachuserpolicy) | No | Principal can call iam:AttachUserPolicy to attach a managed policy to a user |
+| [AWS_CanCreateAccessKey](/opengraph/extensions/aws/edges/aws_cancreateaccesskey) | Yes | Principal can call iam:CreateAccessKey to create a new access key for a user |
+| [AWS_CanCreateAndAccessAdminUser](/opengraph/extensions/aws/edges/aws_cancreateandaccessadminuser) | Yes | Principal can create a new IAM user (iam:CreateUser), grant it admin (iam:AttachUserPolicy/PutUserPolicy on user/*), and mint usable credentials for it (iam:CreateAccessKey/CreateLoginProfile on user/*) — a fresh admin user it controls, gaining account admin. User-side mirror of AWS_CanCreateAndAssumeAdminRole; the methods property records the grant + credential techniques |
+| [AWS_CanCreateAndAssociateEKSAccessEntry](/opengraph/extensions/aws/edges/aws_cancreateandassociateeksaccessentry) | Yes | Can Create And Associate EKS Access Entry relationship. |
+| [AWS_CanCreateAndAssumeAdminRole](/opengraph/extensions/aws/edges/aws_cancreateandassumeadminrole) | Yes | Principal can create a new IAM role (iam:CreateRole), attach an admin policy to it (iam:AttachRolePolicy/PutRolePolicy on role/*), and assume it (sts:AssumeRole) — a self-trusting admin role they assume directly, gaining account admin |
+| [AWS_CanCreateAndPassAdminRole](/opengraph/extensions/aws/edges/aws_cancreateandpassadminrole) | Yes | Principal can create a new IAM role, attach an admin policy to it, and pass it to one or more AWS services (EC2/Lambda/CloudFormation/EKS) to execute as it — account takeover. The services/methods properties record which services are usable |
+| [AWS_CanCreateCloudFormationStack](/opengraph/extensions/aws/edges/aws_cancreatecloudformationstack) | No | Principal can call cloudformation:CreateStack (account-scoped) to provision a stack. Wave-0 primitive that, combined with iam:PassRole, feeds the pass_role_via_cloudformation composite to act as a passed stack role. |
+| [AWS_CanCreateCloudFormationStackSet](/opengraph/extensions/aws/edges/aws_cancreatecloudformationstackset) | No | Principal can call cloudformation:CreateStackSet (account-scoped) to create a StackSet deployed across accounts/regions. Wave-0 primitive feeding the pass_role_via_cloudformation_stack_set composite. |
+| [AWS_CanCreateEKSNodegroup](/opengraph/extensions/aws/edges/aws_cancreateeksnodegroup) | No | Principal can call eks:CreateNodegroup on at least one collected EKS cluster (the action authorizes against the cluster resource, so it is evaluated per existing cluster). Wave-0 primitive feeding the pass_role_via_eks_node_group composite to pass a node IAM role. |
+| [AWS_CanCreateEKSPodIdentityAssociation](/opengraph/extensions/aws/edges/aws_cancreateekspodidentityassociation) | Yes | Can Create EKS Pod Identity Association relationship. |
+| [AWS_CanCreateGroup](/opengraph/extensions/aws/edges/aws_cancreategroup) | No | Principal can call iam:CreateGroup to create a new IAM group |
+| [AWS_CanCreateImage](/opengraph/extensions/aws/edges/aws_cancreateimage) | No | Principal can call ec2:CreateImage to create an AMI from an EC2 instance |
+| [AWS_CanCreateKMSGrant](/opengraph/extensions/aws/edges/aws_cancreatekmsgrant) | No | Principal can call kms:CreateGrant to create a grant on a KMS key, delegating usage permissions |
+| [AWS_CanCreateLambdaEventSource](/opengraph/extensions/aws/edges/aws_cancreatelambdaeventsource) | No | Principal can call lambda:CreateEventSourceMapping to create an event source mapping for a Lambda function |
+| [AWS_CanCreateLambdaFunction](/opengraph/extensions/aws/edges/aws_cancreatelambdafunction) | No | Principal can call lambda:CreateFunction (account-scoped) to create a Lambda function. Wave-0 primitive that, combined with iam:PassRole, feeds the pass_role_via_lambda composite to execute code as a passed role. |
+| [AWS_CanCreateLoginProfile](/opengraph/extensions/aws/edges/aws_cancreateloginprofile) | Yes | Principal can call iam:CreateLoginProfile to create a console password for a user |
+| [AWS_CanCreateOIDCProvider](/opengraph/extensions/aws/edges/aws_cancreateoidcprovider) | No | Principal can call iam:CreateOpenIDConnectProvider to create a new OIDC identity provider |
+| [AWS_CanCreateOIDCProviderAndAssumeRole](/opengraph/extensions/aws/edges/aws_cancreateoidcproviderandassumerole) | Yes | Principal can create a malicious OIDC identity provider and rewrite a role's trust policy to trust it, then assume the role via sts:AssumeRoleWithWebIdentity using tokens from the attacker-controlled provider |
+| [AWS_CanCreatePolicyVersion](/opengraph/extensions/aws/edges/aws_cancreatepolicyversion) | No | Principal can call iam:CreatePolicyVersion on a customer-managed policy to publish a new (default) policy version, overwriting its document (pathfinding.cloud IAM-001) |
+| [AWS_CanCreateRole](/opengraph/extensions/aws/edges/aws_cancreaterole) | No | Principal can call iam:CreateRole to create a new IAM role with a custom trust policy |
+| [AWS_CanCreateSAMLProvider](/opengraph/extensions/aws/edges/aws_cancreatesamlprovider) | No | Principal can call iam:CreateSAMLProvider to create a new SAML identity provider |
+| [AWS_CanCreateSAMLProviderAndAssumeRole](/opengraph/extensions/aws/edges/aws_cancreatesamlproviderandassumerole) | Yes | Principal can create a malicious SAML identity provider and rewrite a role's trust policy to trust it, then assume the role via sts:AssumeRoleWithSAML using assertions from the attacker-controlled provider |
+| [AWS_CanCreateSSMAssociation](/opengraph/extensions/aws/edges/aws_cancreatessmassociation) | No | Can Create SSM Association relationship. |
+| [AWS_CanCreateSSMDocument](/opengraph/extensions/aws/edges/aws_cancreatessmdocument) | No | Principal can call ssm:CreateDocument (account-scoped), letting them author a Systems Manager document. Wave-0 primitive that feeds the pass_role_via_ssm_association composite. |
+| [AWS_CanCreateServiceSpecificCredential](/opengraph/extensions/aws/edges/aws_cancreateservicespecificcredential) | No | Principal can call iam:CreateServiceSpecificCredential to create a credential for a specific AWS service |
+| [AWS_CanCreateSnapshot](/opengraph/extensions/aws/edges/aws_cancreatesnapshot) | No | Principal can call ec2:CreateSnapshot to create snapshots of volumes attached to EC2 instances |
+| [AWS_CanCreateUser](/opengraph/extensions/aws/edges/aws_cancreateuser) | No | Principal can call iam:CreateUser to create a new IAM user |
+| [AWS_CanCreateVirtualMFADevice](/opengraph/extensions/aws/edges/aws_cancreatevirtualmfadevice) | No | Principal can call iam:CreateVirtualMFADevice to create a new virtual MFA device |
+| [AWS_CanDeactivateMFADevice](/opengraph/extensions/aws/edges/aws_candeactivatemfadevice) | No | Principal can call iam:DeactivateMFADevice to deactivate an MFA device for a user |
+| [AWS_CanDecryptKMSKey](/opengraph/extensions/aws/edges/aws_candecryptkmskey) | No | Principal can call kms:Decrypt to decrypt data using a KMS key |
+| [AWS_CanDeleteAccessKey](/opengraph/extensions/aws/edges/aws_candeleteaccesskey) | No | Principal can call iam:DeleteAccessKey to delete an access key from a user |
+| [AWS_CanDeleteBucket](/opengraph/extensions/aws/edges/aws_candeletebucket) | No | Principal can call s3:DeleteBucket to delete an S3 bucket |
+| [AWS_CanDeleteBucketPolicy](/opengraph/extensions/aws/edges/aws_candeletebucketpolicy) | No | Principal can call s3:DeleteBucketPolicy to remove the bucket policy from an S3 bucket |
+| [AWS_CanDeleteGroup](/opengraph/extensions/aws/edges/aws_candeletegroup) | No | Principal can call iam:DeleteGroup to delete an IAM group |
+| [AWS_CanDeleteGroupPolicy](/opengraph/extensions/aws/edges/aws_candeletegrouppolicy) | No | Principal can call iam:DeleteGroupPolicy to delete an inline policy from a group |
+| [AWS_CanDeleteLambdaFunction](/opengraph/extensions/aws/edges/aws_candeletelambdafunction) | No | Principal can call lambda:DeleteFunction to delete a Lambda function |
+| [AWS_CanDeleteLoginProfile](/opengraph/extensions/aws/edges/aws_candeleteloginprofile) | No | Principal can call iam:DeleteLoginProfile to remove a user's console password |
+| [AWS_CanDeleteOIDCProvider](/opengraph/extensions/aws/edges/aws_candeleteoidcprovider) | No | Principal can call iam:DeleteOpenIDConnectProvider to delete an OIDC identity provider |
+| [AWS_CanDeleteObject](/opengraph/extensions/aws/edges/aws_candeleteobject) | No | Principal can call s3:DeleteObject to delete objects from an S3 bucket |
+| [AWS_CanDeleteParameter](/opengraph/extensions/aws/edges/aws_candeleteparameter) | No | Principal can call ssm:DeleteParameter to delete an SSM Parameter Store parameter |
+| [AWS_CanDeleteRole](/opengraph/extensions/aws/edges/aws_candeleterole) | No | Principal can call iam:DeleteRole to delete an IAM role |
+| [AWS_CanDeleteRolePermissionsBoundary](/opengraph/extensions/aws/edges/aws_candeleterolepermissionsboundary) | No | Principal can call iam:DeleteRolePermissionsBoundary to remove a permissions boundary from a role, widening its effective permissions. Non-traversable: deleting a boundary does not by itself grant control of the role. |
+| [AWS_CanDeleteRolePolicy](/opengraph/extensions/aws/edges/aws_candeleterolepolicy) | No | Principal can call iam:DeleteRolePolicy to delete an inline policy from a role |
+| [AWS_CanDeleteSAMLProvider](/opengraph/extensions/aws/edges/aws_candeletesamlprovider) | No | Principal can call iam:DeleteSAMLProvider to delete a SAML identity provider |
+| [AWS_CanDeleteSSHPublicKey](/opengraph/extensions/aws/edges/aws_candeletesshpublickey) | No | Principal can call iam:DeleteSSHPublicKey to delete a user's SSH public key |
+| [AWS_CanDeleteServiceSpecificCredential](/opengraph/extensions/aws/edges/aws_candeleteservicespecificcredential) | No | Principal can call iam:DeleteServiceSpecificCredential to delete a service-specific credential |
+| [AWS_CanDeleteUser](/opengraph/extensions/aws/edges/aws_candeleteuser) | No | Principal can call iam:DeleteUser to delete an IAM user |
+| [AWS_CanDeleteUserPermissionsBoundary](/opengraph/extensions/aws/edges/aws_candeleteuserpermissionsboundary) | No | Principal can call iam:DeleteUserPermissionsBoundary to remove a permissions boundary from a user |
+| [AWS_CanDeleteUserPolicy](/opengraph/extensions/aws/edges/aws_candeleteuserpolicy) | No | Principal can call iam:DeleteUserPolicy to delete an inline policy from a user |
+| [AWS_CanDeleteVirtualMFADevice](/opengraph/extensions/aws/edges/aws_candeletevirtualmfadevice) | No | Principal can call iam:DeleteVirtualMFADevice to delete a virtual MFA device |
+| [AWS_CanDetachGroupPolicy](/opengraph/extensions/aws/edges/aws_candetachgrouppolicy) | No | Principal can call iam:DetachGroupPolicy to detach a managed policy from a group |
+| [AWS_CanDetachRolePolicy](/opengraph/extensions/aws/edges/aws_candetachrolepolicy) | No | Principal can call iam:DetachRolePolicy to detach a managed policy from a role |
+| [AWS_CanDetachUserPolicy](/opengraph/extensions/aws/edges/aws_candetachuserpolicy) | No | Principal can call iam:DetachUserPolicy to detach a managed policy from a user |
+| [AWS_CanDisableKMSKey](/opengraph/extensions/aws/edges/aws_candisablekmskey) | No | Principal can call kms:DisableKey to disable a KMS key, preventing its use |
+| [AWS_CanDisassociateIAMInstanceProfile](/opengraph/extensions/aws/edges/aws_candisassociateiaminstanceprofile) | No | Principal can call ec2:DisassociateIamInstanceProfile to remove an IAM instance profile from an EC2 instance |
+| [AWS_CanEnableMFADevice](/opengraph/extensions/aws/edges/aws_canenablemfadevice) | No | Principal can call iam:EnableMFADevice to enable an MFA device for a user |
+| [AWS_CanEncryptKMSKey](/opengraph/extensions/aws/edges/aws_canencryptkmskey) | No | Principal can call kms:Encrypt to encrypt data using a KMS key |
+| [AWS_CanExecuteCloudFormationChangeSet](/opengraph/extensions/aws/edges/aws_canexecutecloudformationchangeset) | Yes | Principal can call both cloudformation:CreateChangeSet and cloudformation:ExecuteChangeSet to apply a rewritten template to an existing stack, which CloudFormation executes as the stack's execution role (no iam:PassRole needed); the compromise continues to that role via AWS_RunsAs |
+| [AWS_CanGenerateKMSDataKey](/opengraph/extensions/aws/edges/aws_cangeneratekmsdatakey) | No | Principal can call kms:GenerateDataKey to generate a data encryption key from a KMS key |
+| [AWS_CanGetBucketACL](/opengraph/extensions/aws/edges/aws_cangetbucketacl) | No | Principal can call s3:GetBucketAcl to read the ACL of an S3 bucket |
+| [AWS_CanGetBucketPolicy](/opengraph/extensions/aws/edges/aws_cangetbucketpolicy) | No | Principal can call s3:GetBucketPolicy to read the bucket policy of an S3 bucket |
+| [AWS_CanGetFederationToken](/opengraph/extensions/aws/edges/aws_cangetfederationtoken) | No | Principal can call sts:GetFederationToken to obtain temporary federated credentials |
+| [AWS_CanGetObject](/opengraph/extensions/aws/edges/aws_cangetobject) | No | Principal can call s3:GetObject to read objects from an S3 bucket |
+| [AWS_CanGetObjectACL](/opengraph/extensions/aws/edges/aws_cangetobjectacl) | No | Principal can call s3:GetObjectAcl to read the ACL of an S3 object |
+| [AWS_CanGetParameter](/opengraph/extensions/aws/edges/aws_cangetparameter) | No | Principal can call ssm:GetParameter to read an SSM Parameter Store value |
+| [AWS_CanGetPasswordData](/opengraph/extensions/aws/edges/aws_cangetpassworddata) | No | Principal can call ec2:GetPasswordData to retrieve the encrypted Windows administrator password for an EC2 instance |
+| [AWS_CanGetSessionToken](/opengraph/extensions/aws/edges/aws_cangetsessiontoken) | No | Principal can call sts:GetSessionToken to obtain temporary session credentials |
+| [AWS_CanInvokeLambdaFunction](/opengraph/extensions/aws/edges/aws_caninvokelambdafunction) | No | Principal can call lambda:InvokeFunction to execute a Lambda function |
+| [AWS_CanListAllMyBuckets](/opengraph/extensions/aws/edges/aws_canlistallmybuckets) | No | Principal can call s3:ListAllMyBuckets to list all S3 buckets in the account |
+| [AWS_CanListBucket](/opengraph/extensions/aws/edges/aws_canlistbucket) | No | Principal can call s3:ListBucket to list objects within an S3 bucket |
+| [AWS_CanListKMSKeys](/opengraph/extensions/aws/edges/aws_canlistkmskeys) | No | Principal can call kms:ListKeys to enumerate KMS keys in the account |
+| [AWS_CanModifyEC2InstanceAttribute](/opengraph/extensions/aws/edges/aws_canmodifyec2instanceattribute) | Yes | Principal can call ec2:ModifyInstanceAttribute to modify EC2 instance attributes such as user data for code execution |
+| [AWS_CanModifyKMSKeyPolicy](/opengraph/extensions/aws/edges/aws_canmodifykmskeypolicy) | No | Principal can call kms:PutKeyPolicy to modify the key policy of a KMS key |
+| [AWS_CanPassRoleToService](/opengraph/extensions/aws/edges/aws_canpassroletoservice) | Yes | Principal can pass this IAM role to one or more AWS services (EC2/Lambda/CloudFormation/SSM/EKS) and assume it. The services property lists services the role already trusts (a direct pass); services_via_trust_rewrite lists services reachable only after rewriting the role's trust policy via iam:UpdateAssumeRolePolicy. The methods property records the per-service technique. |
+| [AWS_CanPassRoleViaCloudFormation](/opengraph/extensions/aws/edges/aws_canpassroleviacloudformation) | No | Observed CloudFormation service route contributing to AWS_CanPassRoleToService. This evidence edge is not independently traversable. |
+| [AWS_CanPassRoleViaCloudFormationStackSet](/opengraph/extensions/aws/edges/aws_canpassroleviacloudformationstackset) | No | Observed CloudFormationStackSet service route contributing to AWS_CanPassRoleToService. This evidence edge is not independently traversable. |
+| [AWS_CanPassRoleViaCloudFormationStackSetUpdate](/opengraph/extensions/aws/edges/aws_canpassroleviacloudformationstacksetupdate) | No | Observed CloudFormationStackSetUpdate service route contributing to AWS_CanPassRoleToService. This evidence edge is not independently traversable. |
+| [AWS_CanPassRoleViaCloudFormationUpdate](/opengraph/extensions/aws/edges/aws_canpassroleviacloudformationupdate) | No | Observed CloudFormationUpdate service route contributing to AWS_CanPassRoleToService. This evidence edge is not independently traversable. |
+| [AWS_CanPassRoleViaEC2](/opengraph/extensions/aws/edges/aws_canpassroleviaec2) | No | Observed EC2 service route contributing to AWS_CanPassRoleToService. This evidence edge is not independently traversable. |
+| [AWS_CanPassRoleViaEC2Association](/opengraph/extensions/aws/edges/aws_canpassroleviaec2association) | No | Observed EC2Association service route contributing to AWS_CanPassRoleToService. This evidence edge is not independently traversable. |
+| [AWS_CanPassRoleViaEC2SpotInstances](/opengraph/extensions/aws/edges/aws_canpassroleviaec2spotinstances) | No | Observed EC2SpotInstances service route contributing to AWS_CanPassRoleToService. This evidence edge is not independently traversable. |
+| [AWS_CanPassRoleViaEKSNodeGroup](/opengraph/extensions/aws/edges/aws_canpassroleviaeksnodegroup) | No | Observed EKSNodeGroup service route contributing to AWS_CanPassRoleToService. This evidence edge is not independently traversable. |
+| [AWS_CanPassRoleViaLambda](/opengraph/extensions/aws/edges/aws_canpassrolevialambda) | No | Observed Lambda service route contributing to AWS_CanPassRoleToService. This evidence edge is not independently traversable. |
+| [AWS_CanPassRoleViaLambdaUpdate](/opengraph/extensions/aws/edges/aws_canpassrolevialambdaupdate) | No | Observed LambdaUpdate service route contributing to AWS_CanPassRoleToService. This evidence edge is not independently traversable. |
+| [AWS_CanPassRoleViaSSMAssociation](/opengraph/extensions/aws/edges/aws_canpassroleviassmassociation) | No | Observed SSMAssociation service route contributing to AWS_CanPassRoleToService. This evidence edge is not independently traversable. |
+| [AWS_CanPassRoleViaSSMAssociationExisting](/opengraph/extensions/aws/edges/aws_canpassroleviassmassociationexisting) | No | Observed SSMAssociationExisting service route contributing to AWS_CanPassRoleToService. This evidence edge is not independently traversable. |
+| [AWS_CanPassRoleViaSSMAutomation](/opengraph/extensions/aws/edges/aws_canpassroleviassmautomation) | No | Observed SSMAutomation service route contributing to AWS_CanPassRoleToService. This evidence edge is not independently traversable. |
+| [AWS_CanPutAccountPublicAccessBlock](/opengraph/extensions/aws/edges/aws_canputaccountpublicaccessblock) | No | Principal can call s3:PutAccountPublicAccessBlock to modify account-level S3 public access settings |
+| [AWS_CanPutBucketACL](/opengraph/extensions/aws/edges/aws_canputbucketacl) | No | Principal can call s3:PutBucketAcl to modify the ACL of an S3 bucket |
+| [AWS_CanPutBucketOwnershipControls](/opengraph/extensions/aws/edges/aws_canputbucketownershipcontrols) | No | Principal can call s3:PutBucketOwnershipControls to modify bucket ownership controls |
+| [AWS_CanPutBucketPolicy](/opengraph/extensions/aws/edges/aws_canputbucketpolicy) | No | Principal can call s3:PutBucketPolicy to set the bucket policy on an S3 bucket |
+| [AWS_CanPutBucketPublicAccessBlock](/opengraph/extensions/aws/edges/aws_canputbucketpublicaccessblock) | No | Principal can call s3:PutPublicAccessBlock to modify bucket-level public access settings |
+| [AWS_CanPutGroupPolicy](/opengraph/extensions/aws/edges/aws_canputgrouppolicy) | No | Principal can call iam:PutGroupPolicy to create or update an inline policy on a group |
+| [AWS_CanPutObject](/opengraph/extensions/aws/edges/aws_canputobject) | No | Principal can call s3:PutObject to write objects to an S3 bucket |
+| [AWS_CanPutObjectACL](/opengraph/extensions/aws/edges/aws_canputobjectacl) | No | Principal can call s3:PutObjectAcl to modify the ACL of an S3 object |
+| [AWS_CanPutParameter](/opengraph/extensions/aws/edges/aws_canputparameter) | No | Principal can call ssm:PutParameter to create or update an SSM Parameter Store value |
+| [AWS_CanPutRolePermissionsBoundary](/opengraph/extensions/aws/edges/aws_canputrolepermissionsboundary) | No | Principal can call iam:PutRolePermissionsBoundary to set a permissions boundary on a role |
+| [AWS_CanPutRolePolicy](/opengraph/extensions/aws/edges/aws_canputrolepolicy) | No | Principal can call iam:PutRolePolicy to create or update an inline policy on a role |
+| [AWS_CanPutRolePolicyWildcard](/opengraph/extensions/aws/edges/aws_canputrolepolicywildcard) | No | Principal can call iam:PutRolePolicy against the wildcard resource arn:aws:iam::&#123;account&#125;:role/* — authority to write an inline policy onto any role, including yet-to-be-created ones. Wave-0 primitive feeding the CreateAndPassAdminRole composite. |
+| [AWS_CanPutUserPermissionsBoundary](/opengraph/extensions/aws/edges/aws_canputuserpermissionsboundary) | No | Principal can call iam:PutUserPermissionsBoundary to set a permissions boundary on a user |
+| [AWS_CanPutUserPolicy](/opengraph/extensions/aws/edges/aws_canputuserpolicy) | No | Principal can call iam:PutUserPolicy to create or update an inline policy on a user |
+| [AWS_CanRemoveClientIDFromOIDCProvider](/opengraph/extensions/aws/edges/aws_canremoveclientidfromoidcprovider) | No | Principal can call iam:RemoveClientIDFromOpenIDConnectProvider to remove a client ID from an OIDC provider |
+| [AWS_CanRemoveLambdaPermission](/opengraph/extensions/aws/edges/aws_canremovelambdapermission) | No | Principal can call lambda:RemovePermission to revoke a resource-based policy statement from a Lambda function |
+| [AWS_CanRemoveUserFromGroup](/opengraph/extensions/aws/edges/aws_canremoveuserfromgroup) | No | Principal can call iam:RemoveUserFromGroup to remove a user from an IAM group |
+| [AWS_CanReplaceIAMInstanceProfileAssociation](/opengraph/extensions/aws/edges/aws_canreplaceiaminstanceprofileassociation) | No | Principal can call ec2:ReplaceIamInstanceProfileAssociation to swap the IAM instance profile on an EC2 instance |
+| [AWS_CanRequestSpotInstances](/opengraph/extensions/aws/edges/aws_canrequestspotinstances) | No | Principal can call ec2:RequestSpotInstances (account-scoped); the request's LaunchSpecification carries an IamInstanceProfile and UserData, granting the same launch-with-a-role plus code-execution primitive as ec2:RunInstances. Wave-0 primitive feeding the pass_role_via_ec2_spot_instances composite. |
+| [AWS_CanResetServiceSpecificCredential](/opengraph/extensions/aws/edges/aws_canresetservicespecificcredential) | No | Principal can call iam:ResetServiceSpecificCredential to reset a service-specific credential |
+| [AWS_CanResyncMFADevice](/opengraph/extensions/aws/edges/aws_canresyncmfadevice) | No | Principal can call iam:ResyncMFADevice to resynchronize an MFA device |
+| [AWS_CanRunInstances](/opengraph/extensions/aws/edges/aws_canruninstances) | No | Principal can call ec2:RunInstances (account-scoped) to launch EC2 instances. Wave-0 primitive that, combined with iam:PassRole, feeds the pass_role_via_ec2 composite to run code under a passed instance-profile role. |
+| [AWS_CanScheduleKMSKeyDeletion](/opengraph/extensions/aws/edges/aws_canschedulekmskeydeletion) | No | Principal can call kms:ScheduleKeyDeletion to schedule a KMS key for deletion |
+| [AWS_CanSelfGrantKMSOps](/opengraph/extensions/aws/edges/aws_canselfgrantkmsops) | No | Principal can call kms:CreateGrant with self-grant to escalate their own KMS permissions |
+| [AWS_CanSetDefaultPolicyVersion](/opengraph/extensions/aws/edges/aws_cansetdefaultpolicyversion) | No | Principal can call iam:SetDefaultPolicyVersion to activate a different policy version |
+| [AWS_CanStartSSMAutomationExecution](/opengraph/extensions/aws/edges/aws_canstartssmautomationexecution) | No | Can Start SSM Automation Execution relationship. |
+| [AWS_CanTerminateInstances](/opengraph/extensions/aws/edges/aws_canterminateinstances) | No | Principal can call ec2:TerminateInstances to terminate EC2 instances |
+| [AWS_CanUpdateAccessKey](/opengraph/extensions/aws/edges/aws_canupdateaccesskey) | No | Principal can call iam:UpdateAccessKey to activate or deactivate a user's access key |
+| [AWS_CanUpdateAssumeRolePolicy](/opengraph/extensions/aws/edges/aws_canupdateassumerolepolicy) | No | Principal can call iam:UpdateAssumeRolePolicy to modify a role's trust policy |
+| [AWS_CanUpdateAssumeRolePolicyAndAssume](/opengraph/extensions/aws/edges/aws_canupdateassumerolepolicyandassume) | Yes | Principal can modify a role's trust policy and has sts:AssumeRole, enabling them to rewrite the trust to include themselves and then assume the role |
+| [AWS_CanUpdateCloudFormationStack](/opengraph/extensions/aws/edges/aws_canupdatecloudformationstack) | Yes | Principal can call cloudformation:UpdateStack to rewrite a stack's template and have CloudFormation execute it as the stack's execution role; the compromise continues to that role via AWS_RunsAs |
+| [AWS_CanUpdateCloudFormationStackSet](/opengraph/extensions/aws/edges/aws_canupdatecloudformationstackset) | No | Can Update Cloud Formation Stack Set relationship (resource-scoped to a collected StackSet). |
+| [AWS_CanUpdateLambdaCode](/opengraph/extensions/aws/edges/aws_canupdatelambdacode) | Yes | Principal can call lambda:UpdateFunctionCode to replace the code of a Lambda function |
+| [AWS_CanUpdateLambdaConfiguration](/opengraph/extensions/aws/edges/aws_canupdatelambdaconfiguration) | Yes | Principal can call lambda:UpdateFunctionConfiguration to modify a Lambda function's runtime settings (environment, role, layers, etc.) |
+| [AWS_CanUpdateLambdaURLConfig](/opengraph/extensions/aws/edges/aws_canupdatelambdaurlconfig) | No | Principal can call lambda:UpdateFunctionUrlConfig to modify a Lambda function's URL configuration |
+| [AWS_CanUpdateLoginProfile](/opengraph/extensions/aws/edges/aws_canupdateloginprofile) | Yes | Principal can call iam:UpdateLoginProfile to change a user's console password |
+| [AWS_CanUpdateOIDCProviderThumbprint](/opengraph/extensions/aws/edges/aws_canupdateoidcproviderthumbprint) | Yes | Principal can call iam:UpdateOpenIDConnectProviderThumbprint to update an OIDC provider's thumbprint |
+| [AWS_CanUpdateOtherPolicy](/opengraph/extensions/aws/edges/aws_canupdateotherpolicy) | Yes | Principal can both control another principal (CanAssumeRole for a role; CanCreateAccessKey/CanCreateLoginProfile/CanUpdateLoginProfile for a user) and re-permission it (put/attach policy, or CreatePolicyVersion on a policy attached to it), letting it grant the dest admin and act as it. Targets the account; gated by the dest having no capping permissions boundary. The methods property records, per dest principal, the control and re-permission techniques. |
+| [AWS_CanUpdateSAMLProvider](/opengraph/extensions/aws/edges/aws_canupdatesamlprovider) | Yes | Principal can call iam:UpdateSAMLProvider to update the metadata of a SAML provider |
+| [AWS_CanUpdateSSHPublicKey](/opengraph/extensions/aws/edges/aws_canupdatesshpublickey) | No | Principal can call iam:UpdateSSHPublicKey to activate or deactivate a user's SSH public key |
+| [AWS_CanUpdateSelfPolicy](/opengraph/extensions/aws/edges/aws_canupdateselfpolicy) | Yes | Principal can rewrite a permission container it is already subject to — its own user/role inline or attached policy, or a customer-managed policy attached to it (directly or via a group) — granting itself admin with no assume step. Targets the account; gated by the principal having no capping permissions boundary. The methods property records the usable self-modification techniques. |
+| [AWS_CanUploadSSHPublicKey](/opengraph/extensions/aws/edges/aws_canuploadsshpublickey) | No | Principal can call iam:UploadSSHPublicKey to upload an SSH public key for a user |
+| [AWS_ClusterHasNodeGroup](/opengraph/extensions/aws/edges/aws_clusterhasnodegroup) | Yes | Structural edge from an EKS cluster to one of its managed node groups (derived from the node group's clusterName). Traversable because a Kubernetes admin on the cluster can schedule a pod on the node group via nodeSelector and read the node role's credentials from IMDS. |
+| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | Yes | Structural containment (organization contains accounts, account contains principals, buckets, keys, etc.) |
+| [AWS_EC2CanVolumeSwap](/opengraph/extensions/aws/edges/aws_ec2canvolumeswap) | Yes | Principal can perform a volume swap attack (StopInstances + DetachVolume + AttachVolume + StartInstances) to gain code execution on an EC2 instance |
+| [AWS_HasExternalRoleTrust](/opengraph/extensions/aws/edges/aws_hasexternalroletrust) | No | Role has a trust policy entry for a principal in a different AWS account (cross-account trust) |
+| [AWS_HasMember](/opengraph/extensions/aws/edges/aws_hasmember) | No | Structural edge: an IAM group has an IAM user as a member (inverse of AWS_MemberOf), extending the group's attached and inline policies to that user. |
+| [AWS_HasPolicy](/opengraph/extensions/aws/edges/aws_haspolicy) | No | Principal (user, group, or role) has a managed policy attached |
+| [AWS_HasRCP](/opengraph/extensions/aws/edges/aws_hasrcp) | No | Organization has a resource control policy |
+| [AWS_HasSCP](/opengraph/extensions/aws/edges/aws_hasscp) | No | Organization has a service control policy |
+| [AWS_KMSKeyAll](/opengraph/extensions/aws/edges/aws_kmskeyall) | No | Principal has all KMS key permissions (crypto + grants + policy + disable + delete) |
+| [AWS_KMSKeyRead](/opengraph/extensions/aws/edges/aws_kmskeyread) | No | Principal has all KMS key cryptographic operation permissions (Decrypt + Encrypt + GenerateDataKey) |
+| [AWS_LambdaFunctionAll](/opengraph/extensions/aws/edges/aws_lambdafunctionall) | Yes | Principal has all Lambda function permissions (invoke + modify + control plane + delete) |
+| [AWS_LambdaFunctionWrite](/opengraph/extensions/aws/edges/aws_lambdafunctionwrite) | Yes | Principal has Lambda function invoke + code/config modification permissions (InvokeFunction + UpdateFunctionCode + UpdateFunctionConfiguration) |
+| [AWS_MemberOf](/opengraph/extensions/aws/edges/aws_memberof) | No | Structural edge: an IAM user is a member of an IAM group (derived from the user's GroupList), inheriting the group's attached and inline policies. |
+| [AWS_NodeGroupHasRole](/opengraph/extensions/aws/edges/aws_nodegrouphasrole) | Yes | Structural edge from an EKS node group to its node IAM role (from the node group's nodeRole). Traversable because scheduling a pod on the node group exposes that role's credentials via the EC2 Instance Metadata Service at 169.254.169.254. |
+| [AWS_RunsAs](/opengraph/extensions/aws/edges/aws_runsas) | Yes | Compute resource (EC2 instance, Lambda function, CloudFormation stack) executes as an IAM role |
+| [AWS_S3BucketAll](/opengraph/extensions/aws/edges/aws_s3bucketall) | Yes | Principal has all S3 bucket permissions (Write + control plane + delete) |
+| [AWS_S3BucketRead](/opengraph/extensions/aws/edges/aws_s3bucketread) | No | Principal has all S3 bucket read permissions (ListBucket + GetBucketACL + GetBucketPolicy) |
+| [AWS_S3BucketWrite](/opengraph/extensions/aws/edges/aws_s3bucketwrite) | No | Principal has all S3 bucket read and write permissions (Read + PutObject) |
+| [AWS_S3ObjectAll](/opengraph/extensions/aws/edges/aws_s3objectall) | No | Principal has all S3 object permissions (Write + DeleteObject + PutObjectAcl) |
+| [AWS_S3ObjectRead](/opengraph/extensions/aws/edges/aws_s3objectread) | No | Principal has all S3 object read permissions (GetObject + GetObjectAcl) |
+| [AWS_S3ObjectWrite](/opengraph/extensions/aws/edges/aws_s3objectwrite) | No | Principal has all S3 object read and write permissions (Read + PutObject) |
+| [AWS_SSMCanSendCommand](/opengraph/extensions/aws/edges/aws_ssmcansendcommand) | Yes | Principal can call ssm:SendCommand to execute commands on SSM-managed EC2 instances |
+| [AWS_SSMCanStartSession](/opengraph/extensions/aws/edges/aws_ssmcanstartsession) | Yes | Principal can call ssm:StartSession to open an interactive shell on SSM-managed EC2 instances |
+| [AWS_TrustedBy](/opengraph/extensions/aws/edges/aws_trustedby) | No | Principal is trusted by a role (inverse of AWS_Trusts) |
+| [AWS_Trusts](/opengraph/extensions/aws/edges/aws_trusts) | No | Role trusts a principal via its trust policy (role -&gt; trusted entity) |
+| [AWS_TrustsOIDCProvider](/opengraph/extensions/aws/edges/aws_trustsoidcprovider) | No | Role trusts an OIDC identity provider for web identity federation |
+| [AWS_TrustsSAMLProvider](/opengraph/extensions/aws/edges/aws_trustssamlprovider) | No | Role trusts a SAML identity provider for federated access |
+
+## Reference snapshot
+
+This reference follows the SOAWS v0.0.4 collector schema snapshot. Schema SHA-256: `f03ee03056020d4d27528e49387ce326dcfec8d53eb51bf0dfff042c6045e344`.

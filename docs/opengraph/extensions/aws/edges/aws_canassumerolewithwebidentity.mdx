@@ -1,0 +1,34 @@
+---
+title: "AWS_CanAssumeRoleWithWebIdentity"
+description: "AWS_CanAssumeRoleWithWebIdentity direction, traversability, and interpretation in the AWS schema."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<Note>
+AWS is in beta for BloodHound Enterprise. This reference covers the unreleased v0.0.4 schema; behavior may change before release.
+</Note>
+
+Principal can call sts:AssumeRoleWithWebIdentity to assume a role via OIDC federation.
+
+## Edge schema
+
+| Source kind | Destination kind |
+| --- | --- |
+| [AWS_OIDCProvider](/opengraph/extensions/aws/nodes/aws_oidcprovider) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) |
+
+**Traversable:** Yes. BloodHound can include this relationship in an Attack Path.
+
+## Interpretation
+
+The source is the OIDC provider trusted by the role. The collector derives this direction from a same-account federated trust statement allowing `sts:AssumeRoleWithWebIdentity`. Trust conditions remain on the assumption edge; access depends on the token and its claims.
+
+## Authorization evidence
+
+Associated API action: `sts:AssumeRoleWithWebIdentity`.
+
+## Evaluation limits
+
+This edge represents the collector's model of collected authorization and resource state. It does not prove that every runtime request succeeds. Inspect unresolved `conditions` and `trust_policy_conditions` when present; `has_conditions` and `has_trust_policy_conditions` indicate retained evidence. Composite edges can include `methods` or `composite_components` describing their derivation.
+
+[AWS schema](/opengraph/extensions/aws/schema)

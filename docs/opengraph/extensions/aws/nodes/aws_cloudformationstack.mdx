@@ -1,0 +1,56 @@
+---
+title: "AWS_CloudFormationStack"
+description: "AWS CloudFormation Stack identity, collected properties, and AWS graph relationships."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<Note>
+AWS is in beta for BloodHound Enterprise. This reference covers the unreleased v0.0.4 schema; behavior may change before release.
+</Note>
+
+An AWS CloudFormation stack that provisions and manages a collection of AWS resources.
+
+## Identifier
+
+The node identifier is the resource ARN in `arn`.
+
+## Properties
+
+Types below describe collected values. `null` means the value can be unavailable; it does not make the AWS resource optional. Collection scope and API responses determine which metadata is available.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `str` | Collector-generated name used to identify the resource in context. |
+| `displayname` | `str` | Resource label shown in the graph. |
+| `arn` | `str or null` | AWS Resource Name used as the node identifier. |
+| `account_id` | `str or null` | AWS account associated with the resource; nullable in the shared model. |
+| `region` | `str or null` | AWS region, or `global` for resources without a regional scope. |
+| `environmentid` | `str` | Account root ARN identifying the OpenGraph environment. |
+| `stack_id` | `str or null` | Native CloudFormation stack ID. |
+| `stack_name` | `str or null` | CloudFormation stack name. |
+| `stack_status` | `str or null` | Current stack status. |
+| `role_arn` | `str or null` | IAM execution role ARN used by the stack. |
+| `tags` | `list[str] or null` | Tags attached to the stack. |
+| `last_updated_time` | `str or null` | Last stack update timestamp. |
+| `deletion_time` | `str or null` | Stack deletion timestamp, if present. |
+
+## Relationships
+
+These tables cover relationships emitted for this kind by the AWS collector. Other extensions can define additional relationships.
+
+### Inbound
+
+| Edge | Source kind | Traversable |
+| --- | --- | --- |
+| [AWS_CanExecuteCloudFormationChangeSet](/opengraph/extensions/aws/edges/aws_canexecutecloudformationchangeset) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | Yes |
+| [AWS_CanUpdateCloudFormationStack](/opengraph/extensions/aws/edges/aws_canupdatecloudformationstack) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | Yes |
+| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | Yes |
+
+### Outbound
+
+| Edge | Destination kind | Traversable |
+| --- | --- | --- |
+| [AWS_RunsAs](/opengraph/extensions/aws/edges/aws_runsas) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | Yes |
+
+[AWS schema](/opengraph/extensions/aws/schema)

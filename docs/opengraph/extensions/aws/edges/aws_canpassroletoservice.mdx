@@ -1,0 +1,35 @@
+---
+title: "AWS_CanPassRoleToService"
+description: "AWS_CanPassRoleToService direction, traversability, and interpretation in the AWS schema."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<Note>
+AWS is in beta for BloodHound Enterprise. This reference covers the unreleased v0.0.4 schema; behavior may change before release.
+</Note>
+
+Principal can pass this IAM role to one or more AWS services (EC2/Lambda/CloudFormation/SSM/EKS) and assume it. The services property lists services the role already trusts (a direct pass); services_via_trust_rewrite lists services reachable only after rewriting the role's trust policy via iam:UpdateAssumeRolePolicy. The methods property records the per-service technique.
+
+## Edge schema
+
+| Source kind | Destination kind |
+| --- | --- |
+| [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) |
+| [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) |
+
+**Traversable:** Yes. BloodHound can include this relationship in an Attack Path.
+
+## Interpretation
+
+The collector requires `iam:PassRole` on a concrete role in the same account, at least one supported service-operation bundle, and suitable service trust or a supported trust-rewrite path. It excludes passing a role to itself. `services` records existing service trust; `services_via_trust_rewrite` records alternatives requiring `iam:UpdateAssumeRolePolicy`. The 13 AWS_CanPassRoleVia… relationships retain individual route evidence. Inspect `methods` for selected operations and conditions.
+
+## Authorization evidence
+
+Associated API action: `iam:PassRole`.
+
+## Evaluation limits
+
+This edge represents the collector's model of collected authorization and resource state. It does not prove that every runtime request succeeds. Inspect unresolved `conditions` and `trust_policy_conditions` when present; `has_conditions` and `has_trust_policy_conditions` indicate retained evidence. Composite edges can include `methods` or `composite_components` describing their derivation.
+
+[AWS schema](/opengraph/extensions/aws/schema)
