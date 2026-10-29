@@ -231,7 +231,7 @@ The collector reads two keys from the profiles in an AWS config file, in additio
 | `bloodhound_collect = true` | Collect this profile's account. |
 | `bloodhound_organization_management = true` | This profile also supplies AWS Organizations data. Set it on at most one profile that also sets `bloodhound_collect = true`. |
 
-When a profile cannot authenticate, the collector skips it with a warning, except the `bloodhound_organization_management` profile, which stops collection. The collector collects regional resources in every enabled region. For AWS STS and region discovery, it uses `AWS_DEFAULT_REGION` when set, otherwise the profile's `region`, otherwise `AWS_REGION`, and otherwise `us-east-1`.
+When a profile cannot authenticate, the collector logs an error, skips that profile, and continues with the others. If the skipped profile is the `bloodhound_organization_management` profile, the collector collects no AWS Organizations data. Collection fails when no profile authenticates. A failed organization survey stops collection before any profile is used. The collector collects regional resources in every enabled region. For AWS STS and region discovery, it uses `AWS_DEFAULT_REGION` when set, otherwise the profile's `region`, otherwise `AWS_REGION`, and otherwise `us-east-1`.
 
 ## Review the AWS config before collection
 
@@ -424,7 +424,8 @@ The collector now assumes member-account roles through the management role inste
 | `Cannot survey the AWS organization: failed to authenticate role ...` | The source identity cannot assume `management_role_name` in the management account, or the role cannot list the organization's accounts. Check the source credentials, the management role's trust policy, and its `organizations:ListAccounts` permission. |
 | `Set aws_config_file to collect from an AWS config, or management_account_id to survey the organization and build one` | Set one of the two settings. |
 | `collector_assumed_role_name is required to survey the organization` | Set `collector_assumed_role_name` when you set `management_account_id`. |
-| `Skipping AWS profile ...: failed to authenticate` | The collector could not assume the member-account role in that account. Check that the role exists and trusts the management role. Collection continues with the other accounts. |
+| `Skipping AWS profile ...: failed to authenticate` | The collector could not authenticate that profile, for example because the member-account role is missing or does not trust the management role. Collection continues with the other accounts. When the message ends with `AWS Organizations data is not collected`, the skipped profile is the management profile. |
+| `No AWS profile in ... could authenticate; nothing to collect` | Collection stopped because every profile failed. Check the source credentials and the role chain of each profile. |
 
 ## Deployment examples
 
