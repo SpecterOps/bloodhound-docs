@@ -26,7 +26,95 @@ This page explains how to grant the OpenHound AWS collector the read-only AWS pe
 </Note>
 
 <Tabs>
-{/* TODO: Add a tab for the organization (source account) collection strategy. */}
+  <Tab title="Organization (source account)" icon="star">
+    Use this recommended strategy when the collector's AWS identity is in a dedicated source account. The source identity assumes a management-account role, and that role assumes a read-only collection role in each member account.
+
+    ##### Local or external workload
+
+    Run the collector outside AWS with an IAM user in the source account. The user assumes the management-account role, which lists the organization's accounts and assumes the collection role in each one.
+
+    ```mermaid
+    flowchart LR
+      subgraph CustomerStack["Workloads"]
+          VM["OpenHound Service"]
+      end
+
+      subgraph SourceAccount["Source account"]
+          Workload["OpenHoundCollectorUser"]
+          SourcePolicy["sts:AssumeRole policy<br/>for the management role"]
+          SourcePolicy -->|"Attached to"| Workload
+      end
+
+      subgraph ManagementAccount["Management account"]
+          ManagementRole["Management role<br/>management_role_name"]
+          ManagementPolicy["OpenHound read-only policy and<br/>sts:AssumeRole policy restricted to the organization"]
+          ManagementResources["AWS resources"]
+          ManagementPolicy -->|"Attached to"| ManagementRole
+          ManagementRole -->|"Reads"| ManagementResources
+      end
+
+      subgraph Organization["AWS Organization"]
+          subgraph AccountA["Member account A"]
+              RoleA["OpenHoundCollectorRole"]
+              ResourcesA["AWS resources"]
+              RoleA -->|"Reads"| ResourcesA
+          end
+
+          subgraph AccountB["Member account B"]
+              RoleB["OpenHoundCollectorRole"]
+              ResourcesB["AWS resources"]
+              RoleB -->|"Reads"| ResourcesB
+          end
+      end
+
+      VM -->|"Authenticate"| Workload
+      Workload -->|"STS AssumeRole"| ManagementRole
+      ManagementRole -->|"STS AssumeRole"| RoleA
+      ManagementRole -->|"STS AssumeRole"| RoleB
+    ```
+
+    ##### AWS-hosted workload
+
+    Run the collector on EC2 or EKS in the source account. The workload role assumes the management-account role, which lists the organization's accounts and assumes the collection role in each one.
+
+    ```mermaid
+    flowchart LR
+      subgraph SourceAccount["Source account"]
+          Workload["EC2 VM / EKS Pod"]
+          RuntimeRole["Workload role"]
+          SourcePolicy["sts:AssumeRole policy<br/>for the management role"]
+
+          Workload -->|"Get temporary credentials"| RuntimeRole
+          SourcePolicy -->|"Attached to"| RuntimeRole
+      end
+
+      subgraph ManagementAccount["Management account"]
+          ManagementRole["Management role<br/>management_role_name"]
+          ManagementPolicy["OpenHound read-only policy and<br/>sts:AssumeRole policy restricted to the organization"]
+          ManagementResources["AWS resources"]
+          ManagementPolicy -->|"Attached to"| ManagementRole
+          ManagementRole -->|"Reads"| ManagementResources
+      end
+
+      subgraph Organization["AWS Organization"]
+          subgraph AccountA["Member account A"]
+              RoleA["OpenHoundCollectorRole"]
+              ResourcesA["AWS resources"]
+              RoleA -->|"Reads"| ResourcesA
+          end
+
+          subgraph AccountB["Member account B"]
+              RoleB["OpenHoundCollectorRole"]
+              ResourcesB["AWS resources"]
+              RoleB -->|"Reads"| ResourcesB
+          end
+      end
+
+      RuntimeRole -->|"STS AssumeRole"| ManagementRole
+      ManagementRole -->|"STS AssumeRole"| RoleA
+      ManagementRole -->|"STS AssumeRole"| RoleB
+    ```
+  </Tab>
   <Tab title="Organization (management account)">
     Use this alternative when the collector's configured AWS identity resolves to the AWS organization's management account and assumes a read-only collection role in member accounts.
 
@@ -748,6 +836,65 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
                               - eks:ListPodIdentityAssociations
                               - eks:DescribePodIdentityAssociation
                             Resource: "*"
+                          - Sid: SecretsManager
+                            Effect: Allow
+                            Action:
+                              - secretsmanager:ListSecrets
+                              - secretsmanager:DescribeSecret
+                              - secretsmanager:GetResourcePolicy
+                            Resource: "*"
+                          - Sid: ECR
+                            Effect: Allow
+                            Action:
+                              - ecr:DescribeRegistry
+                              - ecr:GetRegistryPolicy
+                              - ecr:DescribeRepositories
+                              - ecr:GetRepositoryPolicy
+                              - ecr:DescribeImages
+                              - ecr:ListTagsForResource
+                            Resource: "*"
+                          - Sid: ECS
+                            Effect: Allow
+                            Action:
+                              - ecs:ListClusters
+                              - ecs:DescribeClusters
+                              - ecs:ListServices
+                              - ecs:DescribeServices
+                              - ecs:ListTaskDefinitions
+                              - ecs:DescribeTaskDefinition
+                              - ecs:ListTasks
+                              - ecs:DescribeTasks
+                              - ecs:ListContainerInstances
+                              - ecs:DescribeContainerInstances
+                              - ecs:ListTagsForResource
+                            Resource: "*"
+                          - Sid: Bedrock
+                            Effect: Allow
+                            Action:
+                              - bedrock:ListAgents
+                              - bedrock:GetAgent
+                              - bedrock:ListAgentVersions
+                              - bedrock:ListAgentAliases
+                              - bedrock:GetAgentAlias
+                              - bedrock:ListAgentActionGroups
+                              - bedrock:GetAgentActionGroup
+                              - bedrock:ListAgentKnowledgeBases
+                              - bedrock:ListKnowledgeBases
+                              - bedrock:GetKnowledgeBase
+                              - bedrock:ListDataSources
+                              - bedrock:GetDataSource
+                              - bedrock:ListFlows
+                              - bedrock:GetFlow
+                              - bedrock:ListFlowVersions
+                              - bedrock:ListFlowAliases
+                              - bedrock:GetFlowAlias
+                              - bedrock:ListPrompts
+                              - bedrock:GetPrompt
+                              - bedrock:ListGuardrails
+                              - bedrock:GetGuardrail
+                              - bedrock:GetResourcePolicy
+                              - bedrock:ListTagsForResource
+                            Resource: "*"
 
             Outputs:
               OpenHoundCollectorRoleArn:
@@ -875,6 +1022,65 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
                               - eks:ListAssociatedAccessPolicies
                               - eks:ListPodIdentityAssociations
                               - eks:DescribePodIdentityAssociation
+                            Resource: "*"
+                          - Sid: SecretsManager
+                            Effect: Allow
+                            Action:
+                              - secretsmanager:ListSecrets
+                              - secretsmanager:DescribeSecret
+                              - secretsmanager:GetResourcePolicy
+                            Resource: "*"
+                          - Sid: ECR
+                            Effect: Allow
+                            Action:
+                              - ecr:DescribeRegistry
+                              - ecr:GetRegistryPolicy
+                              - ecr:DescribeRepositories
+                              - ecr:GetRepositoryPolicy
+                              - ecr:DescribeImages
+                              - ecr:ListTagsForResource
+                            Resource: "*"
+                          - Sid: ECS
+                            Effect: Allow
+                            Action:
+                              - ecs:ListClusters
+                              - ecs:DescribeClusters
+                              - ecs:ListServices
+                              - ecs:DescribeServices
+                              - ecs:ListTaskDefinitions
+                              - ecs:DescribeTaskDefinition
+                              - ecs:ListTasks
+                              - ecs:DescribeTasks
+                              - ecs:ListContainerInstances
+                              - ecs:DescribeContainerInstances
+                              - ecs:ListTagsForResource
+                            Resource: "*"
+                          - Sid: Bedrock
+                            Effect: Allow
+                            Action:
+                              - bedrock:ListAgents
+                              - bedrock:GetAgent
+                              - bedrock:ListAgentVersions
+                              - bedrock:ListAgentAliases
+                              - bedrock:GetAgentAlias
+                              - bedrock:ListAgentActionGroups
+                              - bedrock:GetAgentActionGroup
+                              - bedrock:ListAgentKnowledgeBases
+                              - bedrock:ListKnowledgeBases
+                              - bedrock:GetKnowledgeBase
+                              - bedrock:ListDataSources
+                              - bedrock:GetDataSource
+                              - bedrock:ListFlows
+                              - bedrock:GetFlow
+                              - bedrock:ListFlowVersions
+                              - bedrock:ListFlowAliases
+                              - bedrock:GetFlowAlias
+                              - bedrock:ListPrompts
+                              - bedrock:GetPrompt
+                              - bedrock:ListGuardrails
+                              - bedrock:GetGuardrail
+                              - bedrock:GetResourcePolicy
+                              - bedrock:ListTagsForResource
                             Resource: "*"
 
             Outputs:
