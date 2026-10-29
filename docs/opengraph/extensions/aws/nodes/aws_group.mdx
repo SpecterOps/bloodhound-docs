@@ -1,0 +1,66 @@
+---
+title: "AWS_Group"
+description: "AWS IAM Group identity, collected properties, and AWS graph relationships."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<Note>
+AWS is in beta for BloodHound Enterprise. This reference covers the unreleased v0.0.4 schema; behavior may change before release.
+</Note>
+
+An IAM group that aggregates users for shared policy attachment.
+
+## Identifier
+
+The node identifier is the resource ARN in `arn`.
+
+## Properties
+
+Types below describe collected values. `null` means the value can be unavailable; it does not make the AWS resource optional. Collection scope and API responses determine which metadata is available.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `str` | Collector-generated name used to identify the resource in context. |
+| `displayname` | `str` | Resource label shown in the graph. |
+| `arn` | `str or null` | AWS Resource Name used as the node identifier. |
+| `account_id` | `str or null` | AWS account associated with the resource; nullable in the shared model. |
+| `region` | `str or null` | AWS region, or `global` for resources without a regional scope. |
+| `environmentid` | `str` | Account root ARN identifying the OpenGraph environment. |
+| `group_name` | `str` | Native IAM group name. |
+| `create_date` | `str` | Timestamp when the group was created. |
+| `group_id` | `str` | Native IAM group identifier. |
+| `path` | `str` | IAM path assigned to the group. |
+| `inline_policies` | `list[str] or null` | Inline policy documents encoded as JSON strings on the principal. |
+
+## Interpretation
+
+IAM groups supply policies to their members. Effective permission edges are projected from IAM users and roles, rather than treating the group as an authenticating identity.
+
+## Relationships
+
+These tables cover relationships emitted for this kind by the AWS collector. Other extensions can define additional relationships.
+
+### Inbound
+
+| Edge | Source kind | Traversable |
+| --- | --- | --- |
+| [AWS_AttachedTo](/opengraph/extensions/aws/edges/aws_attachedto) | [AWS_Policy](/opengraph/extensions/aws/nodes/aws_policy) | No |
+| [AWS_CanAddUserToGroup](/opengraph/extensions/aws/edges/aws_canaddusertogroup) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanAttachGroupPolicy](/opengraph/extensions/aws/edges/aws_canattachgrouppolicy) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanDeleteGroup](/opengraph/extensions/aws/edges/aws_candeletegroup) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanDeleteGroupPolicy](/opengraph/extensions/aws/edges/aws_candeletegrouppolicy) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanDetachGroupPolicy](/opengraph/extensions/aws/edges/aws_candetachgrouppolicy) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanPutGroupPolicy](/opengraph/extensions/aws/edges/aws_canputgrouppolicy) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanRemoveUserFromGroup](/opengraph/extensions/aws/edges/aws_canremoveuserfromgroup) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | Yes |
+| [AWS_MemberOf](/opengraph/extensions/aws/edges/aws_memberof) | [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+
+### Outbound
+
+| Edge | Destination kind | Traversable |
+| --- | --- | --- |
+| [AWS_HasMember](/opengraph/extensions/aws/edges/aws_hasmember) | [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_HasPolicy](/opengraph/extensions/aws/edges/aws_haspolicy) | [AWS_Policy](/opengraph/extensions/aws/nodes/aws_policy) | No |
+
+[AWS schema](/opengraph/extensions/aws/schema)

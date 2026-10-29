@@ -1,0 +1,26 @@
+---
+title: "AWS_ClusterHasNodeGroup"
+description: "AWS_ClusterHasNodeGroup direction, traversability, and interpretation in the AWS schema."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<Note>
+AWS is in beta for BloodHound Enterprise. This reference covers the unreleased v0.0.4 schema; behavior may change before release.
+</Note>
+
+Structural edge from an EKS cluster to one of its managed node groups (derived from the node group's clusterName). Traversable because a Kubernetes admin on the cluster can schedule a pod on the node group via nodeSelector and read the node role's credentials from IMDS.
+
+## Edge schema
+
+| Source kind | Destination kind |
+| --- | --- |
+| [AWS_EKSCluster](/opengraph/extensions/aws/nodes/aws_ekscluster) | [AWS_EKSNodeGroup](/opengraph/extensions/aws/nodes/aws_eksnodegroup) |
+
+**Traversable:** Yes. BloodHound can include this relationship in an Attack Path.
+
+## Interpretation
+
+The destination is a managed node group belonging to the source cluster. The model treats cluster administration as a path to node-group workloads; runtime scheduling and metadata access restrictions still matter.
+
+[AWS schema](/opengraph/extensions/aws/schema)

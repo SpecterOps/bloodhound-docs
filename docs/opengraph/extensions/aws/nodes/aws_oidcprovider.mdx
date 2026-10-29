@@ -1,0 +1,57 @@
+---
+title: "AWS_OIDCProvider"
+description: "AWS OIDC Provider identity, collected properties, and AWS graph relationships."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<Note>
+AWS is in beta for BloodHound Enterprise. This reference covers the unreleased v0.0.4 schema; behavior may change before release.
+</Note>
+
+An OpenID Connect identity provider for web identity federation.
+
+## Identifier
+
+The node identifier is the resource ARN in `arn`.
+
+## Properties
+
+Types below describe collected values. `null` means the value can be unavailable; it does not make the AWS resource optional. Collection scope and API responses determine which metadata is available.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `str` | Collector-generated name used to identify the resource in context. |
+| `displayname` | `str` | Resource label shown in the graph. |
+| `arn` | `str or null` | AWS Resource Name used as the node identifier. |
+| `account_id` | `str or null` | AWS account associated with the resource; nullable in the shared model. |
+| `region` | `str or null` | AWS region, or `global` for resources without a regional scope. |
+| `environmentid` | `str` | Account root ARN identifying the OpenGraph environment. |
+| `create_date` | `str or null` | Timestamp when the provider was created. |
+| `url` | `str or null` | The OIDC issuer URL or host path configured on the provider. |
+| `client_id_list` | `list[str] or null` | Client IDs configured on the provider. |
+| `thumbprint_list` | `list[str] or null` | Certificate thumbprints configured on the provider. |
+| `tags` | `list[str] or null` | Optional IAM tags attached to the provider. |
+
+## Relationships
+
+These tables cover relationships emitted for this kind by the AWS collector. Other extensions can define additional relationships.
+
+### Inbound
+
+| Edge | Source kind | Traversable |
+| --- | --- | --- |
+| [AWS_CanAddClientIDToOIDCProvider](/opengraph/extensions/aws/edges/aws_canaddclientidtooidcprovider) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanDeleteOIDCProvider](/opengraph/extensions/aws/edges/aws_candeleteoidcprovider) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanRemoveClientIDFromOIDCProvider](/opengraph/extensions/aws/edges/aws_canremoveclientidfromoidcprovider) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_CanUpdateOIDCProviderThumbprint](/opengraph/extensions/aws/edges/aws_canupdateoidcproviderthumbprint) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | Yes |
+| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | Yes |
+| [AWS_TrustsOIDCProvider](/opengraph/extensions/aws/edges/aws_trustsoidcprovider) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | No |
+
+### Outbound
+
+| Edge | Destination kind | Traversable |
+| --- | --- | --- |
+| [AWS_CanAssumeRoleWithWebIdentity](/opengraph/extensions/aws/edges/aws_canassumerolewithwebidentity) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | Yes |
+
+[AWS schema](/opengraph/extensions/aws/schema)

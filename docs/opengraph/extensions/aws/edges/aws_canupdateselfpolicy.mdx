@@ -1,0 +1,31 @@
+---
+title: "AWS_CanUpdateSelfPolicy"
+description: "AWS_CanUpdateSelfPolicy direction, traversability, and interpretation in the AWS schema."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<Note>
+AWS is in beta for BloodHound Enterprise. This reference covers the unreleased v0.0.4 schema; behavior may change before release.
+</Note>
+
+Principal can rewrite a permission container it is already subject to — its own user/role inline or attached policy, or a customer-managed policy attached to it (directly or via a group) — granting itself admin with no assume step. Targets the account; gated by the principal having no capping permissions boundary. The methods property records the usable self-modification techniques.
+
+## Edge schema
+
+| Source kind | Destination kind |
+| --- | --- |
+| [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) |
+| [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) |
+
+**Traversable:** Yes. BloodHound can include this relationship in an Attack Path.
+
+## Interpretation
+
+The destination is the account in which the capability is modeled, rather than a newly created principal or an existing policy object. The collector combines the relevant policy and principal-control evidence; the schema description above identifies the technique. Review `methods` and `composite_components` when present for the selected evidence and conditions.
+
+## Evaluation limits
+
+This edge represents the collector's model of collected authorization and resource state. It does not prove that every runtime request succeeds. Inspect unresolved `conditions` and `trust_policy_conditions` when present; `has_conditions` and `has_trust_policy_conditions` indicate retained evidence. Composite edges can include `methods` or `composite_components` describing their derivation.
+
+[AWS schema](/opengraph/extensions/aws/schema)

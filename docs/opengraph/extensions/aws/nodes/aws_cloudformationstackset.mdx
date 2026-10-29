@@ -1,0 +1,50 @@
+---
+title: "AWS_CloudFormationStackSet"
+description: "AWS CloudFormation StackSet identity, collected properties, and AWS graph relationships."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<Note>
+AWS is in beta for BloodHound Enterprise. This reference covers the unreleased v0.0.4 schema; behavior may change before release.
+</Note>
+
+An AWS CloudFormation StackSet that deploys stacks across multiple accounts and regions via an administration/execution role pair.
+
+## Identifier
+
+The node identifier is the resource ARN in `arn`.
+
+## Properties
+
+Types below describe collected values. `null` means the value can be unavailable; it does not make the AWS resource optional. Collection scope and API responses determine which metadata is available.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `str` | Collector-generated name used to identify the resource in context. |
+| `displayname` | `str` | Resource label shown in the graph. |
+| `arn` | `str or null` | AWS Resource Name used as the node identifier. |
+| `account_id` | `str or null` | AWS account associated with the resource; nullable in the shared model. |
+| `region` | `str or null` | AWS region, or `global` for resources without a regional scope. |
+| `environmentid` | `str` | Account root ARN identifying the OpenGraph environment. |
+| `permission_model` | `str or null` | StackSet permission model, such as SELF_MANAGED. |
+| `status` | `str or null` | Current StackSet status. |
+| `administration_role_arn` | `str or null` | IAM administration role ARN for self-managed StackSets. |
+| `execution_role_name` | `str or null` | IAM execution role name used in target accounts. |
+
+## Relationships
+
+These tables cover relationships emitted for this kind by the AWS collector. Other extensions can define additional relationships.
+
+### Inbound
+
+| Edge | Source kind | Traversable |
+| --- | --- | --- |
+| [AWS_CanUpdateCloudFormationStackSet](/opengraph/extensions/aws/edges/aws_canupdatecloudformationstackset) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
+| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | Yes |
+
+### Outbound
+
+No relationships are emitted in this direction for this kind in the current collector.
+
+[AWS schema](/opengraph/extensions/aws/schema)

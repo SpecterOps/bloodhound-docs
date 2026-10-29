@@ -1,0 +1,31 @@
+---
+title: "AWS_CanSelfGrantKMSOps"
+description: "AWS_CanSelfGrantKMSOps direction, traversability, and interpretation in the AWS schema."
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<Note>
+AWS is in beta for BloodHound Enterprise. This reference covers the unreleased v0.0.4 schema; behavior may change before release.
+</Note>
+
+Principal can call kms:CreateGrant with self-grant to escalate their own KMS permissions.
+
+## Edge schema
+
+| Source kind | Destination kind |
+| --- | --- |
+| [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | [AWS_KMSKey](/opengraph/extensions/aws/nodes/aws_kmskey) |
+| [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | [AWS_KMSKey](/opengraph/extensions/aws/nodes/aws_kmskey) |
+
+**Traversable:** No. This relationship supplies structural or permission evidence and does not independently form an Attack Path step.
+
+## Interpretation
+
+For a supported customer-managed key, the collector derives this edge from effective `kms:CreateGrant` and retains its condition evidence. `grantable_operations` lists the modeled KMS grant operations. Review the conditions before interpreting which grants are usable; this edge is non-traversable.
+
+## Evaluation limits
+
+This edge represents the collector's model of collected authorization and resource state. It does not prove that every runtime request succeeds. Inspect unresolved `conditions` and `trust_policy_conditions` when present; `has_conditions` and `has_trust_policy_conditions` indicate retained evidence. Composite edges can include `methods` or `composite_components` describing their derivation.
+
+[AWS schema](/opengraph/extensions/aws/schema)
