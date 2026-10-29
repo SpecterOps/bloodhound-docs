@@ -556,7 +556,38 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
         aws sts get-caller-identity --profile <SOURCE_PROFILE_NAME>
         ```
 
-        If the collector uses runtime credentials, run the command from the same workload environment without `--profile`. Then configure the collector with `management_account_id`, `management_role_name = "<MANAGEMENT_ROLE_NAME>"`, and `collector_assumed_role_name = "OpenHoundCollectorRole"`, and with `collector_profile_name` when the source principal is a profile.
+        If the collector uses runtime credentials, run the command from the same workload environment without `--profile`.
+      </Step>
+      <Step title="Configure the collector">
+        <Tabs>
+          <Tab title="Local or external workload">
+            Create a source profile with the access keys from the `OpenHoundCollectorUser` user:
+
+            ```bash
+            aws configure --profile openhound-source
+            ```
+
+            Set `collector_profile_name` to that profile:
+
+            ```toml title="~/.dlt/secrets.toml"
+            [sources.source.aws.credentials]
+            management_account_id = "<MANAGEMENT_ACCOUNT_ID>"
+            management_role_name = "<MANAGEMENT_ROLE_NAME>"
+            collector_assumed_role_name = "OpenHoundCollectorRole"
+            collector_profile_name = "openhound-source"
+            ```
+          </Tab>
+          <Tab title="AWS-hosted workload">
+            Omit `collector_profile_name` so that the collector uses the workload role from its runtime:
+
+            ```toml title="~/.dlt/secrets.toml"
+            [sources.source.aws.credentials]
+            management_account_id = "<MANAGEMENT_ACCOUNT_ID>"
+            management_role_name = "<MANAGEMENT_ROLE_NAME>"
+            collector_assumed_role_name = "OpenHoundCollectorRole"
+            ```
+          </Tab>
+        </Tabs>
       </Step>
     </Steps>
   </Tab>
@@ -564,14 +595,17 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
     Use this alternative when the AWS collector's identity resolves to the AWS Organizations management account and assumes a read-only collection role in member accounts.
 
     <Note>
-      Run these steps from the AWS Organizations management account or a delegated administrator account. Before continuing, verify the active AWS identity with `aws sts get-caller-identity`.
+      Run these setup steps from the AWS Organizations management account or a delegated administrator account. Before continuing, verify the active AWS identity with `aws sts get-caller-identity`. The collector's own identity must still be a role in the management account; a delegated administrator account cannot replace it.
     </Note>
 
     The AWS identity must resolve to credentials in the management account with permissions to read AWS Organizations metadata and assume `OpenHoundCollectorRole` in member accounts.
 
-    Create `OpenHoundCollectorRole` in the management account with the single-account procedure, then deploy the member-account role with StackSets. Do not deploy the member-account StackSet to the management account.
+    The member-account roles trust `OpenHoundCollectorRole` in the management account, so create that role first. Do not deploy the member-account StackSet to the management account.
 
     <Steps>
+      <Step title="Create the management-account collector role">
+        In the management account, follow the [Single-account](/openhound/collectors/aws/configure-permissions#single-account-2) procedure through **Allow the collector principal to assume the collector role**. Its read-only policy also covers AWS Organizations and management-account collection. Skip its **Configure the AWS profile** step; this procedure configures the profile at the end.
+      </Step>
       <Step title="Create or identify the management-account collector principal">
         <Tabs>
           <Tab title="Local or external workload">
@@ -722,7 +756,7 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             ```
           </Tab>
           <Tab title="AWS-hosted workload">
-            Save the following template as `collector-role-stack.yaml`. Replace `<WORKLOAD_ROLE_NAME>` if you use a different workload role name.
+            Save the following template as `collector-role-stack.yaml`. Its trust policy also allows `sts:TagSession`, which EKS Pod Identity requires.
 
             ```yaml title="collector-role-stack.yaml"
             AWSTemplateFormatVersion: "2010-09-09"
@@ -984,6 +1018,7 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
         management_account_id = "<MANAGEMENT_ACCOUNT_ID>"
         management_role_name = "OpenHoundCollectorRole"
         collector_assumed_role_name = "OpenHoundCollectorRole"
+        # Omit for EKS Pod Identity, which uses the pod's identity.
         collector_profile_name = "managementaccount"
         ```
 
