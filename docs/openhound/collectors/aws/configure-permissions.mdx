@@ -21,6 +21,10 @@ This page explains how to grant the OpenHound AWS collector the read-only AWS pe
   For multiple independent-account collection, configure one named AWS profile for each account in `profile_names`. Repeat the single-account permission configuration for each account.
 </Note>
 
+<Note>
+  When the collector runs with EKS Pod Identity, EKS adds transitive session tags to its temporary credentials. AWS carries those tags through each `AssumeRole` hop. For every role the collector assumes, allow both `sts:AssumeRole` and `sts:TagSession` in the caller's permissions policy and the target role's trust policy. Keep the caller principal and target role resources scoped to the collector roles. The AWS-hosted examples below include `sts:TagSession` for EKS; omit it when the runtime credentials do not carry transitive session tags. If your authorization policies do not depend on these tags, you can instead [disable Pod Identity session tags](#troubleshoot-eks-session-tags).
+</Note>
+
 <Tabs>
 {/* TODO: Add a tab for the organization (source account) collection strategy. */}
   <Tab title="Organization (management account)">
@@ -176,9 +180,9 @@ The `aws sts get-caller-identity` command returns the AWS identity that creates 
 
 Save the following policy document as `openhound-collector-policy.json`. This policy grants the read-only API permissions required for the AWS resources collected by the OpenHound AWS collector.
 
-{/* SOURCE OF TRUTH: this block mirrors bhe-extensions/collectors/AWS/openhound-collector-policy.json
-    (internal). Edit the canonical file first, then this block, and run
-    /workspace/scripts/check-collector-policy-mirror.py — it fails on drift. */}
+{/* SOURCE OF TRUTH: every titled JSON/YAML block on this page mirrors a file under
+    bhe-extensions/collectors/AWS/ (internal). Edit the canonical file first, then this
+    page, and run /workspace/scripts/check-collector-policy-mirror.py — it fails on drift. */}
 ```json title="openhound-collector-policy.json"
 {
   "Version": "2012-10-17",
@@ -448,7 +452,10 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
                   "Principal": {
                     "AWS": "arn:aws:iam::<SOURCE_ACCOUNT_ID>:role/<WORKLOAD_ROLE_NAME>"
                   },
-                  "Action": "sts:AssumeRole"
+                  "Action": [
+                    "sts:AssumeRole",
+                    "sts:TagSession"
+                  ]
                 }
               ]
             }
@@ -497,7 +504,7 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
         Keep the OpenHound read-only policy attached to the member-account role. Deploy the role to every active member account that the collector should collect.
       </Step>
       <Step title="Allow the source principal to assume both roles">
-        Attach an `sts:AssumeRole` policy to the source principal. Include the management role explicitly and restrict the member-role resource to the organization path you intend to collect.
+        Attach this policy to the source principal. Include the management role explicitly and restrict the member-role resource to the organization path you intend to collect. For EKS Pod Identity, the source principal needs both `sts:AssumeRole` and `sts:TagSession` on each target role.
 
         ```json title="openhound-assume-role.json"
         {
@@ -506,13 +513,19 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             {
               "Sid": "AssumeManagementCollectorRole",
               "Effect": "Allow",
-              "Action": "sts:AssumeRole",
+              "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+              ],
               "Resource": "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/<MANAGEMENT_ROLE_NAME>"
             },
             {
               "Sid": "AssumeMemberCollectorRoles",
               "Effect": "Allow",
-              "Action": "sts:AssumeRole",
+              "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+              ],
               "Resource": "arn:aws:iam::*:role/OpenHoundCollectorRole",
               "Condition": {
                 "ForAnyValue:StringLike": {
@@ -719,7 +732,9 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
                       - Effect: Allow
                         Principal:
                           AWS: "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/OpenHoundCollectorRole"
-                        Action: sts:AssumeRole
+                        Action:
+                          - sts:AssumeRole
+                          - sts:TagSession
                   Policies:
                     - PolicyName: OpenHoundCollectorReadOnly
                       PolicyDocument:
@@ -857,7 +872,10 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             {
               "Sid": "AssumeOpenHoundTargetRoles",
               "Effect": "Allow",
-              "Action": "sts:AssumeRole",
+              "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+              ],
               "Resource": "arn:aws:iam::*:role/OpenHoundCollectorRole",
               "Condition": {
                 "ForAnyValue:StringLike": {
@@ -880,7 +898,10 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             {
               "Sid": "AssumeManagementCollectorRole",
               "Effect": "Allow",
-              "Action": "sts:AssumeRole",
+              "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+              ],
               "Resource": "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/OpenHoundCollectorRole"
             }
           ]
@@ -1034,7 +1055,10 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
                   "Principal": {
                     "AWS": "arn:aws:iam::<ACCOUNT_ID>:role/<WORKLOAD_ROLE_NAME>"
                   },
-                  "Action": "sts:AssumeRole"
+                  "Action": [
+                    "sts:AssumeRole",
+                    "sts:TagSession"
+                  ]
                 }
               ]
             }
@@ -1070,7 +1094,10 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             {
               "Sid": "AssumeOpenHoundCollectorRole",
               "Effect": "Allow",
-              "Action": "sts:AssumeRole",
+              "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+              ],
               "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/OpenHoundCollectorRole"
             }
           ]
@@ -1139,6 +1166,36 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
     </Steps>
   </Tab>
 </Tabs>
+
+## Troubleshoot EKS session tags
+
+EKS Pod Identity enables session tags by default and passes them through subsequent role assumptions. A collector on Kubernetes can therefore receive `AccessDenied` for `sts:TagSession` when assuming a management or member-account role, even when `sts:AssumeRole` is allowed. Management-account authentication can succeed while member accounts are skipped if the later role assumptions reject the tags. This behavior applies to EKS Pod Identity; other Kubernetes credential methods do not automatically add these EKS tags.
+
+Choose one of these configurations:
+
+- Retain session tags and allow `sts:TagSession` alongside `sts:AssumeRole` in the caller permissions and target role trust for every role assumption, including management-to-member assumptions.
+- Disable the automatic tags on the collector's Pod Identity association if your IAM authorization policies do not depend on them. OpenHound AWS does not require these tags to collect data.
+
+To disable the tags, run the following command with an AWS identity authorized for `eks:UpdatePodIdentityAssociation`. Replace the placeholders with your cluster, association ID, and region:
+
+```bash
+aws eks update-pod-identity-association \
+  --cluster-name <cluster-name> \
+  --association-id <association-id> \
+  --region <aws-region> \
+  --disable-session-tags
+```
+
+Restart the collector deployment to obtain fresh credentials. The following command requires Kubernetes permission to patch the deployment:
+
+```bash
+kubectl -n <namespace> rollout restart deployment/<collector-deployment>
+kubectl -n <namespace> rollout status deployment/<collector-deployment>
+```
+
+Run a new collection and check the logs for skipped accounts and role-assumption errors. Disabling tags resolves failures caused by the automatic EKS tags; each role still needs the appropriate `sts:AssumeRole` permissions and trust.
+
+For details, see [AWS documentation on EKS Pod Identity session tags](https://docs.aws.amazon.com/eks/latest/userguide/pod-id-abac.html).
 
 ## Next steps
 
