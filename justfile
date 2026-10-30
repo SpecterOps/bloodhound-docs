@@ -20,21 +20,3 @@ prune-my-branches nuclear='no':
 # Download openapi.json from BloodHound's stage branch
 update-openapi VERSION:
     curl -L --fail "https://raw.githubusercontent.com/SpecterOps/BloodHound/stage/{{ VERSION }}/packages/go/openapi/doc/openapi.json" -o docs/openapi.json || (echo "Failed to download OpenAPI spec for version {{ VERSION }}" && exit 1)
-
-# Check docs coverage for documentable edges in the BloodHound CUE schema
-check-edges bh_root="../BloodHound":
-    #!/usr/bin/env bash
-    set -euo pipefail
-    python3 scripts/check_edge_docs.py --bh-root "{{ bh_root }}"
-
-# Find images in docs/assets and docs/images no longer referenced anywhere in the repo
-find-unused-images:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    python3 scripts/find_unused_images.py
-
-# Delete images in docs/assets and docs/images no longer referenced anywhere in the repo
-delete-unused-images:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    python3 scripts/find_unused_images.py --delete
