@@ -21,7 +21,7 @@ prune-my-branches nuclear='no':
 update-openapi VERSION:
     curl -L --fail "https://raw.githubusercontent.com/SpecterOps/BloodHound/stage/{{ VERSION }}/packages/go/openapi/doc/openapi.json" -o docs/openapi.json || (echo "Failed to download OpenAPI spec for version {{ VERSION }}" && exit 1)
 
-# Check docs coverage for edge help texts vs code registry
+# Check docs coverage for documentable edges in the BloodHound CUE schema
 check-edges bh_root="../BloodHound":
     #!/usr/bin/env bash
     set -euo pipefail

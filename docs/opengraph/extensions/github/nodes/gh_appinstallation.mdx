@@ -12,7 +12,7 @@ Represents a GitHub App installed on an organization. App installations have spe
 
 Unlike fine-grained personal access tokens, GitHub does not expose separate organization and repository permission buckets for app installations, so this property remains a single flat permission list.
 
-Each installation is linked to its parent [GH_App](/opengraph/extensions/github/nodes/gh_app) via a [GH_InstalledAs](/opengraph/extensions/github/edges/gh_installedas) edge. For installations with `repository_selection` set to `all`, [GH_CanAccess](/opengraph/extensions/github/edges/gh_canaccess) edges are created to every repository in the organization. For installations with `repository_selection` set to `selected`, repository-level edges cannot be enumerated with a PAT (requires app installation token authentication).
+Each installation is linked to its parent [GH_App](/opengraph/extensions/github/nodes/gh_app) via a [GH_InstalledAs](/opengraph/extensions/github/edges/gh_installedas) edge. Installations with `repository_selection` set to `all` use one [GH_CanAccess](/opengraph/extensions/github/edges/gh_canaccess) edge to the organization's repository/all [GH_Scope](/opengraph/extensions/github/nodes/gh_scope); [GH_ScopedTo](/opengraph/extensions/github/edges/gh_scopedto) edges enumerate the repositories in that reusable scope. For installations with `repository_selection` set to `selected`, the collector uses the enterprise organization-installation repositories API to enumerate the granted repositories when the enterprise installation has `Enterprise organization installations: read` or `Enterprise organization installation repositories: read`. If that permission is unavailable, selected repository edges are skipped.
 
 ## Properties
 
@@ -48,10 +48,12 @@ graph LR
     n0["GH_App"]
     n1["GH_AppInstallation"]
     n2["GH_Repository"]
-    n3["GH_Organization"]
+    n3["GH_Scope"]
+    n4["GH_Organization"]
     n0 -->|GH_InstalledAs| n1
     n1 -.->|GH_CanAccess| n2
-    n3 -.->|GH_Contains| n1
+    n1 -.->|GH_CanAccess| n3
+    n4 -.->|GH_Contains| n1
 ```
 
 ## Edges
@@ -67,8 +69,10 @@ flowchart LR
     GH_AppInstallation["GH_AppInstallation"]
     GH_Organization["GH_Organization"]
     GH_Repository["GH_Repository"]
+    GH_Scope["GH_Scope"]
     GH_App -- GH_InstalledAs --> GH_AppInstallation
     GH_AppInstallation -- GH_CanAccess --> GH_Repository
+    GH_AppInstallation -- GH_CanAccess --> GH_Scope
     GH_Organization -- GH_Contains --> GH_AppInstallation
 ```
 
@@ -83,7 +87,7 @@ flowchart LR
 
 | Edge Type | Destination Node Types | Traversable |
 | --------- | ---------------------- | ----------- |
-| [GH_CanAccess](/opengraph/extensions/github/edges/gh_canaccess) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
+| [GH_CanAccess](/opengraph/extensions/github/edges/gh_canaccess) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository), [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) | ❌ |
 
 ## Properties
 

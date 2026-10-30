@@ -1,0 +1,97 @@
+---
+title: Configure the collector
+description: Configure and run the OpenHound Entra Agents collector and verify the collected data.
+hidden: true
+---
+
+import EntraAgentsBetaNote from '/snippets/hounds/openhound-entra-agents-beta-note.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<EntraAgentsBetaNote />
+
+## Configure the collector
+
+Before configuring the collector, complete [permission setup](/openhound/collectors/entra-agents/configure-permissions) and prepare the reviewed environment inventory.
+
+Create a `secrets.toml` file for the Entra Agents collector using the following
+example. Replace each placeholder with your own value.
+
+```toml
+[sources.source.entra_id]
+tenant_id = "<DIRECTORY_TENANT_ID>"
+client_id = "<APPLICATION_CLIENT_ID>"
+client_secret = "<CLIENT_SECRET_VALUE>"
+power_platform_environments_file = "/app/.dlt/power-platform-environments.json"
+
+[destination.bloodhoundenterprise]
+token_id = "<BHE_COLLECTOR_TOKEN_ID>"
+token_key = "<BHE_COLLECTOR_TOKEN>"
+url = "https://<YOUR_BHE_TENANT_HOSTNAME>"
+```
+
+- `tenant_id`, `client_id`, and `client_secret` come from the application
+  provisioned in the [permissions guide](/openhound/collectors/entra-agents/configure-permissions). Use the application client ID, not the enterprise
+  application's object ID, and the client secret **Value**, not its ID.
+- `power_platform_environments_file` is the reviewed [environment inventory](/openhound/collectors/entra-agents/configure-permissions#export-and-maintain-the-environment-inventory).
+  Set it to the file's path inside the collector container. The example assumes
+  the file is available at `/app/.dlt/power-platform-environments.json`.
+- `token_id` and `token_key` are the **Token ID** and **Token** for an OpenHound
+  [collector client](/collect-data/enterprise-collection/create-collector) in
+  BloodHound Enterprise. They are separate from the Entra application credentials.
+- `url` is your BloodHound Enterprise tenant URL.
+
+Provide the secrets file and reviewed environment inventory to the collector
+using the deployment instructions supplied for the beta.
+
+Use the tab for your provisioning route to identify the Entra application credentials:
+
+<Tabs>
+  <Tab title="Automated base provisioning">
+    The automated provisioning script saved its output to `.env`. Copy these values into
+    the corresponding entries under `[sources.source.entra_id]` in `secrets.toml`:
+
+    - `AZ_AGENTS_TENANT_ID` to `tenant_id`
+    - `AZ_AGENTS_CLIENT_ID` to `client_id`
+    - `AZ_AGENTS_CLIENT_SECRET` to `client_secret`
+  </Tab>
+  <Tab title="Manual provisioning">
+    Use the tenant ID, application client ID, and client secret value saved during
+    manual provisioning. Set the environment inventory path as described above.
+  </Tab>
+</Tabs>
+
+## Verify collection
+
+Run a test collection to confirm that the configured identity can read the intended data.
+
+<Steps>
+  <Step title="Start the beta collector">
+    Follow the deployment instructions supplied for the beta to start the
+    OpenHound container with the secrets file and reviewed environment inventory.
+  </Step>
+  <Step title="Run a test collection">
+    In BloodHound Enterprise, open **Administration** → **Manage Clients** and
+    confirm the OpenHound collector client is online. Open its action menu,
+    select **On Demand Scan**, and select **Run**.
+  </Step>
+  <Step title="Review the collection result">
+    Check the [Finished Jobs Log](/collect-data/enterprise-collection/monitor#finished-jobs-log)
+    and the collector logs for errors or coverage messages.
+  </Step>
+  <Step title="Check the collected data">
+    Use the [Cypher queries](/openhound/collectors/entra-agents/queries) to check
+    that known agents, flows, and connections in the approved collection scope
+    are present. If expected data is missing, use the troubleshooting table below.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+Use collection errors and coverage messages to check configuration and collection scope. For Dataverse, Azure Resource Manager (ARM), or Foundry access errors, see [permissions troubleshooting](/openhound/collectors/entra-agents/configure-permissions#troubleshooting).
+
+| What you see | What to check |
+|---|---|
+| `403` during environment discovery | Confirm [Power Platform `Reader` is assigned](/openhound/collectors/entra-agents/configure-permissions#create-collector-application-and-assign-base-permissions) and that `power_platform_environments_file` points to the reviewed inventory. The static inventory is the supported fallback when service-principal discovery is denied. |
+| Known agents, flows, or connections are absent | Confirm the environment is retained in the inventory and that the application user has the [custom Dataverse reader role with all documented table reads](/openhound/collectors/entra-agents/configure-permissions#configure-the-application-for-each-dataverse-environment). |
+| A device-code prompt appears | Remove `reader_upn` and all `device` entries from `auth_mode_matrix`. |

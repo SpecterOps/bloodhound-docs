@@ -5,6 +5,7 @@ hidden: true
 ---
 
 import AwsBetaNote from '/snippets/hounds/openhound-aws-beta-note.mdx';
+import CollectionStrategy from '/snippets/hounds/aws-collection-strategy.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
@@ -28,62 +29,116 @@ The AWS collector needs different settings based on the collection strategy you 
 | `secrets.toml` file | `[sources.source.aws.credentials]` section |
 | Environment variables | `SOURCES__SOURCE__AWS__CREDENTIALS` prefix |
 
+`profile_name` is optional. If you omit it from `secrets.toml` (or leave `SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME` unset), the collector uses the AWS identity available to its runtime. With a configured source account, that identity must resolve to the account ID in `source_account`. When the management account is the source, the runtime identity must resolve to the management account.
+
 <Warning>
   The beta must use the `openhound-aws` container image from the private ECR repository described in the [deployment examples](/openhound/collectors/aws/collect-data#deployment-examples). The public `openhound` image does not support AWS collection.
 </Warning>
 
 ## Choose an account collection strategy
 
-The collector supports three strategies:
-
-- **AWS organization profile** <Badge color="green">Recommended</Badge>: Collect AWS organization metadata and fan out collection across member accounts.
-- **Single AWS profile**: Collect resources from one AWS account.
-- **Multiple AWS profiles**: Collect resources from multiple independent AWS accounts.
-
-<Tip>
-  **AWS organization profile** is the recommended collection strategy.
-</Tip>
+<CollectionStrategy />
 
 Click the tab that matches the strategy of the AWS scope you want to collect.
 
 <Tabs>
-  <Tab title="AWS organization profile (recommended)" icon="star">
-    Use an organization profile to enumerate over all member accounts via the AWS management account.
-
-    This assumes the configured IAM role in each member account. Also used to collect the organization structure, SCPs and RCPs.
+  <Tab title="Organization (source account)" icon="star">
+    Use this recommended strategy when the collector runs with an AWS identity in a dedicated source account. The configured or runtime identity must resolve to `source_account`.
 
     | Setting | Required | Default | Description |
     | --- | --- | --- | --- |
-    | `profile_name` | Yes | None | Name of the AWS SDK profile used for collection. |
+    | `profile_name` | No | Runtime identity | Name of the AWS SDK profile used for collection. If omitted, use the identity available to the runtime. |
     | `org_role_name` | Yes | - | Name of the IAM role to assume in each active member account. The collector constructs `arn:aws:iam::<account-id>:role/<org_role_name>`. |
-    | `org_role_session_name` | No | openhound-aws-org-collector | STS role session name used when assuming the member-account role.          |
-    | `include_management_account` | No | false | Whether to collect account resources from the management account in addition to organization metadata and policies.  |
+    | `org_role_session_name` | No | `openhound-aws-org-collection` | STS role session name used when assuming organization roles. |
+    | `include_management_account` | No | true | Whether to collect account resources from the management account in addition to organization metadata and policies. |
+    | `source_account` | Yes | None | Account ID that the configured or runtime AWS identity must resolve to. |
+    | `management_account_id` | No | None | Management account ID. If omitted, the source identity must be allowed to call `organizations:DescribeOrganization` so the collector can discover it. |
+    | `management_role_name` | No | Value of `org_role_name` | Name of the role assumed in the management account. |
 
-    **`secrets.toml`**
+    The collector assumes the management role from the source identity to read AWS Organizations metadata, then assumes the member-account collection role directly from the source identity. Management-account resources are included by default in this mode.
+
+    ```mermaid
+    flowchart LR
+      SRC["Configured or runtime AWS identity<br/>source_account"]
+
+      subgraph MANAGEMENT["Management account"]
+        MROLE["Management role<br/>management_role_name"]
+        ORG["Organizations API<br/>accounts, SCPs, and RCPs"]
+        MRES["Management account resources<br/>included by default"]
+      end
+
+      subgraph MEMBERS["Active member accounts"]
+        CHILD1["Member account 1<br/>org_role_name"]
+        CHILD2["Member account 2<br/>org_role_name"]
+      end
+
+      SRC -->|"AssumeRole: management_role_name"| MROLE
+      MROLE --> ORG
+      MROLE --> MRES
+      SRC -->|"AssumeRole: org_role_name"| CHILD1
+      SRC -->|"AssumeRole: org_role_name"| CHILD2
+      ORG -. "returns active account IDs" .-> CHILD1
+      ORG -. "returns active account IDs" .-> CHILD2
+    ```
+
+    The source identity must be allowed to assume the management and member-account roles, and each target role must trust the source identity. If you omit `management_account_id`, the source identity needs `organizations:DescribeOrganization` to discover the management account.
 
     ```toml title="~/.dlt/secrets.toml"
     [sources.source.aws.credentials]
-    profile_name = "my_organization"
+    profile_name = "security-tooling"
+    region_name = "us-east-1"
+    source_account = "999999999999"
+    management_account_id = "111111111111"
+    management_role_name = "ManagementCollectorRole"
     org_role_name = "OpenHoundCollectorRole"
-    org_role_session_name = "optional_session_name"
-    include_management_account = true
     ```
+
+    `include_management_account` defaults to `true` for this setup. Set it to `false` to omit management-account resources.
 
     **Environment variables**
 
     ```bash
-    SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME="my_organization"
+    SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME="security-tooling"
+    SOURCES__SOURCE__AWS__CREDENTIALS__REGION_NAME="us-east-1"
+    SOURCES__SOURCE__AWS__CREDENTIALS__SOURCE_ACCOUNT="999999999999"
+    SOURCES__SOURCE__AWS__CREDENTIALS__MANAGEMENT_ACCOUNT_ID="111111111111"
+    SOURCES__SOURCE__AWS__CREDENTIALS__MANAGEMENT_ROLE_NAME="ManagementCollectorRole"
     SOURCES__SOURCE__AWS__CREDENTIALS__ORG_ROLE_NAME="OpenHoundCollectorRole"
-    SOURCES__SOURCE__AWS__CREDENTIALS__ORG_ROLE_SESSION_NAME="optional_session_name"
-    SOURCES__SOURCE__AWS__CREDENTIALS__INCLUDE_MANAGEMENT_ACCOUNT=true
     ```
   </Tab>
-  <Tab title="Single AWS profile">
-    Use a single named AWS profile to collect resources from one AWS account.
+  <Tab title="Organization (management account)">
+    Use this alternative when the collector's AWS identity resolves directly to the AWS organization's management account, reads organization metadata, and assumes `org_role_name` in each active member account.
 
     | Setting | Required | Default | Description |
     | --- | --- | --- | --- |
-    | `profile_name` | Yes | None | Name of the AWS SDK profile used for collection. |
+    | `profile_name` | No | Runtime identity | Name of the AWS SDK profile used for collection. If omitted, use the identity available to the runtime. The identity must resolve to the management account. |
+    | `org_role_name` | Yes | - | Name of the IAM role to assume in each active member account. The collector constructs `arn:aws:iam::<account-id>:role/<org_role_name>`. |
+    | `org_role_session_name` | No | `openhound-aws-org-collection` | STS role session name used when assuming organization roles. |
+    | `include_management_account` | No | false | Whether to collect account resources from the management account in addition to organization metadata and policies. |
+
+    If a collector runs outside the management account, its AWS profile can use `role_arn` with `source_profile` or `credential_source` to resolve to the management-account role before OpenHound starts. If the configured profile already resolves to the management account, no AWS-profile AssumeRole hop is needed.
+
+    ```toml title="~/.dlt/secrets.toml"
+    [sources.source.aws.credentials]
+    profile_name = "managementaccount"
+    org_role_name = "OpenHoundCollectorRole"
+    ```
+
+    `include_management_account` defaults to `false` in this mode. Set it to `true` to collect management-account resources.
+
+    **Environment variables**
+
+    ```bash
+    SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME="managementaccount"
+    SOURCES__SOURCE__AWS__CREDENTIALS__ORG_ROLE_NAME="OpenHoundCollectorRole"
+    ```
+  </Tab>
+  <Tab title="Single-account">
+    Use a named AWS profile, or omit `profile_name` to use the AWS identity available to the runtime, to collect resources from one AWS account.
+
+    | Setting | Required | Default | Description |
+    | --- | --- | --- | --- |
+    | `profile_name` | No | Runtime identity | Name of the AWS SDK profile used for collection. If omitted, use the identity available to the runtime. |
 
     **`secrets.toml`**
 
@@ -98,7 +153,7 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
     SOURCES__SOURCE__AWS__CREDENTIALS__PROFILE_NAME=production
     ```
   </Tab>
-  <Tab title="Multiple AWS profiles">
+  <Tab title="Multiple independent-accounts">
     Use multiple named AWS profiles to collect resources from multiple independent AWS accounts.
 
     | Setting | Required | Default | Description |
@@ -164,7 +219,7 @@ match_object = ".*secret.*"
 
 The following examples show how to configure the AWS collector for different collection strategies. Replace placeholder values with your own.
 
-### Single account collection without buckets
+### Single-account collection without buckets
 
 ```toml 
 [destination.bloodhoundenterprise]
@@ -180,7 +235,7 @@ include = false
 max_objects = 0
 ```
 
-### Single account collection for all buckets
+### Single-account collection with all buckets
 
 ```toml
 [destination.bloodhoundenterprise]
@@ -204,7 +259,7 @@ include = true
 match_object = ".*"
 ```
 
-### Multi-account collection without buckets
+### Multiple independent-account collection without buckets
 
 ```toml
 [destination.bloodhoundenterprise]
@@ -224,7 +279,31 @@ include = false
 max_objects = 0
 ```
 
-### Organization-wide collection without buckets
+### Organization collection from a configured source account
+
+```toml
+[destination.bloodhoundenterprise]
+token_key = "<BHE_TOKEN_KEY>"
+token_id = "<BHE_TOKEN_ID>"
+url = "https://your-tenant.bhe.io"
+
+[sources.source.aws.credentials]
+profile_name = "<AWS_SOURCE_PROFILE_NAME>"
+source_account = "<AWS_SOURCE_ACCOUNT_ID>"
+management_account_id = "<AWS_MANAGEMENT_ACCOUNT_ID>"
+management_role_name = "ManagementCollectorRole"
+org_role_name = "OpenHoundCollectorRole"
+org_role_session_name = "OpenHoundCollectorSession"
+include_management_account = true
+
+[sources.source.aws.bucket_policy]
+include = false
+max_objects = 0
+```
+
+### Organization collection from the management account
+
+Use this alternative when the collector's AWS identity resolves to the AWS Organizations management account.
 
 ```toml
 [destination.bloodhoundenterprise]
@@ -245,7 +324,7 @@ max_objects = 0
 
 ## Deployment examples
 
-Before deploying, ensure that a valid `secrets.toml` file is available. It must contain the BloodHound Enterprise credentials, AWS target profile(s), and optionally bucket collection policies. The deployment method determines how this file is provided to the collector.
+Before continuing, ensure that a valid `secrets.toml` file is available and contains the BloodHound Enterprise credentials and optionally AWS profile(s) and bucket collection policies. If `profile_name` is omitted, the collector uses the AWS identity available to its runtime.
 
 ### Docker Compose
 
@@ -274,7 +353,7 @@ ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws
     Test that you can pull the `openhound-aws` image. You can replace `docker` with `podman` if needed.
 
     ```bash
-    docker pull ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws/openhound/openhound-aws:main
+    docker pull ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws/openhound/openhound-aws:latest
     ```
   </Step>
 
@@ -283,7 +362,7 @@ ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws
 
     ```yaml title="docker-compose.yaml"
     x-scheduler: &scheduler
-      image: ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws/openhound/openhound-aws:main
+      image: ec-e7d32cd970094ca9839c97a7c4abb4d2.ecs.us-east-2.on.aws/openhound/openhound-aws:latest
       restart: unless-stopped
       init: true
 

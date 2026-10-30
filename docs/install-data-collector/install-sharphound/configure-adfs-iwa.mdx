@@ -16,10 +16,13 @@ This guide explains the BloodHound-specific ADFS configuration steps. For genera
 - An ADFS server deployed and operational in your network
 - Administrative access to your ADFS server
 - The **Client ID** generated after [creating a SharpHound Enterprise collector client](/collect-data/enterprise-collection/create-collector#integrated-windows-authentication)
+- The optional **Custom Client Identifier** entered when creating the client (if you use a custom identifier)
 
 ## Process
 
-The ADFS configuration process involves creating a server application for SharpHound Enterprise, configuring authentication, and ensuring that the necessary claims are included in the issued tokens for proper validation by BloodHound Enterprise. Follow the steps below to complete the configuration.
+The ADFS configuration process involves creating a server application for SharpHound Enterprise, configuring authentication, and ensuring that the identifier BloodHound Enterprise uses for client lookup is included in the issued token.
+
+By default, BloodHound uses the token's `sub` claim and the generated **Client ID**. If you configure a **Custom Client Identifier**, the token must contain that value instead. If your deployment uses a custom claim key, BloodHound Enterprise uses that claim instead of `sub`.
 
 <Steps>
    <Step title="Create a Server Application (Web API)">
@@ -133,7 +136,7 @@ The ADFS configuration process involves creating a server application for SharpH
 
    <Step title="Configure Issuance Transform Rule">
 
-   The issuance transform rule is critical for token validation in BloodHound Enterprise. This rule ensures that the **Client ID** is properly included as the "sub" (subject) claim in the token.
+   The issuance transform rule is critical for token validation in BloodHound Enterprise. The rule must include the client lookup identifier in the issued token.
 
    1. On the **Application Groups** page, open the application group you created for SharpHound Enterprise (e.g., `sharphound-bloodhound`).
 
@@ -152,7 +155,7 @@ The ADFS configuration process involves creating a server application for SharpH
 
    1. On the **Configure Claim Rule** page, enter a name for the rule (e.g., `Issue Sub`).
 
-   1. Add the following custom rule to ensure the Client ID is included as the "sub" claim in the token:
+   1. For the default configuration, add the following custom rule to ensure the **Client ID** is included as the `sub` claim in the token:
 
       ```text
       c:[type == "http://schemas.microsoft.com/2014/01/clientcontext/claims/appid"]
@@ -166,8 +169,12 @@ The ADFS configuration process involves creating a server application for SharpH
          />
       </Frame>
 
+      The exact claim transformation rules required may vary based on your ADFS version and configuration. For the default configuration, the token issued by ADFS must include the **Client ID** as the `sub` claim.
+
+      If you use a **Custom Client Identifier**, issue that value in the claim BloodHound Enterprise uses for client lookup. The value must be a non-empty string and must match the client configuration exactly.
+
       <Note>
-      The exact claim transformation rules required may vary based on your ADFS version and configuration. The critical requirement is that the token issued by ADFS must include the **Client ID** as the "sub" claim so that BloodHound Enterprise can validate that the token is intended for SharpHound Enterprise.
+        For instructions on creating and modifying ADFS claim rules, refer to [Microsoft's Active Directory Federation Services documentation](https://learn.microsoft.com/en-us/windows-server/identity/active-directory-federation-services). The claim rule depends on your ADFS version and the claim that contains the identifier in your environment.
       </Note>
 
    1. Click **Finish**.
@@ -204,5 +211,9 @@ Verify that the service account running SharpHound has Windows authentication ri
 
 <Accordion title="Check SharpHound logs">
 Review the SharpHound logs for detailed error messages during authentication attempts. Logs are typically located in `%APPDATA%\BloodHoundEnterprise`. Look for errors related to token acquisition, ADFS connectivity, or authentication failures.
+</Accordion>
+
+<Accordion title="Verify the client identifier claim">
+Confirm that the token contains the expected client identifier. By default, the `sub` claim must contain the generated **Client ID** or configured **Custom Client Identifier**. If your deployment uses a custom claim key, confirm that the configured claim exists, contains a non-empty string, and matches the client configuration exactly.
 </Accordion>
 </AccordionGroup>

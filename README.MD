@@ -36,10 +36,10 @@ Repository-wide contribution and pull request expectations are covered in the [C
 For documentation-specific guidance, also review the following resources:
 
 - [Contributing to Docs](./Contributing-To-Docs.md)
-- [Documentation style guide](./.github/style-guide.md)
-- [Information architecture guide](./.github/info-architecture.md)
-- [Mintlify guidance](./.github/mintlify-guidance.md)
-- [Validation checklist](./.github/validation.md)
+- [Documentation style guide](.agents/style-guide.md)
+- [Information architecture guide](.agents/info-architecture.md)
+- [Mintlify guidance](.agents/mintlify-guidance.md)
+- [Validation checklist](.agents/validation.md)
 
 ## Contact
 

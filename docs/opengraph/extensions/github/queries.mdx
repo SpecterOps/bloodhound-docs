@@ -267,11 +267,13 @@ This query can be imported into BloodHound from the [environments-admin-bypass.j
 
 ## Expired Personal Access Tokens
 
-Finds expired personal access tokens that still exist. Expired tokens should be cleaned up to reduce credential inventory and audit noise.
+Finds expired fine-grained and classic personal access tokens, including tokens whose owner could not be resolved. Expired tokens should be cleaned up to reduce credential inventory and audit noise.
 
 ```cypher
-MATCH p=(:GH_User)-[:GH_HasPersonalAccessToken]->(token:GH_PersonalAccessToken {token_expired: true})
-RETURN p
+MATCH (token)
+WHERE (token:GH_PersonalAccessToken AND token.token_expired = true) OR (token:GH_ClassicPersonalAccessToken AND token.credential_state = 'expired')
+OPTIONAL MATCH p=(:GH_User)-[:GH_HasPersonalAccessToken]->(token)
+RETURN token, p
 LIMIT 1000
 ```
 
@@ -541,7 +543,7 @@ This query can be imported into BloodHound from the [repos-secret-scanning-disab
 Secrets reachable by users who can create new branches. The GH_CanCreateBranch edge accounts for branch protection rules, push restrictions, blocks_creations settings, and all bypass mechanisms (admin, push_protected_branch, pushAllowances). Edges emit from RepoRole in the common case; per-actor edges from User/Team are only present when per-rule allowances grant additional access beyond the role.
 
 ```cypher
-MATCH p1=(:GH_User)-[:GH_HasRole|GH_HasBaseRole|GH_MemberOf*1..]->(:GH_RepoRole)-[:GH_CanCreateBranch]->(repo:GH_Repository)-[:GH_HasSecret]->(s)
+MATCH p1=(:GH_User)-[:GH_HasRole|GH_HasBaseRole|GH_MemberOf*1..]->(:GH_RepoRole)-[:GH_CanCreateBranch]->(repo:GH_Repository)-[:GH_HasSecret|GH_ScopedTo*1..2]->(s)
 WHERE (s:GH_RepoSecret
 OR s:GH_OrgSecret)
 OPTIONAL MATCH p2=(repo)<-[:GH_CanCreateBranch]-(:GH_User)
@@ -607,7 +609,7 @@ This query can be imported into BloodHound from the [secret-scanning-disabled-ne
 Returns all repo and org secrets reachable by users through write access. Users with write access can create GitHub Actions workflows to access secrets.
 
 ```cypher
-MATCH p=(:GH_User)-[:GH_HasRole|GH_HasBaseRole|GH_MemberOf*1..]->(:GH_RepoRole)-[:GH_WriteRepoContents]->(:GH_Repository)-[:GH_HasSecret]->(s)
+MATCH p=(:GH_User)-[:GH_HasRole|GH_HasBaseRole|GH_MemberOf*1..]->(:GH_RepoRole)-[:GH_WriteRepoContents]->(:GH_Repository)-[:GH_HasSecret|GH_ScopedTo*1..2]->(s)
 WHERE s:GH_RepoSecret
 OR s:GH_OrgSecret
 RETURN p

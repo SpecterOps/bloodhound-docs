@@ -1,0 +1,36 @@
+---
+title: Zone
+description: Synthetic nodes that represent privilege zones in BloodHound Enterprise graph data.
+icon: '/images/nodes/bloodhound-enterprise/zone.png'
+---
+
+import EnterpriseEditionPill from '/snippets/resources/enterprise-edition-pill.mdx';
+
+<EnterpriseEditionPill />
+
+## Representation
+
+The **Zone** node is a synthetic node that represents a [privilege zone](/analyze-data/privilege-zones/overview) in the BloodHound Enterprise graph. It does not represent an object collected from an environment. BloodHound Enterprise creates one Zone node for each privilege-zone asset group tag during analysis and connects the zone's members to it with [`MemberOfZone`](/resources/edges/member-of-zone) relationships.
+
+BloodHound Enterprise uses Zone nodes to measure the shortest path from a finding's target principal to Tier Zero for [Findings Prioritization](/analyze-data/findings/table-view#prioritize-findings). You can also use the nodes as destinations in Cypher queries.
+
+<Note>
+  Zone nodes are generated when Findings Prioritization is enabled. Disabling the feature removes the Zone nodes and their `MemberOfZone` relationships during the next analysis run.
+</Note>
+
+## Node properties
+
+The following properties identify the represented privilege zone and its source asset group tag.
+
+| Database | Description |
+| --- | --- |
+| `objectid` | Generated identifier in the format `zone:<asset_group_tag_id>`. |
+| `name` | Name of the privilege zone. |
+| `displayname` | Display name of the privilege zone. |
+| `zone` | Graph kind associated with the privilege zone's asset group tag, such as `Tag_Tier_Zero`. |
+| `asset_group_tag_id` | Internal identifier of the asset group tag represented by the node. |
+
+## Edges
+
+Zone nodes use [`MemberOfZone`](/resources/edges/member-of-zone) relationships to connect each current zone member to the synthetic zone representation.
+
