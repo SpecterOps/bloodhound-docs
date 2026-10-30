@@ -8,7 +8,7 @@ import ManagedCollectorsBetaNote from '/snippets/feature-beta.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-<ManagedCollectorsBetaNote />
+<ManagedCollectorsBetaNote feature="Managed Collection" />
 
 Managed Collection reduces the infrastructure you operate for AWS data collection, but your organization remains responsible for choosing the AWS scope, granting collection permissions, and protecting the credential you provide.
 
@@ -54,9 +54,11 @@ When you create a collection plan successfully, the jobs engine sends the secret
 
 BloodHound Enterprise does not read the secret value back, and the edit form shows only the saved key identifier. The managed OpenHound collector reads the configured secret directly from AWS Secrets Manager when it performs collection.
 
-The jobs engine is responsible for customer-secret lifecycle operations. The managed OpenHound collector has read-only access to the secret. You can edit a collection plan and select a different saved credential, but you cannot edit the saved key pair itself. The Managed Collection user interface does not provide a self-service way to delete credentials. Contact SpecterOps support to delete a secret.
+The jobs engine is responsible for customer-secret lifecycle operations. The managed OpenHound collector has read-only access to the secret. You cannot edit a collection plan and select a different saved credential after saving it, and you cannot edit the saved key pair itself.
 
-The **Configuration** field is for non-secret collection settings. Do not paste an AWS secret access key, BloodHound Enterprise token, or other credential material into the JSON configuration. Use the separate **Authentication** section for the AWS access key pair.
+The Managed Collection user interface does not provide a self-service way to delete credential reference metadata from the Managed Collection service. Contact your SpecterOps account team for more information.
+
+The **Configuration** field is for non-secret collection settings. Do not paste an AWS secret access key, BloodHound Enterprise token, or other credential material into the JSON configuration. Use the separate **Secrets** section for the AWS access key pair.
 
 <Warning>
   Treat the secret access key as a long-lived credential. Do not reuse it for unrelated workloads, commit it to source control, or include it in screenshots, logs, or support requests.
@@ -64,7 +66,7 @@ The **Configuration** field is for non-secret collection settings. Do not paste 
 
 ## Rotate or revoke a credential
 
-To rotate a credential, follow [Replace a credential](/collect-data/enterprise-collection/managed-collection/configure#replace-a-credential). That procedure covers creating and validating a replacement plan, revoking the old AWS key, and removing the old secret reference through the supported process.
+To rotate a credential, follow [Rotate a credential](/collect-data/enterprise-collection/managed-collection/configure#rotate-a-credential). That procedure covers creating and validating a replacement plan, revoking the old AWS key, and removing the old secret reference through the supported process.
 
 Deleting the old plan removes its profile and schedule links; it does not automatically delete the secret reference or revoke the AWS key. Secret deletion is a separate operation that detaches referencing profiles. A job that BloodHound Enterprise already created keeps its captured key reference, but it can fail if the underlying AWS key is revoked.
 
