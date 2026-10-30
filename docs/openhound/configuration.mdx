@@ -10,7 +10,7 @@ import CollectorSpecificConfig from '/snippets/hounds/collector-specific-config.
 
 OpenHound uses [DLT configuration management](https://dlthub.com/docs/general-usage/credentials/setup), which lets you set parameters through configuration files, environment variables, or both.
 
-The following sections cover common OpenHound parameters and how to configure them for your deployment.
+The following tables cover OpenHound deployment settings and the shared DLT tuning options used by its collectors. For all AWS-specific `config.toml` and `secrets.toml` options, see the [AWS configuration reference](/openhound/collectors/aws/collect-data#configuration-reference). For the wider DLT tuning surface, see [DLT configuration](https://dlthub.com/docs/general-usage/credentials/setup).
 You configure OpenHound in nearly the same way whether you run it as a containerized service or as a standalone CLI application.
 
 ## Configuration management
@@ -21,7 +21,7 @@ The syntax allows for nested sections, collector-specific configurations, and co
 
 Configuration precedence follows a global-to-specific order: a collector-specific override in `[sources.source.<collector>.extract]` takes priority over a global setting in `[extract]`, which in turn takes priority over the built-in default.
 
-OpenHound reads configuration from DLT files, environment variables, or both. Keep non-sensitive settings and secrets in separate files:
+OpenHound reads configuration from DLT files, environment variables, or both. For the same setting, environment variables take priority over `secrets.toml`, which takes priority over `config.toml`. A non-secret setting can be resolved from either file; credentials must use `secrets.toml` or environment variables. Keep non-sensitive settings and secrets in separate files:
 
 | File | Purpose |
 |---|---|
@@ -32,6 +32,8 @@ OpenHound reads configuration from DLT files, environment variables, or both. Ke
 <Note>
   For Docker Compose deployments, create the DLT files under `~/.dlt` on the host.
 </Note>
+
+Use uppercase section and key names separated by `__` for environment variables: `[runtime] log_level` becomes `RUNTIME__LOG_LEVEL`. Omit optional keys to use their defaults; `None` in the tables means unset, not a TOML literal. Unless stated otherwise, all runtime and phase tuning settings below are optional and belong in `config.toml`. Use TOML strings for paths and enumerated values, integers for counts and byte limits, numbers for durations in seconds, and booleans for switches.
 
 ## `config.toml`
 
@@ -194,6 +196,19 @@ The structure of the `secrets.toml` file is the main configuration difference be
   </Tab>
 </Tabs>
 
+### Enterprise destination options
+
+These settings belong to `[destination.bloodhoundenterprise]` and apply to BloodHound Enterprise only. For AWS scheduled collection, set `collector_name = "aws"`. All four keys are required by the AWS scheduler and have no fallback there.
+
+| Key | File / type | Default and explanation |
+| --- | --- | --- |
+| `url` | `config.toml`; string URL | No default. Your tenant base URL, such as `"https://your-tenant.bhe.io"`; used by the scheduler and Enterprise ingest. Set this independently of AWS's `endpoint_url`. |
+| `collector_name` | `config.toml`; string | No default in the AWS scheduler. Identifies the installed collector, `"aws"` for AWS. Docker Compose examples for other collectors may supply it separately; container deployments must provide it. |
+| `token_id` | `secrets.toml`; string | No default. API token ID for the matching collector client created in your tenant; required for scheduling and Enterprise ingest. |
+| `token_key` | `secrets.toml`; string | No default. Secret API token key paired with `token_id`; required for scheduling and Enterprise ingest. Keep it out of version control. |
+
+Environment variables use `DESTINATION__BLOODHOUNDENTERPRISE__` followed by the uppercase key, for example `DESTINATION__BLOODHOUNDENTERPRISE__URL`.
+
 ### Collector-specific secrets
 
 <CollectorSpecificConfig />
@@ -224,11 +239,11 @@ OpenHound checks for container indicators first, then falls back to a TTY check,
 
 By default, OpenHound writes logs as human-readable text. Set `log_format` to `JSON` to switch to structured JSON logging, which is useful for ingestion into log aggregation systems.
 
-`JSON` is the only value you can set for this option. To keep the default text logging, omit `log_format` from your configuration or comment it out.
+Use `"JSON"` for consistent structured logs from OpenHound and DLT. To keep the default text output, omit `log_format` or set `"text"`.
 
 | Runtime Option | Environment Variable | Description |
 |-----------------|------------------------|--------------|
-| `log_format`    | RUNTIME__LOG_FORMAT    | The log output format. `JSON` is the only supported value. |
+| `log_format`    | RUNTIME__LOG_FORMAT    | Optional string; text output by default. Set `"JSON"` for structured file/container output; interactive CLI output stays Rich-formatted. |
 
 <Warning>
   The value must be uppercase `JSON`. DLT's internal logger performs a case-sensitive check for `"JSON"` to decide whether to emit its own structured logs.
@@ -250,12 +265,13 @@ variables:
 
 | Runtime Option     | Environment Variable      | Description                                                                                                                   | Default Value   |
 |--------------------|---------------------------|-------------------------------------------------------------------------------------------------------------------------------|-----------------|
-| `log_level`        | RUNTIME__LOG_LEVEL        | Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)                                                                             | INFO            |
-| `log_cli_level`    | RUNTIME__LOG_CLI_LEVEL    | Console-only verbosity when running in `CLI` mode, independent of `log_level`, which controls file logging.                   | ERROR           |
-| `log_rotate_when`  | RUNTIME__LOG_ROTATE_WHEN  | The time-based rotation settings. S for seconds, H for hours, D for days and 'midnight' for rotating at midnight              | midnight        |
-| `log_interval`     | RUNTIME__LOG_INTERVAL     | Rotate every X unit of seconds, hours, days etc. Ignored when rotate_when is 'midnight'                                       | 1               |
-| `log_max_bytes`    | RUNTIME__LOG_MAX_BYTES    | The size-based rotation settings. Rotate the files after an item exceeds the specified byte size. 0 means rotate by time only | 5_000_000_000  (5GB) |
-| `log_backup_count` | RUNTIME__LOG_BACKUP_COUNT | The amount of files to keep before deleting the oldest.                                                                       | 14              |
+| `log_level`        | RUNTIME__LOG_LEVEL        | String: DEBUG, INFO, WARNING, ERROR, CRITICAL. Raise verbosity to diagnose failures; DEBUG can produce large logs.                                                                             | INFO            |
+| `log_cli_level`    | RUNTIME__LOG_CLI_LEVEL    | String: DEBUG, INFO, WARNING, ERROR, CRITICAL. Console verbosity in CLI mode; the global log_level also filters messages before they reach the console.                   | ERROR           |
+| `log_rotate_when`  | RUNTIME__LOG_ROTATE_WHEN  | The time-based rotation settings. String: S (seconds), M (minutes), H (hours), D (days), midnight, or W0–W6 (weekday, Monday–Sunday). Uses local time.              | midnight        |
+| `log_interval`     | RUNTIME__LOG_INTERVAL     | Positive integer multiplier for the rotation interval. Use with log_rotate_when to change retention cadence.                                       | 1               |
+| `log_max_bytes`    | RUNTIME__LOG_MAX_BYTES    | Integer bytes; rotate when the current file reaches this size. In OpenHound 0.4.2, 0 is treated as unset and retains the default size limit. | 3_145_728_000 (about 3 GiB) |
+| `log_backup_count` | RUNTIME__LOG_BACKUP_COUNT | Positive integer count of rotated files to retain before deleting the oldest. In OpenHound 0.4.2, 0 retains the default.                                                                       | 14              |
+| `log_path` | RUNTIME__LOG_PATH | Optional string directory for global and collector log files. Use an absolute writable mounted path in containers to retain logs across restarts. | Linux: `~/.local/share/openhound/logs`; macOS: `~/Library/Logs/openhound`; Windows: `LOCALAPPDATA/openhound/logs` (fallback `C:\ProgramData/openhound/logs`) |
 
 <Note>
   The code default for `log_cli_level` is `ERROR`, which keeps console output nearly silent. We recommend setting it to `WARNING` for day-to-day use so operators see actionable issues on screen without the noise of full `DEBUG`/`INFO` logging.
@@ -265,14 +281,16 @@ variables:
 
 ### HTTP request parameters
 
-OpenHound uses these `[runtime]` parameters to control how it handles and retries failing HTTP requests to source APIs.
+OpenHound uses these `[runtime]` parameters for framework HTTP requests. AWS source clients use the separate [AWS SDK settings](/openhound/collectors/aws/collect-data#aws-sdk-options); runtime HTTP values do not tune the AWS SDK or the organization survey.
 
 | Runtime Option | Environment Variable | Description | Default Value |
 |---|---|---|---|
+| `request_timeout` | RUNTIME__REQUEST_TIMEOUT | Positive number of seconds allowed for framework HTTP requests. Increase for slow responses; separate from AWS SDK timeouts. | 60 |
+| `http_max_error_body_length` | RUNTIME__HTTP_MAX_ERROR_BODY_LENGTH | Integer character limit for included HTTP error response bodies; applies when http_show_error_body is true. | 8192 |
 | `http_show_error_body` | RUNTIME__HTTP_SHOW_ERROR_BODY | Includes the HTTP response body in raised exceptions/logs. Useful for diagnosing API errors from collectors (GitHub, Okta, Jamf). May expose sensitive response data in logs when enabled. | false |
-| `request_max_attempts` | RUNTIME__REQUEST_MAX_ATTEMPTS | Maximum number of retry attempts for a failing HTTP request before OpenHound gives up and fails the pipeline. | 5 |
-| `request_backoff_factor` | RUNTIME__REQUEST_BACKOFF_FACTOR | Multiplier for the exponential delay between retries. The delay for a given attempt is `backoff_factor * 2^(attempt - 1)` seconds. | 1 |
-| `request_max_retry_delay` | RUNTIME__REQUEST_MAX_RETRY_DELAY | Upper bound, in seconds, on the computed exponential delay. Prevents the wait time from growing unbounded on later attempts. | 300 |
+| `request_max_attempts` | RUNTIME__REQUEST_MAX_ATTEMPTS | Positive integer maximum HTTP attempts before failure; increase to tolerate longer transient outages. | 5 |
+| `request_backoff_factor` | RUNTIME__REQUEST_BACKOFF_FACTOR | Nonnegative number multiplying the exponential delay between retries. The delay for a given attempt is `backoff_factor * 2^(attempt - 1)` seconds. | 1 |
+| `request_max_retry_delay` | RUNTIME__REQUEST_MAX_RETRY_DELAY | Nonnegative number of seconds capping the computed exponential delay. Prevents the wait time from growing unbounded on later attempts. | 300 |
 
 #### How retries mitigate API rate limits
 
@@ -317,9 +335,10 @@ The following parameters are configured under the `[data_writer]` section in the
 
 | Data writer option | Environment Variable          | Description                                                                       | Default Value   |
 |--------------------|-------------------------------|-----------------------------------------------------------------------------------|-----------------|
-| `buffer_max_items` | DATA_WRITER__BUFFER_MAX_ITEMS | The maximum amount of items to keep in memory before writing to disk.             | 5000          |
-| `file_max_items`   | DATA_WRITER__FILE_MAX_ITEMS   | The maximum amount of items to write to a single file before creating a new file. | None         |
-| `file_max_bytes`   | DATA_WRITER__FILE_MAX_BYTES   | The maximum amount of bytes to write to a single file before creating a new file. | None |
+| `buffer_max_items` | DATA_WRITER__BUFFER_MAX_ITEMS | Positive integer item count buffered before a flush. Lower to reduce memory use; a lower file_max_items also limits this buffer.             | 5000          |
+| `file_max_items`   | DATA_WRITER__FILE_MAX_ITEMS   | Optional positive integer item limit per file. Lower for smaller batches; rotation is checked after a buffer flush, so the limit can be exceeded by a batch. | None         |
+| `file_max_bytes`   | DATA_WRITER__FILE_MAX_BYTES   | Optional positive integer byte limit per file, checked after a buffer flush. Omit to use destination recommendations when present, otherwise no explicit byte limit. | None |
+| `disable_compression` | DATA_WRITER__DISABLE_COMPRESSION | Boolean; set true to disable compression for formats that support it. This trades disk space for less compression work. | false |
 
 ```toml Example for ~/.dlt/config.toml with data writing overrides
 [data_writer]
@@ -329,6 +348,10 @@ file_max_items=1000
 file_max_items=100000
 
 [sources.source.okta.data_writer]
+file_max_items=50000
+
+# AWS source-specific override
+[sources.source.aws.data_writer]
 file_max_items=50000
 ```
 
@@ -348,7 +371,7 @@ The following parameters are configured under the `[extract]` section in the con
 
 | Extract option | Environment Variable | Description                                                       | Default Value |
 |----------------|----------------------|-------------------------------------------------------------------|---------------|
-| `workers`      | EXTRACT__WORKERS     | The amount of concurrent workers used during the collection phase | 5             |
+| `workers`      | EXTRACT__WORKERS     | Positive integer thread count for deferred/parallelized collection tasks. Increase for I/O concurrency within API and memory limits. | 5             |
 
 ```toml Example for ~/.dlt/config.toml parallel worker overrides
 [extract]
@@ -360,14 +383,14 @@ workers=10
 
 ### Normalize parameters
 
-The normalize phase is responsible for converting data times and handling schema evolutions. It standardizes column/table names to be snake_case and is executed automatically between the extract and load phase.
+The normalize phase is responsible for converting data types and handling schema evolutions. It standardizes column/table names to be snake_case and is executed automatically between the extract and load phase.
 
 The following parameters are configured under the `[normalize]` section in the configuration file. The normalization phase can also have its own [data writer](/openhound/configuration#data-writing-parameters) configuration by setting the `data_writer` parameter in the `[normalize]` section, which will override the global data writer settings.
 
 | Normalize option | Environment Variable    | Description                                                              | Default Value |
 |------------------|-------------------------|--------------------------------------------------------------------------|---------------|
-| `workers`        | NORMALIZE__WORKERS      | The amount of concurrent workers used during the DLT normalization phase | 1             |
-| `start_method`   | NORMALIZE__START_METHOD | The subprocess starting method (relevant for OS)                         | fork          |
+| `workers`        | NORMALIZE__WORKERS      | Positive integer process count. 1 normalizes without a process pool; increase for CPU parallelism at higher memory cost. | 1             |
+| `start_method`   | NORMALIZE__START_METHOD | Optional string: spawn, fork, or forkserver where supported by the OS. Applies with multiple normalization workers; omit for the platform default (DLT may select spawn in an orchestrator). | None          |
 
 ### Load parameters
 
@@ -377,6 +400,6 @@ The following parameters are configured under the `[load]` section in the config
 
 | Load option                | Environment Variable           | Description                                                                                                     | Default Value |
 |----------------------------|--------------------------------|-----------------------------------------------------------------------------------------------------------------|---------------|
-| `delete_completed_jobs`    | LOAD__DELETE_COMPLETED_JOBS    | Whether to delete completed jobs after a pipeline has completed.                                                | false          |
-| `truncate_staging_dataset` | LOAD__TRUNCATE_STAGING_DATASET | Whether to truncate the staging dataset after loading data into the destination.                                | false          |
-| `workers`                  | LOAD__WORKERS                  | The amount of concurrent workers used during the loading phase, is when uploading data to BloodHound Enterprise | 1             |
+| `delete_completed_jobs`    | LOAD__DELETE_COMPLETED_JOBS    | Boolean; delete completed job files from local load storage after success. Enable to reduce retained intermediate data.                                                | false          |
+| `truncate_staging_dataset` | LOAD__TRUNCATE_STAGING_DATASET | Boolean; truncate a destination staging dataset after loading, where the destination uses one. Leave false for the AWS local-file/Enterprise workflow.                                | false          |
+| `workers`                  | LOAD__WORKERS                  | Positive integer maximum concurrent load jobs; destination capabilities can further limit concurrency. Tune for upload throughput and destination limits. | 20             |
