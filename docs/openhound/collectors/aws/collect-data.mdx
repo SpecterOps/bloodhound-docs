@@ -11,7 +11,7 @@ import CollectionStrategy from '/snippets/hounds/aws-collection-strategy.mdx';
 
 <AwsBetaNote />
 
-This page covers configuring the OpenHound AWS collector for an AWS account or organization. Use this page to choose a collection strategy and configure the collector settings in the `secrets.toml` file or with environment variables.
+This page covers configuring the OpenHound AWS collector for an AWS account or organization. Use this page to choose a collection strategy and configure credentials in `secrets.toml`, tuning in `config.toml`, or either through environment variables. The [configuration reference](#configuration-reference) lists all AWS collector options and links to the shared OpenHound settings.
 
 ## Prerequisites
 
@@ -37,6 +37,62 @@ You can set these values in one of two places:
 <Warning>
   The beta must use the `openhound-aws` container image from the private ECR repository described in the [beta-only deployment example](/openhound/collectors/aws/collect-data#beta-only). The public `openhound` image does not support AWS collection.
 </Warning>
+
+## Configuration reference
+
+Keep `[sources.source.aws.credentials]` in `secrets.toml`. Put SDK and S3 settings in `config.toml`. Both files use the same TOML section paths; non-secret values in existing `secrets.toml` deployments remain supported. Do not duplicate a key across files: environment variables take priority, followed by `secrets.toml`, then `config.toml`. Credentials must come from a secret-capable provider (`secrets.toml` or environment variables).
+
+These DLT files are separate from AWS's shared-config and shared-credentials files. Paths must exist **inside the collector container**; mount host files at the paths you configure. `None` below means omit the key; TOML has no null value.
+
+| Reference | File and section | Contents |
+| --- | --- | --- |
+| [AWS credentials](#aws-credential-options) | `secrets.toml`: `[sources.source.aws.credentials]` | File selection, organization survey, and authentication |
+| [AWS SDK](#aws-sdk-options) | `config.toml`: `[sources.source.aws]` | Connection pool, timeouts, and retries |
+| [S3](#configure-s3-collection) | `config.toml`: `[sources.source.aws.bucket_policy]` | Bucket collection and object inventory rules |
+| [Enterprise destination](/openhound/configuration#enterprise-destination-options) | Both files: `[destination.bloodhoundenterprise]` | Tenant URL, collector name, and API token pair |
+| [Shared runtime](/openhound/configuration#runtime-settings) | `config.toml`: `[runtime]` | Logging and framework HTTP settings |
+| [Data writer](/openhound/configuration#data-writing-parameters) | `config.toml`: `[data_writer]` | Memory buffers, file sizes, and compression |
+| [Extract](/openhound/configuration#extract-parameters), [normalize](/openhound/configuration#normalize-parameters), [load](/openhound/configuration#load-parameters) | `config.toml`: `[extract]`, `[normalize]`, `[load]` | Phase concurrency and cleanup |
+
+For any table row, derive the environment variable by uppercasing the full section and key and replacing each dot with `__`. For example, `sources.source.aws.connect_timeout` becomes `SOURCES__SOURCE__AWS__CONNECT_TIMEOUT`; `sources.source.aws.credentials.aws_config_file` becomes `SOURCES__SOURCE__AWS__CREDENTIALS__AWS_CONFIG_FILE`. Use `true`/`false` for booleans and decimal numbers for numeric environment values. Use the repeated TOML tables shown below for S3 rules.
+
+### AWS credential options
+
+All keys below belong to `[sources.source.aws.credentials]`. Survey-only settings do not alter profiles in a supplied `aws_config_file`.
+
+| Key | Type / default | Required and behavior |
+| --- | --- | --- |
+| `aws_config_file` | String path; `None` | Required for file mode. Uses this AWS shared-config file as written, bypassing the organization survey and `survey_only`. Supports `~` expansion. Omit to survey on each collection. Mark profiles with the [AWS config file keys](#aws-config-file-keys). |
+| `credentials_file` | String path; `None` | Optional override of the AWS shared-credentials file for both survey and collection. Supports `~` expansion. Omit to use SDK resolution (`AWS_SHARED_CREDENTIALS_FILE`, otherwise `~/.aws/credentials`). Use when a source profile refers to credentials in a nonstandard mounted file. This is not DLT's `secrets.toml`. |
+| `endpoint_url` | String URL; `None` | Optional AWS API endpoint override passed to survey STS/Organizations clients and collection service clients, including collection STS. Omit for normal AWS endpoints; set only when your deployment needs a compatible custom endpoint. This is separate from the BloodHound tenant URL. |
+| `management_account_id` | String account ID; `None` | Required when `aws_config_file` is unset. Selects the organization management account to survey. Use a quoted account ID, not a TOML integer. |
+| `management_role_name` | String; `None`, effectively `collector_assumed_role_name` | Survey role in the management account. Set when it differs from the member role. If the source already resolves to this role in this account, the collector skips the management AssumeRole hop. The role supplies Organizations data and management-account resources. |
+| `collector_profile_name` | String profile name; `None` | Optional survey source profile from the SDK's AWS configuration. Omit to use runtime credentials. Set for SSO, credential processes, shared-file credentials, or an existing role chain. This selects the survey source, not which accounts to collect from a supplied file. |
+| `collector_assumed_role_name` | String role name; `None` | Required when `aws_config_file` is unset. Role the management identity assumes in each active member account. Set to the member role you deployed; it must trust the management identity. |
+| `collector_assumed_role_session_name` | String; `None`, effectively `"openhound-aws-collection"` | Optional STS session name for the survey's role assumption and generated role profiles. Change to identify collection sessions in audit logs; use an AWS-valid role session name. |
+| `runtime_auth_mode` | String: `"auto"`, `"web_identity"`, `"default_chain"`; `"auto"` | Survey runtime authentication selection. `auto` selects web identity when `AWS_ROLE_ARN` and `AWS_WEB_IDENTITY_TOKEN_FILE` name an existing token file, otherwise the SDK default chain. `web_identity` requires those values and the file, and forces the IRSA bootstrap profile when no source profile is selected. `default_chain` uses SDK credential resolution, including Pod Identity, ECS, or EC2. Normally omit; use explicit `web_identity` to prevent higher-priority environment credentials from displacing IRSA. Omit `collector_profile_name` when selecting a runtime identity; an explicit web-identity mode still requires the token environment even with a named profile. |
+| `survey_only` | Boolean; `false` | Set `true` to survey, write the generated AWS config and stop before collection. Applies only when `aws_config_file` is unset. See [review the AWS config](#review-the-aws-config-before-collection) for output paths, backups, and reuse. |
+
+The `survey` execution flag is supplied by the collection command; it is not an operator setting. [Removed beta settings](#upgrade-from-earlier-beta-versions) are rejected even if their values would otherwise be ignored.
+
+### AWS SDK options
+
+All keys below are optional and belong to `[sources.source.aws]` in `config.toml`. These values configure collection sessions and their AWS clients, including SDK profile role resolution; they do not tune the separate organization-survey clients. They are independent of the framework's [HTTP retry settings](/openhound/configuration#http-request-parameters).
+
+| Key | Type / default | Explanation and when to change |
+| --- | --- | --- |
+| `max_pool_connections` | Positive integer; `50` | Maximum connections kept in each SDK HTTP connection pool. Increase for highly concurrent collection when the SDK reports pool exhaustion; this does not itself increase worker concurrency. |
+| `connect_timeout` | Positive integer seconds; `5` | Time allowed to establish an AWS connection. Increase for slow network connections or proxies. |
+| `read_timeout` | Positive integer seconds; `15` | Time allowed for an AWS response read. Increase when slow responses time out; longer values also delay failure detection. |
+| `max_attempts` | Nonnegative integer; `3` | SDK standard-mode retries after the initial request (up to four total attempts with the default). Set `0` to disable retries or increase for transient AWS failures. This is a retry count, separate from the framework HTTP attempt limit. |
+
+```toml title="~/.dlt/config.toml"
+[sources.source.aws]
+max_pool_connections = 50
+connect_timeout = 5
+read_timeout = 15
+max_attempts = 3
+```
 
 ## Choose an account collection strategy
 
@@ -257,15 +313,18 @@ Use `survey_only` to inspect the AWS config file that the organization survey wr
 
 S3 bucket collection is disabled by default. Enable it with the `bucket_policy.include` setting, then define bucket and object rules to control which S3 objects the collector stores for processing.
 
-| Setting | Required | Default | Description |
-| --- | --- | --- | --- |
-| `include` | No | `false` | Enables S3 bucket collection. |
-| `max_objects` | No | `10` | Maximum number of objects to collect from each included bucket. Set to `0` to skip object collection. |
-| `rule.include` | No | `true` | Includes or excludes matching buckets or objects. Exclusion rules take precedence. |
-| `rule.match_bucket` | No | None | Regular expression matched against the S3 bucket name. |
-| `rule.match_object` | No | None | Regular expression matched against the S3 object key. |
+Use `[sources.source.aws.bucket_policy]` in `config.toml` for the first three rows. Use `[[sources.source.aws.bucket_policy.rule]]` for each rule. All settings are optional.
 
-Buckets and objects are excluded from object collection by default. A bucket or object must match at least one rule where `include` is `true`. If a bucket or object also matches a rule where `include` is `false`, the exclusion wins.
+| Key | Type / default | Explanation and when to change |
+| --- | --- | --- |
+| `include` | Boolean; `false` | Enable bucket metadata collection, including policies, ACLs, tags, and public access settings. Does not disable account-level S3 public access block collection. Rules below filter object inventory, not bucket metadata. |
+| `max_objects` | Integer; `10` | Maximum object entries examined per included bucket, before object-key filtering. Set `0` (or a negative value) to skip object inventory while retaining enabled bucket metadata. Increase to examine more entries; matching objects can be fewer than this limit. Object contents are not downloaded. |
+| `rule` | Array of rule tables; `None` | Optional bucket-name and object-key filters for object inventory. With no rules, or no matching include rules, no objects are stored. Add both bucket and object include patterns to collect objects. |
+| `rule.include` | Boolean; `true` | Include matching names/keys. Set `false` to exclude; an exclusion wins over all matching inclusions in the same filter. |
+| `rule.match_bucket` | Regex string; `None` | Python `re.search` pattern for bucket names. Only matching included buckets proceed to object listing. Use anchors (`^`, `$`) for a whole-name match. |
+| `rule.match_object` | Regex string; `None` | Python `re.search` pattern for object keys returned by the bounded listing. Only matching included keys are stored. Escape backslashes in TOML basic strings as in the example. |
+
+Bucket and object filters are evaluated separately: a bucket must pass a bucket include rule and its object must pass an object include rule, with no matching exclusion at either level. Putting both patterns in one rule does not bind the object pattern to that bucket. An empty rule has no effect. A bucket exclusion skips its object listing but does not remove its bucket metadata.
 
 ```toml
 [sources.source.aws.bucket_policy]
@@ -290,12 +349,12 @@ match_object = ".*secret.*"
 ```
 
 <Note>
-  Bucket and object filters apply after AWS API responses are returned. Excluded buckets or objects can still appear in API responses, but the collector does not store excluded objects for further processing.
+  Bucket-name filters run after bucket metadata is collected and before object listing. Object-key filters run after the bounded AWS listing response. Excluded object keys can appear in that response, but the collector does not store them for further processing.
 </Note>
 
 ## Configuration examples
 
-The following examples show how to configure the AWS collector for different collection strategies. Replace placeholder values with your own.
+The following examples show supported combined `secrets.toml` configurations. For the preferred split, keep credentials and API tokens in `secrets.toml`, and move the tenant URL and S3 settings to the same section paths in `config.toml`. Replace placeholder values with your own; `max_objects` values here are examples, not defaults.
 
 ### Single-account collection without buckets
 

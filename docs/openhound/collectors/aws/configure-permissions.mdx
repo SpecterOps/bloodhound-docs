@@ -126,11 +126,15 @@ This page explains how to grant the OpenHound AWS collector the read-only AWS pe
     flowchart LR
       subgraph SecurityAccount["Management Account"]
           Workload["OpenHoundCollectorUser"]
-          RuntimeRole["OpenHoundCollectorRuntimeRole"]
+          RuntimeRole["Management role<br/>management_role_name"]
           AssumePolicy["sts:AssumeRole policy<br/>restricted to the organization"]
 
-          Workload -->|"Get temporary credentials"| RuntimeRole
+          Workload -->|"STS AssumeRole"| RuntimeRole
           AssumePolicy -->|"Attached to"| RuntimeRole
+          ReadPolicy["OpenHound read-only policy"]
+          ManagementResources["Organizations and management-account resources"]
+          ReadPolicy -->|"Attached to"| RuntimeRole
+          RuntimeRole -->|"Reads"| ManagementResources
       end
 
       subgraph Organization["AWS Organization"]
@@ -168,11 +172,15 @@ This page explains how to grant the OpenHound AWS collector the read-only AWS pe
     flowchart LR
       subgraph SecurityAccount["Management Account"]
           Workload["EC2 VM / EKS Pod"]
-          RuntimeRole["OpenHoundCollectorRuntimeRole"]
+          RuntimeRole["Management role<br/>management_role_name"]
           AssumePolicy["sts:AssumeRole policy<br/>restricted to the organization"]
 
           Workload -->|"Get temporary credentials"| RuntimeRole
           AssumePolicy -->|"Attached to"| RuntimeRole
+          ReadPolicy["OpenHound read-only policy"]
+          ManagementResources["Organizations and management-account resources"]
+          ReadPolicy -->|"Attached to"| RuntimeRole
+          RuntimeRole -->|"Reads"| ManagementResources
       end
 
       subgraph Organization["AWS Organization"]
@@ -213,7 +221,7 @@ This page explains how to grant the OpenHound AWS collector the read-only AWS pe
             ReadPolicy["OpenHound <br/>permissions policy"]
             AWSResources["AWS resources"]
 
-            Workload -->|"Get temporary credentials"| RuntimeRole
+            Workload -->|"STS AssumeRole"| RuntimeRole
             ReadPolicy -->|"Attached to"| RuntimeRole
             RuntimeRole -->|"Reads"| AWSResources
         end
