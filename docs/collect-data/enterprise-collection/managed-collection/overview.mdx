@@ -62,7 +62,12 @@ sequenceDiagram
     Administrator->>BHE: Create a collection plan
     BHE->>Secrets: Store the AWS credential
     BHE->>BHE: Store the plan and secret reference
-    BHE->>Collector: Make a scheduled job available
+    alt Schedule fires
+        BHE->>BHE: Queue a scheduled job
+    else Administrator starts on-demand collection
+        Administrator->>BHE: Start collection
+        BHE->>BHE: Queue an on-demand job
+    end
     Collector->>BHE: Discover and claim the job
     Collector->>Secrets: Read the referenced credential
     Collector->>AWS: Collect AWS data with read-only access
