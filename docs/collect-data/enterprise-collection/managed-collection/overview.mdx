@@ -4,6 +4,7 @@ description: Learn how the Managed Collection service simplifies data collection
 hidden: true
 ---
 
+import DataExploration from '/snippets/opengraph/extensions/data-exploration.mdx';
 import ManagedCollectorsBetaNote from '/snippets/feature-beta.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
@@ -26,11 +27,11 @@ The Managed Collection beta supports the following capabilities:
 
 | Capability | Beta behavior |
 | --- | --- |
-| Collector | SpecterOps-managed OpenHound |
-| Extension | AWS collection only |
-| Authentication | AWS access key and secret access key (`auth_key`) |
-| Collection plans | Multiple plans supported; each plan describes one AWS collection configuration |
-| Schedule | One optional daily schedule per plan in the beta UI |
+| **Collector** | SpecterOps-managed OpenHound |
+| **Extension** | Pre-installed AWS <Tooltip tip="A ZIP archive that packages an OpenGraph extension definition schema with supported extension assets, such as saved queries and Privilege Zone rules." cta="Learn more" href="/opengraph/extensions/manage#extension-bundles">extension bundle</Tooltip> |
+| **Authentication** | Access key and secret access key for third-party cloud service credentials |
+| **Collection plans** | Multiple plans supported; each plan describes one collection configuration (profile, secret, and optional schedule) |
+| **Schedule** | One optional daily schedule per collection plan |
 
 ## Key concepts
 
@@ -41,7 +42,7 @@ Before diving into the workflow, it's important to understand the following key 
 | **Collector** | A piece of software designed to collect attack path data from your environment. Current collectors include SharpHound, AzureHound, and OpenHound. Managed Collection uses OpenHound.|
 | **Managed collector** | A cloud-hosted collector service that SpecterOps deploys, operates, and maintains. |
 | **Self-hosted collector** | A collector that you install, configure, deploy, operate, and maintain in your own infrastructure. SharpHound, AzureHound, and OpenHound can perform self-hosted collection. |
-| **Collection plan** | A managed collector configuration that tells BloodHound Enterprise what to collect, which credential to use, and when to create collection jobs. You can use a plan to queue an on-demand job or create a schedule for daily automatic collection.  |
+| **Collection plan** | A managed collector configuration that includes a collection profile, a secret, and an optional schedule. The profile defines what to collect and the secret provides the credentials. You can use a plan to queue an on-demand job or schedule automatic collection. |
 | **Job** | A unit of work for a collector to execute. A job defines what data should be collected and from where. |
 | **On-demand collection** | A job execution mode in which you manually queue a job instead of relying on a schedule. |
 | **Schedule collection** (or schedule) | Defines when or how often a particular job should be queued. |
@@ -85,17 +86,21 @@ Managed collection uses an external secret store for AWS credentials. BloodHound
   Use an AWS principal with only the read permissions required for the resources you collect. Review [Configure AWS permissions](/openhound/collectors/aws/configure-permissions) before you create a plan.
 </Note>
 
+## Data exploration
+
+<DataExploration />
+
 ## Managed vs self-hosted collection
 
 The following table provides a comparison of managed versus self-hosted collection:
 
 | Area | Managed collection | Self-hosted collection |
 | --- | --- | --- |
-| Deployment | SpecterOps deploys and operates the OpenHound collector | You deploy and operate a collector in your environment |
-| Maintenance | SpecterOps manages the collector runtime and upgrades | You manage the runtime, upgrades, and troubleshooting |
-| Credentials | BloodHound Enterprise stores a reference to credentials held in the managed service's external secret store | You choose and operate the credential store for your collector |
-| Network path | Collection traffic originates from the managed service | Collection traffic originates from your collector host |
-| Best fit | You want collection without the burden of managing infrastructure | Your network or governance policy requires customer-operated collection |
+| **Deployment** | SpecterOps deploys and operates the OpenHound collector | You deploy and operate a collector in your environment |
+| **Maintenance** | SpecterOps manages the collector runtime and upgrades | You manage the runtime, upgrades, and troubleshooting |
+| **Credentials** | BloodHound Enterprise stores a reference to credentials held in the managed service's external secret store | You choose and operate the credential store for your collector |
+| **Network path** | Collection traffic originates from the managed service | Collection traffic originates from your collector host |
+| **Best fit** | You want collection without the burden of managing infrastructure | Your network or governance policy requires customer-operated collection |
 
 ## Next steps
 
