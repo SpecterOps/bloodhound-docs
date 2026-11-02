@@ -1,13 +1,15 @@
 ---
 title: "AWS_EC2Instance"
 description: "AWS EC2 Instance identity, collected properties, and AWS graph relationships."
+icon: "/images/extensions/aws/aws_ec2instance.svg"
+hidden: true
 ---
+
+import AwsReferenceBetaNote from '/snippets/opengraph/extensions/aws-reference-beta-note.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-<Note>
-AWS is in beta for BloodHound Enterprise. This reference covers schema v0.0.5 for openhound-aws 0.4.0; behavior may change as the beta evolves.
-</Note>
+<AwsReferenceBetaNote />
 
 An Amazon EC2 virtual machine instance, with its instance type, state, VPC/subnet placement, security groups, and attached IAM instance profile.
 
@@ -40,31 +42,104 @@ Types below describe collected values. `null` means the value can be unavailable
 | `tags` | `list[str] or null` | EC2 tags attached to the instance. |
 | `security_groups` | `str or null` | Security groups attached to the instance. |
 
-## Relationships
+## Diagram
+
+Solid arrows show traversable edges; dotted arrows show non-traversable edges. Each view shows the node in relation to the listed endpoint types.
+
+### Inbound edges (1)
+
+```mermaid
+graph LR
+    n["AWS_EC2Instance"]
+    p0_0["AWS_Role"]
+    p0_0 -.->|AWS_CanAssociateIAMInstanceProfile| n
+    p0_1["AWS_User"]
+    p0_1 -.->|AWS_CanAssociateIAMInstanceProfile| n
+    p1_0["AWS_Role"]
+    p1_0 -.->|AWS_CanCreateImage| n
+    p1_1["AWS_User"]
+    p1_1 -.->|AWS_CanCreateImage| n
+    p2_0["AWS_Role"]
+    p2_0 -.->|AWS_CanCreateSnapshot| n
+    p2_1["AWS_User"]
+    p2_1 -.->|AWS_CanCreateSnapshot| n
+    p3_0["AWS_Role"]
+    p3_0 -.->|AWS_CanDisassociateIAMInstanceProfile| n
+    p3_1["AWS_User"]
+    p3_1 -.->|AWS_CanDisassociateIAMInstanceProfile| n
+    p4_0["AWS_Role"]
+    p4_0 -.->|AWS_CanGetPasswordData| n
+    p4_1["AWS_User"]
+    p4_1 -.->|AWS_CanGetPasswordData| n
+    p5_0["AWS_Role"]
+    p5_0 -->|AWS_CanModifyEC2InstanceAttribute| n
+    p5_1["AWS_User"]
+    p5_1 -->|AWS_CanModifyEC2InstanceAttribute| n
+```
+
+### Inbound edges (2)
+
+```mermaid
+graph LR
+    n["AWS_EC2Instance"]
+    p0_0["AWS_Role"]
+    p0_0 -.->|AWS_CanReplaceIAMInstanceProfileAssociation| n
+    p0_1["AWS_User"]
+    p0_1 -.->|AWS_CanReplaceIAMInstanceProfileAssociation| n
+    p1_0["AWS_Role"]
+    p1_0 -.->|AWS_CanTerminateInstances| n
+    p1_1["AWS_User"]
+    p1_1 -.->|AWS_CanTerminateInstances| n
+    p2_0["AWS_Account"]
+    p2_0 -->|AWS_Contains| n
+    p3_0["AWS_Role"]
+    p3_0 -->|AWS_EC2CanVolumeSwap| n
+    p3_1["AWS_User"]
+    p3_1 -->|AWS_EC2CanVolumeSwap| n
+    p4_0["AWS_Role"]
+    p4_0 -->|AWS_SSMCanSendCommand| n
+    p4_1["AWS_User"]
+    p4_1 -->|AWS_SSMCanSendCommand| n
+    p5_0["AWS_Role"]
+    p5_0 -->|AWS_SSMCanStartSession| n
+    p5_1["AWS_User"]
+    p5_1 -->|AWS_SSMCanStartSession| n
+```
+
+### Outbound edges
+
+```mermaid
+graph LR
+    n["AWS_EC2Instance"]
+    p0_0["AWS_Role"]
+    n -->|AWS_RunsAs| p0_0
+```
+
+## Edges
 
 These tables cover relationships emitted for this kind by the AWS collector. Other extensions can define additional relationships.
 
-### Inbound
+### Inbound Edges
 
-| Edge | Source kind | Traversable |
+| Edge Type | Source Node Types | Traversable |
 | --- | --- | --- |
-| [AWS_CanAssociateIAMInstanceProfile](/opengraph/extensions/aws/edges/aws_canassociateiaminstanceprofile) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
-| [AWS_CanCreateImage](/opengraph/extensions/aws/edges/aws_cancreateimage) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
-| [AWS_CanCreateSnapshot](/opengraph/extensions/aws/edges/aws_cancreatesnapshot) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
-| [AWS_CanDisassociateIAMInstanceProfile](/opengraph/extensions/aws/edges/aws_candisassociateiaminstanceprofile) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
-| [AWS_CanGetPasswordData](/opengraph/extensions/aws/edges/aws_cangetpassworddata) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
-| [AWS_CanModifyEC2InstanceAttribute](/opengraph/extensions/aws/edges/aws_canmodifyec2instanceattribute) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | Yes |
-| [AWS_CanReplaceIAMInstanceProfileAssociation](/opengraph/extensions/aws/edges/aws_canreplaceiaminstanceprofileassociation) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
-| [AWS_CanTerminateInstances](/opengraph/extensions/aws/edges/aws_canterminateinstances) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
-| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | Yes |
-| [AWS_EC2CanVolumeSwap](/opengraph/extensions/aws/edges/aws_ec2canvolumeswap) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | Yes |
-| [AWS_SSMCanSendCommand](/opengraph/extensions/aws/edges/aws_ssmcansendcommand) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | Yes |
-| [AWS_SSMCanStartSession](/opengraph/extensions/aws/edges/aws_ssmcanstartsession) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | Yes |
+| [AWS_CanAssociateIAMInstanceProfile](/opengraph/extensions/aws/edges/aws_canassociateiaminstanceprofile) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanCreateImage](/opengraph/extensions/aws/edges/aws_cancreateimage) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanCreateSnapshot](/opengraph/extensions/aws/edges/aws_cancreatesnapshot) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanDisassociateIAMInstanceProfile](/opengraph/extensions/aws/edges/aws_candisassociateiaminstanceprofile) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanGetPasswordData](/opengraph/extensions/aws/edges/aws_cangetpassworddata) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanModifyEC2InstanceAttribute](/opengraph/extensions/aws/edges/aws_canmodifyec2instanceattribute) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
+| [AWS_CanReplaceIAMInstanceProfileAssociation](/opengraph/extensions/aws/edges/aws_canreplaceiaminstanceprofileassociation) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanTerminateInstances](/opengraph/extensions/aws/edges/aws_canterminateinstances) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | ✅ |
+| [AWS_EC2CanVolumeSwap](/opengraph/extensions/aws/edges/aws_ec2canvolumeswap) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
+| [AWS_SSMCanSendCommand](/opengraph/extensions/aws/edges/aws_ssmcansendcommand) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
+| [AWS_SSMCanStartSession](/opengraph/extensions/aws/edges/aws_ssmcanstartsession) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
 
-### Outbound
+### Outbound Edges
 
-| Edge | Destination kind | Traversable |
+| Edge Type | Destination Node Types | Traversable |
 | --- | --- | --- |
-| [AWS_RunsAs](/opengraph/extensions/aws/edges/aws_runsas) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | Yes |
+| [AWS_RunsAs](/opengraph/extensions/aws/edges/aws_runsas) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | ✅ |
 
 [AWS schema](/opengraph/extensions/aws/schema)

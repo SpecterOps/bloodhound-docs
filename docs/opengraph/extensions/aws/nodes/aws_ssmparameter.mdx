@@ -1,13 +1,15 @@
 ---
 title: "AWS_SSMParameter"
 description: "AWS SSM Parameter identity, collected properties, and AWS graph relationships."
+icon: "/images/extensions/aws/aws_ssmparameter.svg"
+hidden: true
 ---
+
+import AwsReferenceBetaNote from '/snippets/opengraph/extensions/aws-reference-beta-note.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-<Note>
-AWS is in beta for BloodHound Enterprise. This reference covers schema v0.0.5 for openhound-aws 0.4.0; behavior may change as the beta evolves.
-</Note>
+<AwsReferenceBetaNote />
 
 An AWS Systems Manager Parameter Store parameter containing configuration data or secrets.
 
@@ -39,20 +41,45 @@ Types below describe collected values. `null` means the value can be unavailable
 
 The node contains parameter metadata. The collector does not put the parameter value in these properties.
 
-## Relationships
+## Diagram
+
+Solid arrows show traversable edges; dotted arrows show non-traversable edges. Each view shows the node in relation to the listed endpoint types.
+
+### Inbound edges
+
+```mermaid
+graph LR
+    n["AWS_SSMParameter"]
+    p0_0["AWS_Role"]
+    p0_0 -.->|AWS_CanDeleteParameter| n
+    p0_1["AWS_User"]
+    p0_1 -.->|AWS_CanDeleteParameter| n
+    p1_0["AWS_Role"]
+    p1_0 -->|AWS_CanGetSSMParameter| n
+    p1_1["AWS_User"]
+    p1_1 -->|AWS_CanGetSSMParameter| n
+    p2_0["AWS_Role"]
+    p2_0 -.->|AWS_CanPutParameter| n
+    p2_1["AWS_User"]
+    p2_1 -.->|AWS_CanPutParameter| n
+    p3_0["AWS_Account"]
+    p3_0 -->|AWS_Contains| n
+```
+
+## Edges
 
 These tables cover relationships emitted for this kind by the AWS collector. Other extensions can define additional relationships.
 
-### Inbound
+### Inbound Edges
 
-| Edge | Source kind | Traversable |
+| Edge Type | Source Node Types | Traversable |
 | --- | --- | --- |
-| [AWS_CanDeleteParameter](/opengraph/extensions/aws/edges/aws_candeleteparameter) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
-| [AWS_CanGetSSMParameter](/opengraph/extensions/aws/edges/aws_cangetssmparameter) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | Yes |
-| [AWS_CanPutParameter](/opengraph/extensions/aws/edges/aws_canputparameter) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | No |
-| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | Yes |
+| [AWS_CanDeleteParameter](/opengraph/extensions/aws/edges/aws_candeleteparameter) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanGetSSMParameter](/opengraph/extensions/aws/edges/aws_cangetssmparameter) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
+| [AWS_CanPutParameter](/opengraph/extensions/aws/edges/aws_canputparameter) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | ✅ |
 
-### Outbound
+### Outbound Edges
 
 No relationships are emitted in this direction for this kind in the current collector.
 

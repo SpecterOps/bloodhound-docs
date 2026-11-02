@@ -1,24 +1,42 @@
 ---
 title: "AWS_CanPassRoleToService"
 description: "AWS_CanPassRoleToService direction, traversability, and interpretation in the AWS schema."
+hidden: true
 ---
+
+import AwsReferenceBetaNote from '/snippets/opengraph/extensions/aws-reference-beta-note.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-<Note>
-AWS is in beta for BloodHound Enterprise. This reference covers schema v0.0.5 for openhound-aws 0.4.0; behavior may change as the beta evolves.
-</Note>
+<AwsReferenceBetaNote />
 
 Principal can pass this IAM role to one or more AWS services (EC2/Lambda/CloudFormation/SSM/EKS) and assume it. The services property lists services the role already trusts (a direct pass); services_via_trust_rewrite lists services reachable only after rewriting the role's trust policy via iam:UpdateAssumeRolePolicy. The methods property records the per-service technique.
 
-## Edge schema
+## Edge Schema
 
-| Source kind | Destination kind |
+- Source: [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user)
+- Destination: [AWS_Role](/opengraph/extensions/aws/nodes/aws_role)
+- Traversable: ✅
+
+BloodHound can include this relationship in an Attack Path.
+
+### Endpoint pairs
+
+| Source Node Types | Destination Node Types |
 | --- | --- |
 | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) |
 | [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) |
 
-**Traversable:** Yes. BloodHound can include this relationship in an Attack Path.
+## Diagram
+
+```mermaid
+graph LR
+    s0["AWS_Role"]
+    s1["AWS_User"]
+    t0["AWS_Role"]
+    s0 -->|AWS_CanPassRoleToService| t0
+    s1 -->|AWS_CanPassRoleToService| t0
+```
 
 ## Interpretation
 
