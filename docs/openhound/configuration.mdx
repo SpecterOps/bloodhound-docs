@@ -10,7 +10,7 @@ import CollectorSpecificConfig from '/snippets/hounds/collector-specific-config.
 
 OpenHound uses [DLT configuration management](https://dlthub.com/docs/general-usage/credentials/setup), which lets you set parameters through configuration files, environment variables, or both.
 
-The following tables cover OpenHound deployment settings and the shared DLT tuning options used by its collectors. For all AWS-specific `config.toml` and `secrets.toml` options, see the [AWS configuration reference](/openhound/collectors/aws/collect-data#configuration-reference). For the wider DLT tuning surface, see [DLT configuration](https://dlthub.com/docs/general-usage/credentials/setup).
+The following tables cover OpenHound deployment settings and the shared DLT tuning options used by its collectors. For the wider DLT tuning surface, see [DLT configuration](https://dlthub.com/docs/general-usage/credentials/setup).
 You configure OpenHound in nearly the same way whether you run it as a containerized service or as a standalone CLI application.
 
 ## Configuration management
@@ -138,6 +138,19 @@ The following example configuration sets global values for runtime, normalize, a
   See [Runtime settings](/openhound/configuration#runtime-settings) for the full list of common runtime settings.
 </Tip>
 
+#### Enterprise destination options
+
+These settings belong to `[destination.bloodhoundenterprise]` and apply to BloodHound Enterprise only. Store non-sensitive settings in `config.toml` and API tokens in `secrets.toml`, as shown in the table. For AWS scheduled collection, set `collector_name = "aws"`. All four keys are required by the AWS scheduler and have no fallback there.
+
+| Key | File / type | Default and explanation |
+| --- | --- | --- |
+| `url` | `config.toml`; string URL | No default. Your tenant base URL, such as `"https://your-tenant.bhe.io"`; used by the scheduler and Enterprise ingest. Set this independently of AWS's `endpoint_url`. |
+| `collector_name` | `config.toml`; string | No default in the AWS scheduler. Identifies the installed collector, `"aws"` for AWS. Docker Compose examples for other collectors may supply it separately; container deployments must provide it. |
+| `token_id` | `secrets.toml`; string | No default. API token ID for the matching collector client created in your tenant; required for scheduling and Enterprise ingest. |
+| `token_key` | `secrets.toml`; string | No default. Secret API token key paired with `token_id`; required for scheduling and Enterprise ingest. Keep it out of version control. |
+
+Environment variables use `DESTINATION__BLOODHOUNDENTERPRISE__` followed by the uppercase key, for example `DESTINATION__BLOODHOUNDENTERPRISE__URL`.
+
 ## `secrets.toml`
 
 Each OpenHound container runs a single collector, so each container needs its own `secrets.toml` file. To run multiple collectors on one host, keep a separate secrets file per collector, for example:
@@ -195,19 +208,6 @@ The structure of the `secrets.toml` file is the main configuration difference be
   | `token_id` | DESTINATION__BLOODHOUNDENTERPRISE__TOKEN_ID | The API token ID generated for the matching OpenHound collector client. |
   </Tab>
 </Tabs>
-
-### Enterprise destination options
-
-These settings belong to `[destination.bloodhoundenterprise]` and apply to BloodHound Enterprise only. For AWS scheduled collection, set `collector_name = "aws"`. All four keys are required by the AWS scheduler and have no fallback there.
-
-| Key | File / type | Default and explanation |
-| --- | --- | --- |
-| `url` | `config.toml`; string URL | No default. Your tenant base URL, such as `"https://your-tenant.bhe.io"`; used by the scheduler and Enterprise ingest. Set this independently of AWS's `endpoint_url`. |
-| `collector_name` | `config.toml`; string | No default in the AWS scheduler. Identifies the installed collector, `"aws"` for AWS. Docker Compose examples for other collectors may supply it separately; container deployments must provide it. |
-| `token_id` | `secrets.toml`; string | No default. API token ID for the matching collector client created in your tenant; required for scheduling and Enterprise ingest. |
-| `token_key` | `secrets.toml`; string | No default. Secret API token key paired with `token_id`; required for scheduling and Enterprise ingest. Keep it out of version control. |
-
-Environment variables use `DESTINATION__BLOODHOUNDENTERPRISE__` followed by the uppercase key, for example `DESTINATION__BLOODHOUNDENTERPRISE__URL`.
 
 ### Collector-specific secrets
 
@@ -281,7 +281,7 @@ variables:
 
 ### HTTP request parameters
 
-OpenHound uses these `[runtime]` parameters for framework HTTP requests. AWS source clients use the separate [AWS SDK settings](/openhound/collectors/aws/collect-data#aws-sdk-options); runtime HTTP values do not tune the AWS SDK or the organization survey.
+OpenHound uses these `[runtime]` parameters for framework HTTP requests.
 
 | Runtime Option | Environment Variable | Description | Default Value |
 |---|---|---|---|

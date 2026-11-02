@@ -17,12 +17,12 @@ This page explains how to grant the OpenHound AWS collector the read-only AWS pe
 
 <CollectionStrategy />
 
-<Note>
-  For multiple independent-account collection, repeat the single-account permission configuration for each account. Then mark one profile per account with `bloodhound_collect = true` in the AWS config file that you pass to the collector as `aws_config_file`.
-</Note>
+For multiple independent-account collection, repeat the single-account permission configuration for each account. Then mark one profile per account with `bloodhound_collect = true` in the AWS config file that you pass to the collector as `aws_config_file`.
 
 <Note>
-  When the collector runs with EKS Pod Identity, EKS adds transitive session tags to its temporary credentials. AWS carries those tags through each `AssumeRole` hop. For every role the collector assumes, allow both `sts:AssumeRole` and `sts:TagSession` in the caller's permissions policy and the target role's trust policy. Keep the caller principal and target role resources scoped to the collector roles. The AWS-hosted examples below include `sts:TagSession` for EKS; omit it when the runtime credentials do not carry transitive session tags. If your authorization policies do not depend on these tags, you can instead [disable Pod Identity session tags](#troubleshoot-eks-session-tags).
+  EKS Pod Identity credentials carry transitive session tags through each `AssumeRole` hop. For every role the collector assumes, allow `sts:AssumeRole` and `sts:TagSession` in both the caller's permissions policy and the target role's trust policy. Scope caller principals and target role resources to the collector roles.
+
+  The AWS-hosted examples below include `sts:TagSession`; omit it when runtime credentials carry no transitive session tags. If authorization policies do not depend on these tags, you can instead [disable Pod Identity session tags](#troubleshoot-eks-session-tags).
 </Note>
 
 <Tabs>
