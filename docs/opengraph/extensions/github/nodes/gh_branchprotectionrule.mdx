@@ -6,69 +6,11 @@ icon: '/images/extensions/github/gh_branchprotectionrule.png'
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
+## General Information
+
 Represents a branch protection rule configured on a GitHub repository. Protection rules define requirements that must be met before changes can be merged to matching branches, such as required reviews, status checks, and restrictions on who can push.
 
 A single protection rule can apply to multiple branches via pattern matching (e.g., `main`, `release/*`).
-
-## Edges
-
-<Note>
-The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
-</Note>
-
-### Inbound Edges
-
-| Edge Type | Source Node Types | Traversable |
-| --------- | ----------------- | ----------- |
-| [GH_BypassPullRequestAllowances](/opengraph/extensions/github/edges/gh_bypasspullrequestallowances) | [GH_User](/opengraph/extensions/github/nodes/gh_user), [GH_Team](/opengraph/extensions/github/nodes/gh_team) | ❌ |
-| [GH_RestrictionsCanPush](/opengraph/extensions/github/edges/gh_restrictionscanpush) | [GH_User](/opengraph/extensions/github/nodes/gh_user), [GH_Team](/opengraph/extensions/github/nodes/gh_team) | ❌ |
-
-### Outbound Edges
-
-| Edge Type | Destination Node Types | Traversable |
-| --------- | ---------------------- | ----------- |
-| [GH_ProtectedBy](/opengraph/extensions/github/edges/gh_protectedby) | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) | ❌ |
-
-## Properties
-
-| Property Name                   | Data Type | Description                                                                                                                                                   |
-| ------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| objectid                        | string    | The GitHub node ID of the branch protection rule: `BPR_kwDOMuFnXM4DPZQt`                                                                                      |
-| name                            | string    | Display name (e.g., `repo\main`).                                                                                                                             |
-| id                              | string    | Same as objectid.                                                                                                                                             |
-| environment_name                | string    | The GitHub organization login name.                                                                                                                           |
-| environmentid                   | string    | The GitHub organization node ID.                                                                                                                              |
-| pattern                         | string    | The branch name pattern this rule applies to (e.g., `main`, `release/*`).                                                                                     |
-| enforce_admins                  | boolean   | Whether branch protection rules are enforced for administrators.                                                                                              |
-| lock_branch                     | boolean   | Whether the branch is locked (read-only).                                                                                                                     |
-| blocks_creations                | boolean   | Whether creating branches matching this pattern is restricted. Only effective when `push_restrictions` is also `true`; silently reverts to `false` otherwise. |
-| required_pull_request_reviews   | boolean   | Whether pull request reviews are required before merging.                                                                                                     |
-| required_approving_review_count | integer   | The number of approving reviews required.                                                                                                                     |
-| require_code_owner_reviews      | boolean   | Whether reviews from code owners are required.                                                                                                                |
-| require_last_push_approval      | boolean   | Whether the last push must be approved by someone other than the pusher.                                                                                      |
-| push_restrictions               | boolean   | Whether push access is restricted to specific users/teams.                                                                                                    |
-| requires_status_checks          | boolean   | Whether status checks must pass before merging.                                                                                                               |
-| requires_strict_status_checks   | boolean   | Whether branches must be up to date with the base branch before merging.                                                                                      |
-| dismisses_stale_reviews         | boolean   | Whether new commits dismiss previously approved reviews.                                                                                                      |
-| allows_force_pushes             | boolean   | Whether force pushes are allowed to matching branches.                                                                                                        |
-| allows_deletions                | boolean   | Whether matching branches can be deleted.                                                                                                                     |
-
-## Diagram
-
-```mermaid
-flowchart TD
-    GH_BranchProtectionRule[fa:fa-shield GH_BranchProtectionRule]
-    GH_Branch[fa:fa-code-branch GH_Branch]
-    GH_User[fa:fa-user GH_User]
-    GH_Team[fa:fa-user-group GH_Team]
-
-
-    GH_User -.->|GH_BypassPullRequestAllowances| GH_BranchProtectionRule
-    GH_Team -.->|GH_BypassPullRequestAllowances| GH_BranchProtectionRule
-    GH_User -.->|GH_RestrictionsCanPush| GH_BranchProtectionRule
-    GH_Team -.->|GH_RestrictionsCanPush| GH_BranchProtectionRule
-    GH_BranchProtectionRule -.->|GH_ProtectedBy| GH_Branch
-```
 
 ## Security Considerations
 
@@ -87,7 +29,7 @@ Branch protection rules are critical security controls. Key settings to review:
 
 The only branch protection configuration that blocks the write-access → workflow → secrets exfiltration attack path is `push_restrictions` + `blocks_creations` on a `*` pattern rule. However, users with [GH_PushProtectedBranch](/opengraph/extensions/github/edges/gh_pushprotectedbranch), [GH_AdminTo](/opengraph/extensions/github/edges/gh_adminto), [GH_RestrictionsCanPush](/opengraph/extensions/github/edges/gh_restrictionscanpush), or [GH_EditRepoProtections](/opengraph/extensions/github/edges/gh_editrepoprotections) can bypass this control.
 
-For complete analysis, see [Mitigating Controls](/opengraph/extensions/github/mitigating-controls).
+For complete analysis, see [BloodHound Docs: GitHub - Mitigating Controls](/opengraph/extensions/github/mitigating-controls).
 
 ### Identifying Bypass Actors
 
@@ -98,3 +40,108 @@ Use these edges to identify users and teams with elevated branch permissions:
 - [GH_BypassBranchProtection](/opengraph/extensions/github/edges/gh_bypassbranchprotection) — repo-wide bypass of merge-gate controls (PR reviews + lock branch)
 - [GH_PushProtectedBranch](/opengraph/extensions/github/edges/gh_pushprotectedbranch) — repo-wide bypass of push-gate controls (push restrictions + blocks creations)
 - [GH_EditRepoProtections](/opengraph/extensions/github/edges/gh_editrepoprotections) — can remove/modify protection rules entirely
+
+## Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | The node name used for matching and display. |
+| `displayname` | `string` | The human-readable display name. |
+| `environmentid` | `string` | The identifier of the GitHub environment where this node was collected. |
+| `last_seen` | `datetime` | The timestamp when this node was last observed during collection. |
+| `node_id` | `string` | The stable identifier used as the OpenGraph node ID; this is the native GitHub node ID where available. |
+| `pattern` | `string` | The branch name pattern this rule applies to (e.g., `main`, `release/*`). |
+| `repository_name` | `string` | The repository name property. |
+| `repository_id` | `string` | The repository id property. |
+| `environment_name` | `string` | The GitHub organization login name. |
+| `enforce_admins` | `boolean` | Whether branch protection rules are enforced for administrators. |
+| `lock_branch` | `boolean` | Whether the branch is locked (read-only). |
+| `blocks_creations` | `boolean` | Whether creating branches matching this pattern is restricted. Only effective when `push_restrictions` is also `true`; silently reverts to `false` otherwise. |
+| `required_pull_request_reviews` | `boolean` | Whether pull request reviews are required before merging. |
+| `required_approving_review_count` | `integer` | The number of approving reviews required. |
+| `require_code_owner_reviews` | `boolean` | Whether reviews from code owners are required. |
+| `require_last_push_approval` | `boolean` | Whether the last push must be approved by someone other than the pusher. |
+| `push_restrictions` | `boolean` | Whether push access is restricted to specific users/teams. |
+| `requires_status_checks` | `boolean` | Whether status checks must pass before merging. |
+| `requires_strict_status_checks` | `boolean` | Whether branches must be up to date with the base branch before merging. |
+| `dismisses_stale_reviews` | `boolean` | Whether new commits dismiss previously approved reviews. |
+| `allows_force_pushes` | `boolean` | Whether force pushes are allowed to matching branches. |
+| `allows_deletions` | `boolean` | Whether matching branches can be deleted. |
+| `query_user_exceptions` | `string` | Query for user exceptions. |
+| `query_branches` | `string` | Query for branches. |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_BranchProtectionRule"]
+    n1["GH_Branch"]
+    n2["GH_Repository"]
+    n3["GH_User"]
+    n0 -.->|GH_ProtectedBy| n1
+    n2 -.->|GH_Contains| n0
+    n3 -.->|GH_BypassPullRequestAllowances| n0
+    n3 -.->|GH_RestrictionsCanPush| n0
+```
+
+## Edges
+
+<Note>
+The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
+</Note>
+
+```mermaid
+flowchart LR
+
+    GH_Branch["GH_Branch"]
+    GH_BranchProtectionRule["GH_BranchProtectionRule"]
+    GH_Repository["GH_Repository"]
+    GH_User["GH_User"]
+    GH_BranchProtectionRule -- GH_ProtectedBy --> GH_Branch
+    GH_Repository -- GH_Contains --> GH_BranchProtectionRule
+    GH_User -- GH_BypassPullRequestAllowances --> GH_BranchProtectionRule
+    GH_User -- GH_RestrictionsCanPush --> GH_BranchProtectionRule
+```
+
+### Inbound Edges
+
+| Edge Type | Source Node Types | Traversable |
+| --------- | ----------------- | ----------- |
+| [GH_BypassPullRequestAllowances](/opengraph/extensions/github/edges/gh_bypasspullrequestallowances) | [GH_User](/opengraph/extensions/github/nodes/gh_user) | ❌ |
+| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
+| [GH_RestrictionsCanPush](/opengraph/extensions/github/edges/gh_restrictionscanpush) | [GH_User](/opengraph/extensions/github/nodes/gh_user) | ❌ |
+
+### Outbound Edges
+
+| Edge Type | Destination Node Types | Traversable |
+| --------- | ---------------------- | ----------- |
+| [GH_ProtectedBy](/opengraph/extensions/github/edges/gh_protectedby) | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) | ❌ |
+
+## Properties
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `name` | `str` | - |
+| `displayname` | `str` | - |
+| `environmentid` | `str` | - |
+| `last_seen` | `datetime` | - |
+| `node_id` | `str` | - |
+| `pattern` | `str \| None` | The branch name pattern this rule applies to (e.g., `main`, `release/*`). |
+| `repository_name` | `str \| None` | The repository name property. |
+| `repository_id` | `str \| None` | The repository id property. |
+| `environment_name` | `str \| None` | The GitHub organization login name. |
+| `enforce_admins` | `bool \| None` | Whether branch protection rules are enforced for administrators. |
+| `lock_branch` | `bool \| None` | Whether the branch is locked (read-only). |
+| `blocks_creations` | `bool \| None` | Whether creating branches matching this pattern is restricted. Only effective when `push_restrictions` is also `true`; silently reverts to `false` otherwise. |
+| `required_pull_request_reviews` | `bool \| None` | Whether pull request reviews are required before merging. |
+| `required_approving_review_count` | `int \| None` | The number of approving reviews required. |
+| `require_code_owner_reviews` | `bool \| None` | Whether reviews from code owners are required. |
+| `require_last_push_approval` | `bool \| None` | Whether the last push must be approved by someone other than the pusher. |
+| `push_restrictions` | `bool \| None` | Whether push access is restricted to specific users/teams. |
+| `requires_status_checks` | `bool \| None` | Whether status checks must pass before merging. |
+| `requires_strict_status_checks` | `bool \| None` | Whether branches must be up to date with the base branch before merging. |
+| `dismisses_stale_reviews` | `bool \| None` | Whether new commits dismiss previously approved reviews. |
+| `allows_force_pushes` | `bool \| None` | Whether force pushes are allowed to matching branches. |
+| `allows_deletions` | `bool \| None` | Whether matching branches can be deleted. |
+| `query_user_exceptions` | `str \| None` | Query for user exceptions. |
+| `query_branches` | `str \| None` | Query for branches. |

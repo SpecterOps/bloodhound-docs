@@ -7,21 +7,34 @@ description: 'User has a pending personal access token request for the organizat
 
 ## Edge Schema
 
-- Source: [GH_User](/opengraph/extensions/github/nodes/gh_user)
-- Destination: [GH_PersonalAccessTokenRequest](/opengraph/extensions/github/nodes/gh_personalaccesstokenrequest)
 - Traversable: ❌
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_User](/opengraph/extensions/github/nodes/gh_user) | GH_HasPersonalAccessTokenRequest | [GH_PersonalAccessTokenRequest](/opengraph/extensions/github/nodes/gh_personalaccesstokenrequest) |
+
+```mermaid
+flowchart LR
+    GH_PersonalAccessTokenRequest["GH_PersonalAccessTokenRequest"]
+    GH_User["GH_User"]
+    GH_User -- GH_HasPersonalAccessTokenRequest --> GH_PersonalAccessTokenRequest
+```
 
 ## General Information
 
 The non-traversable GH_HasPersonalAccessTokenRequest edge represents the relationship between a user and their pending personal access token requests awaiting organizational approval. This edge links each pending token request back to the user who submitted it. Pending token requests are security-relevant because they represent access that may soon be granted, and reviewing them helps administrators understand what permissions users are requesting before approval. Organizations that require approval for fine-grained PATs will have these requests queued until an administrator acts on them.
 
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_User](/opengraph/extensions/github/nodes/gh_user) | [GH_PersonalAccessTokenRequest](/opengraph/extensions/github/nodes/gh_personalaccesstokenrequest) | `false` |
+
+## Diagram
 
 ```mermaid
 graph LR
-    node1("GH_User alice")
-    node2("GH_PersonalAccessTokenRequest deploy-request")
-    node3("GH_User bob")
-    node4("GH_PersonalAccessTokenRequest admin-access-request")
-    node1 -- GH_HasPersonalAccessTokenRequest --> node2
-    node3 -- GH_HasPersonalAccessTokenRequest --> node4
+    n0["GH_User"]
+    n1["GH_PersonalAccessTokenRequest"]
+    n0 -.->|GH_HasPersonalAccessTokenRequest| n1
 ```

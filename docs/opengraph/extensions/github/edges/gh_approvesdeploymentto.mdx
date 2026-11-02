@@ -1,0 +1,50 @@
+---
+title: 'GH_ApprovesDeploymentTo'
+description: 'User or team is configured as a required reviewer for this environment'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Traversable: ❌
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_User](/opengraph/extensions/github/nodes/gh_user) | GH_ApprovesDeploymentTo | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
+| [GH_Team](/opengraph/extensions/github/nodes/gh_team) | GH_ApprovesDeploymentTo | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
+
+```mermaid
+flowchart LR
+    GH_Environment["GH_Environment"]
+    GH_Team["GH_Team"]
+    GH_User["GH_User"]
+    GH_Team -- GH_ApprovesDeploymentTo --> GH_Environment
+    GH_User -- GH_ApprovesDeploymentTo --> GH_Environment
+```
+
+## General Information
+
+The non-traversable GH_ApprovesDeploymentTo edge represents that a user or team is configured as a required reviewer for a GitHub Environment.
+
+This edge is emitted from [GH_User](/opengraph/extensions/github/nodes/gh_user) or [GH_Team](/opengraph/extensions/github/nodes/gh_team) nodes to [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) nodes when the environment includes a required reviewer protection rule. Required reviewers act as an approval gate before jobs referencing the environment can continue.
+
+The edge is non-traversable because it records reviewer configuration rather than direct deployment access. When self-review is allowed, the same reviewer may also receive a traversable [GH_CanDeployToEnvironment](/opengraph/extensions/github/edges/gh_candeploytoenvironment) edge only if they can also supply deployable code through [GH_CanCreateBranch](/opengraph/extensions/github/edges/gh_cancreatebranch) or [GH_CanWriteBranch](/opengraph/extensions/github/edges/gh_canwritebranch) under the environment's branch policy. When prevent_self_review is enabled, GH_ApprovesDeploymentTo remains context only because the split-principal approval flow is not currently modeled.
+
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_Team](/opengraph/extensions/github/nodes/gh_team) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | `false` |
+| [GH_User](/opengraph/extensions/github/nodes/gh_user) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | `false` |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_Team"]
+    n1["GH_Environment"]
+    n2["GH_User"]
+    n0 -.->|GH_ApprovesDeploymentTo| n1
+    n2 -.->|GH_ApprovesDeploymentTo| n1
+```

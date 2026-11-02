@@ -1,0 +1,124 @@
+---
+title: 'GH_Scope'
+description: 'A reusable asset selection within one GitHub organization'
+icon: '/images/extensions/github/gh_scope.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## General Information
+
+Represents a reusable, organization-scoped asset set. Its `scope_type` identifies the kind of asset being grouped and its `scope` identifies the canonical selector. Repository, runner-group, organization-secret, and organization-variable scopes support `all` and `private_or_internal`, matching GitHub's organization-policy semantics. [GH_ScopedTo](/opengraph/extensions/github/edges/gh_scopedto) is traversable so an incoming traversable capability reaches each member.
+
+Arbitrary app `selected` and PAT `subset` selections are not repository-scope nodes. Those selections remain direct [GH_CanAccess](/opengraph/extensions/github/edges/gh_canaccess) relationships. A pending all-repository PAT request uses [GH_RequestsAccessTo](/opengraph/extensions/github/edges/gh_requestsaccessto) rather than [GH_CanAccess](/opengraph/extensions/github/edges/gh_canaccess) because approval has not granted the requested access.
+
+Repositories receive capability boundary edges only when the target scope has at least one matching collected runner group, organization secret, or organization variable. Populated organization-secret scopes similarly receive [GH_CanReadSecret](/opengraph/extensions/github/edges/gh_canreadsecret) from the owners role and, where repository creation policy permits it, the members role. This avoids expanding empty scope families in sparse organizations while retaining owner exposure when the organization currently has no repositories.
+
+## Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | The node name used for matching and display. |
+| `displayname` | `string` | The human-readable display name. |
+| `environmentid` | `string` | The identifier of the GitHub environment where this node was collected. |
+| `last_seen` | `datetime` | The timestamp when this node was last observed during collection. |
+| `node_id` | `string` | The stable identifier used as the OpenGraph node ID; this is the native GitHub node ID where available. |
+| `collected` | `boolean` | The collected value. |
+| `scope_type` | `string` | The scope type value. |
+| `scope` | `string` | The scope value. |
+| `member_count` | `integer` | Number of collected assets reached through outgoing [GH_ScopedTo](/opengraph/extensions/github/edges/gh_scopedto) edges. |
+| `environment_name` | `string` | The environment name value. |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_AppInstallation"]
+    n1["GH_Scope"]
+    n2["GH_OrgRole"]
+    n3["GH_Organization"]
+    n4["GH_PersonalAccessToken"]
+    n5["GH_PersonalAccessTokenRequest"]
+    n6["GH_Repository"]
+    n7["GH_OrgRunnerGroup"]
+    n8["GH_OrgSecret"]
+    n9["GH_OrgVariable"]
+    n0 -.->|GH_CanAccess| n1
+    n2 -->|GH_CanReadSecret| n1
+    n3 -.->|GH_Contains| n1
+    n4 -.->|GH_CanAccess| n1
+    n5 -.->|GH_RequestsAccessTo| n1
+    n6 -->|GH_HasSecret| n1
+    n6 -->|GH_HasVariable| n1
+    n6 -.->|GH_IsEligibleFor| n1
+    n1 -->|GH_ScopedTo| n7
+    n1 -->|GH_ScopedTo| n8
+    n1 -->|GH_ScopedTo| n9
+    n1 -->|GH_ScopedTo| n6
+```
+
+## Edges
+
+<Note>
+The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
+</Note>
+
+```mermaid
+flowchart LR
+
+    GH_AppInstallation["GH_AppInstallation"]
+    GH_Organization["GH_Organization"]
+    GH_OrgRole["GH_OrgRole"]
+    GH_OrgRunnerGroup["GH_OrgRunnerGroup"]
+    GH_OrgSecret["GH_OrgSecret"]
+    GH_OrgVariable["GH_OrgVariable"]
+    GH_PersonalAccessToken["GH_PersonalAccessToken"]
+    GH_PersonalAccessTokenRequest["GH_PersonalAccessTokenRequest"]
+    GH_Repository["GH_Repository"]
+    GH_Scope["GH_Scope"]
+    GH_AppInstallation -- GH_CanAccess --> GH_Scope
+    GH_Organization -- GH_Contains --> GH_Scope
+    GH_OrgRole -- GH_CanReadSecret --> GH_Scope
+    GH_PersonalAccessToken -- GH_CanAccess --> GH_Scope
+    GH_PersonalAccessTokenRequest -- GH_RequestsAccessTo --> GH_Scope
+    GH_Repository -- GH_HasSecret --> GH_Scope
+    GH_Repository -- GH_HasVariable --> GH_Scope
+    GH_Repository -- GH_IsEligibleFor --> GH_Scope
+    GH_Scope -- GH_ScopedTo --> GH_OrgRunnerGroup
+    GH_Scope -- GH_ScopedTo --> GH_OrgSecret
+    GH_Scope -- GH_ScopedTo --> GH_OrgVariable
+    GH_Scope -- GH_ScopedTo --> GH_Repository
+```
+
+### Inbound Edges
+
+| Edge Type | Source Node Types | Traversable |
+| --------- | ----------------- | ----------- |
+| [GH_CanAccess](/opengraph/extensions/github/edges/gh_canaccess) | [GH_AppInstallation](/opengraph/extensions/github/nodes/gh_appinstallation), [GH_PersonalAccessToken](/opengraph/extensions/github/nodes/gh_personalaccesstoken) | ❌ |
+| [GH_CanReadSecret](/opengraph/extensions/github/edges/gh_canreadsecret) | [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole) | ✅ |
+| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
+| [GH_HasSecret](/opengraph/extensions/github/edges/gh_hassecret) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ✅ |
+| [GH_HasVariable](/opengraph/extensions/github/edges/gh_hasvariable) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ✅ |
+| [GH_IsEligibleFor](/opengraph/extensions/github/edges/gh_iseligiblefor) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
+| [GH_RequestsAccessTo](/opengraph/extensions/github/edges/gh_requestsaccessto) | [GH_PersonalAccessTokenRequest](/opengraph/extensions/github/nodes/gh_personalaccesstokenrequest) | ❌ |
+
+### Outbound Edges
+
+| Edge Type | Destination Node Types | Traversable |
+| --------- | ---------------------- | ----------- |
+| [GH_ScopedTo](/opengraph/extensions/github/edges/gh_scopedto) | [GH_OrgRunnerGroup](/opengraph/extensions/github/nodes/gh_orgrunnergroup), [GH_OrgSecret](/opengraph/extensions/github/nodes/gh_orgsecret), [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable), [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ✅ |
+
+## Properties
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `name` | `str` | - |
+| `displayname` | `str` | - |
+| `environmentid` | `str` | - |
+| `last_seen` | `datetime` | - |
+| `node_id` | `str` | - |
+| `collected` | `bool` | - |
+| `scope_type` | `str \| None` | - |
+| `scope` | `str \| None` | - |
+| `member_count` | `int \| None` | - |
+| `environment_name` | `str \| None` | - |

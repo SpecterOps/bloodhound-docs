@@ -258,7 +258,7 @@ This query can be imported into BloodHound from the [dependency-graph-disabled-n
 Finds deployment environments where administrators can bypass protection rules such as required reviewers and wait timers. Admins can deploy to these environments without any approval.
 
 ```cypher
-MATCH p=(:GH_Repository)-[:GH_HasEnvironment]->(env:GH_Environment {can_admins_bypass: true})
+MATCH p=(:GH_Repository)-[:GH_Contains]->(env:GH_Environment {can_admins_bypass: true})
 RETURN p
 LIMIT 1000
 ```
@@ -267,11 +267,13 @@ This query can be imported into BloodHound from the [environments-admin-bypass.j
 
 ## Expired Personal Access Tokens
 
-Finds expired personal access tokens that still exist. Expired tokens should be cleaned up to reduce credential inventory and audit noise.
+Finds expired fine-grained and classic personal access tokens, including tokens whose owner could not be resolved. Expired tokens should be cleaned up to reduce credential inventory and audit noise.
 
 ```cypher
-MATCH p=(:GH_User)-[:GH_HasPersonalAccessToken]->(token:GH_PersonalAccessToken {token_expired: true})
-RETURN p
+MATCH (token)
+WHERE (token:GH_PersonalAccessToken AND token.token_expired = true) OR (token:GH_ClassicPersonalAccessToken AND token.credential_state = 'expired')
+OPTIONAL MATCH p=(:GH_User)-[:GH_HasPersonalAccessToken]->(token)
+RETURN token, p
 LIMIT 1000
 ```
 
@@ -541,7 +543,7 @@ This query can be imported into BloodHound from the [repos-secret-scanning-disab
 Secrets reachable by users who can create new branches. The GH_CanCreateBranch edge accounts for branch protection rules, push restrictions, blocks_creations settings, and all bypass mechanisms (admin, push_protected_branch, pushAllowances). Edges emit from RepoRole in the common case; per-actor edges from User/Team are only present when per-rule allowances grant additional access beyond the role.
 
 ```cypher
-MATCH p1=(:GH_User)-[:GH_HasRole|GH_HasBaseRole|GH_MemberOf*1..]->(:GH_RepoRole)-[:GH_CanCreateBranch]->(repo:GH_Repository)-[:GH_HasSecret]->(s)
+MATCH p1=(:GH_User)-[:GH_HasRole|GH_HasBaseRole|GH_MemberOf*1..]->(:GH_RepoRole)-[:GH_CanCreateBranch]->(repo:GH_Repository)-[:GH_HasSecret|GH_ScopedTo*1..2]->(s)
 WHERE (s:GH_RepoSecret
 OR s:GH_OrgSecret)
 OPTIONAL MATCH p2=(repo)<-[:GH_CanCreateBranch]-(:GH_User)
@@ -557,7 +559,7 @@ This query can be imported into BloodHound from the [repos-vulnerable-to-workflo
 Returns all repository workflows
 
 ```cypher
-MATCH p=(:GH_Repository)-[:GH_HasWorkflow]->(:GH_Workflow)
+MATCH p=(:GH_Repository)-[:GH_Contains]->(:GH_Workflow)
 RETURN p
 LIMIT 1000
 ```
@@ -607,7 +609,7 @@ This query can be imported into BloodHound from the [secret-scanning-disabled-ne
 Returns all repo and org secrets reachable by users through write access. Users with write access can create GitHub Actions workflows to access secrets.
 
 ```cypher
-MATCH p=(:GH_User)-[:GH_HasRole|GH_HasBaseRole|GH_MemberOf*1..]->(:GH_RepoRole)-[:GH_WriteRepoContents]->(:GH_Repository)-[:GH_HasSecret]->(s)
+MATCH p=(:GH_User)-[:GH_HasRole|GH_HasBaseRole|GH_MemberOf*1..]->(:GH_RepoRole)-[:GH_WriteRepoContents]->(:GH_Repository)-[:GH_HasSecret|GH_ScopedTo*1..2]->(s)
 WHERE s:GH_RepoSecret
 OR s:GH_OrgSecret
 RETURN p
@@ -615,6 +617,35 @@ LIMIT 1000
 ```
 
 This query can be imported into BloodHound from the [secrets-reachable-by-user.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/secrets-reachable-by-user.json) file.
+
+## Self-Hosted Runners Can Intercept Broad-Token Jobs
+
+Returns self-hosted runners that can intercept workflow jobs whose effective GITHUB_TOKEN has high-impact write permissions. These jobs can materially increase the blast radius of runner compromise.
+
+```cypher
+MATCH p=(runner:GH_Runner)-[:GH_CanInterceptJob]->(job:GH_WorkflowJob)
+WHERE 'contents:write' IN job.effective_github_token_permissions
+OR 'actions:write' IN job.effective_github_token_permissions
+OR 'pull-requests:write' IN job.effective_github_token_permissions
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [self-hosted-runners-can-intercept-broad-token-jobs.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/self-hosted-runners-can-intercept-broad-token-jobs.json) file.
+
+## Shared Self-Hosted Runners Can Intercept Secret-Bearing Jobs
+
+Returns organization- and enterprise-scoped self-hosted runners that can intercept workflow jobs with statically resolvable secret access. Shared runners are especially important to review because compromise can expose execution contexts across multiple repositories.
+
+```cypher
+MATCH p=(runner:GH_Runner)-[:GH_CanInterceptJob]->(job:GH_WorkflowJob)-[:GH_CanAccessSecret]->(secret:GH_Secret)
+WHERE runner:GH_OrgRunner
+OR runner:GH_EnterpriseRunner
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [shared-self-hosted-runners-can-intercept-secret-bearing-jobs.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/shared-self-hosted-runners-can-intercept-secret-bearing-jobs.json) file.
 
 ## Team Membership Admins
 
@@ -646,7 +677,7 @@ This query can be imported into BloodHound from the [team-structure.json](https:
 Returns all unprotected branches in repositories.
 
 ```cypher
-MATCH p=(repo:GH_Repository)-[:GH_HasBranch]-(:GH_Branch {protected: false})
+MATCH p=(repo:GH_Repository)-[:GH_Contains]-(:GH_Branch {protected: false})
 RETURN p
 LIMIT 1000
 ```
@@ -658,8 +689,8 @@ This query can be imported into BloodHound from the [unprotected-branches.json](
 Returns all repositories that have GitHub Actions workflows and an unprotected default branch. This means that users with GH_WriteRepoContents to the Repository can overwrite or change the workflow.
 
 ```cypher
-MATCH p=(repo:GH_Repository)-[:GH_HasWorkflow]->(:GH_Workflow)
-MATCH p1=(repo)-[:GH_HasBranch]->(branch:GH_Branch)
+MATCH p=(repo:GH_Repository)-[:GH_Contains]->(:GH_Workflow)
+MATCH p1=(repo)-[:GH_Contains]->(branch:GH_Branch)
 WHERE repo.default_branch = branch.short_name
 AND branch.protected = false
 RETURN p1
@@ -673,7 +704,7 @@ This query can be imported into BloodHound from the [unprotected-default-branch-
 Returns all default branches in repositories that are not protected.
 
 ```cypher
-MATCH p=(repo:GH_Repository)-[:GH_HasBranch]-(branch:GH_Branch {protected: false})
+MATCH p=(repo:GH_Repository)-[:GH_Contains]-(branch:GH_Branch {protected: false})
 WHERE repo.default_branch = branch.short_name
 RETURN p
 LIMIT 1000
@@ -692,4 +723,79 @@ LIMIT 1000
 ```
 
 This query can be imported into BloodHound from the [web-commit-signoff-not-required.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/web-commit-signoff-not-required.json) file.
+
+## Workflow Jobs Interceptable by Self-Hosted Runners
+
+Returns workflow jobs whose future execution context may be exposed to an actor controlling a collected self-hosted runner that is not explicitly marked ephemeral.
+
+```cypher
+MATCH p=(runner:GH_Runner)-[:GH_CanInterceptJob]->(job:GH_WorkflowJob)
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [workflow-jobs-interceptable-by-self-hosted-runners.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/workflow-jobs-interceptable-by-self-hosted-runners.json) file.
+
+## Workflow Jobs with Broad GITHUB_TOKEN Write Permissions
+
+Returns workflow jobs whose calculated effective GITHUB_TOKEN permissions include write access to repository contents, Actions, or pull requests. These permissions can materially increase the impact of workflow compromise.
+
+```cypher
+MATCH p=(repo:GH_Repository)-[:GH_Contains]->(:GH_Workflow)-[:GH_Contains]->(job:GH_WorkflowJob)
+WHERE 'contents:write' IN job.effective_github_token_permissions
+OR 'actions:write' IN job.effective_github_token_permissions
+OR 'pull-requests:write' IN job.effective_github_token_permissions
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [workflow-jobs-with-broad-token-write-permissions.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/workflow-jobs-with-broad-token-write-permissions.json) file.
+
+## OIDC-Capable Workflow Jobs Interceptable by Self-Hosted Runners
+
+Returns OIDC-capable workflow jobs whose execution context may be exposed to an actor controlling a collected self-hosted runner that is not explicitly marked ephemeral. These jobs are especially important to review because runner compromise could expose short-lived cloud federation tokens.
+
+```cypher
+MATCH p=(runner:GH_Runner)-[:GH_CanInterceptJob]->(job:GH_WorkflowJob)
+WHERE 'id-token:write' IN job.effective_github_token_permissions
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [workflow-jobs-with-id-token-write-on-self-hosted-runners.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/workflow-jobs-with-id-token-write-on-self-hosted-runners.json) file.
+
+## Workflow Jobs with OIDC Token Permission
+
+Returns workflow jobs whose calculated effective GITHUB_TOKEN permissions include id-token:write. These jobs can request GitHub OIDC tokens, though additional step analysis is needed to determine whether the token is actually used.
+
+```cypher
+MATCH p=(repo:GH_Repository)-[:GH_Contains]->(:GH_Workflow)-[:GH_Contains]->(job:GH_WorkflowJob)
+WHERE 'id-token:write' IN job.effective_github_token_permissions
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [workflow-jobs-with-id-token-write.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/workflow-jobs-with-id-token-write.json) file.
+
+## Workflow Jobs with Observed OIDC Authentication Steps
+
+Returns OIDC-capable workflow jobs with direct descendant steps that show likely OIDC token consumption, including common AWS, Azure, GitHub Pages, and direct token-request patterns. This is evidence of likely use, not a complete classifier for every possible OIDC consumer; reusable workflow callers may require following GH_CallsWorkflow to find the consuming steps.
+
+```cypher
+MATCH p=(repo:GH_Repository)-[:GH_Contains]->(:GH_Workflow)-[:GH_Contains]->(job:GH_WorkflowJob)-[:GH_Contains]->(step:GH_WorkflowStep)
+WHERE 'id-token:write' IN job.effective_github_token_permissions
+AND (
+  step.action_slug = 'aws-actions/configure-aws-credentials'
+  OR step.action_slug = 'azure/login'
+  OR step.action_slug = 'Azure/login'
+  OR step.action_slug = 'actions/deploy-pages'
+  OR step.contents CONTAINS 'getIDToken'
+  OR step.contents CONTAINS 'ACTIONS_ID_TOKEN_REQUEST_URL'
+  OR step.contents CONTAINS 'ACTIONS_ID_TOKEN_REQUEST_TOKEN'
+)
+RETURN p
+LIMIT 1000
+```
+
+This query can be imported into BloodHound from the [workflow-jobs-with-observed-oidc-auth-steps.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/saved_searches/workflow-jobs-with-observed-oidc-auth-steps.json) file.
 

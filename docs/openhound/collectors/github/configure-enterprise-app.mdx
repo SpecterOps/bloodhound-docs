@@ -48,6 +48,10 @@ Follow these steps to create a GitHub App that can be installed at the enterpris
            <GitHubEnterprisePermissions />
          </Expandable>
 
+       <Note>
+         If you plan to collect external group mapping data for IdP-synced teams, set the organization **Members** permission to **Read and write** instead of **Read-only**. See [Optional privileged collection](/openhound/collectors/github/configure-enterprise-app#optional-privileged-collection) for details.
+       </Note>
+
     1. Under **Where can this GitHub App be installed?**, select the option for organizations owned by your enterprise.
   </Step>
   <Step title="Create the app">
@@ -82,6 +86,24 @@ Install the same GitHub App in the enterprise account and in each organization y
     </Note>
   </Step>
 </Steps>
+
+## Optional privileged collection
+
+The collector runs successfully with the read-only permission set described above. Some higher-fidelity relationships require optional non-read-only permissions because GitHub exposes the supporting read APIs behind privileged permission names.
+
+<Note>
+  In most environments you can skip these; grant them only if you need the specific data they unlock.
+</Note>
+
+- Organization **Members: Read and write** enables external group mapping collection for IdP-synced teams, which allows the converter to emit `SCIM_Provisioned` edges from `SCIM_Group` to `GH_Team`.
+
+  This is useful when the organization uses team synchronization with an external identity provider. If no GitHub teams are linked to external groups, this permission does not add graph data.
+
+- Classic PAT scope `manage_runners:enterprise` enables enterprise self-hosted runner group and runner collection.
+
+  This is useful when the enterprise has enterprise-scoped runner groups or runners, especially runner groups shared into organizations. If all runners are organization- or repository-scoped, this scope does not add graph data.
+
+If you don't grant these optional permissions, OpenHound skips the affected resources and continues collecting the rest of the GitHub environment.
 
 ## Create a Classic PAT for SSO, SCIM, and Runners
 

@@ -1,0 +1,294 @@
+---
+title: Cypher queries
+description: Entra Agents extension Cypher queries
+icon: code
+hidden: true
+---
+
+import EntraAgentsBetaNote from '/snippets/hounds/openhound-entra-agents-beta-note.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+<EntraAgentsBetaNote />
+
+The following custom Cypher queries can be imported into BloodHound to enhance visibility.
+
+## AZAgent - A2A endpoints connected to Foundry agents
+
+Lists Foundry agents and the external Agent2Agent endpoints connected to them. The graph does not represent the external endpoints' downstream identities or permissions. Research reference: AP10 - A2A Cross-Agent Escalation, query Q21.
+
+```cypher
+MATCH p = (agent:AZAgent_FoundryAgent)-[r:AZAgent_A2AConnection]->(ep:AZAgent_ExternalA2AEndpoint)
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - All Entra Agent relationships
+
+Lists collected relationships defined by the Entra Agents graph model. Optional or reserved relationship types appear only when corresponding data is present.
+
+```cypher
+MATCH p = ()-[:AZAgent_A2AConnection|AZAgent_ActsAs|AZAgent_AddBlueprintCredential|AZAgent_BlueprintOwns|AZAgent_CanEdit|AZAgent_CanInvoke|AZAgent_ConnectionAuthenticatedAs|AZAgent_ConnectsToMCP|AZAgent_DelegatesToAgent|AZAgent_DelegatesToFlow|AZAgent_FlowUsesConnection|AZAgent_HasAccountRole|AZAgent_HasAgentUser|AZAgent_HasBlueprintPrincipal|AZAgent_HasConnectionAccess|AZAgent_HasIdentity|AZAgent_HasProjectRole|AZAgent_IdentityIsServicePrincipal|AZAgent_Owns|AZAgent_ProjectContainsAgent|AZAgent_ProjectContainsConnection|AZAgent_ProjectUsesKeyVault|AZAgent_RunOnly|AZAgent_Sponsors|AZAgent_HasTool|AZAgent_UsesConnection]-()
+RETURN p
+```
+
+## AZAgent - Blueprint agent users with a mailbox or OneDrive
+
+Lists agent identity blueprints, their child identities, and associated agent users marked as having a mailbox or OneDrive. The current collector does not populate these flags, and the graph does not represent access to the mailbox or OneDrive resources. Research reference: AP14 - Agent User Mailbox/OneDrive Access, query Q26.
+
+```cypher
+MATCH p = (bp:AZAgent_Blueprint)-[:AZAgent_BlueprintOwns]->(ai:AZAgent_Identity)-[:AZAgent_HasAgentUser]->(au:AZAgent_AgentUser)
+WHERE au.hasmailbox = true OR au.hasonedrive = true
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Configured connection identities
+
+Lists connections and their resolved configured user or service-principal identities. The identity relationship is non-traversable and does not establish token health or control of the account.
+
+```cypher
+MATCH p = (conn:AZAgent_Connection)-[:AZAgent_ConnectionAuthenticatedAs]->(identity)
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Configured identities for child flow connections
+
+Lists parent-to-child flow relationships, the child flows' connections, and their configured user identities. The identity relationship is non-traversable; verify the flow operation and token health before assessing runtime access.
+
+```cypher
+MATCH p = (parent:AZAgent_Flow)-[:AZAgent_DelegatesToFlow]->(child:AZAgent_Flow)-[:AZAgent_FlowUsesConnection]->(conn:AZAgent_Connection)-[:AZAgent_ConnectionAuthenticatedAs]->(identity:AZUser)
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Connection access and configured identities
+
+Lists users without collected directory-role assignments who have connection access, together with the configured user identities of those connections. Requires optional administrator reads. Both relationships are non-traversable and do not establish credential use or account control.
+
+```cypher
+MATCH p = (user:AZUser)-[:AZAgent_HasConnectionAccess]->(conn:AZAgent_Connection)-[:AZAgent_ConnectionAuthenticatedAs]->(identity:AZUser)
+WHERE NOT (user)-[:AZHasRole]->(:AZRole)
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Connections with unmatched authentication metadata
+
+Lists Power Platform connections with raw administrator metadata but no matched configured identity. A missing identity relationship does not establish anonymous authentication or the absence of an authenticated principal; review the metadata and supported identity-matching limits.
+
+```cypher
+MATCH (conn:AZAgent_Connection)
+WHERE conn.authenticationdetails IS NOT NULL
+AND NOT (conn)-[:AZAgent_ConnectionAuthenticatedAs]->()
+RETURN conn
+LIMIT 1000
+```
+
+## AZAgent - Copilot agent access and configured connection identities
+
+Lists ownership, edit, or invocation relationships to Copilot agents whose tools reference connections configured to authenticate as a different identity. Authoring tool configuration may differ from the published agent, and the non-traversable tool and identity relationships do not establish tool execution rights or account control.
+
+```cypher
+MATCH p = (source)-[:AZAgent_Owns|AZAgent_CanEdit|AZAgent_CanInvoke]->(agent:AZAgent_CopilotAgent)
+  -[:AZAgent_HasTool]->(tool:AZAgent_ToolInstance)
+  -[:AZAgent_UsesConnection]->(conn:AZAgent_Connection)-[:AZAgent_ConnectionAuthenticatedAs]->(target)
+WHERE source<>target
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Copilot agent owners and tool bindings
+
+Lists Copilot agent owners, configured tools, and the connections referenced by those tools. Authoring configuration may differ from the published agent; these bindings do not establish tool execution rights or a traversable capability path.
+
+```cypher
+MATCH p = (owner:AZUser)-[:AZAgent_Owns]->(agent:AZAgent_CopilotAgent)-[:AZAgent_HasTool]->(tool:AZAgent_ToolInstance)-[:AZAgent_UsesConnection]->(conn:AZAgent_Connection)
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Copilot agent paths to resource-delegated child flow connections
+
+Lists user-to-Copilot-agent paths that reach child flows using resource-delegated connections. Requires delegation-mode metadata, which the current Power Platform collector does not populate. Research reference: AP7 - Child Flow Context Loss, query Q15.
+
+```cypher
+MATCH p = (user:AZUser)-[:AZAgent_CanInvoke]->(agent:AZAgent_CopilotAgent)-[:AZAgent_DelegatesToFlow]->(parent:AZAgent_Flow)-[:AZAgent_DelegatesToFlow]->(child:AZAgent_Flow)-[:AZAgent_FlowUsesConnection]->(conn:AZAgent_Connection)
+WHERE conn.delegationmode = 'resource'
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Copilot agents using streamable HTTP MCP servers
+
+Lists Copilot agents connected to Model Context Protocol (MCP) servers using streamable HTTP transport. Research reference: AP11 - MCP Cross-Server Influence, query Q22.
+
+```cypher
+MATCH p = (agent:AZAgent_CopilotAgent)-[:AZAgent_ConnectsToMCP]->(mcp:AZAgent_MCPServer)
+WHERE mcp.transporttype = 'streamablehttp'
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Directory roles assigned to blueprint identities
+
+Lists agent identity blueprints, the service principals backing their child identities, and directory roles assigned to those service principals. Research reference: AP17 - Cross-Graph Blueprint to Azure RBAC, query Q30.
+
+```cypher
+MATCH p = (bp:AZAgent_Blueprint)-[:AZAgent_BlueprintOwns]->(ai:AZAgent_Identity)-[:AZAgent_IdentityIsServicePrincipal]->(sp:AZServicePrincipal)-[:AZHasRole]->(role:AZRole)
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Directory roles that can add blueprint credentials
+
+Lists directory roles with collected credential-administration relationships to agent identity blueprints.
+
+```cypher
+MATCH p = (role:AZRole)-[r:AZAgent_AddBlueprintCredential]->(bp:AZAgent_Blueprint)
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Foundry account roles and project connections
+
+Lists users with selected account-level roles on Cognitive Services-backed Foundry projects, together with the projects' connections. Research reference: AP6 - Foundry RBAC Bypass, query Q11.
+
+```cypher
+MATCH p = (user:AZUser)-[role:AZAgent_HasAccountRole]->(project:AZAgent_FoundryProject)-[:AZAgent_ProjectContainsConnection]->(conn:AZAgent_Connection)
+WHERE project.hubtype = 'cognitiveservices'
+  AND role.roledefinition IN ['eadc314b-1a2d-4efa-be10-5d325db5065e','e47c6f54-e4a2-4754-9501-8e0985b135e1','c883944f-8b7b-4483-af10-35834be79c4a','b78c5d69-af96-48a3-bf8d-a8b4d589de94','25fbc0a9-bd7c-42a3-aa1a-3b75d497ee68','8e3af657-a8ff-443c-a75c-2fe8c4bcb635','b24988ac-6180-42a0-ab88-20f7382dd24c']
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Foundry project connections using API keys
+
+Lists Foundry projects and their connections configured to use API-key authentication.
+
+```cypher
+MATCH p = (project:AZAgent_FoundryProject)-[:AZAgent_ProjectContainsConnection]->(conn:AZAgent_Connection)
+WHERE conn.authtype = 'apikey'
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Foundry project roles and agent identities
+
+Lists users with selected Foundry project roles, agents in those projects, and the service principals backing the agents' resolved identities. Research reference: AP16 - Project Agent Compromise via Shared Identity, query Q28.
+
+```cypher
+MATCH p = (user:AZUser)-[r:AZAgent_HasProjectRole]->(project:AZAgent_FoundryProject)-[:AZAgent_ProjectContainsAgent]->(agent:AZAgent_FoundryAgent)-[:AZAgent_HasIdentity]->(identity:AZAgent_Identity)-[:AZAgent_IdentityIsServicePrincipal]->(sp:AZServicePrincipal)
+WHERE r.roledefinition IN ['53ca6127-db72-4b80-b1b0-d745d6d5456d','eadc314b-1a2d-4efa-be10-5d325db5065e','c883944f-8b7b-4483-af10-35834be79c4a']
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Identities owned by blueprints
+
+Lists agent identity blueprints and their child identities.
+
+```cypher
+MATCH p = (bp:AZAgent_Blueprint)-[:AZAgent_BlueprintOwns]->(ai:AZAgent_Identity)
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Key Vaults linked to Foundry projects
+
+Lists Foundry projects and the Azure Key Vaults linked to them for workspace-backed project secrets.
+
+```cypher
+MATCH p = (project:AZAgent_FoundryProject)-[:AZAgent_ProjectUsesKeyVault]->(kv:AZKeyVault)
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Principals linked to blueprints
+
+Lists agent identity blueprints and their tenant-local blueprint principals.
+
+```cypher
+MATCH p = (bp:AZAgent_Blueprint)-[:AZAgent_HasBlueprintPrincipal]->(principal:AZAgent_BlueprintPrincipal)
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Public Copilot agents
+
+Lists Copilot agents configured without inbound authentication.
+
+```cypher
+MATCH (agent:AZAgent_CopilotAgent)
+WHERE agent.inboundauthmode = 'none'
+RETURN agent
+LIMIT 1000
+```
+
+## AZAgent - Run-only flow access and configured connection identities
+
+Lists users with run-only flow access whose flows use connections configured to authenticate as a different user. Run-only permissions are not currently collected. The configured identity relationship is non-traversable and does not establish token health or account control.
+
+```cypher
+MATCH p = (user:AZUser)-[:AZAgent_RunOnly]->(flow:AZAgent_Flow)-[:AZAgent_FlowUsesConnection]->(conn:AZAgent_Connection)-[:AZAgent_ConnectionAuthenticatedAs]->(identity:AZUser)
+WHERE user <> identity
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Service principals backing blueprint identities
+
+Lists agent identity blueprints, their child identities, and the Entra service principals backing those identities. Research reference: AP3 - Blueprint Mass Impersonation, query Q05.
+
+```cypher
+MATCH p = (bp:AZAgent_Blueprint)-[:AZAgent_BlueprintOwns]->(ai:AZAgent_Identity)-[:AZAgent_IdentityIsServicePrincipal]->(sp:AZServicePrincipal)
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Sponsors of agent identities
+
+Lists users recorded as sponsors of agent identities.
+
+```cypher
+MATCH p = (sponsor:AZUser)-[:AZAgent_Sponsors]->(identity:AZAgent_Identity)
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Tool bindings on Copilot agents without a resolved user owner
+
+Lists configured tools and their connections on Copilot agents without a resolved user-ownership relationship. Missing ownership can reflect orphaning, incomplete collection, or ownership-resolution failures; it does not confirm owner deletion. Authoring configuration may differ from the published agent, and these bindings do not establish tool execution rights or a traversable capability path.
+
+```cypher
+MATCH p = (agent:AZAgent_CopilotAgent)-[:AZAgent_HasTool]->(tool:AZAgent_ToolInstance)-[:AZAgent_UsesConnection]->(conn:AZAgent_Connection)
+WHERE NOT (:AZUser)-[:AZAgent_Owns]->(agent)
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Users with access to SQL gateway connections
+
+Lists users with connection access or ownership for connections marked as SQL connections using an on-premises gateway. Power Platform gateway metadata is not currently populated. Connection access-list collection requires optional administrator reads, and access-list relationships are non-traversable.
+
+```cypher
+MATCH (conn:AZAgent_Connection)
+WHERE conn.usesgateway = true
+  AND conn.connectortype = 'sql'
+MATCH p = (user:AZUser)-[:AZAgent_HasConnectionAccess|AZAgent_Owns]->(conn)
+RETURN p
+LIMIT 1000
+```
+
+## AZAgent - Users with agent invoke or edit access
+
+Lists users with collected invocation or editing permissions on objects labeled `AZAgent`.
+
+```cypher
+MATCH p = (user:AZUser)-[:AZAgent_CanInvoke|AZAgent_CanEdit]->
+  (agent:AZAgent)
+RETURN p
+LIMIT 1000
+```
+

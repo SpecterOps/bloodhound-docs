@@ -1,0 +1,112 @@
+---
+title: 'GH_EnterpriseTeam'
+description: 'A team managed at the GitHub Enterprise level and assignable across organizations'
+icon: '/images/extensions/github/gh_enterpriseteam.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## General Information
+
+A team managed at the GitHub Enterprise level and assignable across organizations.
+
+## Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | The node name used for matching and display. |
+| `displayname` | `string` | The human-readable display name. |
+| `environmentid` | `string` | The identifier of the GitHub environment where this node was collected. |
+| `last_seen` | `datetime` | The timestamp when this node was last observed during collection. |
+| `node_id` | `string` | The stable identifier used as the OpenGraph node ID; this is the native GitHub node ID where available. |
+| `github_team_id` | `string or integer` | The raw GitHub enterprise team ID. |
+| `slug` | `string` | The enterprise team slug. |
+| `projected_slug` | `string` | The organization-projected team slug. |
+| `group_id` | `string` | The linked SCIM group ID. |
+| `description` | `string` | The team description. |
+| `created_at` | `string` | When the team was created. |
+| `updated_at` | `string` | When the team was last updated. |
+| `environment_name` | `string` | The enterprise environment name. |
+| `query_enterprise` | `string` | Query for the containing enterprise. |
+| `query_assigned_organizations` | `string` | Query for assigned organizations. |
+| `query_projected_teams` | `string` | Query for projected organization teams. |
+| `query_members` | `string` | Query for team members. |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_Enterprise"]
+    n1["GH_EnterpriseTeam"]
+    n2["GH_EnterpriseRole"]
+    n3["GH_Organization"]
+    n4["GH_Team"]
+    n5["GH_TeamRole"]
+    n0 -.->|GH_Contains| n1
+    n1 -->|GH_HasRole| n2
+    n1 -.->|GH_AssignedTo| n3
+    n1 -->|GH_MemberOf| n4
+    n5 -->|GH_MemberOf| n1
+```
+
+## Edges
+
+<Note>
+The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
+</Note>
+
+```mermaid
+flowchart LR
+
+    GH_Enterprise["GH_Enterprise"]
+    GH_EnterpriseRole["GH_EnterpriseRole"]
+    GH_EnterpriseTeam["GH_EnterpriseTeam"]
+    GH_Organization["GH_Organization"]
+    GH_Team["GH_Team"]
+    GH_TeamRole["GH_TeamRole"]
+    SCIM_Group["SCIM_Group"]
+    GH_Enterprise -- GH_Contains --> GH_EnterpriseTeam
+    GH_EnterpriseTeam -- GH_AssignedTo --> GH_Organization
+    GH_EnterpriseTeam -- GH_HasRole --> GH_EnterpriseRole
+    GH_EnterpriseTeam -- GH_MemberOf --> GH_Team
+    GH_TeamRole -- GH_MemberOf --> GH_EnterpriseTeam
+    SCIM_Group -- SCIM_Provisioned --> GH_EnterpriseTeam
+```
+
+### Inbound Edges
+
+| Edge Type | Source Node Types | Traversable |
+| --------- | ----------------- | ----------- |
+| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | ❌ |
+| [GH_MemberOf](/opengraph/extensions/github/edges/gh_memberof) | [GH_TeamRole](/opengraph/extensions/github/nodes/gh_teamrole) | ✅ |
+| SCIM_Provisioned | SCIM_Group | ❌ |
+
+### Outbound Edges
+
+| Edge Type | Destination Node Types | Traversable |
+| --------- | ---------------------- | ----------- |
+| [GH_AssignedTo](/opengraph/extensions/github/edges/gh_assignedto) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
+| [GH_HasRole](/opengraph/extensions/github/edges/gh_hasrole) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | ✅ |
+| [GH_MemberOf](/opengraph/extensions/github/edges/gh_memberof) | [GH_Team](/opengraph/extensions/github/nodes/gh_team) | ✅ |
+
+## Properties
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `name` | `str` | - |
+| `displayname` | `str` | - |
+| `environmentid` | `str` | - |
+| `last_seen` | `datetime` | - |
+| `node_id` | `str` | - |
+| `github_team_id` | `str \| int \| None` | The raw GitHub enterprise team ID. |
+| `slug` | `str \| None` | The enterprise team slug. |
+| `projected_slug` | `str \| None` | The organization-projected team slug. |
+| `group_id` | `str \| None` | The linked SCIM group ID. |
+| `description` | `str \| None` | The team description. |
+| `created_at` | `str \| None` | When the team was created. |
+| `updated_at` | `str \| None` | When the team was last updated. |
+| `environment_name` | `str \| None` | The enterprise environment name. |
+| `query_enterprise` | `str \| None` | Query for the containing enterprise. |
+| `query_assigned_organizations` | `str \| None` | Query for assigned organizations. |
+| `query_projected_teams` | `str \| None` | Query for projected organization teams. |
+| `query_members` | `str \| None` | Query for team members. |

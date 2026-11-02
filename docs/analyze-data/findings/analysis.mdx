@@ -10,20 +10,84 @@ import defCompositeEdge from '/snippets/terms/composite-edge.mdx';
 
 BloodHound Enterprise's analysis process includes several key steps that work together to surface findings and prioritize risk.
 
-## Analysis stages
+Use this reference to understand when the BloodHound data pipeline runs graph analysis and which conditions cause it to skip an analysis pass.
 
-By default, BloodHound runs the full analysis pipeline in the following order:
+<Tip>
+  For details about tenant status, job status, and the broader datapipe lifecycle, see [Monitor Data Collection](/collect-data/enterprise-collection/monitor).
+</Tip>
+
+## When analysis runs
+
+The data pipeline runs on a repeating loop. On each loop iteration, the pipeline performs the following stages **in order**:
+
+- **Purge**: Process any pending “delete collected graph data” requests.
+- **Ingest**: Process uploaded/collected data files.
+- **Analyze**: Enhance the graph and run [post-processing](/analyze-data/findings/analysis#post-processing).
+- **Optimize**: Perform database-specific optimization tasks.
+
+When the pipeline reaches the Analyze stage, it uses the decision tree below to determine whether analysis runs and which steps it performs.
+
+```mermaid
+flowchart TD
+    A([Datapipe reaches<br/>the Analyze stage]) --> B{Scheduled analysis enabled<br/>and schedule time reached?}
+
+    B -- Yes --> C[Run full analysis]
+    B -- No --> D[Start with no analysis steps]
+
+    D --> E{Pending analysis request?}
+    E -- Yes --> F[Add requested steps]
+    E -- No --> G
+    F --> G{Any jobs waiting<br/>for analysis?}
+
+    G -- Yes --> H[Add full analysis steps]
+    G -- No --> I
+    H --> I{Any steps to run?}
+
+    I -- No --> J([Skip analysis])
+    I -- Yes --> K[Run analysis with<br/>the collected steps]
+
+    C --> L[Run analysis operations]
+    K --> L
+
+    L --> M{Outcome?}
+    M -- Success --> N([Mark jobs complete<br/>record completion time<br/>reset caches])
+    M -- Partial failure --> O([Mark jobs partially complete<br/>report error])
+    M -- Failure --> P([Mark jobs failed<br/>report error])
+```
+
+## What triggers analysis
+
+BloodHound evaluates the following triggers from top to bottom to determine whether analysis runs:
+
+| Trigger | Result |
+| --- | --- |
+| **Scheduled analysis** | If recurring scheduled analysis is enabled and its next run time has passed, BloodHound runs a <Tooltip tip="All analysis steps are performed.">full analysis</Tooltip>. |
+| **Requested analysis** | If a user or system action explicitly requests analysis, BloodHound runs the <Tooltip tip="A specific subset of steps attached to an explicit analysis request; may be merged with full steps if jobs are also waiting.">requested steps</Tooltip>. BloodHound also requests analysis after collected graph data is deleted. |
+| **Jobs waiting for analysis** | If newly ingested data from ingest jobs or client collection jobs is waiting for analysis, BloodHound runs a full analysis. |
+
+If none of these apply, the pipeline skips analysis for that iteration and moves on.
+
+<Note>
+  Scheduled analysis is a SpecterOps-managed feature.
+</Note>
+
+### Trigger behavior
+
+- **Scheduling takes priority:** When scheduled analysis is due, BloodHound runs a full analysis and does not evaluate pending requests or waiting jobs during that Analyze phase.
+- **Data deletion requests analysis:** When collected graph data is purged, BloodHound automatically requests a full analysis so the graph is reconciled during the next Analyze phase.
+- **Waiting jobs require full analysis:** When ingest or client collection jobs are waiting for analysis, BloodHound runs the full analysis pipeline and updates the associated jobs after analysis completes.
+- **Invalid schedules do not run:** If scheduled analysis is enabled but its recurrence rule is empty or invalid, scheduled analysis does not run until the schedule is corrected.
+
+## Full analysis stages
+
+When a trigger requires full analysis, BloodHound runs the analysis-specific stages in the following order:
 
 1. Active Directory post-processing
 1. Azure post-processing
 1. Tagging
 1. Analysis
 
-BloodHound uses the full analysis pipeline for all standard and scheduled analysis runs. [Variable Analysis Mode](/analyze-data/findings/analysis#variable-analysis-mode) enables BloodHound Enterprise to skip post-processing for some analysis runs to speed up the process (for example, when updating Privilege Zones).
-
-<Note>
-  Scheduled analysis is a SpecterOps-managed feature.
-</Note>
+BloodHound uses the full analysis pipeline for standard, scheduled, and job-driven analysis runs. Requested analysis can run a subset of analysis steps. [Variable Analysis Mode](/analyze-data/findings/analysis#variable-analysis-mode) enables BloodHound Enterprise to skip post-processing for some analysis runs to speed up the process (for example, when updating Privilege Zones).
 
 ## Choke point analysis
 

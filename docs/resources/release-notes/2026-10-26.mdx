@@ -1,0 +1,163 @@
+---
+title: 2026-10-26 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-10-26"
+---
+
+import CollectorDeprecationNotice from '/snippets/resources/collector-deprecation-notice.mdx';
+
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-10-26 | v9.9.0 | No release | v2.17.1 | No release |
+
+<CollectorDeprecationNotice />
+
+<Update label="BloodHound" description="New Feature" tags={["OpenGraph"]}>
+  {/*BED-9897, BED-9497, BED-9498, BED-9322, BED-9319*/}
+  ## Extension bundles
+
+  An extension bundle packages an OpenGraph extension's schema with supported components, such as saved queries and Privilege Zone rules.
+  
+  Administrators can install an extension with a single file and have all the necessary components put in the correct place for a streamlined installation experience.
+
+  - **Administrators:** Upload a bundle to [install an extension](/opengraph/extensions/manage) and its supported components together.
+  - **Users:** Explore extension data using its [saved queries](/analyze-data/explore/cypher-search/search) and apply its Privilege Zone [rules](/analyze-data/privilege-zones/rules).
+  - **Extension developers:** Learn how to [package](/opengraph/developer/extension-bundles) an extension's schema and supported components for administrators to install together.
+</Update>
+
+<Update label="SharpHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-9763*/}
+  ## Collect Azure VM IDs from Windows computers
+
+  Correlate domain-joined Windows computers with their [Azure VM identity](/collect-data/sharphound-data-permissions#azure-vm-identity) using the Azure guest VM ID (`VmId`).
+
+  When [`AzureRegistry`](/collect-data/ce-collection/sharphound-flags) collection is enabled, SharpHound reads the ID from domain-joined Windows computers and stores it in the Active Directory computer's `azvmid` property.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["API"]}>
+  {/*BED-10037, BED-7066*/}
+  ## Faster object searches
+
+  The [`/api/v2/search`](/reference/search/search-for-objects) endpoint now matches `objectid` values exactly, including uppercase and lowercase variants, while name searches remain fuzzy.
+  
+  It passes the requested result limit to the graph database for domain lookups and honors the limit when results are filtered by [Environment Targeted Access Control (ETAC)](/manage-bloodhound/auth/environment-targeted-access-control).
+
+  These changes improve search performance, especially on the **Explore** page, and reduce unnecessary work on large result sets.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["API"]}>
+  {/*BED-10051*/}
+  ## Accurate audit log counts for date ranges
+
+  The [`/api/v2/audit`](/reference/audit/list-audit-logs) endpoint now applies the requested date range (including its documented 365-day default) to both the returned events and the `count`, so pagination totals match the results.
+
+  <Note>
+    It also returns HTTP 400 when the `after` value is later than the `before` value.
+  </Note>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-9940*/}
+
+  ## Distinguish non-traversable graph edges
+
+  Easily distinguish between [traversable and non-traversable](/resources/edges/traversable-edges) edges in the graph.
+  
+  The graph on the **Explore** page now uses dashed lines for non-traversable edges, making it easier to distinguish them from edges that can be traversed.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["PostgreSQL"]}>
+  {/*BED-8495*/}
+  ## Additional PostgreSQL storage optimization
+
+  The **Optimize** stage of the [data pipeline](/analyze-data/findings/analysis#when-analysis-runs) now includes additional PostgreSQL storage optimization steps.
+
+  These steps help reclaim index bloat and keep graph query performance consistent over time.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Post-Processing"]}>
+  {/*BED-9943*/}
+  ## Analysis performance improvements
+
+  All [post-processed](/analyze-data/findings/analysis#show-post-processed-edges) edges now use optimized processing logic, significantly reducing time in analysis and improving overall performance.
+
+  Post-processed edges no longer display the **Last Seen by BloodHound** field in Entity panels.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Explore"]}>
+  {/*BED-9130*/}
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  ## Control graph direction and spacing
+
+  Choose whether the graph on the **Explore** page flows left, right, up, or down, and adjust horizontal and vertical spacing.
+
+  These [new controls](/analyze-data/explore/graph-controls#graph-direction) help you arrange complex graphs so their relationships are easier to inspect.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-9772, BED-9379, BED-8938, BED-8916*/}
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  ## Findings Prioritization improvements
+
+  [Findings Prioritization](/analyze-data/findings/table-view#prioritize-findings) now considers proximity to Tier Zero alongside exposure, impact, and starting objects. Findings targeting objects in or near Tier Zero receive a stronger priority signal, helping you identify larger remediation opportunities.
+
+  During analysis, BloodHound Enterprise uses a synthetic [Zone](/resources/nodes/zone) node to calculate the shortest traversable path from each finding's target to Tier Zero. Findings without a path to Tier Zero (or with a path beyond the maximum traversal depth) use a maximum-hop fallback and are de-prioritized.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-9138*/}
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  ## Export Findings Table results
+
+  [Export findings](/analyze-data/findings/table-view#export-findings) to a CSV file, including all findings that match the current filters and sort order (up to 200,000 findings).
+  
+  <Note>
+    When **Findings Prioritization** is enabled, the export also includes the prioritization score and rank.
+  </Note>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-8946*/}
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  ## Identify new findings
+
+  The [Findings Table](/analyze-data/findings/table-view#identify-new-findings) marks findings added in the past 24 hours with a <Badge color="purple">New</Badge> badge, helping you spot recently surfaced results during triage.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["PostgreSQL"]}>
+  {/*BED-9997*/}
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  ## Faster ingest reconciliation
+
+  Updated the node-table trigger that cascade-deletes edges connected to a deleted node to use index scans instead of table scans.
+
+  This reduces database work during ingest reconciliation and helps maintain ingest throughput.
+</Update>
+
+## Fixed issues
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## Search and performance
+
+  - {/*BED-9780*/} Resolved an issue where a second `OPTIONAL MATCH` clause could be treated as required, causing Cypher queries to omit expected results.
+
+  - {/*BED-7367*/} Resolved an issue where parallel graph path processing could corrupt path segment sizes.
+
+  ## Findings Table
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  - {/*BED-9830*/} Resolved an issue where finding types with only remediated findings were missing from the filter options.
+  
+  - {/*BED-10023*/} Resolved an issue where findings filter dropdown text and hover styling appeared incorrectly in light mode and the cell hover effect was missing in dark mode.
+</Update>

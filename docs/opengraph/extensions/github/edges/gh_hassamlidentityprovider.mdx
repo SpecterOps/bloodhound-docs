@@ -7,20 +7,40 @@ description: 'Organization has this SAML identity provider configured'
 
 ## Edge Schema
 
-- Source: [GH_Organization](/opengraph/extensions/github/nodes/gh_organization)
-- Destination: [GH_SamlIdentityProvider](/opengraph/extensions/github/nodes/gh_samlidentityprovider)
 - Traversable: ❌
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | GH_HasSamlIdentityProvider | [GH_SamlIdentityProvider](/opengraph/extensions/github/nodes/gh_samlidentityprovider) |
+| [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | GH_HasSamlIdentityProvider | [GH_SamlIdentityProvider](/opengraph/extensions/github/nodes/gh_samlidentityprovider) |
+
+```mermaid
+flowchart LR
+    GH_Enterprise["GH_Enterprise"]
+    GH_Organization["GH_Organization"]
+    GH_SamlIdentityProvider["GH_SamlIdentityProvider"]
+    GH_Enterprise -- GH_HasSamlIdentityProvider --> GH_SamlIdentityProvider
+    GH_Organization -- GH_HasSamlIdentityProvider --> GH_SamlIdentityProvider
+```
 
 ## General Information
 
 The non-traversable GH_HasSamlIdentityProvider edge represents the relationship between an organization and its SAML identity provider configuration. This edge links an organization to the SAML SSO provider used for authentication and user provisioning. SAML identity providers are a critical security component because they establish the trust boundary between an external identity provider (such as Entra ID or Okta) and the GitHub organization. Understanding this relationship is essential for mapping cross-platform attack paths where compromise of the identity provider could lead to access within the GitHub organization.
 
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | [GH_SamlIdentityProvider](/opengraph/extensions/github/nodes/gh_samlidentityprovider) | `false` |
+| [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | [GH_SamlIdentityProvider](/opengraph/extensions/github/nodes/gh_samlidentityprovider) | `false` |
+
+## Diagram
 
 ```mermaid
 graph LR
-    node1("GH_Organization SpecterOps")
-    node2("GH_SamlIdentityProvider entra-id-sso")
-    node3("GH_ExternalIdentity alice\@specterops.io")
-    node1 -- GH_HasSamlIdentityProvider --> node2
-    node2 -- GH_HasExternalIdentity --> node3
+    n0["GH_Enterprise"]
+    n1["GH_SamlIdentityProvider"]
+    n2["GH_Organization"]
+    n0 -.->|GH_HasSamlIdentityProvider| n1
+    n2 -.->|GH_HasSamlIdentityProvider| n1
 ```

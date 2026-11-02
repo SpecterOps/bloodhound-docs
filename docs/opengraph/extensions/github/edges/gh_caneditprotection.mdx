@@ -7,9 +7,18 @@ description: '[Repository - Computed] Repo role can modify or remove branch prot
 
 ## Edge Schema
 
-- Source: [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole)
-- Destination: [GH_Repository](/opengraph/extensions/github/nodes/gh_repository), [GH_Branch](/opengraph/extensions/github/nodes/gh_branch)
 - Traversable: ✅
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | GH_CanEditProtection | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) |
+
+```mermaid
+flowchart LR
+    GH_Branch["GH_Branch"]
+    GH_RepoRole["GH_RepoRole"]
+    GH_RepoRole -- GH_CanEditProtection --> GH_Branch
+```
 
 ## General Information
 
@@ -21,24 +30,17 @@ The traversable GH_CanEditProtection edge is a computed edge indicating that a r
 
 The admin role has [GH_AdminTo](/opengraph/extensions/github/edges/gh_adminto) which implicitly grants the ability to modify or remove any branch protection rule.
 
-```mermaid
-graph LR
-    role("GH_RepoRole admin") -->|GH_AdminTo| repo("GH_Repository")
-    repo -->|GH_HasBranch| branch("GH_Branch main")
-    bpr("GH_BranchProtectionRule") -->|GH_ProtectedBy| branch
-    role ==>|GH_CanEditProtection| repo
-    role ==>|GH_CanEditProtection| branch
-```
+## Edge Schema
 
-### `edit_repo_protections` — Explicit edit permission
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) | `false` |
 
-A custom or standard role with the [GH_EditRepoProtections](/opengraph/extensions/github/edges/gh_editrepoprotections) permission can modify or remove branch protection rules.
+## Diagram
 
 ```mermaid
 graph LR
-    role("GH_RepoRole custom") -->|GH_EditRepoProtections| repo("GH_Repository")
-    repo -->|GH_HasBranch| branch("GH_Branch main")
-    bpr("GH_BranchProtectionRule") -->|GH_ProtectedBy| branch
-    role ==>|GH_CanEditProtection| repo
-    role ==>|GH_CanEditProtection| branch
+    n0["GH_RepoRole"]
+    n1["GH_Branch"]
+    n0 -.->|GH_CanEditProtection| n1
 ```
