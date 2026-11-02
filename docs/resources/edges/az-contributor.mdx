@@ -1,6 +1,6 @@
 ---
 title: AZContributor
-description: "The contributor role grants almost all abusable privileges in all circumstances, with some exceptions. Those exceptions are not collected by AzureHound."
+description: "An Entra principal has been granted the Azure Resource Manager 'Contributor' role over an Azure Resource Manager asset."
 ---
 
 import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
@@ -8,11 +8,17 @@ import AzureGenericAbuseLogOpsec from '/snippets/edges/azure-generic-abuse-log-o
 
 <ResourceEditionPill />
 
+AZContributor targets resources in Azure Resource Manager (for example [AZResourceGroup](/resources/nodes/az-resource-group), [AZSubscription](/resources/nodes/az-subscription), and [AZVM](/resources/nodes/az-vm)) through a role assignment called "Contributor".
+
+
 
 
 ## Abuse Info
 
-This depends on what the target object is:
+The Contributor role grants broad management access to Azure Resource Manager resources, but it cannot assign Azure RBAC roles or perform the operations excluded by its `NotActions` list.
+
+Abuse depends on the target object:
+The edge terminates at the role assignment's scope. A role assignment scoped to an [AZManagementGroup](/resources/nodes/az-management-group), [AZSubscription](/resources/nodes/az-subscription), or [AZResourceGroup](/resources/nodes/az-resource-group) is inherited by all child resources. In BloodHound, that inheritance is traversable through the Azure Resource Manager hierarchy via [AZContains](/resources/edges/az-contains) edges. One scoped to a specific resource applies to that resource and, where applicable, its nested child resources.
 
 * **Key Vault:**
     You can read secrets and alter access policies (grant yourself access to read secrets)
@@ -27,6 +33,7 @@ This depends on what the target object is:
 
 ## References
 
+* [Contributor](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/privileged#contributor)
 * [https://blog.netspi.com/maintaining-azure-persistence-via-automation-accounts/](https://blog.netspi.com/maintaining-azure-persistence-via-automation-accounts/)
 * [https://blog.netspi.com/azure-automation-accounts-key-stores/](https://blog.netspi.com/azure-automation-accounts-key-stores/)
 * [https://blog.netspi.com/get-azurepasswords/](https://blog.netspi.com/get-azurepasswords/)
