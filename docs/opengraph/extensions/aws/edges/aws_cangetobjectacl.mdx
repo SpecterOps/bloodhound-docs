@@ -1,26 +1,47 @@
 ---
 title: "AWS_CanGetObjectACL"
 description: "AWS_CanGetObjectACL direction, traversability, and interpretation in the AWS schema."
+hidden: true
 ---
+
+import AwsReferenceBetaNote from '/snippets/opengraph/extensions/aws-reference-beta-note.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-<Note>
-AWS is in beta for BloodHound Enterprise. This reference covers schema v0.0.5 for openhound-aws 0.4.0; behavior may change as the beta evolves.
-</Note>
+<AwsReferenceBetaNote />
 
 Principal can call s3:GetObjectAcl to read the ACL of an S3 object.
 
-## Edge schema
+## Edge Schema
 
-| Source kind | Destination kind |
+- Source: [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user)
+- Destination: [AWS_S3Bucket](/opengraph/extensions/aws/nodes/aws_s3bucket), [AWS_S3Object](/opengraph/extensions/aws/nodes/aws_s3object)
+- Traversable: ❌
+
+This relationship supplies structural or permission evidence and does not independently form an Attack Path step.
+
+### Endpoint pairs
+
+| Source Node Types | Destination Node Types |
 | --- | --- |
 | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | [AWS_S3Bucket](/opengraph/extensions/aws/nodes/aws_s3bucket) |
 | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | [AWS_S3Object](/opengraph/extensions/aws/nodes/aws_s3object) |
 | [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | [AWS_S3Bucket](/opengraph/extensions/aws/nodes/aws_s3bucket) |
 | [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | [AWS_S3Object](/opengraph/extensions/aws/nodes/aws_s3object) |
 
-**Traversable:** No. This relationship supplies structural or permission evidence and does not independently form an Attack Path step.
+## Diagram
+
+```mermaid
+graph LR
+    s0["AWS_Role"]
+    s1["AWS_User"]
+    t0["AWS_S3Bucket"]
+    t1["AWS_S3Object"]
+    s0 -.->|AWS_CanGetObjectACL| t0
+    s0 -.->|AWS_CanGetObjectACL| t1
+    s1 -.->|AWS_CanGetObjectACL| t0
+    s1 -.->|AWS_CanGetObjectACL| t1
+```
 
 ## Interpretation
 

@@ -1,24 +1,44 @@
 ---
 title: "AWS_RunsAs"
 description: "AWS_RunsAs direction, traversability, and interpretation in the AWS schema."
+hidden: true
 ---
+
+import AwsReferenceBetaNote from '/snippets/opengraph/extensions/aws-reference-beta-note.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
-<Note>
-AWS is in beta for BloodHound Enterprise. This reference covers schema v0.0.5 for openhound-aws 0.4.0; behavior may change as the beta evolves.
-</Note>
+<AwsReferenceBetaNote />
 
 Compute resource (EC2 instance, Lambda function, CloudFormation stack) executes as an IAM role.
 
-## Edge schema
+## Edge Schema
 
-| Source kind | Destination kind |
+- Source: [AWS_CloudFormationStack](/opengraph/extensions/aws/nodes/aws_cloudformationstack), [AWS_EC2Instance](/opengraph/extensions/aws/nodes/aws_ec2instance), [AWS_LambdaFunction](/opengraph/extensions/aws/nodes/aws_lambdafunction)
+- Destination: [AWS_Role](/opengraph/extensions/aws/nodes/aws_role)
+- Traversable: ✅
+
+BloodHound can include this relationship in an Attack Path.
+
+### Endpoint pairs
+
+| Source Node Types | Destination Node Types |
 | --- | --- |
 | [AWS_CloudFormationStack](/opengraph/extensions/aws/nodes/aws_cloudformationstack) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) |
 | [AWS_EC2Instance](/opengraph/extensions/aws/nodes/aws_ec2instance) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) |
 | [AWS_LambdaFunction](/opengraph/extensions/aws/nodes/aws_lambdafunction) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) |
 
-**Traversable:** Yes. BloodHound can include this relationship in an Attack Path.
+## Diagram
+
+```mermaid
+graph LR
+    s0["AWS_CloudFormationStack"]
+    s1["AWS_EC2Instance"]
+    s2["AWS_LambdaFunction"]
+    t0["AWS_Role"]
+    s0 -->|AWS_RunsAs| t0
+    s1 -->|AWS_RunsAs| t0
+    s2 -->|AWS_RunsAs| t0
+```
 
 [AWS schema](/opengraph/extensions/aws/schema)
