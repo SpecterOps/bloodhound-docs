@@ -1,0 +1,121 @@
+---
+title: 'Collect Okta Data'
+description: 'Configure and run the Okta collector, convert its output, and verify ingestion in BloodHound.'
+hidden: true
+---
+
+import OpenHoundBetaNote from '/snippets/hounds/openhound-okta-beta-note.mdx';
+
+<OpenHoundBetaNote />
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+
+Run the collector with your [Okta collection identity](/openhound/collectors/okta/configure-permissions), then verify resource coverage and ingestion. Keep each organization's raw data and lookup database separate.
+
+## Interactive collection
+
+Use this workflow for BloodHound Community Edition, or to prepare graph files for manual upload. Install the collector version supplied for your beta deployment; [OpenHound Community](/openhound/community) describes CLI installation.
+
+Run these commands from the directory containing your `.dlt/secrets.toml`. Keep the Okta base URL configured during conversion because the collector uses its tenant domain when constructing identities.
+
+<Steps>
+  <Step title="Check the installed commands">
+    ```bash
+    openhound collect okta --help
+    openhound preprocess okta --help
+    openhound convert okta --help
+    ```
+
+    Confirm all three commands are available before starting.
+  </Step>
+  <Step title="Collect raw data">
+    ```bash
+    openhound collect okta ./output
+    ```
+
+    Raw resources are written beneath `./output/okta`. Inspect the logs for denied or unavailable resources before continuing.
+  </Step>
+  <Step title="Build the lookup database and graph">
+    ```bash
+    openhound preprocess okta ./output/okta ./lookup.duckdb
+    openhound convert okta ./output/okta ./graph/okta --lookup-file ./lookup.duckdb
+    ```
+
+    Preprocessing supplies the joins used by the Okta converter. Use the database from this collection, not one from another organization or an earlier run. Conversion writes OpenGraph JSON files to `./graph/okta`.
+  </Step>
+  <Step title="Install extension assets and ingest the graph">
+    Install the matching edition-specific extension assets in [OpenGraph Management](/opengraph/extensions/manage) before ingesting graph data. The Community Edition bundle workflow requires BloodHound v9.9 or later and a compatible beta build. Use the complete ZIP supplied for your deployment; do not upload its individual component wrappers through legacy OpenHound asset commands. A Community Edition bundle does not include Enterprise findings. Confirm the matching collector and target build with your beta contact.
+
+    Bundle queries are extension-owned and read-only. Bundled rules target Tier Zero. An update reconciles the managed set: omitted query or rule keys remove those extension-owned assets. Review updates before installing them; legacy or user-owned duplicates require separate review.
+
+    Upload the generated JSON files through BloodHound's file-ingestion workflow. Extension installation and graph-data ingestion are separate operations. Ingest every generated graph part and review the ingest result before investigating paths. Do not treat an extension ZIP as a graph-data archive.
+
+    This beta collector’s locked framework writes graph JSON parts without the separate platform/hybrid `metadata.source_kind` contract. Do not manually add metadata or assume platform replacement and retention behavior. Have your beta contact confirm compatibility with your target before using recurring ingestion.
+  </Step>
+</Steps>
+
+## Scheduled collection in BloodHound Enterprise
+
+The Okta scheduler uses a BloodHound Enterprise collector client's token ID and key. These credentials are separate from your Okta credentials and from a browser JWT or a user's BloodHound API token.
+
+<Steps>
+  <Step title="Prepare the collector client and deployment">
+    Configure an Okta collector client in your Enterprise tenant and obtain its token ID and key. Use the [Okta Docker Compose deployment files](https://github.com/SpecterOps/openhound-okta/tree/e8c521d96ff7a0557e33b18b5b40b8c6cabeb58d/docker-compose) for the matching collector revision. Set the tenant URL in `config.toml`, the collector-client credentials in `secrets.toml`, and one Okta credential mode in the same secrets file.
+
+    ```toml title="config.toml"
+    [destination.bloodhoundenterprise]
+    url = "https://your-tenant.bloodhoundenterprise.io"
+    collector_name = "okta"
+    ```
+
+    ```toml title="secrets.toml"
+    [destination.bloodhoundenterprise]
+    token_id = "YOUR_OKTA_COLLECTOR_CLIENT_TOKEN_ID"
+    token_key = "YOUR_OKTA_COLLECTOR_CLIENT_TOKEN_KEY"
+    ```
+
+    Add the Okta credential section from [Configure Okta Permissions](/openhound/collectors/okta/configure-permissions). For file-based keys, use a path readable inside the container. Select the supplied scheduler image version; CLI image tags have a `-cli` suffix and do not run the scheduler.
+  </Step>
+  <Step title="Validate and start the scheduler">
+    From the configured `docker-compose` directory, run:
+
+    ```bash
+    docker compose config --quiet
+    docker compose pull
+    docker compose run --rm --entrypoint python scheduler-okta /opt/openhound-check-config.py
+    docker compose up -d scheduler-okta
+    docker compose logs -f scheduler-okta
+    ```
+
+    The preflight checks local configuration, key format, and writable storage. It does not authenticate to Okta or BloodHound Enterprise.
+  </Step>
+  <Step title="Start a collection and inspect the result">
+    Run an on-demand scan or configure a schedule for the matching collector client in BloodHound Enterprise. Starting the scheduler alone does not collect data. Follow the container logs and the tenant's collection, ingestion, and analysis results.
+  </Step>
+</Steps>
+
+## Collection options
+
+Set non-secret options in `.dlt/config.toml` under `[sources.source.okta]`. Environment variables use the prefix `SOURCES__SOURCE__OKTA__` and uppercase option names.
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `limit_app_user_collection` | `false` | Collect application user assignments only for a limited set of app types and listed application IDs |
+| `limit_user_mfa_collection` | `false` | Collect MFA factors only for privileged users (direct role assignees and admin-group members) instead of every user |
+| `endpoint_concurrency` | `32` | Maximum simultaneous requests for each endpoint family |
+| `org_concurrency` | `32` | Maximum simultaneous requests across all endpoint families |
+| `rate_limit_max_elapsed_seconds` | `900` | Maximum elapsed retry window in seconds for an individual 429 request |
+
+Use `app_user_collection_app_ids` to supply additional application IDs when `limit_app_user_collection` is enabled.
+
+Limiting application-user collection preserves application nodes and group assignments but loses direct user assignments, sync relationships, and user-specific hybrid sign-on relationships for skipped applications. Limiting MFA collection means uncollected users do not have an observed factor inventory; missing factor data does not establish missing MFA.
+
+The collector paces requests using Okta rate-limit headers and retries rate limits and transient failures. If a required request exhausts its retry budget, collection fails. Inspect other denied-resource warnings separately: some unavailable reads can leave a coverage gap. Reduce concurrency when competing workloads consume the same organization's API capacity.
+
+## Verify the graph
+
+Check that the intended organization, representative users and groups, administrator role assignments, application assignments, and expected resource counts appear. Compare known positive and negative examples against Okta. Treat missing relationships as a coverage question until you have checked authorization and collection options.
+
+Hybrid relationships require compatible destination nodes and sufficient source evidence. An empty hybrid result does not prove the absence of trust or access. Follow your beta deployment's compatibility guidance for cross-platform datasets.
+
+Protect raw data, lookup databases, graph output, and credentials as sensitive material. Optional local performance telemetry is disabled by default; see the collector's [telemetry guide](https://github.com/SpecterOps/openhound-okta/blob/e8c521d96ff7a0557e33b18b5b40b8c6cabeb58d/docs/collection-performance-telemetry.md) before enabling it.
