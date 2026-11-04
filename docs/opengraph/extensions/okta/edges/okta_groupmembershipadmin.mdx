@@ -3,18 +3,21 @@ title: 'Okta_GroupMembershipAdmin'
 description: 'Group membership administrator role assignment'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
 
 ## Edge Schema
 
-- Source: [Okta_User](/opengraph/extensions/okta/nodes/okta_user), [Okta_Group](/opengraph/extensions/okta/nodes/okta_group), [Okta_Application](/opengraph/extensions/okta/nodes/okta_application)
-- Destination: [Okta_Group](/opengraph/extensions/okta/nodes/okta_group)
 - Traversable: ✅
+
+| Source | Destination |
+| --- | --- |
+| [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | [Okta_Group](/opengraph/extensions/okta/nodes/okta_group) |
+| [Okta_Group](/opengraph/extensions/okta/nodes/okta_group) | [Okta_Group](/opengraph/extensions/okta/nodes/okta_group) |
+| [Okta_User](/opengraph/extensions/okta/nodes/okta_user) | [Okta_Group](/opengraph/extensions/okta/nodes/okta_group) |
 
 ## General Information
 
-The traversable Okta_GroupMembershipAdmin edges represent Group Membership Administrator role assignments. Group Membership Administrators can add and remove members from groups within their assigned scope but cannot modify the groups themselves.
-
+The traversable Okta_GroupMembershipAdmin edges represent [Group](/resources/nodes/group) Membership Administrator role assignments. [Group](/resources/nodes/group) Membership Administrators can add and remove members from groups within their assigned scope but cannot modify the groups themselves.
 
 ```mermaid
 graph LR
@@ -24,3 +27,34 @@ graph LR
     u1 -- Okta_GroupMembershipAdmin --> g1
     u1 -- Okta_GroupMembershipAdmin --> g2
 ```
+
+## Abuse Info
+
+Only Super Administrators can manage groups with administrator roles. Review protected-group restrictions even when the collector emits a permission edge.
+
+Authenticate as the assigned administrator or an authorized group member and identify the destination group. This role permits scoped membership administration, not general editing of the group or unrestricted user administration. Use the AddMember procedure only for an Okta-managed group.
+
+1. Establish control of the source identity or system described above. Inherited group access requires a controlled member. Use native Okta IDs from the API, not normalized BloodHound object IDs.
+2. Inspect **scoped membership inventory** through the matching object in the Okta Admin Console, or use this read-only API check. The token must belong to the identity being assessed; a separate administrator’s token does not prove the source’s access. OAuth callers use `Authorization: Bearer $OKTA_ACCESS_TOKEN` instead.
+
+```bash
+export OKTA_ORG="https://example.okta.com"
+export OKTA_API_TOKEN="YOUR_CONTROLLED_IDENTITY_TOKEN"
+export GROUP_ID="YOUR_OKTA_GROUP_ID"
+curl -i -sS -H "Authorization: SSWS $OKTA_API_TOKEN" \
+  -H "Accept: application/json" "$OKTA_ORG/api/v1/groups/$GROUP_ID/users"
+```
+
+3. Expect HTTP 200 and confirm the response identifies the intended tenant and object. Follow pagination for a complete list. Compare the returned scope, membership, or configuration with the represented relationship; a 403 or an empty response does not prove the relationship is absent. This inspection does not validate additional compromise claims.
+
+## Opsec Considerations
+
+Correlate group membership modifications with role scope, actor ID, and downstream app or administrator access. Review the Okta System Log alongside the relevant source-system logs. The API check above reads state; no environmental change or restoration is included in it. These steps have not been exercised against a lab.
+
+
+## References
+
+- [User role assignments and targets](https://developer.okta.com/docs/api/openapi/okta-management/management/tags/roleassignmentauser)
+- [Okta System Log](https://developer.okta.com/docs/api/openapi/okta-management/management/tags/systemlog)
+
+- [Standard administrator permissions and restrictions](https://help.okta.com/en-us/Content/topics/security/administrators-admin-comparison.htm)

@@ -4,43 +4,13 @@ description: 'An Okta JSON Web Key'
 icon: '/images/extensions/okta/okta_jwk.png'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
 
 ## Overview
 
 JSON Web Keys (JWKs) are used by OAuth 2.0 client applications to authenticate with Okta using the `private_key_jwt` client authentication method. This is an asymmetric authentication mechanism where the application possesses a private key and Okta stores the corresponding public key. A service application can have multiple JWKs configured for key rotation purposes.
 
 JWKs are represented as Okta_JWK nodes in BloodHound.
-## Edges
-
-<Note>
-The tables below list edges defined by the Okta extension only. Additional edges to or from this node may be created by other extensions.
-</Note>
-
-### Inbound Edges
-
-No inbound edges are defined by the Okta extension for this node.
-
-### Outbound Edges
-
-| Edge Type | Destination Node Types | Traversable |
-| --------- | ---------------------- | ----------- |
-| [Okta_KeyOf](/opengraph/extensions/okta/edges/okta_keyof) | [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ✅ |
-
-## Properties
-
-| Name | Source | Type | Description |
-| ---- | ------ | ---- | ----------- |
-| `id` | `jwk.id` | `string` | Unique JSON Web Key identifier. |
-| `name` | `jwk.kid` (fallback `jwk.id`) | `string` | Key identifier used as node name. |
-| `display_name` | `jwk.kid` (fallback `jwk.id`) | `string` | Display label used in BloodHound. |
-| `okta_domain` | Collector context (non-API) | `string` | Okta organization domain where the key exists. |
-| `status` | `jwk.status` | `string` | Current lifecycle status of the key. |
-| `kid` | `jwk.kid` | `string` | JSON Web Key identifier (`kid`). |
-| `kty` | `jwk.kty` | `string` | Key type (`RSA`, `EC`, ...). |
-| `use` | `jwk.use` | `string` | Intended key usage (`sig`, `enc`). |
-| `created` | `jwk.created` | `datetime` | Key creation timestamp. |
-| `last_updated` | `jwk.lastUpdated` | `datetime` | Last update timestamp. |
 
 ## Sample Property Values
 
@@ -56,3 +26,36 @@ use: sig
 created: 2025-10-02T10:14:44Z
 last_updated: 2025-10-02T10:26:27Z
 ```
+
+
+## Edges
+
+### Inbound Edges
+
+| Edge | Source Node | Traversable |
+| --- | --- | --- |
+
+### Outbound Edges
+
+| Edge | Destination Node | Traversable |
+| --- | --- | --- |
+| [Okta_KeyOf](/opengraph/extensions/okta/edges/okta_keyof) | [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ✅ |
+
+## Properties
+
+| Name | Type | Source | Description |
+| --- | --- | --- | --- |
+| created | datetime &#124; null | created | Creation timestamp reported by the source. |
+| displayname | string | display_name | Readable label supplied by the source object. |
+| environmentid | string | _lookup.org_id() | Graph ID of the containing Okta organization, normalized to uppercase. |
+| id | string | id | Source identifier used to build the node ID. |
+| kid | string &#124; null | kid | Kid recorded for this object when available. |
+| kty | string &#124; null | kty | Kty recorded for this object when available. |
+| last_seen | datetime | NodeProperties.last_seen | Timestamp assigned when the collector converts the node. |
+| last_updated | datetime &#124; null | last_updated | Last modification timestamp, when available. |
+| name | string | display_name | Name normalized to uppercase by the Okta node model. |
+| okta_domain | string | _extras[&#39;tenant&#39;] | Okta domain associated with the object. |
+| status | string | status | Status recorded for this object when available. |
+| tenant | string | _lookup.org_id() | Identifier of the organization used as collection context. |
+| tenant_domain | string | _extras[&#39;tenant&#39;] | Domain of the organization being collected. |
+| use | string &#124; null | use | Use recorded for this object when available. |

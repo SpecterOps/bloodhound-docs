@@ -3,18 +3,19 @@ title: 'Okta_GroupPull'
 description: 'Import of group memberships from an external application'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
 
 ## Edge Schema
 
-- Source: [Okta_Application](/opengraph/extensions/okta/nodes/okta_application)
-- Destination: [Okta_Group](/opengraph/extensions/okta/nodes/okta_group)
 - Traversable: ✅
+
+| Source | Destination |
+| --- | --- |
+| [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | [Okta_Group](/opengraph/extensions/okta/nodes/okta_group) |
 
 ## General Information
 
 The traversable Okta_GroupPull edges represent the group synchronization relationships from applications to Okta:
-
 
 ```mermaid
 graph LR
@@ -22,3 +23,30 @@ graph LR
     app1("Okta_Application contoso.com")
     app1 -- Okta_GroupPull --> g1
 ```
+
+## Abuse Info
+
+Control of the authoritative source group can influence the imported Okta group where the configured import and mapping allow it. Inspect the importing application and source authority. This procedure does not prescribe changing the source directory; that requires source-specific permissions, synchronization timing, and restoration evidence.
+
+1. Establish control of the source identity or system described above. Inherited group access requires a controlled member. Use native Okta IDs from the API, not normalized BloodHound object IDs.
+2. Inspect **importing application** through the matching object in the Okta Admin Console, or use this read-only API check. The token must belong to the identity being assessed; a separate administrator’s token does not prove the source’s access. OAuth callers use `Authorization: Bearer $OKTA_ACCESS_TOKEN` instead.
+
+```bash
+export OKTA_ORG="https://example.okta.com"
+export OKTA_API_TOKEN="YOUR_CONTROLLED_IDENTITY_TOKEN"
+export APP_ID="YOUR_OKTA_APPLICATION_ID"
+curl -i -sS -H "Authorization: SSWS $OKTA_API_TOKEN" \
+  -H "Accept: application/json" "$OKTA_ORG/api/v1/apps/$APP_ID"
+```
+
+3. Expect HTTP 200 and confirm the response identifies the intended tenant and object. Follow pagination for a complete list. Compare the returned scope, membership, or configuration with the represented relationship; a 403 or an empty response does not prove the relationship is absent. This inspection does not validate additional compromise claims.
+
+## Opsec Considerations
+
+Correlate source directory membership changes with Okta import results and effective group membership. A scheduled import may delay effects. Review the Okta System Log alongside the relevant source-system logs. The API check above reads state; no environmental change or restoration is included in it. These steps have not been exercised against a lab.
+
+
+## References
+
+- [SCIM provisioning and source authority](https://developer.okta.com/docs/concepts/scim/)
+- [Okta System Log](https://developer.okta.com/docs/api/openapi/okta-management/management/tags/systemlog)

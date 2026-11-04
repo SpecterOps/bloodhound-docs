@@ -4,44 +4,23 @@ description: 'An Okta organization'
 icon: '/images/extensions/okta/okta_organization.png'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
 
 ## Overview
 
 The Organization entity represents the Okta tenant itself. It contains general information about the organization, such as its name, domain, and settings.
 
-The organization is represented as a single Okta_Organization node in BloodHound.
-## Edges
+The Okta organization is represented as a single Okta_Organization node.
 
-<Note>
-The tables below list edges defined by the Okta extension only. Additional edges to or from this node may be created by other extensions.
-</Note>
+## Identity and Investigation
 
-### Inbound Edges
+The collector uses the organization's native ID for the node and the same organization ID for its nodes' `environmentid` values. The converter uppercases these identifiers consistently. The configured Okta domain supplies tenant context; it is not a substitute for the organization ID.
 
-| Edge Type | Source Node Types | Traversable |
-| --------- | ----------------- | ----------- |
-| [Okta_ScopedTo](/opengraph/extensions/okta/edges/okta_scopedto) | [Okta_RoleAssignment](/opengraph/extensions/okta/nodes/okta_roleassignment) | ❌ |
-| [Okta_SuperAdmin](/opengraph/extensions/okta/edges/okta_superadmin) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user), [Okta_Group](/opengraph/extensions/okta/nodes/okta_group), [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ✅ |
+Use this node to establish the environment boundary and investigate administrative access to the organization. It is an inherent Tier Zero target. A principal that can reach it through a removable role or membership is an access investigation, rather than a reason to tag that principal as an inherent target.
 
-### Outbound Edges
+## References
 
-| Edge Type | Destination Node Types | Traversable |
-| --------- | ---------------------- | ----------- |
-| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user), [Okta_Group](/opengraph/extensions/okta/nodes/okta_group), [Okta_Device](/opengraph/extensions/okta/nodes/okta_device), [Okta_Application](/opengraph/extensions/okta/nodes/okta_application), [Okta_ApiServiceIntegration](/opengraph/extensions/okta/nodes/okta_apiserviceintegration), [Okta_ResourceSet](/opengraph/extensions/okta/nodes/okta_resourceset), [Okta_Role](/opengraph/extensions/okta/nodes/okta_role), [Okta_CustomRole](/opengraph/extensions/okta/nodes/okta_customrole), [Okta_RoleAssignment](/opengraph/extensions/okta/nodes/okta_roleassignment), [Okta_Realm](/opengraph/extensions/okta/nodes/okta_realm), [Okta_AgentPool](/opengraph/extensions/okta/nodes/okta_agentpool), [Okta_IdentityProvider](/opengraph/extensions/okta/nodes/okta_identityprovider), [Okta_AuthorizationServer](/opengraph/extensions/okta/nodes/okta_authorizationserver), [Okta_Policy](/opengraph/extensions/okta/nodes/okta_policy) | ✅ |
-
-## Properties
-
-| Name | Source | Type | Description |
-| ---- | ------ | ---- | ----------- |
-| `id` | `settings.id` | `string` | Unique organization identifier. |
-| `name` | `okta_domain` | `string` | Okta organization domain name. |
-| `display_name` | `settings.companyName` | `string` | Organization/company display name. |
-| `okta_domain` | Collector context (non-API) | `string` | Okta organization domain name. |
-| `subdomain` | `settings.subdomain` | `string` | Okta subdomain value. |
-| `status` | `settings.status` | `string` | Organization lifecycle status. |
-| `created` | `settings.created` | `datetime` | Organization creation timestamp. |
-| `last_updated` | `settings.lastUpdated` | `datetime` | Last organization metadata update timestamp. |
+- [Super administrators and organization-wide management](https://help.okta.com/oie/en-us/Content/Topics/security/administrators-super-admin.htm)
 
 ## Sample Property Values
 
@@ -55,3 +34,52 @@ status: ACTIVE
 created: 2025-10-02T09:21:31+00:00
 last_updated: 2025-12-09T23:04:15+00:00
 ```
+
+
+## Edges
+
+### Inbound Edges
+
+| Edge | Source Node | Traversable |
+| --- | --- | --- |
+| [Okta_ScopedTo](/opengraph/extensions/okta/edges/okta_scopedto) | [Okta_RoleAssignment](/opengraph/extensions/okta/nodes/okta_roleassignment) | ❌ |
+| [Okta_SuperAdmin](/opengraph/extensions/okta/edges/okta_superadmin) | [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ✅ |
+| [Okta_SuperAdmin](/opengraph/extensions/okta/edges/okta_superadmin) | [Okta_Group](/opengraph/extensions/okta/nodes/okta_group) | ✅ |
+| [Okta_SuperAdmin](/opengraph/extensions/okta/edges/okta_superadmin) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user) | ✅ |
+
+### Outbound Edges
+
+| Edge | Destination Node | Traversable |
+| --- | --- | --- |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_AgentPool](/opengraph/extensions/okta/nodes/okta_agentpool) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_ApiServiceIntegration](/opengraph/extensions/okta/nodes/okta_apiserviceintegration) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_AuthorizationServer](/opengraph/extensions/okta/nodes/okta_authorizationserver) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_CustomRole](/opengraph/extensions/okta/nodes/okta_customrole) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Device](/opengraph/extensions/okta/nodes/okta_device) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Group](/opengraph/extensions/okta/nodes/okta_group) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_IdentityProvider](/opengraph/extensions/okta/nodes/okta_identityprovider) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Policy](/opengraph/extensions/okta/nodes/okta_policy) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Realm](/opengraph/extensions/okta/nodes/okta_realm) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_ResourceSet](/opengraph/extensions/okta/nodes/okta_resourceset) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Role](/opengraph/extensions/okta/nodes/okta_role) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_RoleAssignment](/opengraph/extensions/okta/nodes/okta_roleassignment) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user) | ✅ |
+
+## Properties
+
+| Name | Type | Source | Description |
+| --- | --- | --- | --- |
+| collected | bool | OrganizationProperties.collected | Whether this organization was directly collected. |
+| created | datetime | created | Creation timestamp reported by the source. |
+| displayname | string | display_name | Readable label supplied by the source object. |
+| environmentid | string | _lookup.org_id() | Graph ID of the containing Okta organization, normalized to uppercase. |
+| id | string | id | Source identifier used to build the node ID. |
+| last_seen | datetime | NodeProperties.last_seen | Timestamp assigned when the collector converts the node. |
+| last_updated | datetime &#124; null | last_updated | Last modification timestamp, when available. |
+| name | string | okta_domain | Name normalized to uppercase by the Okta node model. |
+| okta_domain | string | okta_domain | Okta domain associated with the object. |
+| status | string | status | Status recorded for this object when available. |
+| subdomain | string | subdomain | Subdomain recorded for this object when available. |
+| tenant | string | _lookup.org_id() | Identifier of the organization used as collection context. |
+| tenant_domain | string | okta_domain | Domain of the organization being collected. |

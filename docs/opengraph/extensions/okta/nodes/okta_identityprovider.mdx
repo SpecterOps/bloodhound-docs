@@ -4,7 +4,7 @@ description: 'An identity provider trusted by Okta for authentication'
 icon: '/images/extensions/okta/okta_identityprovider.png'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
 
 ## Overview
 
@@ -12,57 +12,11 @@ Identity Providers (IdPs) in Okta represent external authentication sources that
 
 When users authenticate through an external identity provider, Okta can optionally create or link user accounts, enabling federated authentication across multiple systems.
 
-Identity providers are represented as Okta_IdentityProvider nodes in BloodHound.
+Okta identity providers are represented as Okta_IdentityProvider nodes.
 
 <Info>
 The inbound identity provider routing rules and JIT (Just-In-Time) provisioning settings are currently not evaluated.
 </Info>
-## Edges
-
-<Note>
-The tables below list edges defined by the Okta extension only. Additional edges to or from this node may be created by other extensions.
-</Note>
-
-### Inbound Edges
-
-| Edge Type | Source Node Types | Traversable |
-| --------- | ----------------- | ----------- |
-| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Organization](/opengraph/extensions/okta/nodes/okta_organization) | ✅ |
-| [Okta_InboundOrgSSO](/opengraph/extensions/okta/edges/okta_inboundorgsso) | [AZTenant](/resources/nodes/az-tenant) | ✅ |
-| [Okta_OutboundOrgSSO](/opengraph/extensions/okta/edges/okta_outboundorgsso) | [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ✅ |
-| [Okta_ResourceSetContains](/opengraph/extensions/okta/edges/okta_resourcesetcontains) | [Okta_ResourceSet](/opengraph/extensions/okta/nodes/okta_resourceset) | ✅ |
-
-### Outbound Edges
-
-| Edge Type | Destination Node Types | Traversable |
-| --------- | ---------------------- | ----------- |
-| [Okta_IdentityProviderFor](/opengraph/extensions/okta/edges/okta_identityproviderfor) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user) | ✅ |
-| [Okta_IdpGroupAssignment](/opengraph/extensions/okta/edges/okta_idpgroupassignment) | [Okta_Group](/opengraph/extensions/okta/nodes/okta_group) | ❌ |
-
-## Properties
-
-These properties are common for all identity provider types:
-
-| Name | Source | Type | Description |
-| ---- | ------ | ---- | ----------- |
-| `id` | `idp.id` | `string` | Unique identity provider identifier. |
-| `name` | `idp.name` | `string` | Identity provider name. |
-| `display_name` | `idp.name` | `string` | Display label used in BloodHound. |
-| `okta_domain` | Collector context (non-API) | `string` | Okta organization domain where the identity provider exists. |
-| `issuer_mode` | `idp.issuerMode` | `string` | Issuer mode for the identity provider. |
-| `type` | `idp.type` | `string` | Identity provider category/type. |
-| `enabled` | `idp.status == "ACTIVE"` | `bool` | Whether the IdP is active/enabled. |
-| `auto_user_provisioning` | `idp.policy.provisioning.action == "AUTO"` | `bool` | Whether automatic user provisioning is enabled. |
-| `governed_group_ids` | `idp.policy.provisioning.groups` | `string[]` | Group IDs governed by this IdP provisioning policy. |
-| `protocol_type` | `idp.protocol.*.type[0]` | `string` | Protocol configured for authentication through this IdP. |
-| `url` | `idp.protocol.*.endpoints.*.url[0]` | `string` | Primary authorization/SSO endpoint URL for the IdP. |
-| `created` | `idp.created` | `datetime` | IdP creation timestamp. |
-
-Additional properties are provider-specific:
-
-| Name | Source | Type | Description |
-| ---- | ------ | ---- | ----------- |
-| `entra_tenant_id` | `TenantIdFromSamlEndpoint(url)` | `string` | Associated Entra tenant ID when identifiable. |
 
 ## Sample Property Values
 
@@ -80,3 +34,44 @@ governed_group_ids: []
 protocol_type: OIDC
 url: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
 ```
+
+
+## Edges
+
+### Inbound Edges
+
+| Edge | Source Node | Traversable |
+| --- | --- | --- |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Organization](/opengraph/extensions/okta/nodes/okta_organization) | ✅ |
+| [Okta_InboundOrgSSO](/opengraph/extensions/okta/edges/okta_inboundorgsso) | [AZTenant](/resources/nodes/az-tenant) | ✅ |
+| [Okta_OutboundOrgSSO](/opengraph/extensions/okta/edges/okta_outboundorgsso) | [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ✅ |
+| [Okta_ResourceSetContains](/opengraph/extensions/okta/edges/okta_resourcesetcontains) | [Okta_ResourceSet](/opengraph/extensions/okta/nodes/okta_resourceset) | ❌ |
+
+### Outbound Edges
+
+| Edge | Destination Node | Traversable |
+| --- | --- | --- |
+| [Okta_IdentityProviderFor](/opengraph/extensions/okta/edges/okta_identityproviderfor) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user) | ✅ |
+| [Okta_IdpGroupAssignment](/opengraph/extensions/okta/edges/okta_idpgroupassignment) | [Okta_Group](/opengraph/extensions/okta/nodes/okta_group) | ❌ |
+
+## Properties
+
+| Name | Type | Source | Description |
+| --- | --- | --- | --- |
+| auto_user_provisioning | bool | policy.provisioning.action == &#39;AUTO&#39; if policy and policy.provisioning else False | Auto user provisioning recorded for this object when available. |
+| created | datetime | created | Creation timestamp reported by the source. |
+| displayname | string | name | Readable label supplied by the source object. |
+| enabled | bool | status == &#39;ACTIVE&#39; | Lifecycle projection that excludes suspended, staged, and deprovisioned users. |
+| entra_tenant_id | string &#124; null | entra_tenant_id | Entra tenant id recorded for this object when available. |
+| environmentid | string | _lookup.org_id() | Graph ID of the containing Okta organization, normalized to uppercase. |
+| governed_group_ids | list[string] | governed_group_ids | Governed group ids recorded for this object when available. |
+| id | string | id | Source identifier used to build the node ID. |
+| issuer_mode | string &#124; null | issuer_mode | Issuer mode recorded for this object when available. |
+| last_seen | datetime | NodeProperties.last_seen | Timestamp assigned when the collector converts the node. |
+| name | string | name | Name normalized to uppercase by the Okta node model. |
+| okta_domain | string | _extras[&#39;tenant&#39;] | Okta domain associated with the object. |
+| protocol_type | string &#124; null | protocol.type | Protocol type recorded for this object when available. |
+| tenant | string | _lookup.org_id() | Identifier of the organization used as collection context. |
+| tenant_domain | string | _extras[&#39;tenant&#39;] | Domain of the organization being collected. |
+| type | string | type | Type recorded for this object when available. |
+| url | string &#124; null | idp_url | Url recorded for this object when available. |

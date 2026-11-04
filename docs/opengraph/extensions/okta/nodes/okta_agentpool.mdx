@@ -4,7 +4,7 @@ description: 'A pool of synchronization or authentication agents in Okta'
 icon: '/images/extensions/okta/okta_agentpool.png'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
 
 ## Overview
 
@@ -25,40 +25,7 @@ The following agent pool types are supported by Okta:
 The most common agent pool type is the Active Directory (AD) Agent Pool, which consists of one or more AD Agents that facilitate bi-directional object synchronization between Okta and on-premises Active Directory environments.
 
 ![Okta AD Agent Pools displayed in BloodHound](/images/extensions/okta/bloodhound-ad-agent-pool.png)
-## Edges
 
-<Note>
-The tables below list edges defined by the Okta extension only. Additional edges to or from this node may be created by other extensions.
-</Note>
-
-### Inbound Edges
-
-| Edge Type | Source Node Types | Traversable |
-| --------- | ----------------- | ----------- |
-| [Okta_AgentMemberOf](/opengraph/extensions/okta/edges/okta_agentmemberof) | [Okta_Agent](/opengraph/extensions/okta/nodes/okta_agent) | ✅ |
-| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Organization](/opengraph/extensions/okta/nodes/okta_organization) | ✅ |
-
-### Outbound Edges
-
-| Edge Type | Destination Node Types | Traversable |
-| --------- | ---------------------- | ----------- |
-| [Okta_AgentPoolFor](/opengraph/extensions/okta/edges/okta_agentpoolfor) | [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ✅ |
-
-## Properties
-
-| Name | Source | Type | Description |
-| ---- | ------ | ---- | ----------- |
-| `id` | `agentPool.id + "_pool"` | `string` | Unique agent pool identifier. |
-| `name` | `agentPool.name` | `string` | Name of the Okta agent pool. |
-| `display_name` | `agentPool.name` | `string` | Display label used in BloodHound. |
-| `okta_domain` | Collector context (non-API) | `string` | Okta organization domain where the agent pool exists. |
-| `operational_status` | `agentPool.operationalStatus` | `string` | Current health/operational state of the agent pool. |
-| `type` | `agentPool.type` | `string` | Agent pool type (for example AD, LDAP, IWA, RADIUS). |
-
-<Info>
-Active Directory (AD) agent pool identifiers have the same values as the identifiers of the corresponding application objects.
-The `_pool` suffix is therefore added to the `id` property of `Okta_AgentPool` nodes to ensure uniqueness of node identifiers in BloodHound.
-</Info>
 ## Sample Property Values
 
 ```yaml
@@ -69,3 +36,34 @@ okta_domain: contoso.okta.com
 operational_status: DISRUPTED
 type: AD
 ```
+
+
+## Edges
+
+### Inbound Edges
+
+| Edge | Source Node | Traversable |
+| --- | --- | --- |
+| [Okta_AgentMemberOf](/opengraph/extensions/okta/edges/okta_agentmemberof) | [Okta_Agent](/opengraph/extensions/okta/nodes/okta_agent) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Organization](/opengraph/extensions/okta/nodes/okta_organization) | ✅ |
+
+### Outbound Edges
+
+| Edge | Destination Node | Traversable |
+| --- | --- | --- |
+| [Okta_AgentPoolFor](/opengraph/extensions/okta/edges/okta_agentpoolfor) | [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ✅ |
+
+## Properties
+
+| Name | Type | Source | Description |
+| --- | --- | --- | --- |
+| displayname | string | name | Readable label supplied by the source object. |
+| environmentid | string | _lookup.org_id() | Graph ID of the containing Okta organization, normalized to uppercase. |
+| id | string | graph_id | Source identifier used to build the node ID. |
+| last_seen | datetime | NodeProperties.last_seen | Timestamp assigned when the collector converts the node. |
+| name | string | name | Name normalized to uppercase by the Okta node model. |
+| okta_domain | string | _extras[&#39;tenant&#39;] | Okta domain associated with the object. |
+| operational_status | string | operational_status | Operational status recorded for this object when available. |
+| tenant | string | _lookup.org_id() | Identifier of the organization used as collection context. |
+| tenant_domain | string | _extras[&#39;tenant&#39;] | Domain of the organization being collected. |
+| type | string | type | Type recorded for this object when available. |

@@ -4,7 +4,7 @@ description: 'A secret used by users to authenticate to the Okta API'
 icon: '/images/extensions/okta/okta_apitoken.png'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
 
 ## Overview
 
@@ -15,37 +15,6 @@ These tokens are always associated with a specific user in Okta, and the permiss
 The use of API tokens is generally discouraged in favor of OAuth 2.0 access tokens, as they provide better security and flexibility. However, API tokens are still widely used by Okta customers.
 
 Okta API tokens are represented as Okta_ApiToken nodes in BloodHound.
-## Edges
-
-<Note>
-The tables below list edges defined by the Okta extension only. Additional edges to or from this node may be created by other extensions.
-</Note>
-
-### Inbound Edges
-
-No inbound edges are defined by the Okta extension for this node.
-
-### Outbound Edges
-
-| Edge Type | Destination Node Types | Traversable |
-| --------- | ---------------------- | ----------- |
-| [Okta_ApiTokenFor](/opengraph/extensions/okta/edges/okta_apitokenfor) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user) | ✅ |
-
-## Properties
-
-| Name | Source | Type | Description |
-| ---- | ------ | ---- | ----------- |
-| `id` | `apiToken.id` | `string` | Unique API token identifier. |
-| `name` | `apiToken.name` | `string` | Friendly name of the API token. |
-| `display_name` | `apiToken.name` | `string` | Display label used in BloodHound. |
-| `okta_domain` | Collector context (non-API) | `string` | Okta organization domain where the token exists. |
-| `user_id` | `apiToken.userId` | `string` | ID of the Okta user that owns the token. |
-| `client_name` | `apiToken.clientName` | `string` | Client/application name associated with the token. |
-| `created` | `apiToken.created` | `datetime` | Token creation timestamp. |
-| `last_updated` | `apiToken.lastUpdated` | `datetime` | Last update timestamp of token metadata. |
-| `expires_at` | `apiToken.expiresAt` | `datetime` | Token expiration timestamp. |
-| `network_connection` | `apiToken.network.connection` | `string` | Network connection restriction for token usage. |
-| `token_window` | `ToTimeSpan(apiToken.tokenWindow)` | `duration` | Inactivity window converted to `TimeSpan` when present. |
 
 ## Sample Property Values
 
@@ -62,3 +31,37 @@ expires_at: 2026-03-02T20:22:42+00:00
 network_connection: ANYWHERE
 token_window: 30.00:00:00
 ```
+
+
+## Edges
+
+### Inbound Edges
+
+| Edge | Source Node | Traversable |
+| --- | --- | --- |
+
+### Outbound Edges
+
+| Edge | Destination Node | Traversable |
+| --- | --- | --- |
+| [Okta_ApiTokenFor](/opengraph/extensions/okta/edges/okta_apitokenfor) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user) | ✅ |
+
+## Properties
+
+| Name | Type | Source | Description |
+| --- | --- | --- | --- |
+| client_name | string &#124; null | client_name | Client name recorded for this object when available. |
+| created | datetime | created | Creation timestamp reported by the source. |
+| displayname | string | name | Readable label supplied by the source object. |
+| environmentid | string | _lookup.org_id() | Graph ID of the containing Okta organization, normalized to uppercase. |
+| expires_at | datetime &#124; null | expires_at | Expires at recorded for this object when available. |
+| id | string | id | Source identifier used to build the node ID. |
+| last_seen | datetime | NodeProperties.last_seen | Timestamp assigned when the collector converts the node. |
+| last_updated | datetime &#124; null | last_updated | Last modification timestamp, when available. |
+| name | string | name | Name normalized to uppercase by the Okta node model. |
+| network_connection | string &#124; null | network.get(&#39;connection&#39;) if network and isinstance(network.get(&#39;connection&#39;), str) else None | Network connection recorded for this object when available. |
+| okta_domain | string | _extras[&#39;tenant&#39;] | Okta domain associated with the object. |
+| tenant | string | _lookup.org_id() | Identifier of the organization used as collection context. |
+| tenant_domain | string | _extras[&#39;tenant&#39;] | Domain of the organization being collected. |
+| token_window | string &#124; null | token_window_timespan(token_window) | Token window recorded for this object when available. |
+| user_id | string | user_id | [User](/resources/nodes/user) id recorded for this object when available. |
