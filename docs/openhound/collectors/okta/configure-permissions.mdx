@@ -1,0 +1,114 @@
+---
+title: 'Configure Okta Permissions'
+description: 'Configure an Okta collection identity, grant API scopes, and verify access for the beta collector.'
+hidden: true
+---
+
+import OpenHoundBetaNote from '/snippets/hounds/openhound-okta-beta-note.mdx';
+
+<OpenHoundBetaNote />
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+
+Configure one collection identity for your Okta organization. The collector supports an OAuth service app with a private RSA JSON Web Key (JWK), an installed API Service Integration with a client secret, or an SSWS API token.
+
+The administrator who provisions access is separate from the unattended runtime identity. Review the identity's permissions before collection; the collector performs reads, but a credential can have broader authority.
+
+## OAuth service app
+
+<Steps>
+  <Step title="Create the service app">
+    In the Okta Admin Console, open **Applications and Resources > Applications**, select **Create App Integration**, and choose **API Services**. Some organizations show the application creation flow under **Classic experience**. Record the app's **Client ID** and your organization's HTTPS URL.
+  </Step>
+  <Step title="Configure a signing key">
+    Set client authentication to **Public key / Private key**. Register the public key and securely retain its private RSA JWK, including its `kid`. The collector accepts one private JWK JSON object as a file or base64-encoded value; it does not accept a PEM file or a JWKS array in that field.
+  </Step>
+  <Step title="Grant API scopes and administrator access">
+    In **Okta API Scopes**, grant the scopes listed below. Separately assign the app administrator roles and resource access under **Admin roles**. Scope grants and role assignments are distinct authorization requirements. Have an Okta administrator review access to role assignments, OAuth grants, and credential metadata; a generic read-only role is not evidence of full collector coverage.
+
+    This beta guide does not establish a lab-validated least-privilege role profile. Review denied datasets before treating the result as a complete administrative access graph.
+  </Step>
+  <Step title="Configure the collector">
+    Save the following in `.dlt/secrets.toml` in your collection working directory:
+
+    ```toml
+    [sources.source.okta.credentials]
+    base_url = "https://example.okta.com"
+    client_id = "YOUR_OKTA_CLIENT_ID"
+    private_key_path = "/secure/path/okta-private.jwk"
+    ```
+
+    Alternatively, replace `private_key_path` with `private_key_b64` containing the base64-encoded private JWK. Protect the file and do not commit it. The collector signs client assertions and obtains and refreshes access tokens from the organization's authorization server automatically.
+  </Step>
+</Steps>
+
+Follow Okta's [OAuth service app setup](https://developer.okta.com/docs/guides/implement-oauth-for-okta-serviceapp/main/) for the current console workflow and key rotation. Keep the old public key available until collection has switched to the replacement private key, then retire the old key.
+
+## Requested scopes
+
+The collector requests the following Okta management scopes from the organization's `/oauth2/v1/token` endpoint. These are application permissions for unattended collection, not delegated user consent or custom authorization-server scopes.
+
+| Scope | Collection coverage |
+| --- | --- |
+| `okta.users.read` | Users, memberships, and user factor reads |
+| `okta.apps.read` | Applications, assignments, provisioning settings, and application metadata |
+| `okta.groups.read` | Groups and group membership |
+| `okta.roles.read` | Administrative roles, assignments, and resource-set context |
+| `okta.agentPools.read` | Directory agent pools and agents |
+| `okta.apiTokens.read` | API token metadata |
+| `okta.authorizationServers.read` | Authorization servers |
+| `okta.devices.read` | Devices and associated users |
+| `okta.policies.read` | Policies |
+| `okta.orgs.read` | Organization metadata |
+| `okta.idps.read` | Identity providers and linked users |
+| `okta.features.read` | Organization feature information |
+| `okta.clients.read` | OAuth client information |
+| `okta.appGrants.read` | Application OAuth scope grants |
+| `okta.oauthIntegrations.read` | API Service Integration instances |
+| `okta.authenticators.read` | Authenticator information |
+| `okta.realms.read` | Realms; requires the corresponding Okta entitlement |
+| `okta.realmAssignments.read` | Realm assignments; requires the corresponding Okta entitlement |
+
+These are the collector's fixed requested scopes, including the realm scopes. A missing grant can reject the token request before collection starts; disabling a dataset is not a way to change that request. If your tenant cannot grant a requested scope, resolve compatibility with your beta contact. Individual endpoint authorization also depends on the identity's roles and resource access. See Okta's [scope reference](https://developer.okta.com/docs/api/oauth2/).
+
+## Other supported credentials
+
+<Tabs>
+  <Tab title="API Service Integration">
+    Use this mode only for an API Service Integration supplied for your beta deployment and installed and authorized in your organization. It is distinct from a custom OAuth service app, which requires private-key authentication for Okta scopes. Do not assume that an OpenHound integration is publicly listed in the Okta Integration Network.
+
+    The installing administrator reviews its requested scopes and records the organization-specific client ID and secret. Confirm that the integration grants the collector's fixed requested scope set. See Okta's [API service integration guide](https://developer.okta.com/docs/guides/build-api-integration/main/).
+
+    ```toml
+    [sources.source.okta.credentials]
+    base_url = "https://example.okta.com"
+    client_id = "YOUR_INTEGRATION_CLIENT_ID"
+    client_secret = "YOUR_INTEGRATION_CLIENT_SECRET"
+    ```
+
+    Follow the integration's credential rotation procedure and update the stored secret before restarting collection.
+  </Tab>
+  <Tab title="SSWS API token">
+    Use a dedicated administrator account with reviewed access. In **Security > API > Tokens**, create a token and save its value securely. SSWS tokens inherit the issuing user's current privileges; they can permit writes even though collection reads data. Apply suitable network restrictions. Tokens expire after 30 days without use, and deactivating the issuing user deactivates its tokens. See Okta's [API token guide](https://developer.okta.com/docs/guides/create-an-api-token/main/).
+
+    ```toml
+    [sources.source.okta.credentials]
+    base_url = "https://example.okta.com"
+    token = "YOUR_OKTA_API_TOKEN"
+    ```
+
+    Before retiring a token, configure and verify its replacement. This mode does not use the OAuth scope grants above; API operations still require the issuing account's authorization.
+  </Tab>
+</Tabs>
+
+Configure exactly one credential mode. Environment variables use the same nested names, for example `SOURCES__SOURCE__OKTA__CREDENTIALS__BASE_URL` and `SOURCES__SOURCE__OKTA__CREDENTIALS__CLIENT_ID`. Use `PRIVATE_KEY_PATH`, `PRIVATE_KEY_B64`, `CLIENT_SECRET`, or `TOKEN` under that prefix for the selected credential.
+
+## Verify access
+
+Before collection, confirm that the configured organization URL, client ID or token owner, key ID, scope grants, and administrator assignments refer to the intended organization. Run the collection and inspect authentication errors, denied endpoints, resource counts, and representative role assignments and memberships. An empty result can mean unavailable features, insufficient authorization, or no matching objects.
+
+For HTTP 401, check the selected credential mode, organization URL, credential validity, and signing key. For HTTP 403, review endpoint scopes, administrator roles, resource access, and tenant features. Do not infer that a principal has no administrative access from a denied role-assignment read.
+
+## Next steps
+
+[Collect Okta Data](/openhound/collectors/okta/collect-data) with the configured identity.
