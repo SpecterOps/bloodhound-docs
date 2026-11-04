@@ -1,6 +1,6 @@
 ---
-title: Configure the Collector
-description: Configure the OpenHound Okta collector to gather data from your Okta organization.
+title: 'Configure the Collector'
+description: 'Configure the OpenHound Okta collector to gather data from your Okta organization.'
 ---
 
 import RunAndCollect from '/snippets/hounds/openhound-run-and-collect.mdx';
@@ -9,7 +9,7 @@ import RunAndCollect from '/snippets/hounds/openhound-run-and-collect.mdx';
 
 This page covers configuring the OpenHound Okta collector for your Okta organization.
 
-To prevent OpenHound from consuming your full organization-wide Okta rate limit, [configure a client-specific rate limit](https://developer.okta.com/docs/reference/rl2-token-oauth/) for the OAuth service application or API token used by the collector. OpenHound honors Okta rate-limit responses and retries each HTTP request up to 10 times with increasing delays.
+To prevent OpenHound from consuming your full organization-wide Okta rate limit, [configure a client-specific rate limit](https://developer.okta.com/docs/reference/rl2-token-oauth/) for the OAuth service application or API token used by the collector. The collector paces requests using observed quota headers and retries rate-limit responses within the configured retry window. Transient failures have a separate bounded retry policy.
 
 ## Prerequisites
 
@@ -22,9 +22,9 @@ To prevent OpenHound from consuming your full organization-wide Okta rate limit,
 
 Register the OpenHound Okta collector as a [service application](/openhound/collectors/okta/okta-app-registration) in Okta.
 
-Grant the application limited read-only permissions, then configure authentication with either a symmetric client secret or an asymmetric RSA public/private key pair.
+Grant the application read scopes and an appropriate admin role, then configure an RSA public/private key pair. Custom service apps requesting Okta API scopes must use [private-key JWT authentication](https://developer.okta.com/docs/guides/implement-oauth-for-okta-serviceapp/main/).
 
-Use an RSA public/private key pair when possible, because it provides stronger security than a symmetric client secret.
+The collector's `client_secret` credential mode is for an installed API Service Integration, which is a different Okta integration type. Do not use the client secret of a custom service app in place of its private key.
 
 ### API Token (SSWS)
 
@@ -34,7 +34,7 @@ This is the least secure option, but the easiest one to set up.
 ## Configure OpenHound
 
 The following OpenHound configuration parameters are required to run the Okta collector. These can either be set
-via the `[sources.source.okta.credentials]` section of the secrets file or via environment variables using the `SOURCES__OKTA__CREDENTIALS` prefix.
+via the `[sources.source.okta.credentials]` section of the secrets file or via environment variables using the `SOURCES__SOURCE__OKTA__CREDENTIALS` prefix. In the tables below, `{PREFIX}` stands for `SOURCES__SOURCE__OKTA__CREDENTIALS`. Set credentials for one authentication mode at a time.
 
 ### Option 1: Service Application with JSON key file
 
@@ -122,12 +122,14 @@ The Okta collector requests explicit page sizes for resources that support large
 
 | Environment variable | Default | Purpose |
 | --- | ---: | --- |
+| `SOURCES__SOURCE__OKTA__APPLICATIONS_PAGE_SIZE` | `200` | Applications per page, from 1 through 200 |
 | `SOURCES__SOURCE__OKTA__APPLICATION_USERS_PAGE_SIZE` | `500` | Application users per page, from 1 through 500 |
 | `SOURCES__SOURCE__OKTA__GROUPS_PAGE_SIZE` | `200` | Expanded groups per page, from 1 through 200 |
 | `SOURCES__SOURCE__OKTA__APPLICATION_GROUP_ASSIGNMENTS_PAGE_SIZE` | `200` | Application-group assignments per page, from 20 through 200 |
-| `SOURCES__SOURCE__OKTA__GROUP_PUSH_MAPPINGS_PAGE_SIZE` | `1000` | Group push mappings per page, from 1 through 1,000 |
+| `SOURCES__SOURCE__OKTA__GROUP_PUSH_MAPPINGS_PAGE_SIZE` | `1000` | [Group](/resources/nodes/group) push mappings per page, from 1 through 1,000 |
 | `SOURCES__SOURCE__OKTA__IDENTITY_PROVIDER_USERS_PAGE_SIZE` | `200` | Identity-provider users per page, from 1 through 200 |
-| `SOURCES__SOURCE__OKTA__ENDPOINT_CONCURRENCY` | `2` | Maximum simultaneous requests per endpoint family |
+| `SOURCES__SOURCE__OKTA__ENDPOINT_CONCURRENCY` | `32` | Maximum simultaneous requests per endpoint family |
+| `SOURCES__SOURCE__OKTA__ORG_CONCURRENCY` | `32` | Maximum simultaneous requests across all endpoint families |
 | `SOURCES__SOURCE__OKTA__RATE_LIMIT_MAX_ELAPSED_SECONDS` | `900` | Maximum elapsed retry window for an individual 429 request |
 | `SOURCES__SOURCE__OKTA__RATE_LIMIT_REMAINING_RESERVE` | `1` | Requests held in reserve when pacing against a rate-limit window |
 
@@ -136,6 +138,16 @@ Application-group assignments are collected from each application's public assig
 <Note>
   If the initial expanded group page repeatedly times out on large Okta tenants, the collector retries that first page with successively halved page sizes before failing. With the default `GROUPS_PAGE_SIZE` of 200, that fallback sequence is 200, then 100, then 50.
 </Note>
+
+### Collection scope options
+
+These options reduce collection work and graph coverage. Leave them disabled for the broadest collection supported by the credential.
+
+| Environment variable | Default | Effect |
+| --- | --- | --- |
+| `SOURCES__SOURCE__OKTA__LIMIT_APP_USER_COLLECTION` | `false` | Restricts application-user reads to the collector's supported application types and explicitly listed app IDs. Omitted assignments can remove application and hybrid relationships. |
+| `SOURCES__SOURCE__OKTA__APP_USER_COLLECTION_APP_IDS` | `[]` | JSON array of additional native Okta application IDs to include when application-user collection is limited. It does not restrict the credential's authority. |
+| `SOURCES__SOURCE__OKTA__LIMIT_USER_MFA_COLLECTION` | `false` | Restricts factor reads to privileged users, including direct role assignees and admin-group members. Other users' factor information is incomplete. |
 
 ## Performance telemetry
 
@@ -222,3 +234,62 @@ Page and row counts describe data yielded by Okta pagination; they do not confir
 ## Running OpenHound and Collecting Data
 
 <RunAndCollect source="Okta" env="organization" />
+
+### Standalone CLI workflow
+
+With the Okta collector installed and credentials configured, run collection, preprocessing, and conversion in order:
+
+<Steps>
+  <Step title="Collect the raw resources">
+
+    ```bash
+    openhound collect okta ./output
+    ```
+
+    Confirm that raw resources were written under `./output/okta`. Keep this data protected; upload converted graph files rather than raw collection or telemetry files.
+
+  </Step>
+  <Step title="Build the lookup database">
+
+    ```bash
+    openhound preprocess okta ./output/okta ./lookup.duckdb
+    ```
+
+    Use the lookup database from this collection when converting its resources.
+
+  </Step>
+  <Step title="Convert to graph data">
+
+    ```bash
+    openhound convert okta ./output/okta ./graph/okta --lookup-file ./lookup.duckdb
+    ```
+
+    Keep the same Okta base URL configured for conversion; it supplies tenant identity context. Review every generated graph chunk under `./graph/okta` before ingestion.
+
+  </Step>
+</Steps>
+
+Install the matching [Okta extension](/opengraph/extensions/okta/getting-started) before uploading graph data. Use the ingestion workflow for your BloodHound edition and verify the ingestion result. A schema or extension archive is installed separately from collected graph data.
+
+The documented collector uses OpenHound 0.4.0 and does not yet produce separate platform and hybrid payloads with the current source-kind contract. Do not assume it produces two separately named outputs. Check the collector and target versions together before replacing an existing dataset; ingestion compatibility requires validation on the intended BloodHound target.
+
+## Verify collection coverage
+
+Check collection logs for failed endpoints before uploading the graph output. An authenticated request or a successful upload does not establish complete coverage. In particular:
+
+- `401` responses can indicate an invalid credential, an expired or revoked token, or a token with insufficient scope. Check the Okta error code before replacing credentials.
+- `403` responses require checking both the app's granted scopes and its admin roles or the SSWS token owner's permissions. Missing role assignments, app grants, or integrations can hide attack paths.
+- Realm collection depends on the organization's licensed features and access. An unavailable realm endpoint is different from an empty realm inventory.
+- `429` responses indicate rate limiting. Reduce endpoint concurrency or page sizes and review the retry window before repeating a collection.
+
+Inspect the expected users, groups, applications, and role assignments after ingestion. Compare known administrative assignments with their graph relationships; do not interpret missing relationships as proof that access is absent.
+
+### Hybrid relationships
+
+The collector derives external relationship endpoints from Okta data; it does not run SharpHound, AzureHound, or the downstream platform's collector. Collect and ingest the relevant external environment for complete external-node context. A companion upload does not repair denied Okta API reads. Matching requires compatible object IDs and current data from the same environments.
+
+[Okta_KerberosSSO](/opengraph/extensions/okta/edges/okta_kerberossso) is defined in the schema but its emission is disabled in the documented collector implementation. Its absence does not prove that agentless Desktop SSO is disabled.
+
+## Next steps
+
+Follow the [Okta extension setup](/opengraph/extensions/okta/getting-started) to check installation and ingestion, then use the [saved queries](/opengraph/extensions/okta/queries) to investigate the collected graph.

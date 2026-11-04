@@ -1,6 +1,6 @@
 ---
-title: Okta App Registration
-description: Create an API service application in Okta to authenticate the OpenHound Okta collector.
+title: 'Okta App Registration'
+description: 'Create an API service application in Okta to authenticate the OpenHound Okta collector.'
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
@@ -9,9 +9,11 @@ The OpenHound Okta collector authenticates to the Okta API using an OAuth 2.0 se
 
 To create the Okta application registration for the OpenHound Okta collector, follow the steps below.
 
+Use an administrator who can create service apps and assign the required admin roles. A Super Administrator must grant the Okta API scopes. The application is the runtime collection identity; the administrator does not need to maintain an interactive session during collection. See [Okta's service app setup](https://developer.okta.com/docs/guides/implement-oauth-for-okta-serviceapp/main/) for prerequisites and console variations.
+
 <Steps>
   <Step title="Open the Applications page">
-    In the Okta Admin Console, navigate to **Applications > Applications** and click **Create App Integration**.
+    In the Okta Admin Console, open **Applications and Resources > Applications** and select **Create App Integration**. Older console layouts use **Applications > Applications**. If prompted, select **Classic experience**.
 
     <Frame>
       <img src="/images/extensions/okta/okta-app-registration/app-registration1.png" alt="Okta Admin Console - Applications page" />
@@ -129,13 +131,11 @@ To create the Okta application registration for the OpenHound Okta collector, fo
         <Note>
         The Super Administrator role is currently the only Okta admin role that allows reading application OAuth 2.0 grants and API service integrations,
         as the permissions corresponding to the `okta.appGrants.read` and `okta.oauthIntegrations.read` scopes cannot be delegated to custom admin roles.
-        Assigning the Super Administrator role to the application does not pose a security risk,
-        because its effective permissions are limited by the read-only OAuth 2.0 scopes granted above,
-        so the OpenHound Okta collector cannot modify any data in the Okta organization.
+        The app's effective API access depends on both its admin role and the scopes in its token. These read scopes constrain collection, but the Super Administrator assignment remains privileged. Protect the private key, review all grants, and avoid adding write scopes to the collection identity.
         </Note>
       </Tab>
 
-      <Tab title="Least privilege">
+      <Tab title="Reduced access">
         If assigning the Super Administrator role is not acceptable in your environment, a less privileged combination of roles can be used instead,
         at the cost of the collector not being able to read application OAuth 2.0 grants and API service integrations.
 
@@ -171,3 +171,33 @@ To create the Okta application registration for the OpenHound Okta collector, fo
     </Tabs>
   </Step>
 </Steps>
+
+## Verify access and maintain credentials
+
+Before collecting, confirm the intended app's Client ID, registered public key, scope grants, and admin role assignments. Keep the private JWK's `kid` when saving the JSON. The collector requests the scopes listed above for every OAuth token, including the realm scopes; the optional license designation does not make the collector omit those scopes automatically. An `invalid_scope` response requires checking the requested scopes against the app grants and tenant capabilities.
+
+These role profiles describe expected coverage, rather than a lab-verified least-privilege configuration. Verify the required datasets using the [collection coverage checks](/openhound/collectors/okta/collect-data#verify-collection-coverage).
+
+For rotation, register a replacement public key and update the collector's private key together. Verify collection with the new key before retiring the old key. Only a Super Administrator can rotate a service app's keys after Okta-scoped grants are assigned; see [Okta's key-management requirements](https://developer.okta.com/docs/guides/implement-oauth-for-okta-serviceapp/main/).
+
+## API token alternative
+
+An SSWS token inherits its issuing administrator's privileges. OAuth scope grants do not restrict it. Use a dedicated account and an approved network restriction; a Super Administrator token can modify the organization. See [Okta's API token guide](https://developer.okta.com/docs/guides/create-an-api-token/main/).
+
+<Steps>
+  <Step title="Create the collection account">
+    Create or select a dedicated Okta administrator account with the required resource access. Use Super Administrator only when full collection requires it; a narrower role can leave datasets unavailable.
+  </Step>
+  <Step title="Create and save the token">
+    Sign in as that account. In **Security > API > Tokens**, select **Create token**, give it a collection-specific name, and configure permitted network origins. Copy the token once to your secret store.
+  </Step>
+  <Step title="Configure the collector">
+    Set `base_url` and `token` using the [SSWS configuration example](/openhound/collectors/okta/collect-data#option-3-api-token-ssws), then verify dataset coverage. Do not configure private-key credentials at the same time.
+  </Step>
+</Steps>
+
+SSWS tokens expire after 30 days without use and are deprovisioned when their owner is deactivated. For rotation, create a replacement, update the collector's secret, verify collection, then revoke the old token.
+
+## Next steps
+
+[Configure the collector and collect data](/openhound/collectors/okta/collect-data).
