@@ -1,0 +1,67 @@
+---
+title: 'Okta_KerberosSSO'
+description: 'Agentless desktop SSO relationship from on-prem AD user account to Okta AD application'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+
+## Edge Schema
+
+- Traversable: ✅
+
+| Source | Destination |
+| --- | --- |
+| [User](/resources/nodes/user) | [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) |
+
+## General Information
+
+The schema defines this relationship, but the documented collector implementation disables its emission while array-based matching is unsupported. A missing edge is not evidence that agentless Desktop SSO is disabled in Okta.
+
+Hybrid traversable Okta_KerberosSSO edges represent [agentless desktop SSO](https://help.okta.com/en-us/content/topics/directory/ad-dsso-about-workflow.htm) trust from an on-prem AD [User](/resources/nodes/user) account to an AD-backed [Okta_Application](/opengraph/extensions/okta/nodes/okta_application).
+
+```mermaid
+graph LR
+    subgraph ad["Active Directory"]
+        d1("Domain contoso.com")
+        u1("User SPN:HTTP/contoso.kerberos.okta.com")
+        u2("User jane.doe\@contoso.com")
+        d1 -- "Contains" --> u1
+        d1 -- "Contains" --> u2
+    end
+    subgraph okta["Okta"]
+        app1("Okta_Application contoso.com")
+        u3("Okta_User jane.doe\@contoso.com")
+        app1 -. Okta_UserPull .-> u3
+    end
+    u1 -- Okta_KerberosSSO --> app1
+    u2 -. Okta_UserSync .-> u3
+```
+
+## Abuse Info
+
+Use an existing controlled AD identity through the configured agentless Desktop SSO flow. The path still depends on Kerberos, browser and network configuration, account mapping, and Okta sign-on policy; the edge alone does not bypass MFA.
+
+1. Establish control of the source identity or system described above. Inherited group access requires a controlled member. Use native Okta IDs from the API, not normalized BloodHound object IDs.
+2. Inspect **ad-backed application** through the matching object in the Okta Admin Console, or use this read-only API check. The token must belong to the identity being assessed; a separate administrator’s token does not prove the source’s access. OAuth callers use `Authorization: Bearer $OKTA_ACCESS_TOKEN` instead.
+
+```bash
+export OKTA_ORG="https://example.okta.com"
+export OKTA_API_TOKEN="YOUR_CONTROLLED_IDENTITY_TOKEN"
+export APP_ID="YOUR_OKTA_APPLICATION_ID"
+curl -i -sS -H "Authorization: SSWS $OKTA_API_TOKEN" \
+  -H "Accept: application/json" "$OKTA_ORG/api/v1/apps/$APP_ID"
+```
+
+3. Expect HTTP 200 and confirm the response identifies the intended tenant and object. Follow pagination for a complete list. Compare the returned scope, membership, or configuration with the represented relationship; a 403 or an empty response does not prove the relationship is absent. This inspection does not validate additional compromise claims.
+
+## Opsec Considerations
+
+Correlate domain-controller Kerberos activity, browser sign-in, and Okta authentication outcomes for the same account. Review the Okta System Log alongside the relevant source-system logs. The API check above reads state; no environmental change or restoration is included in it. These steps have not been exercised against a lab.
+
+
+## References
+
+- [Application management](https://developer.okta.com/docs/api/openapi/okta-management/management/tags/application)
+- [Okta System Log](https://developer.okta.com/docs/api/openapi/okta-management/management/tags/systemlog)
+
+- [Agentless Desktop SSO workflow](https://help.okta.com/en-us/content/topics/directory/ad-dsso-about-workflow.htm)

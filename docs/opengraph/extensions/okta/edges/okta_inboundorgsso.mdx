@@ -1,0 +1,55 @@
+---
+title: 'Okta_InboundOrgSSO'
+description: 'Single sign-on from an external organization into Okta'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+
+## Edge Schema
+
+- Traversable: ✅
+
+| Source | Destination |
+| --- | --- |
+| [AZTenant](/resources/nodes/az-tenant) | [Okta_IdentityProvider](/opengraph/extensions/okta/nodes/okta_identityprovider) |
+
+## General Information
+
+The Okta_InboundOrgSSO and [Okta_InboundSSO](/opengraph/extensions/okta/edges/okta_inboundsso) hybrid edges connect external tenants and users to Okta entities:
+
+```mermaid
+graph LR
+    t1("AZTenant Contoso")
+    idp1("Okta_IdentityProvider Microsoft Login")
+    u1("AZUser alice\@contoso.com")
+    ou1("Okta_User alice\@contoso.com")
+    t1 -- Okta_InboundOrgSSO --> idp1
+    u1 -- Okta_InboundSSO --> ou1
+```
+
+## Abuse Info
+
+Control of the upstream tenant may influence an Okta identity provider only through the trust and claims Okta actually accepts. Establish the tenant, issuer, routing and account-linking constraints. Inspect the provider without modifying trust; a tenant-control graph path is not a validated universal user-impersonation procedure.
+
+1. Establish control of the source identity or system described above. Inherited group access requires a controlled member. Use native Okta IDs from the API, not normalized BloodHound object IDs.
+2. Inspect **inbound federation configuration** through the matching object in the Okta Admin Console, or use this read-only API check. The token must belong to the identity being assessed; a separate administrator’s token does not prove the source’s access. OAuth callers use `Authorization: Bearer $OKTA_ACCESS_TOKEN` instead.
+
+```bash
+export OKTA_ORG="https://example.okta.com"
+export OKTA_API_TOKEN="YOUR_CONTROLLED_IDENTITY_TOKEN"
+export IDP_ID="YOUR_OKTA_IDP_ID"
+curl -i -sS -H "Authorization: SSWS $OKTA_API_TOKEN" \
+  -H "Accept: application/json" "$OKTA_ORG/api/v1/idps/$IDP_ID"
+```
+
+3. Expect HTTP 200 and confirm the response identifies the intended tenant and object. Follow pagination for a complete list. Compare the returned scope, membership, or configuration with the represented relationship; a 403 or an empty response does not prove the relationship is absent. This inspection does not validate additional compromise claims.
+
+## Opsec Considerations
+
+Correlate upstream tenant app/claims changes with Okta provider changes, routing decisions, and sign-ins. Review the Okta System Log alongside the relevant source-system logs. The API check above reads state; no environmental change or restoration is included in it. These steps have not been exercised against a lab.
+
+
+## References
+
+- [Identity providers](https://developer.okta.com/docs/api/openapi/okta-management/management/tags/identityprovider)
+- [Okta System Log](https://developer.okta.com/docs/api/openapi/okta-management/management/tags/systemlog)
