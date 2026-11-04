@@ -1,0 +1,69 @@
+---
+title: 'Okta_CustomRole'
+description: 'A custom role in Okta created by an administrator'
+icon: '/images/extensions/okta/okta_customrole.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+
+## Overview
+
+Custom roles can be created with specific [permissions](https://developer.okta.com/docs/api/openapi/okta-management/guides/permissions/) and then assigned to [users](/opengraph/extensions/okta/nodes/okta_user), [groups](/opengraph/extensions/okta/nodes/okta_group), and [applications](/opengraph/extensions/okta/nodes/okta_application) over [resource sets](/opengraph/extensions/okta/nodes/okta_resourceset). [Complex conditions](https://help.okta.com/oie/en-us/content/topics/security/custom-admin-role/permission-conditions.htm) can be used if the custom admin role has one of the following permissions:
+
+- okta.users.read
+- okta.users.manage
+- okta.users.create
+
+Custom roles are represented as Okta_CustomRole and [Okta_RoleAssignment](/opengraph/extensions/okta/nodes/okta_roleassignment) nodes, similar to built-in roles.
+
+## Abusable Permissions of Custom Roles in Okta
+
+The following Okta permissions are particularly interesting from an offensive security perspective, as they can be abused to escalate privileges in hybrid scenarios:
+
+- okta.users.manage
+- okta.users.credentials.manage
+- okta.users.credentials.resetFactors
+- okta.users.credentials.resetPassword
+- okta.users.credentials.expirePassword
+- okta.users.credentials.manageTemporaryAccessCode
+- okta.groups.manage
+- okta.groups.members.manage
+- okta.apps.manage
+- okta.apps.clientCredentials.read
+
+<Info>
+The research on abusable Okta permissions is still ongoing.
+</Info>
+
+
+## Edges
+
+### Inbound Edges
+
+| Edge | Source Node | Traversable |
+| --- | --- | --- |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Organization](/opengraph/extensions/okta/nodes/okta_organization) | ✅ |
+| [Okta_HasRole](/opengraph/extensions/okta/edges/okta_hasrole) | [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ❌ |
+| [Okta_HasRole](/opengraph/extensions/okta/edges/okta_hasrole) | [Okta_Group](/opengraph/extensions/okta/nodes/okta_group) | ❌ |
+| [Okta_HasRole](/opengraph/extensions/okta/edges/okta_hasrole) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user) | ❌ |
+
+### Outbound Edges
+
+| Edge | Destination Node | Traversable |
+| --- | --- | --- |
+
+## Properties
+
+| Name | Type | Source | Description |
+| --- | --- | --- | --- |
+| created | datetime &#124; null | created | Creation timestamp reported by the source. |
+| displayname | string | label | Readable label supplied by the source object. |
+| environmentid | string | _lookup.org_id() | Graph ID of the containing Okta organization, normalized to uppercase. |
+| id | string | id | Source identifier used to build the node ID. |
+| last_seen | datetime | NodeProperties.last_seen | Timestamp assigned when the collector converts the node. |
+| last_updated | datetime &#124; null | last_updated | Last modification timestamp, when available. |
+| name | string | label | Name normalized to uppercase by the Okta node model. |
+| okta_domain | string | _extras[&#39;tenant&#39;] | Okta domain associated with the object. |
+| permissions | list[string] | list(_lookup.custom_role_permissions(id)) | Administrative permission names associated with the role. |
+| tenant | string | _lookup.org_id() | Identifier of the organization used as collection context. |
+| tenant_domain | string | _extras[&#39;tenant&#39;] | Domain of the organization being collected. |

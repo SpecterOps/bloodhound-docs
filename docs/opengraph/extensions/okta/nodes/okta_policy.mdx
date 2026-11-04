@@ -1,0 +1,65 @@
+---
+title: 'Okta_Policy'
+description: 'A policy defining rules for authentication, password, or other features in Okta'
+icon: '/images/extensions/okta/okta_policy.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+
+## Overview
+
+Policies in Okta define the rules and conditions that govern authentication, authorization, and security behaviors within an organization. They control aspects such as password requirements, MFA enrollment, session management, and application access.
+
+Okta policies are represented as Okta_Policy nodes.
+
+## Policy Types
+
+The following [policy types](https://developer.okta.com/docs/api/openapi/okta-management/management/tag/Policy/) are supported by Okta:
+
+| Policy Type ID | Description |
+|----------------|-------------|
+| OKTA_SIGN_ON | [Global session policies](https://help.okta.com/oie/en-us/content/topics/identity-engine/policies/about-okta-sign-on-policies.htm) |
+| PASSWORD | [Password policies](https://help.okta.com/en-us/content/topics/security/policies/about-password-policies.htm) |
+| MFA_ENROLL | [Authenticator enrollment policies](https://help.okta.com/en-us/content/topics/security/policies/configure-mfa-policies.htm) |
+| IDP_DISCOVERY | [Identity Provider routing rules](https://help.okta.com/en-us/content/topics/security/identity_provider_discovery.htm) |
+| ACCESS_POLICY | [App sign-in policies](https://help.okta.com/oie/en-us/content/topics/identity-engine/policies/about-app-sign-on-policies.htm) |
+| DEVICE_SIGNAL_COLLECTION | [Device signal collection policies](https://help.okta.com/oie/en-us/content/topics/identity-engine/policies/create-device-signal-collection-ruleset.htm) |
+| PROFILE_ENROLLMENT | [User profile policies](https://help.okta.com/oie/en-us/content/topics/identity-engine/policies/create-profile-enrollment-policy.htm) |
+| POST_AUTH_SESSION | [Identity Threat Protection policies](https://help.okta.com/oie/en-us/content/topics/itp/overview.htm) |
+| ENTITY_RISK | [Entity risk policies](https://help.okta.com/oie/en-us/content/topics/itp/entity-risk-policy.htm) |
+
+The OpenHound collector specifically reads the `IDP_DISCOVERY` policies to check if the [Agentless Desktop SSO](https://help.okta.com/en-us/content/topics/directory/configuring_agentless_sso.htm) feature is enabled in the organization through at least one such policy.
+
+
+## Edges
+
+### Inbound Edges
+
+| Edge | Source Node | Traversable |
+| --- | --- | --- |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Organization](/opengraph/extensions/okta/nodes/okta_organization) | ✅ |
+| [Okta_ResourceSetContains](/opengraph/extensions/okta/edges/okta_resourcesetcontains) | [Okta_ResourceSet](/opengraph/extensions/okta/nodes/okta_resourceset) | ❌ |
+
+### Outbound Edges
+
+| Edge | Destination Node | Traversable |
+| --- | --- | --- |
+| [Okta_PolicyMapping](/opengraph/extensions/okta/edges/okta_policymapping) | [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ❌ |
+
+## Properties
+
+| Name | Type | Source | Description |
+| --- | --- | --- | --- |
+| created | datetime | created | Creation timestamp reported by the source. |
+| description | string &#124; null | description | Description recorded for this object when available. |
+| displayname | string | name | Readable label supplied by the source object. |
+| environmentid | string | _lookup.org_id() | Graph ID of the containing Okta organization, normalized to uppercase. |
+| id | string | id | Source identifier used to build the node ID. |
+| last_seen | datetime | NodeProperties.last_seen | Timestamp assigned when the collector converts the node. |
+| name | string | name | Name normalized to uppercase by the Okta node model. |
+| okta_domain | string | _extras[&#39;tenant&#39;] | Okta domain associated with the object. |
+| priority | int &#124; null | priority | Priority recorded for this object when available. |
+| system | bool | system or False | System recorded for this object when available. |
+| tenant | string | _lookup.org_id() | Identifier of the organization used as collection context. |
+| tenant_domain | string | _extras[&#39;tenant&#39;] | Domain of the organization being collected. |
+| type | string | type | Type recorded for this object when available. |

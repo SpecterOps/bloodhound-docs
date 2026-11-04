@@ -1,0 +1,79 @@
+---
+title: 'Okta_ResourceSet'
+description: 'A resource set containing users, groups, applications, and other Okta objects'
+icon: '/images/extensions/okta/okta_resourceset.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+
+## Overview
+
+Resource sets are collections of entities that can be used to scope custom role assignments in Okta. A resource set can contain the following object types:
+
+- [x] [Users](/opengraph/extensions/okta/nodes/okta_user)
+- [x] [Groups](/opengraph/extensions/okta/nodes/okta_group)
+- [x] [Applications](/opengraph/extensions/okta/nodes/okta_application)
+- [x] [API Service Integrations](/opengraph/extensions/okta/nodes/okta_apiserviceintegration)
+- [x] [Devices](/opengraph/extensions/okta/nodes/okta_device)
+- [x] [Authorization servers](/opengraph/extensions/okta/nodes/okta_authorizationserver)
+- [x] [Identity Providers](/opengraph/extensions/okta/nodes/okta_identityprovider)
+- [x] [Policies](/opengraph/extensions/okta/nodes/okta_policy)
+  - [x] Entity risk policy
+  - [x] Session protection policy
+  - [x] Authentication policy
+  - [x] Global session policy
+  - [x] End user account management policy
+- [ ] Shared Signals Framework (SSF) Receivers
+- [ ] ~~Workflows~~ (Gaps in the Okta API)
+- [ ] ~~Customizations~~ (Gaps in the Okta API)
+- [ ] ~~Support cases~~ (Gaps in the Okta API)
+- [ ] ~~Identity and Access Management Resources~~ (Gaps in the Okta API)
+
+<Info>
+Only the marked resource types are currently supported as resource set members. Some resource types, such as Workflows, are not accessible via the Okta API at all.
+</Info>
+
+![Okta Resource Set displayed in BloodHound](/images/extensions/okta/bloodhound-resource-set.png)
+
+Okta resource sets are represented as Okta_ResourceSet nodes. Their members are linked through the [Okta_ResourceSetContains](/opengraph/extensions/okta/edges/okta_resourcesetcontains) edges for directly contained objects, and through the [Okta_ResourceSetContainsMembersOf](/opengraph/extensions/okta/edges/okta_resourcesetcontainsmembersof) and [Okta_ResourceSetContainsIndirect](/opengraph/extensions/okta/edges/okta_resourcesetcontainsindirect) edges when a resource set contains the members of a group.
+
+
+## Edges
+
+### Inbound Edges
+
+| Edge | Source Node | Traversable |
+| --- | --- | --- |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Organization](/opengraph/extensions/okta/nodes/okta_organization) | ✅ |
+| [Okta_ScopedTo](/opengraph/extensions/okta/edges/okta_scopedto) | [Okta_RoleAssignment](/opengraph/extensions/okta/nodes/okta_roleassignment) | ❌ |
+
+### Outbound Edges
+
+| Edge | Destination Node | Traversable |
+| --- | --- | --- |
+| [Okta_ResourceSetContains](/opengraph/extensions/okta/edges/okta_resourcesetcontains) | [Okta_ApiServiceIntegration](/opengraph/extensions/okta/nodes/okta_apiserviceintegration) | ❌ |
+| [Okta_ResourceSetContains](/opengraph/extensions/okta/edges/okta_resourcesetcontains) | [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ❌ |
+| [Okta_ResourceSetContains](/opengraph/extensions/okta/edges/okta_resourcesetcontains) | [Okta_AuthorizationServer](/opengraph/extensions/okta/nodes/okta_authorizationserver) | ❌ |
+| [Okta_ResourceSetContains](/opengraph/extensions/okta/edges/okta_resourcesetcontains) | [Okta_Device](/opengraph/extensions/okta/nodes/okta_device) | ❌ |
+| [Okta_ResourceSetContains](/opengraph/extensions/okta/edges/okta_resourcesetcontains) | [Okta_Group](/opengraph/extensions/okta/nodes/okta_group) | ❌ |
+| [Okta_ResourceSetContains](/opengraph/extensions/okta/edges/okta_resourcesetcontains) | [Okta_IdentityProvider](/opengraph/extensions/okta/nodes/okta_identityprovider) | ❌ |
+| [Okta_ResourceSetContains](/opengraph/extensions/okta/edges/okta_resourcesetcontains) | [Okta_Policy](/opengraph/extensions/okta/nodes/okta_policy) | ❌ |
+| [Okta_ResourceSetContains](/opengraph/extensions/okta/edges/okta_resourcesetcontains) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user) | ❌ |
+| [Okta_ResourceSetContainsIndirect](/opengraph/extensions/okta/edges/okta_resourcesetcontainsindirect) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user) | ❌ |
+| [Okta_ResourceSetContainsMembersOf](/opengraph/extensions/okta/edges/okta_resourcesetcontainsmembersof) | [Okta_Group](/opengraph/extensions/okta/nodes/okta_group) | ❌ |
+
+## Properties
+
+| Name | Type | Source | Description |
+| --- | --- | --- | --- |
+| created | datetime | created | Creation timestamp reported by the source. |
+| description | string &#124; null | description | Description recorded for this object when available. |
+| displayname | string | label | Readable label supplied by the source object. |
+| environmentid | string | _lookup.org_id() | Graph ID of the containing Okta organization, normalized to uppercase. |
+| id | string | node_id | Source identifier used to build the node ID. |
+| last_seen | datetime | NodeProperties.last_seen | Timestamp assigned when the collector converts the node. |
+| last_updated | datetime &#124; null | last_updated | Last modification timestamp, when available. |
+| name | string | label | Name normalized to uppercase by the Okta node model. |
+| okta_domain | string | _extras[&#39;tenant&#39;] | Okta domain associated with the object. |
+| tenant | string | _lookup.org_id() | Identifier of the organization used as collection context. |
+| tenant_domain | string | _extras[&#39;tenant&#39;] | Domain of the organization being collected. |

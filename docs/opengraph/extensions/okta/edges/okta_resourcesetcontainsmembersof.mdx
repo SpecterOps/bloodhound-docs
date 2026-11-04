@@ -1,0 +1,35 @@
+---
+title: 'Okta_ResourceSetContainsMembersOf'
+description: 'An Okta resource set contains the members of a group'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+
+## Edge Schema
+
+- Traversable: ❌
+
+| Source | Destination |
+| --- | --- |
+| [Okta_ResourceSet](/opengraph/extensions/okta/nodes/okta_resourceset) | [Okta_Group](/opengraph/extensions/okta/nodes/okta_group) |
+
+## General Information
+
+The non-traversable Okta_ResourceSetContainsMembersOf edges represent resource sets that contain the members of a group in Okta, as opposed to the group object itself:
+
+```mermaid
+graph LR
+    rs1("Okta_ResourceSet Frontline Workers")
+    g1("Okta_Group Retail Staff")
+    u1("Okta_User john\@contoso.com")
+    u2("Okta_User bob\@contoso.com")
+    rs1 -. Okta_ResourceSetContainsMembersOf .-> g1
+    u1 -- Okta_MemberOf --> g1
+    u2 -- Okta_MemberOf --> g1
+    rs1 -. Okta_ResourceSetContainsIndirect .-> u1
+    rs1 -. Okta_ResourceSetContainsIndirect .-> u2
+```
+
+In the Okta Admin Console, this corresponds to adding a group to a resource set with the *Users in group* option instead of *[Group](/resources/nodes/group)*.
+
+A custom role scoped to the resource set applies to the users who are members of the group, not to the group itself. For example, a Help Desk role scoped to this resource set can reset passwords of the group's members but cannot manage the group's membership. The individual users in scope are represented by the [Okta_ResourceSetContainsIndirect](/opengraph/extensions/okta/edges/okta_resourcesetcontainsindirect) edges, while directly contained objects are represented by the [Okta_ResourceSetContains](/opengraph/extensions/okta/edges/okta_resourcesetcontains) edges.

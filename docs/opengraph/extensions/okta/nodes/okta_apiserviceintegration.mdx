@@ -1,0 +1,65 @@
+---
+title: 'Okta_ApiServiceIntegration'
+description: 'An API service integration'
+icon: '/images/extensions/okta/okta_apiserviceintegration.png'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+
+## Overview
+
+API service integrations in Okta represent OAuth 2.0 service (daemon) applications that can be granted machine-to-machine access to Okta APIs. There are some important differences between API service integrations and [regular OIDC service applications in Okta](/opengraph/extensions/okta/nodes/okta_application):
+
+| Feature                                      | Service Applications | API Service Integrations |
+|----------------------------------------------|----------------------|--------------------------|
+| Can be created manually:                     | ✅                  | ❌                       |
+| Can be added from the OIN Catalog:           | ✅                  | ✅                       |
+| Require role assignments:                    | ✅                  | ❌                       |
+| Support authentication using client secrets: | ✅                  | ✅                       |
+| Support authentication using private keys:   | ✅                  | ❌                       |
+| Admins can read cleartext client secrets:    | ✅                  | ❌                       |
+
+Okta API service integrations are represented as Okta_ApiServiceIntegration nodes.
+
+## Integration OAuth 2.0 Scopes
+
+Each API service integration comes with a pre-defined set of OAuth 2.0 scopes to access Okta APIs:
+
+![Okta API service integration scopes in BloodHound](/images/extensions/okta/bloodhound-api-service-integration-scopes.png)
+
+
+## Edges
+
+### Inbound Edges
+
+| Edge | Source Node | Traversable |
+| --- | --- | --- |
+| [Okta_AppAdmin](/opengraph/extensions/okta/edges/okta_appadmin) | [Okta_Application](/opengraph/extensions/okta/nodes/okta_application) | ✅ |
+| [Okta_AppAdmin](/opengraph/extensions/okta/edges/okta_appadmin) | [Okta_Group](/opengraph/extensions/okta/nodes/okta_group) | ✅ |
+| [Okta_AppAdmin](/opengraph/extensions/okta/edges/okta_appadmin) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user) | ✅ |
+| [Okta_Contains](/opengraph/extensions/okta/edges/okta_contains) | [Okta_Organization](/opengraph/extensions/okta/nodes/okta_organization) | ✅ |
+| [Okta_CreatorOf](/opengraph/extensions/okta/edges/okta_creatorof) | [Okta_User](/opengraph/extensions/okta/nodes/okta_user) | ❌ |
+| [Okta_ResourceSetContains](/opengraph/extensions/okta/edges/okta_resourcesetcontains) | [Okta_ResourceSet](/opengraph/extensions/okta/nodes/okta_resourceset) | ❌ |
+| [Okta_ScopedTo](/opengraph/extensions/okta/edges/okta_scopedto) | [Okta_RoleAssignment](/opengraph/extensions/okta/nodes/okta_roleassignment) | ❌ |
+| [Okta_SecretOf](/opengraph/extensions/okta/edges/okta_secretof) | [Okta_ClientSecret](/opengraph/extensions/okta/nodes/okta_clientsecret) | ✅ |
+
+### Outbound Edges
+
+| Edge | Destination Node | Traversable |
+| --- | --- | --- |
+
+## Properties
+
+| Name | Type | Source | Description |
+| --- | --- | --- | --- |
+| app_type | string | type | App type recorded for this object when available. |
+| created_at | datetime | created_at | Created at recorded for this object when available. |
+| displayname | string | name | Readable label supplied by the source object. |
+| environmentid | string | _lookup.org_id() | Graph ID of the containing Okta organization, normalized to uppercase. |
+| id | string | id | Source identifier used to build the node ID. |
+| last_seen | datetime | NodeProperties.last_seen | Timestamp assigned when the collector converts the node. |
+| name | string | name | Name normalized to uppercase by the Okta node model. |
+| oauth_scopes | list[string] &#124; null | granted_scopes | OAuth scope grants collected for the application or integration. |
+| okta_domain | string | _extras[&#39;tenant&#39;] | Okta domain associated with the object. |
+| tenant | string | _lookup.org_id() | Identifier of the organization used as collection context. |
+| tenant_domain | string | _extras[&#39;tenant&#39;] | Domain of the organization being collected. |
