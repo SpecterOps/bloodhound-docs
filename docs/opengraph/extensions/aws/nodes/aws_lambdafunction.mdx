@@ -1,0 +1,144 @@
+---
+title: "AWS_LambdaFunction"
+description: "AWS Lambda Function identity, collected properties, and AWS graph relationships."
+icon: "/images/extensions/aws/aws_lambdafunction.svg"
+hidden: true
+---
+
+import AwsReferenceBetaNote from '/snippets/opengraph/extensions/aws-reference-beta-note.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<AwsReferenceBetaNote />
+
+An AWS Lambda function with code, configuration, execution role, and resource policy.
+
+## Identifier
+
+The node identifier is the resource ARN in `arn`.
+
+## Properties
+
+Types below describe collected values. `null` means the value can be unavailable; it does not make the AWS resource optional. Collection scope and API responses determine which metadata is available.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `str` | Collector-generated name used to identify the resource in context. |
+| `displayname` | `str` | Resource label shown in the graph. |
+| `arn` | `str or null` | AWS Resource Name used as the node identifier. |
+| `account_id` | `str or null` | AWS account associated with the resource; nullable in the shared model. |
+| `region` | `str or null` | AWS region, or `global` for resources without a regional scope. |
+| `environmentid` | `str` | Account root ARN identifying the OpenGraph environment. |
+| `runtime` | `str or null` | Lambda runtime identifier. |
+| `handler` | `str or null` | Function handler. |
+| `role_arn` | `str or null` | IAM execution role ARN. |
+| `code_size` | `int or null` | Deployment package size in bytes. |
+| `memory_size` | `int or null` | Configured memory size in MB. |
+| `timeout` | `int or null` | Function timeout in seconds. |
+| `last_modified` | `str or null` | Last modified timestamp from Lambda. |
+| `description` | `str or null` | Function description. |
+| `has_function_url` | `bool` | Whether a function URL configuration exists. |
+| `is_publicly_accessible` | `bool` | Whether the function URL uses no auth. |
+| `function_url` | `str or null` | Function URL, when configured. |
+| `function_url_auth_type` | `str or null` | Function URL auth type, when configured. |
+| `kms_key_arn` | `str or null` | KMS key ARN used by the function, when configured. |
+| `layers` | `str or null` | Lambda layer metadata. |
+| `resource_policy` | `str or null` | Resource-based Lambda policy, when available. |
+| `tags` | `list[str] or null` | Lambda function tags formatted as `key=value` strings. |
+
+## Diagram
+
+Solid arrows show traversable edges; dotted arrows show non-traversable edges. Each view shows the node in relation to the listed endpoint types.
+
+### Inbound edges (1)
+
+```mermaid
+graph LR
+    n["AWS_LambdaFunction"]
+    p0_0["AWS_Role"]
+    p0_0 -.->|AWS_CanAddLambdaPermission| n
+    p0_1["AWS_User"]
+    p0_1 -.->|AWS_CanAddLambdaPermission| n
+    p1_0["AWS_Role"]
+    p1_0 -.->|AWS_CanCreateLambdaEventSource| n
+    p1_1["AWS_User"]
+    p1_1 -.->|AWS_CanCreateLambdaEventSource| n
+    p2_0["AWS_Role"]
+    p2_0 -.->|AWS_CanDeleteLambdaFunction| n
+    p2_1["AWS_User"]
+    p2_1 -.->|AWS_CanDeleteLambdaFunction| n
+    p3_0["AWS_Role"]
+    p3_0 -.->|AWS_CanInvokeLambdaFunction| n
+    p3_1["AWS_User"]
+    p3_1 -.->|AWS_CanInvokeLambdaFunction| n
+    p4_0["AWS_Role"]
+    p4_0 -.->|AWS_CanRemoveLambdaPermission| n
+    p4_1["AWS_User"]
+    p4_1 -.->|AWS_CanRemoveLambdaPermission| n
+    p5_0["AWS_Role"]
+    p5_0 -->|AWS_CanUpdateLambdaCode| n
+    p5_1["AWS_User"]
+    p5_1 -->|AWS_CanUpdateLambdaCode| n
+```
+
+### Inbound edges (2)
+
+```mermaid
+graph LR
+    n["AWS_LambdaFunction"]
+    p0_0["AWS_Role"]
+    p0_0 -->|AWS_CanUpdateLambdaConfiguration| n
+    p0_1["AWS_User"]
+    p0_1 -->|AWS_CanUpdateLambdaConfiguration| n
+    p1_0["AWS_Role"]
+    p1_0 -.->|AWS_CanUpdateLambdaURLConfig| n
+    p1_1["AWS_User"]
+    p1_1 -.->|AWS_CanUpdateLambdaURLConfig| n
+    p2_0["AWS_Account"]
+    p2_0 -->|AWS_Contains| n
+    p3_0["AWS_Role"]
+    p3_0 -->|AWS_LambdaFunctionAll| n
+    p3_1["AWS_User"]
+    p3_1 -->|AWS_LambdaFunctionAll| n
+    p4_0["AWS_Role"]
+    p4_0 -->|AWS_LambdaFunctionWrite| n
+    p4_1["AWS_User"]
+    p4_1 -->|AWS_LambdaFunctionWrite| n
+```
+
+### Outbound edges
+
+```mermaid
+graph LR
+    n["AWS_LambdaFunction"]
+    p0_0["AWS_Role"]
+    n -->|AWS_RunsAs| p0_0
+```
+
+## Edges
+
+These tables cover relationships emitted for this kind by the AWS collector. Other extensions can define additional relationships.
+
+### Inbound Edges
+
+| Edge Type | Source Node Types | Traversable |
+| --- | --- | --- |
+| [AWS_CanAddLambdaPermission](/opengraph/extensions/aws/edges/aws_canaddlambdapermission) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanCreateLambdaEventSource](/opengraph/extensions/aws/edges/aws_cancreatelambdaeventsource) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanDeleteLambdaFunction](/opengraph/extensions/aws/edges/aws_candeletelambdafunction) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanInvokeLambdaFunction](/opengraph/extensions/aws/edges/aws_caninvokelambdafunction) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanRemoveLambdaPermission](/opengraph/extensions/aws/edges/aws_canremovelambdapermission) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanUpdateLambdaCode](/opengraph/extensions/aws/edges/aws_canupdatelambdacode) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
+| [AWS_CanUpdateLambdaConfiguration](/opengraph/extensions/aws/edges/aws_canupdatelambdaconfiguration) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
+| [AWS_CanUpdateLambdaURLConfig](/opengraph/extensions/aws/edges/aws_canupdatelambdaurlconfig) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | ✅ |
+| [AWS_LambdaFunctionAll](/opengraph/extensions/aws/edges/aws_lambdafunctionall) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
+| [AWS_LambdaFunctionWrite](/opengraph/extensions/aws/edges/aws_lambdafunctionwrite) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
+
+### Outbound Edges
+
+| Edge Type | Destination Node Types | Traversable |
+| --- | --- | --- |
+| [AWS_RunsAs](/opengraph/extensions/aws/edges/aws_runsas) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | ✅ |
+
+[AWS schema](/opengraph/extensions/aws/schema)

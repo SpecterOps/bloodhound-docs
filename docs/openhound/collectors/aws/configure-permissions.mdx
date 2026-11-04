@@ -17,12 +17,104 @@ This page explains how to grant the OpenHound AWS collector the read-only AWS pe
 
 <CollectionStrategy />
 
+For multiple independent-account collection, repeat the single-account permission configuration for each account. Then mark one profile per account with `bloodhound_collect = true` in the AWS config file that you pass to the collector as `aws_config_file`.
+
 <Note>
-  For multiple independent-account collection, configure one named AWS profile for each account in `profile_names`. Repeat the single-account permission configuration for each account.
+  EKS Pod Identity credentials carry transitive session tags through each `AssumeRole` hop. For every role the collector assumes, allow `sts:AssumeRole` and `sts:TagSession` in both the caller's permissions policy and the target role's trust policy. Scope caller principals and target role resources to the collector roles.
+
+  The AWS-hosted examples below include `sts:TagSession`; omit it when runtime credentials carry no transitive session tags. If authorization policies do not depend on these tags, you can instead [disable Pod Identity session tags](#troubleshoot-eks-session-tags).
 </Note>
 
 <Tabs>
-{/* TODO: Add a tab for the organization (source account) collection strategy. */}
+  <Tab title="Organization (source account)" icon="star">
+    Use this recommended strategy when the collector's AWS identity is in a dedicated source account. The source identity assumes a management-account role, and that role assumes a read-only collection role in each member account.
+
+    ##### Local or external workload
+
+    Run the collector outside AWS with an IAM user in the source account. The user assumes the management-account role, which lists the organization's accounts and assumes the collection role in each one.
+
+    ```mermaid
+    flowchart LR
+      subgraph CustomerStack["Workloads"]
+          VM["OpenHound Service"]
+      end
+
+      subgraph SourceAccount["Source account"]
+          Workload["OpenHoundCollectorUser"]
+          SourcePolicy["sts:AssumeRole policy<br/>for the management role"]
+          SourcePolicy -->|"Attached to"| Workload
+      end
+
+      subgraph ManagementAccount["Management account"]
+          ManagementRole["Management role<br/>management_role_name"]
+          ManagementPolicy["OpenHound read-only policy and<br/>sts:AssumeRole policy restricted to the organization"]
+          ManagementResources["AWS resources"]
+          ManagementPolicy -->|"Attached to"| ManagementRole
+          ManagementRole -->|"Reads"| ManagementResources
+      end
+
+      subgraph Organization["AWS Organization"]
+          subgraph AccountA["Member account A"]
+              RoleA["OpenHoundCollectorRole"]
+              ResourcesA["AWS resources"]
+              RoleA -->|"Reads"| ResourcesA
+          end
+
+          subgraph AccountB["Member account B"]
+              RoleB["OpenHoundCollectorRole"]
+              ResourcesB["AWS resources"]
+              RoleB -->|"Reads"| ResourcesB
+          end
+      end
+
+      VM -->|"Authenticate"| Workload
+      Workload -->|"STS AssumeRole"| ManagementRole
+      ManagementRole -->|"STS AssumeRole"| RoleA
+      ManagementRole -->|"STS AssumeRole"| RoleB
+    ```
+
+    ##### AWS-hosted workload
+
+    Run the collector on EC2 or EKS in the source account. The workload role assumes the management-account role, which lists the organization's accounts and assumes the collection role in each one.
+
+    ```mermaid
+    flowchart LR
+      subgraph SourceAccount["Source account"]
+          Workload["EC2 VM / EKS Pod"]
+          RuntimeRole["Workload role"]
+          SourcePolicy["sts:AssumeRole policy<br/>for the management role"]
+
+          Workload -->|"Get temporary credentials"| RuntimeRole
+          SourcePolicy -->|"Attached to"| RuntimeRole
+      end
+
+      subgraph ManagementAccount["Management account"]
+          ManagementRole["Management role<br/>management_role_name"]
+          ManagementPolicy["OpenHound read-only policy and<br/>sts:AssumeRole policy restricted to the organization"]
+          ManagementResources["AWS resources"]
+          ManagementPolicy -->|"Attached to"| ManagementRole
+          ManagementRole -->|"Reads"| ManagementResources
+      end
+
+      subgraph Organization["AWS Organization"]
+          subgraph AccountA["Member account A"]
+              RoleA["OpenHoundCollectorRole"]
+              ResourcesA["AWS resources"]
+              RoleA -->|"Reads"| ResourcesA
+          end
+
+          subgraph AccountB["Member account B"]
+              RoleB["OpenHoundCollectorRole"]
+              ResourcesB["AWS resources"]
+              RoleB -->|"Reads"| ResourcesB
+          end
+      end
+
+      RuntimeRole -->|"STS AssumeRole"| ManagementRole
+      ManagementRole -->|"STS AssumeRole"| RoleA
+      ManagementRole -->|"STS AssumeRole"| RoleB
+    ```
+  </Tab>
   <Tab title="Organization (management account)">
     Use this alternative when the collector's configured AWS identity resolves to the AWS organization's management account and assumes a read-only collection role in member accounts.
 
@@ -34,11 +126,15 @@ This page explains how to grant the OpenHound AWS collector the read-only AWS pe
     flowchart LR
       subgraph SecurityAccount["Management Account"]
           Workload["OpenHoundCollectorUser"]
-          RuntimeRole["OpenHoundCollectorRuntimeRole"]
+          RuntimeRole["Management role<br/>management_role_name"]
           AssumePolicy["sts:AssumeRole policy<br/>restricted to the organization"]
 
-          Workload -->|"Get temporary credentials"| RuntimeRole
+          Workload -->|"STS AssumeRole"| RuntimeRole
           AssumePolicy -->|"Attached to"| RuntimeRole
+          ReadPolicy["OpenHound read-only policy"]
+          ManagementResources["Organizations and management-account resources"]
+          ReadPolicy -->|"Attached to"| RuntimeRole
+          RuntimeRole -->|"Reads"| ManagementResources
       end
 
       subgraph Organization["AWS Organization"]
@@ -58,7 +154,7 @@ This page explains how to grant the OpenHound AWS collector the read-only AWS pe
               RoleB -->|"Reads"| ResourcesB
           end
       end
-      
+
         subgraph CustomerStack["Workloads"]
             VM["OpenHound Service"]
             VM -->|"Authenticate"| Workload
@@ -76,11 +172,15 @@ This page explains how to grant the OpenHound AWS collector the read-only AWS pe
     flowchart LR
       subgraph SecurityAccount["Management Account"]
           Workload["EC2 VM / EKS Pod"]
-          RuntimeRole["OpenHoundCollectorRuntimeRole"]
+          RuntimeRole["Management role<br/>management_role_name"]
           AssumePolicy["sts:AssumeRole policy<br/>restricted to the organization"]
 
           Workload -->|"Get temporary credentials"| RuntimeRole
           AssumePolicy -->|"Attached to"| RuntimeRole
+          ReadPolicy["OpenHound read-only policy"]
+          ManagementResources["Organizations and management-account resources"]
+          ReadPolicy -->|"Attached to"| RuntimeRole
+          RuntimeRole -->|"Reads"| ManagementResources
       end
 
       subgraph Organization["AWS Organization"]
@@ -121,11 +221,11 @@ This page explains how to grant the OpenHound AWS collector the read-only AWS pe
             ReadPolicy["OpenHound <br/>permissions policy"]
             AWSResources["AWS resources"]
 
-            Workload -->|"Get temporary credentials"| RuntimeRole
+            Workload -->|"STS AssumeRole"| RuntimeRole
             ReadPolicy -->|"Attached to"| RuntimeRole
             RuntimeRole -->|"Reads"| AWSResources
         end
-        
+
         subgraph CustomerStack["Workloads"]
             VM["OpenHound Service"]
             VM -->|"Authenticate"| Workload
@@ -302,6 +402,47 @@ Save the following policy document as `openhound-collector-policy.json`. This po
         "eks:DescribePodIdentityAssociation"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "SecretsManager",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:ListSecrets",
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:GetResourcePolicy"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ECR",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:DescribeRegistry",
+        "ecr:GetRegistryPolicy",
+        "ecr:DescribeRepositories",
+        "ecr:GetRepositoryPolicy",
+        "ecr:DescribeImages",
+        "ecr:ListTagsForResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ECS",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:ListClusters",
+        "ecs:DescribeClusters",
+        "ecs:ListServices",
+        "ecs:DescribeServices",
+        "ecs:ListTaskDefinitions",
+        "ecs:DescribeTaskDefinition",
+        "ecs:ListTasks",
+        "ecs:DescribeTasks",
+        "ecs:ListContainerInstances",
+        "ecs:DescribeContainerInstances",
+        "ecs:ListTagsForResource"
+      ],
+      "Resource": "*"
     }
   ]
 }
@@ -315,10 +456,10 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
   <Tab title="Organization (source account)" icon="star">
     Use this recommended procedure when the collector's AWS identity is in a dedicated source account. The role-assumption path is:
 
-    1. The source identity assumes the management-account role to read AWS Organizations metadata and collect management-account resources.
-    1. The same source identity directly assumes the configured collection role in each active member account.
+    1. The source identity assumes the management-account role to list the organization's active accounts, read AWS Organizations metadata, and collect management-account resources.
+    1. The management-account role assumes the collection role in each active member account.
 
-    The source identity must resolve to the account ID in `source_account`. If you omit `management_account_id`, it must also be allowed to call `organizations:DescribeOrganization` so the collector can discover the management account.
+    The source identity needs permission to assume only the management-account role. The management-account role needs permission to assume the member-account roles, and each member-account role trusts the management-account role.
 
     <Steps>
       <Step title="Create or identify the source principal">
@@ -341,7 +482,7 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
       <Step title="Create the management-account role">
         Create a role named `<MANAGEMENT_ROLE_NAME>` in the management account. Use the same value for `management_role_name` in the collector configuration.
 
-        If you omit `management_role_name`, name this role the same as `org_role_name`. Replace the principal with the source-account principal that runs the collector.
+        If you omit `management_role_name`, name this role the same as `collector_assumed_role_name`. Replace the principal with the source-account principal that runs the collector.
 
         <Tabs>
           <Tab title="Local or external workload">
@@ -374,7 +515,10 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
                   "Principal": {
                     "AWS": "arn:aws:iam::<SOURCE_ACCOUNT_ID>:role/<WORKLOAD_ROLE_NAME>"
                   },
-                  "Action": "sts:AssumeRole"
+                  "Action": [
+                    "sts:AssumeRole",
+                    "sts:TagSession"
+                  ]
                 }
               ]
             }
@@ -399,46 +543,31 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
       <Step title="Deploy the member-account role with StackSets">
         Use the `collector-role-stack.yaml` template and StackSets commands in the [Organization collection from the management account](/openhound/collectors/aws/configure-permissions#organization-management-account-2) tab.
 
-        In the member-role trust policy, replace the management-account principal with the source-account principal.
+        The member-account role trusts the management-account role, not the source principal. In the template's trust policy, set the principal to the role you created in the previous step:
 
-        <Tabs>
-          <Tab title="Local or external workload">
-            Use the source-account IAM user as the principal:
+        ```yaml
+        Principal:
+          AWS: "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/<MANAGEMENT_ROLE_NAME>"
+        ```
 
-            ```yaml
-            Principal:
-              AWS: "arn:aws:iam::<SOURCE_ACCOUNT_ID>:user/OpenHoundCollectorUser"
-            ```
-          </Tab>
-          <Tab title="AWS-hosted workload">
-            Use the source-account workload role as the principal:
-
-            ```yaml
-            Principal:
-              AWS: "arn:aws:iam::<SOURCE_ACCOUNT_ID>:role/<WORKLOAD_ROLE_NAME>"
-            ```
-          </Tab>
-        </Tabs>
+        If the source principal uses EKS Pod Identity, start from the AWS-hosted workload template, which also allows `sts:TagSession`: EKS session tags carry through the management-account role to every member-account role.
 
         Keep the OpenHound read-only policy attached to the member-account role. Deploy the role to every active member account that the collector should collect.
       </Step>
-      <Step title="Allow the source principal to assume both roles">
-        Attach an `sts:AssumeRole` policy to the source principal. Include the management role explicitly and restrict the member-role resource to the organization path you intend to collect.
+      <Step title="Allow the management-account role to assume member-account roles">
+        Save the following document as `openhound-assume-member-roles.json`. Replace `<ORG_PATH>` with the AWS Organizations path that contains the target accounts, for example `o-exampleorgid/*` for the whole organization:
 
-        ```json title="openhound-assume-role.json"
+        ```json title="openhound-assume-member-roles.json"
         {
           "Version": "2012-10-17",
           "Statement": [
             {
-              "Sid": "AssumeManagementCollectorRole",
-              "Effect": "Allow",
-              "Action": "sts:AssumeRole",
-              "Resource": "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/<MANAGEMENT_ROLE_NAME>"
-            },
-            {
               "Sid": "AssumeMemberCollectorRoles",
               "Effect": "Allow",
-              "Action": "sts:AssumeRole",
+              "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+              ],
               "Resource": "arn:aws:iam::*:role/OpenHoundCollectorRole",
               "Condition": {
                 "ForAnyValue:StringLike": {
@@ -452,10 +581,39 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
         }
         ```
 
+        Attach it to the management-account role:
+
+        ```bash
+        aws iam put-role-policy \
+          --role-name <MANAGEMENT_ROLE_NAME> \
+          --policy-name OpenHoundAssumeMemberRoles \
+          --policy-document file://openhound-assume-member-roles.json
+        ```
+      </Step>
+      <Step title="Allow the source principal to assume the management-account role">
+        Save the following document as `openhound-assume-role.json`. For EKS Pod Identity, the source principal needs both `sts:AssumeRole` and `sts:TagSession`; otherwise you can omit `sts:TagSession`.
+
+        ```json title="openhound-assume-role.json"
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AssumeManagementCollectorRole",
+              "Effect": "Allow",
+              "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+              ],
+              "Resource": "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/<MANAGEMENT_ROLE_NAME>"
+            }
+          ]
+        }
+        ```
+
         Attach the policy to `OpenHoundCollectorUser` for a local or external workload, or to the workload role for an AWS-hosted workload.
       </Step>
       <Step title="Verify the source identity">
-        Before configuring the collector, verify that the configured profile or runtime credentials resolve to the account ID in `source_account`:
+        Before configuring the collector, verify that the configured profile or runtime credentials resolve to the source principal that `management-role-trust.json` trusts:
 
         ```bash
         aws sts get-caller-identity --profile <SOURCE_PROFILE_NAME>
@@ -463,20 +621,54 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
 
         If the collector uses runtime credentials, run the command from the same workload environment without `--profile`.
       </Step>
+      <Step title="Configure the collector">
+        <Tabs>
+          <Tab title="Local or external workload">
+            Create a source profile with the access keys from the `OpenHoundCollectorUser` user:
+
+            ```bash
+            aws configure --profile openhound-source
+            ```
+
+            Set `collector_profile_name` to that profile:
+
+            ```toml title="~/.dlt/secrets.toml"
+            [sources.source.aws.credentials]
+            management_account_id = "<MANAGEMENT_ACCOUNT_ID>"
+            management_role_name = "<MANAGEMENT_ROLE_NAME>"
+            collector_assumed_role_name = "OpenHoundCollectorRole"
+            collector_profile_name = "openhound-source"
+            ```
+          </Tab>
+          <Tab title="AWS-hosted workload">
+            Omit `collector_profile_name` so that the collector uses the workload role from its runtime:
+
+            ```toml title="~/.dlt/secrets.toml"
+            [sources.source.aws.credentials]
+            management_account_id = "<MANAGEMENT_ACCOUNT_ID>"
+            management_role_name = "<MANAGEMENT_ROLE_NAME>"
+            collector_assumed_role_name = "OpenHoundCollectorRole"
+            ```
+          </Tab>
+        </Tabs>
+      </Step>
     </Steps>
   </Tab>
   <Tab title="Organization (management account)">
     Use this alternative when the AWS collector's identity resolves to the AWS Organizations management account and assumes a read-only collection role in member accounts.
 
     <Note>
-      Run these steps from the AWS Organizations management account or a delegated administrator account. Before continuing, verify the active AWS identity with `aws sts get-caller-identity`.
+      Run these setup steps from the AWS Organizations management account or a delegated administrator account. Before continuing, verify the active AWS identity with `aws sts get-caller-identity`. The collector's own identity must still be a role in the management account; a delegated administrator account cannot replace it.
     </Note>
 
     The AWS identity must resolve to credentials in the management account with permissions to read AWS Organizations metadata and assume `OpenHoundCollectorRole` in member accounts.
 
-    Create `OpenHoundCollectorRole` in the management account with the single-account procedure, then deploy the member-account role with StackSets. Do not deploy the member-account StackSet to the management account.
+    The member-account roles trust `OpenHoundCollectorRole` in the management account, so create that role first. Do not deploy the member-account StackSet to the management account.
 
     <Steps>
+      <Step title="Create the management-account collector role">
+        In the management account, follow the [Single-account](/openhound/collectors/aws/configure-permissions#single-account-2) procedure through **Allow the collector principal to assume the collector role**. Its read-only policy also covers AWS Organizations and management-account collection. Skip its **Configure the AWS profile** step; this procedure configures the profile at the end.
+      </Step>
       <Step title="Create or identify the management-account collector principal">
         <Tabs>
           <Tab title="Local or external workload">
@@ -619,6 +811,38 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
                               - eks:ListPodIdentityAssociations
                               - eks:DescribePodIdentityAssociation
                             Resource: "*"
+                          - Sid: SecretsManager
+                            Effect: Allow
+                            Action:
+                              - secretsmanager:ListSecrets
+                              - secretsmanager:DescribeSecret
+                              - secretsmanager:GetResourcePolicy
+                            Resource: "*"
+                          - Sid: ECR
+                            Effect: Allow
+                            Action:
+                              - ecr:DescribeRegistry
+                              - ecr:GetRegistryPolicy
+                              - ecr:DescribeRepositories
+                              - ecr:GetRepositoryPolicy
+                              - ecr:DescribeImages
+                              - ecr:ListTagsForResource
+                            Resource: "*"
+                          - Sid: ECS
+                            Effect: Allow
+                            Action:
+                              - ecs:ListClusters
+                              - ecs:DescribeClusters
+                              - ecs:ListServices
+                              - ecs:DescribeServices
+                              - ecs:ListTaskDefinitions
+                              - ecs:DescribeTaskDefinition
+                              - ecs:ListTasks
+                              - ecs:DescribeTasks
+                              - ecs:ListContainerInstances
+                              - ecs:DescribeContainerInstances
+                              - ecs:ListTagsForResource
+                            Resource: "*"
 
             Outputs:
               OpenHoundCollectorRoleArn:
@@ -627,7 +851,7 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             ```
           </Tab>
           <Tab title="AWS-hosted workload">
-            Save the following template as `collector-role-stack.yaml`. Replace `<WORKLOAD_ROLE_NAME>` if you use a different workload role name.
+            Save the following template as `collector-role-stack.yaml`. Its trust policy also allows `sts:TagSession`, which EKS Pod Identity requires.
 
             ```yaml title="collector-role-stack.yaml"
             AWSTemplateFormatVersion: "2010-09-09"
@@ -645,7 +869,9 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
                       - Effect: Allow
                         Principal:
                           AWS: "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/OpenHoundCollectorRole"
-                        Action: sts:AssumeRole
+                        Action:
+                          - sts:AssumeRole
+                          - sts:TagSession
                   Policies:
                     - PolicyName: OpenHoundCollectorReadOnly
                       PolicyDocument:
@@ -745,6 +971,38 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
                               - eks:ListPodIdentityAssociations
                               - eks:DescribePodIdentityAssociation
                             Resource: "*"
+                          - Sid: SecretsManager
+                            Effect: Allow
+                            Action:
+                              - secretsmanager:ListSecrets
+                              - secretsmanager:DescribeSecret
+                              - secretsmanager:GetResourcePolicy
+                            Resource: "*"
+                          - Sid: ECR
+                            Effect: Allow
+                            Action:
+                              - ecr:DescribeRegistry
+                              - ecr:GetRegistryPolicy
+                              - ecr:DescribeRepositories
+                              - ecr:GetRepositoryPolicy
+                              - ecr:DescribeImages
+                              - ecr:ListTagsForResource
+                            Resource: "*"
+                          - Sid: ECS
+                            Effect: Allow
+                            Action:
+                              - ecs:ListClusters
+                              - ecs:DescribeClusters
+                              - ecs:ListServices
+                              - ecs:DescribeServices
+                              - ecs:ListTaskDefinitions
+                              - ecs:DescribeTaskDefinition
+                              - ecs:ListTasks
+                              - ecs:DescribeTasks
+                              - ecs:ListContainerInstances
+                              - ecs:DescribeContainerInstances
+                              - ecs:ListTagsForResource
+                            Resource: "*"
 
             Outputs:
               OpenHoundCollectorRoleArn:
@@ -783,7 +1041,10 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             {
               "Sid": "AssumeOpenHoundTargetRoles",
               "Effect": "Allow",
-              "Action": "sts:AssumeRole",
+              "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+              ],
               "Resource": "arn:aws:iam::*:role/OpenHoundCollectorRole",
               "Condition": {
                 "ForAnyValue:StringLike": {
@@ -806,7 +1067,10 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             {
               "Sid": "AssumeManagementCollectorRole",
               "Effect": "Allow",
-              "Action": "sts:AssumeRole",
+              "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+              ],
               "Resource": "arn:aws:iam::<MANAGEMENT_ACCOUNT_ID>:role/OpenHoundCollectorRole"
             }
           ]
@@ -870,9 +1134,22 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             region = us-east-2
             ```
 
-            For EKS, configure the pod service account role with your normal EKS IAM role workflow, then expose the profile or default AWS SDK credentials to the collector container.
+            For EKS Pod Identity, omit the profile and `collector_profile_name`. The collector uses the pod's identity as the source and assumes `OpenHoundCollectorRole` in the management account, so that role's trust policy must allow the workload role, as the AWS-hosted single-account trust policy does.
           </Tab>
         </Tabs>
+
+        Configure the collector with the management-account role as both the management role and the member-account role name:
+
+        ```toml title="~/.dlt/secrets.toml"
+        [sources.source.aws.credentials]
+        management_account_id = "<MANAGEMENT_ACCOUNT_ID>"
+        management_role_name = "OpenHoundCollectorRole"
+        collector_assumed_role_name = "OpenHoundCollectorRole"
+        # Omit for EKS Pod Identity, which uses the pod's identity.
+        collector_profile_name = "managementaccount"
+        ```
+
+        When the profile's identity is already `OpenHoundCollectorRole` in the management account, the collector does not assume that role again. It collects the management account with the role's read-only policy and assumes `OpenHoundCollectorRole` in each member account.
       </Step>
     </Steps>
   </Tab>
@@ -960,7 +1237,10 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
                   "Principal": {
                     "AWS": "arn:aws:iam::<ACCOUNT_ID>:role/<WORKLOAD_ROLE_NAME>"
                   },
-                  "Action": "sts:AssumeRole"
+                  "Action": [
+                    "sts:AssumeRole",
+                    "sts:TagSession"
+                  ]
                 }
               ]
             }
@@ -996,7 +1276,10 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             {
               "Sid": "AssumeOpenHoundCollectorRole",
               "Effect": "Allow",
-              "Action": "sts:AssumeRole",
+              "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+              ],
               "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/OpenHoundCollectorRole"
             }
           ]
@@ -1027,7 +1310,7 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
         </Tabs>
       </Step>
       <Step title="Configure the AWS profile">
-        Configure the AWS profile that the OpenHound AWS collector uses. Write down the profile name so you can add it to the collector configuration.
+        Configure the AWS profile that the OpenHound AWS collector uses. Mark it with `bloodhound_collect = true`, and pass the AWS config file that contains it to the collector as `aws_config_file`.
 
         <Tabs>
           <Tab title="Local or external workload">
@@ -1045,6 +1328,7 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             source_profile = openhound-source
             role_session_name = OpenHoundCollector
             region = us-east-2
+            bloodhound_collect = true
             ```
           </Tab>
           <Tab title="AWS-hosted workload">
@@ -1056,9 +1340,10 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
             credential_source = Ec2InstanceMetadata
             role_session_name = OpenHoundCollector
             region = us-east-2
+            bloodhound_collect = true
             ```
 
-            For EKS, configure the pod service account role with your normal EKS IAM role workflow, then expose the profile or default AWS SDK credentials to the collector container.
+            For EKS Pod Identity, use `credential_source = EcsContainer` instead of `Ec2InstanceMetadata`.
           </Tab>
         </Tabs>
       </Step>
@@ -1066,6 +1351,36 @@ Click the tab that matches the AWS scope you want OpenHound to collect. Each pat
   </Tab>
 </Tabs>
 
+## Troubleshoot EKS session tags
+
+EKS Pod Identity enables session tags by default and passes them through subsequent role assumptions. A collector on Kubernetes can therefore receive `AccessDenied` for `sts:TagSession` when assuming a management or member-account role, even when `sts:AssumeRole` is allowed. Management-account authentication can succeed while member accounts are skipped if the later role assumptions reject the tags. This behavior applies to EKS Pod Identity; other Kubernetes credential methods do not automatically add these EKS tags.
+
+Choose one of these configurations:
+
+- Retain session tags and allow `sts:TagSession` alongside `sts:AssumeRole` in the caller permissions and target role trust for every role assumption, including management-to-member assumptions.
+- Disable the automatic tags on the collector's Pod Identity association if your IAM authorization policies do not depend on them. OpenHound AWS does not require these tags to collect data.
+
+To disable the tags, run the following command with an AWS identity authorized for `eks:UpdatePodIdentityAssociation`. Replace the placeholders with your cluster, association ID, and region:
+
+```bash
+aws eks update-pod-identity-association \
+  --cluster-name <cluster-name> \
+  --association-id <association-id> \
+  --region <aws-region> \
+  --disable-session-tags
+```
+
+Restart the collector deployment to obtain fresh credentials. The following command requires Kubernetes permission to patch the deployment:
+
+```bash
+kubectl -n <namespace> rollout restart deployment/<collector-deployment>
+kubectl -n <namespace> rollout status deployment/<collector-deployment>
+```
+
+Run a new collection and check the logs for skipped accounts and role-assumption errors. Disabling tags resolves failures caused by the automatic EKS tags; each role still needs the appropriate `sts:AssumeRole` permissions and trust.
+
+For details, see [AWS documentation on EKS Pod Identity session tags](https://docs.aws.amazon.com/eks/latest/userguide/pod-id-abac.html).
+
 ## Next steps
 
-Continue to [Configure the Collector](/openhound/collectors/aws/collect-data). For the recommended setup, set `source_account` to the account ID returned by the configured profile or runtime identity.
+Continue to [Configure the Collector](/openhound/collectors/aws/collect-data). For organization collection, use the role names you created for `management_role_name` and `collector_assumed_role_name`.

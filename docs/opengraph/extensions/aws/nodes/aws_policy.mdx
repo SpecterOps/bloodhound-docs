@@ -1,0 +1,100 @@
+---
+title: "AWS_Policy"
+description: "AWS IAM Managed Policy identity, collected properties, and AWS graph relationships."
+icon: "/images/extensions/aws/aws_policy.svg"
+hidden: true
+---
+
+import AwsReferenceBetaNote from '/snippets/opengraph/extensions/aws-reference-beta-note.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<AwsReferenceBetaNote />
+
+A standalone (AWS-managed or customer-managed) IAM policy that can be attached to principals.
+
+## Identifier
+
+The node identifier is the resource ARN in `arn`.
+
+## Properties
+
+Types below describe collected values. `null` means the value can be unavailable; it does not make the AWS resource optional. Collection scope and API responses determine which metadata is available.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `str` | Collector-generated name used to identify the resource in context. |
+| `displayname` | `str` | Resource label shown in the graph. |
+| `arn` | `str or null` | AWS Resource Name used as the node identifier. |
+| `account_id` | `str or null` | AWS account associated with the resource; nullable in the shared model. |
+| `region` | `str or null` | AWS region, or `global` for resources without a regional scope. |
+| `environmentid` | `str` | Account root ARN identifying the OpenGraph environment. |
+| `policy_name` | `str` | Native IAM managed policy name. |
+| `policy_id` | `str` | Native IAM policy identifier. |
+| `path` | `str` | IAM path assigned to the policy. |
+| `default_version_id` | `str` | Default policy version identifier. |
+| `is_aws_managed` | `bool` | Whether AWS owns and manages the policy. |
+| `is_attachable` | `bool or null` | Whether the policy can be attached to an IAM principal. |
+| `update_date` | `str or null` | Timestamp when the policy was last updated. |
+| `policy_document` | `str or null` | JSON-encoded default policy document. |
+
+## Diagram
+
+Solid arrows show traversable edges; dotted arrows show non-traversable edges. Each view shows the node in relation to the listed endpoint types.
+
+### Inbound edges
+
+```mermaid
+graph LR
+    n["AWS_Policy"]
+    p0_0["AWS_Role"]
+    p0_0 -.->|AWS_CanCreatePolicyVersion| n
+    p0_1["AWS_User"]
+    p0_1 -.->|AWS_CanCreatePolicyVersion| n
+    p1_0["AWS_Role"]
+    p1_0 -.->|AWS_CanSetDefaultPolicyVersion| n
+    p1_1["AWS_User"]
+    p1_1 -.->|AWS_CanSetDefaultPolicyVersion| n
+    p2_0["AWS_Account"]
+    p2_0 -->|AWS_Contains| n
+    p3_0["AWS_Group"]
+    p3_0 -.->|AWS_HasPolicy| n
+    p3_1["AWS_Role"]
+    p3_1 -.->|AWS_HasPolicy| n
+    p3_2["AWS_User"]
+    p3_2 -.->|AWS_HasPolicy| n
+```
+
+### Outbound edges
+
+```mermaid
+graph LR
+    n["AWS_Policy"]
+    p0_0["AWS_Group"]
+    n -.->|AWS_AttachedTo| p0_0
+    p0_1["AWS_Role"]
+    n -.->|AWS_AttachedTo| p0_1
+    p0_2["AWS_User"]
+    n -.->|AWS_AttachedTo| p0_2
+```
+
+## Edges
+
+These tables cover relationships emitted for this kind by the AWS collector. Other extensions can define additional relationships.
+
+### Inbound Edges
+
+| Edge Type | Source Node Types | Traversable |
+| --- | --- | --- |
+| [AWS_CanCreatePolicyVersion](/opengraph/extensions/aws/edges/aws_cancreatepolicyversion) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanSetDefaultPolicyVersion](/opengraph/extensions/aws/edges/aws_cansetdefaultpolicyversion) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | ✅ |
+| [AWS_HasPolicy](/opengraph/extensions/aws/edges/aws_haspolicy) | [AWS_Group](/opengraph/extensions/aws/nodes/aws_group), [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+
+### Outbound Edges
+
+| Edge Type | Destination Node Types | Traversable |
+| --- | --- | --- |
+| [AWS_AttachedTo](/opengraph/extensions/aws/edges/aws_attachedto) | [AWS_Group](/opengraph/extensions/aws/nodes/aws_group), [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+
+[AWS schema](/opengraph/extensions/aws/schema)

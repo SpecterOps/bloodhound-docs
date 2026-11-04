@@ -1,0 +1,271 @@
+---
+title: "AWS_Account"
+description: "AWS Account identity, collected properties, and AWS graph relationships."
+icon: "/images/extensions/aws/aws_account.svg"
+hidden: true
+---
+
+import AwsReferenceBetaNote from '/snippets/opengraph/extensions/aws-reference-beta-note.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<AwsReferenceBetaNote />
+
+An AWS account within an organization or standalone.
+
+## Identifier
+
+The node identifier is the account root ARN: `arn:aws:iam::<account-id>:root`. This ARN also identifies the account environment.
+
+## Properties
+
+Types below describe collected values. `null` means the value can be unavailable; it does not make the AWS resource optional. Collection scope and API responses determine which metadata is available.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `str` | Collector-generated name used to identify the resource in context. |
+| `displayname` | `str` | Resource label shown in the graph. |
+| `arn` | `str or null` | AWS Resource Name used as the node identifier. |
+| `account_id` | `str or null` | AWS account associated with the resource; nullable in the shared model. |
+| `region` | `str or null` | AWS region, or `global` for resources without a regional scope. |
+| `environmentid` | `str` | Account root ARN identifying the OpenGraph environment. |
+| `org_id` | `str or null` | AWS Organizations organization ID containing the account. |
+| `org_path` | `str or null` | PrincipalOrgPaths-style hierarchy for the account. |
+| `management_account_id` | `str or null` | Management account ID for the organization. |
+| `collected` | `bool` | True for an account targeted by collection. |
+
+## Diagram
+
+Solid arrows show traversable edges; dotted arrows show non-traversable edges. Each view shows the node in relation to the listed endpoint types.
+
+### Inbound edges (1)
+
+```mermaid
+graph LR
+    n["AWS_Account"]
+    p0_0["AWS_Role"]
+    p0_0 -.->|AWS_CanAttachRolePolicyWildcard| n
+    p0_1["AWS_User"]
+    p0_1 -.->|AWS_CanAttachRolePolicyWildcard| n
+    p1_0["AWS_Role"]
+    p1_0 -->|AWS_CanCreateAndAccessAdminUser| n
+    p1_1["AWS_User"]
+    p1_1 -->|AWS_CanCreateAndAccessAdminUser| n
+    p2_0["AWS_Role"]
+    p2_0 -->|AWS_CanCreateAndAssumeAdminRole| n
+    p2_1["AWS_User"]
+    p2_1 -->|AWS_CanCreateAndAssumeAdminRole| n
+    p3_0["AWS_Role"]
+    p3_0 -->|AWS_CanCreateAndPassAdminRole| n
+    p3_1["AWS_User"]
+    p3_1 -->|AWS_CanCreateAndPassAdminRole| n
+    p4_0["AWS_Role"]
+    p4_0 -.->|AWS_CanCreateCloudFormationStack| n
+    p4_1["AWS_User"]
+    p4_1 -.->|AWS_CanCreateCloudFormationStack| n
+    p5_0["AWS_Role"]
+    p5_0 -.->|AWS_CanCreateCloudFormationStackSet| n
+    p5_1["AWS_User"]
+    p5_1 -.->|AWS_CanCreateCloudFormationStackSet| n
+```
+
+### Inbound edges (2)
+
+```mermaid
+graph LR
+    n["AWS_Account"]
+    p0_0["AWS_Role"]
+    p0_0 -.->|AWS_CanCreateEKSNodegroup| n
+    p0_1["AWS_User"]
+    p0_1 -.->|AWS_CanCreateEKSNodegroup| n
+    p1_0["AWS_Role"]
+    p1_0 -.->|AWS_CanCreateGroup| n
+    p1_1["AWS_User"]
+    p1_1 -.->|AWS_CanCreateGroup| n
+    p2_0["AWS_Role"]
+    p2_0 -.->|AWS_CanCreateLambdaFunction| n
+    p2_1["AWS_User"]
+    p2_1 -.->|AWS_CanCreateLambdaFunction| n
+    p3_0["AWS_Role"]
+    p3_0 -.->|AWS_CanCreateOIDCProvider| n
+    p3_1["AWS_User"]
+    p3_1 -.->|AWS_CanCreateOIDCProvider| n
+    p4_0["AWS_Role"]
+    p4_0 -.->|AWS_CanCreateRole| n
+    p4_1["AWS_User"]
+    p4_1 -.->|AWS_CanCreateRole| n
+    p5_0["AWS_Role"]
+    p5_0 -.->|AWS_CanCreateSAMLProvider| n
+    p5_1["AWS_User"]
+    p5_1 -.->|AWS_CanCreateSAMLProvider| n
+```
+
+### Inbound edges (3)
+
+```mermaid
+graph LR
+    n["AWS_Account"]
+    p0_0["AWS_Role"]
+    p0_0 -.->|AWS_CanCreateSSMAssociation| n
+    p0_1["AWS_User"]
+    p0_1 -.->|AWS_CanCreateSSMAssociation| n
+    p1_0["AWS_Role"]
+    p1_0 -.->|AWS_CanCreateSSMDocument| n
+    p1_1["AWS_User"]
+    p1_1 -.->|AWS_CanCreateSSMDocument| n
+    p2_0["AWS_Role"]
+    p2_0 -.->|AWS_CanCreateUser| n
+    p2_1["AWS_User"]
+    p2_1 -.->|AWS_CanCreateUser| n
+    p3_0["AWS_Role"]
+    p3_0 -.->|AWS_CanListAllMyBuckets| n
+    p3_1["AWS_User"]
+    p3_1 -.->|AWS_CanListAllMyBuckets| n
+    p4_0["AWS_Role"]
+    p4_0 -.->|AWS_CanListKMSKeys| n
+    p4_1["AWS_User"]
+    p4_1 -.->|AWS_CanListKMSKeys| n
+    p5_0["AWS_Role"]
+    p5_0 -.->|AWS_CanPutAccountPublicAccessBlock| n
+    p5_1["AWS_User"]
+    p5_1 -.->|AWS_CanPutAccountPublicAccessBlock| n
+```
+
+### Inbound edges (4)
+
+```mermaid
+graph LR
+    n["AWS_Account"]
+    p0_0["AWS_Role"]
+    p0_0 -.->|AWS_CanPutRolePolicyWildcard| n
+    p0_1["AWS_User"]
+    p0_1 -.->|AWS_CanPutRolePolicyWildcard| n
+    p1_0["AWS_Role"]
+    p1_0 -.->|AWS_CanRequestSpotInstances| n
+    p1_1["AWS_User"]
+    p1_1 -.->|AWS_CanRequestSpotInstances| n
+    p2_0["AWS_Role"]
+    p2_0 -.->|AWS_CanRunInstances| n
+    p2_1["AWS_User"]
+    p2_1 -.->|AWS_CanRunInstances| n
+    p3_0["AWS_Role"]
+    p3_0 -.->|AWS_CanStartSSMAutomationExecution| n
+    p3_1["AWS_User"]
+    p3_1 -.->|AWS_CanStartSSMAutomationExecution| n
+    p4_0["AWS_Role"]
+    p4_0 -->|AWS_CanUpdateOtherPolicy| n
+    p4_1["AWS_User"]
+    p4_1 -->|AWS_CanUpdateOtherPolicy| n
+    p5_0["AWS_Role"]
+    p5_0 -->|AWS_CanUpdateSelfPolicy| n
+    p5_1["AWS_User"]
+    p5_1 -->|AWS_CanUpdateSelfPolicy| n
+```
+
+### Inbound edges (5)
+
+```mermaid
+graph LR
+    n["AWS_Account"]
+    p0_0["AWS_Organization"]
+    p0_0 -->|AWS_Contains| n
+    p1_0["AWS_Account"]
+    p1_0 -.->|AWS_HasExternalRoleTrust| n
+    p2_0["AWS_Role"]
+    p2_0 -.->|AWS_Trusts| n
+```
+
+### Outbound edges
+
+```mermaid
+graph LR
+    n["AWS_Account"]
+    p0_0["AWS_CloudFormationStack"]
+    n -->|AWS_Contains| p0_0
+    p0_1["AWS_CloudFormationStackSet"]
+    n -->|AWS_Contains| p0_1
+    p0_2["AWS_EC2Instance"]
+    n -->|AWS_Contains| p0_2
+    p0_3["AWS_EKSCluster"]
+    n -->|AWS_Contains| p0_3
+    p0_4["AWS_EKSNodeGroup"]
+    n -->|AWS_Contains| p0_4
+    p0_5["AWS_Group"]
+    n -->|AWS_Contains| p0_5
+    p0_6["AWS_KMSKey"]
+    n -->|AWS_Contains| p0_6
+    p0_7["AWS_LambdaFunction"]
+    n -->|AWS_Contains| p0_7
+    p0_8["AWS_OIDCProvider"]
+    n -->|AWS_Contains| p0_8
+    p0_9["AWS_Policy"]
+    n -->|AWS_Contains| p0_9
+    p0_10["AWS_Resource"]
+    n -->|AWS_Contains| p0_10
+    p0_11["AWS_Role"]
+    n -->|AWS_Contains| p0_11
+    p0_12["AWS_S3Bucket"]
+    n -->|AWS_Contains| p0_12
+    p0_13["AWS_SAMLProvider"]
+    n -->|AWS_Contains| p0_13
+    p0_14["AWS_SSMParameter"]
+    n -->|AWS_Contains| p0_14
+    p0_15["AWS_User"]
+    n -->|AWS_Contains| p0_15
+    p1_0["AWS_Account"]
+    n -.->|AWS_HasExternalRoleTrust| p1_0
+    p2_0["AWS_ResourceControlPolicy"]
+    n -.->|AWS_HasRCP| p2_0
+    p3_0["AWS_ServiceControlPolicy"]
+    n -.->|AWS_HasSCP| p3_0
+    p4_0["AWS_Role"]
+    n -.->|AWS_TrustedBy| p4_0
+```
+
+## Edges
+
+These tables cover relationships emitted for this kind by the AWS collector. Other extensions can define additional relationships.
+
+### Inbound Edges
+
+| Edge Type | Source Node Types | Traversable |
+| --- | --- | --- |
+| [AWS_CanAttachRolePolicyWildcard](/opengraph/extensions/aws/edges/aws_canattachrolepolicywildcard) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanCreateAndAccessAdminUser](/opengraph/extensions/aws/edges/aws_cancreateandaccessadminuser) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
+| [AWS_CanCreateAndAssumeAdminRole](/opengraph/extensions/aws/edges/aws_cancreateandassumeadminrole) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
+| [AWS_CanCreateAndPassAdminRole](/opengraph/extensions/aws/edges/aws_cancreateandpassadminrole) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
+| [AWS_CanCreateCloudFormationStack](/opengraph/extensions/aws/edges/aws_cancreatecloudformationstack) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanCreateCloudFormationStackSet](/opengraph/extensions/aws/edges/aws_cancreatecloudformationstackset) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanCreateEKSNodegroup](/opengraph/extensions/aws/edges/aws_cancreateeksnodegroup) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanCreateGroup](/opengraph/extensions/aws/edges/aws_cancreategroup) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanCreateLambdaFunction](/opengraph/extensions/aws/edges/aws_cancreatelambdafunction) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanCreateOIDCProvider](/opengraph/extensions/aws/edges/aws_cancreateoidcprovider) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanCreateRole](/opengraph/extensions/aws/edges/aws_cancreaterole) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanCreateSAMLProvider](/opengraph/extensions/aws/edges/aws_cancreatesamlprovider) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanCreateSSMAssociation](/opengraph/extensions/aws/edges/aws_cancreatessmassociation) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanCreateSSMDocument](/opengraph/extensions/aws/edges/aws_cancreatessmdocument) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanCreateUser](/opengraph/extensions/aws/edges/aws_cancreateuser) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanListAllMyBuckets](/opengraph/extensions/aws/edges/aws_canlistallmybuckets) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanListKMSKeys](/opengraph/extensions/aws/edges/aws_canlistkmskeys) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanPutAccountPublicAccessBlock](/opengraph/extensions/aws/edges/aws_canputaccountpublicaccessblock) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanPutRolePolicyWildcard](/opengraph/extensions/aws/edges/aws_canputrolepolicywildcard) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanRequestSpotInstances](/opengraph/extensions/aws/edges/aws_canrequestspotinstances) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanRunInstances](/opengraph/extensions/aws/edges/aws_canruninstances) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanStartSSMAutomationExecution](/opengraph/extensions/aws/edges/aws_canstartssmautomationexecution) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanUpdateOtherPolicy](/opengraph/extensions/aws/edges/aws_canupdateotherpolicy) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
+| [AWS_CanUpdateSelfPolicy](/opengraph/extensions/aws/edges/aws_canupdateselfpolicy) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
+| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_Organization](/opengraph/extensions/aws/nodes/aws_organization) | ✅ |
+| [AWS_HasExternalRoleTrust](/opengraph/extensions/aws/edges/aws_hasexternalroletrust) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | ❌ |
+| [AWS_Trusts](/opengraph/extensions/aws/edges/aws_trusts) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | ❌ |
+
+### Outbound Edges
+
+| Edge Type | Destination Node Types | Traversable |
+| --- | --- | --- |
+| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_CloudFormationStack](/opengraph/extensions/aws/nodes/aws_cloudformationstack), [AWS_CloudFormationStackSet](/opengraph/extensions/aws/nodes/aws_cloudformationstackset), [AWS_EC2Instance](/opengraph/extensions/aws/nodes/aws_ec2instance), [AWS_EKSCluster](/opengraph/extensions/aws/nodes/aws_ekscluster), [AWS_EKSNodeGroup](/opengraph/extensions/aws/nodes/aws_eksnodegroup), [AWS_Group](/opengraph/extensions/aws/nodes/aws_group), [AWS_KMSKey](/opengraph/extensions/aws/nodes/aws_kmskey), [AWS_LambdaFunction](/opengraph/extensions/aws/nodes/aws_lambdafunction), [AWS_OIDCProvider](/opengraph/extensions/aws/nodes/aws_oidcprovider), [AWS_Policy](/opengraph/extensions/aws/nodes/aws_policy), [AWS_Resource](/opengraph/extensions/aws/nodes/aws_resource), [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_S3Bucket](/opengraph/extensions/aws/nodes/aws_s3bucket), [AWS_SAMLProvider](/opengraph/extensions/aws/nodes/aws_samlprovider), [AWS_SSMParameter](/opengraph/extensions/aws/nodes/aws_ssmparameter), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ✅ |
+| [AWS_HasExternalRoleTrust](/opengraph/extensions/aws/edges/aws_hasexternalroletrust) | [AWS_Account](/opengraph/extensions/aws/nodes/aws_account) | ❌ |
+| [AWS_HasRCP](/opengraph/extensions/aws/edges/aws_hasrcp) | [AWS_ResourceControlPolicy](/opengraph/extensions/aws/nodes/aws_resourcecontrolpolicy) | ❌ |
+| [AWS_HasSCP](/opengraph/extensions/aws/edges/aws_hasscp) | [AWS_ServiceControlPolicy](/opengraph/extensions/aws/nodes/aws_servicecontrolpolicy) | ❌ |
+| [AWS_TrustedBy](/opengraph/extensions/aws/edges/aws_trustedby) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | ❌ |
+
+[AWS schema](/opengraph/extensions/aws/schema)

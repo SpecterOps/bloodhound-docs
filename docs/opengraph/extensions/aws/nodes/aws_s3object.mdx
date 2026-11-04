@@ -1,0 +1,114 @@
+---
+title: "AWS_S3Object"
+description: "AWS S3 Object identity, collected properties, and AWS graph relationships."
+icon: "/images/extensions/aws/aws_s3object.svg"
+hidden: true
+---
+
+import AwsReferenceBetaNote from '/snippets/opengraph/extensions/aws-reference-beta-note.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<AwsReferenceBetaNote />
+
+An object (key) stored within an S3 bucket, identified by its s3:::bucket/key ARN and carrying size, storage class, ETag, and last-modified metadata.
+
+## Identifier
+
+The node identifier is the object ARN: `arn:aws:s3:::<bucket>/<key>`. The key is part of the identifier, including any path separators.
+
+## Properties
+
+Types below describe collected values. `null` means the value can be unavailable; it does not make the AWS resource optional. Collection scope and API responses determine which metadata is available.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `str` | Collector-generated name used to identify the resource in context. |
+| `displayname` | `str` | Resource label shown in the graph. |
+| `arn` | `str or null` | AWS Resource Name used as the node identifier. |
+| `account_id` | `str or null` | AWS account associated with the resource; nullable in the shared model. |
+| `region` | `str or null` | AWS region, or `global` for resources without a regional scope. |
+| `environmentid` | `str` | Account root ARN identifying the OpenGraph environment. |
+| `bucket_name` | `str` | S3 bucket containing the object. |
+| `bucket_arn` | `str` | ARN of the S3 bucket containing the object. |
+| `object_key` | `str` | S3 object key. |
+| `last_modified` | `str or null` | Timestamp when the object was last modified. |
+| `size` | `int or null` | Object size in bytes. |
+| `storage_class` | `str or null` | Object storage class. |
+| `etag` | `str or null` | Object ETag. |
+
+## Diagram
+
+Solid arrows show traversable edges; dotted arrows show non-traversable edges. Each view shows the node in relation to the listed endpoint types.
+
+### Inbound edges (1)
+
+```mermaid
+graph LR
+    n["AWS_S3Object"]
+    p0_0["AWS_Role"]
+    p0_0 -.->|AWS_CanDeleteObject| n
+    p0_1["AWS_User"]
+    p0_1 -.->|AWS_CanDeleteObject| n
+    p1_0["AWS_Role"]
+    p1_0 -.->|AWS_CanGetObject| n
+    p1_1["AWS_User"]
+    p1_1 -.->|AWS_CanGetObject| n
+    p2_0["AWS_Role"]
+    p2_0 -.->|AWS_CanGetObjectACL| n
+    p2_1["AWS_User"]
+    p2_1 -.->|AWS_CanGetObjectACL| n
+    p3_0["AWS_Role"]
+    p3_0 -.->|AWS_CanPutObject| n
+    p3_1["AWS_User"]
+    p3_1 -.->|AWS_CanPutObject| n
+    p4_0["AWS_Role"]
+    p4_0 -.->|AWS_CanPutObjectACL| n
+    p4_1["AWS_User"]
+    p4_1 -.->|AWS_CanPutObjectACL| n
+    p5_0["AWS_S3Bucket"]
+    p5_0 -->|AWS_Contains| n
+```
+
+### Inbound edges (2)
+
+```mermaid
+graph LR
+    n["AWS_S3Object"]
+    p0_0["AWS_Role"]
+    p0_0 -.->|AWS_S3ObjectAll| n
+    p0_1["AWS_User"]
+    p0_1 -.->|AWS_S3ObjectAll| n
+    p1_0["AWS_Role"]
+    p1_0 -.->|AWS_S3ObjectRead| n
+    p1_1["AWS_User"]
+    p1_1 -.->|AWS_S3ObjectRead| n
+    p2_0["AWS_Role"]
+    p2_0 -.->|AWS_S3ObjectWrite| n
+    p2_1["AWS_User"]
+    p2_1 -.->|AWS_S3ObjectWrite| n
+```
+
+## Edges
+
+These tables cover relationships emitted for this kind by the AWS collector. Other extensions can define additional relationships.
+
+### Inbound Edges
+
+| Edge Type | Source Node Types | Traversable |
+| --- | --- | --- |
+| [AWS_CanDeleteObject](/opengraph/extensions/aws/edges/aws_candeleteobject) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanGetObject](/opengraph/extensions/aws/edges/aws_cangetobject) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanGetObjectACL](/opengraph/extensions/aws/edges/aws_cangetobjectacl) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanPutObject](/opengraph/extensions/aws/edges/aws_canputobject) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_CanPutObjectACL](/opengraph/extensions/aws/edges/aws_canputobjectacl) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_Contains](/opengraph/extensions/aws/edges/aws_contains) | [AWS_S3Bucket](/opengraph/extensions/aws/nodes/aws_s3bucket) | ✅ |
+| [AWS_S3ObjectAll](/opengraph/extensions/aws/edges/aws_s3objectall) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_S3ObjectRead](/opengraph/extensions/aws/edges/aws_s3objectread) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+| [AWS_S3ObjectWrite](/opengraph/extensions/aws/edges/aws_s3objectwrite) | [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | ❌ |
+
+### Outbound Edges
+
+No relationships are emitted in this direction for this kind in the current collector.
+
+[AWS schema](/opengraph/extensions/aws/schema)

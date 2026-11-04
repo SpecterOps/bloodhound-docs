@@ -1,0 +1,42 @@
+---
+title: "AWS_ClusterHasNodeGroup"
+description: "AWS_ClusterHasNodeGroup direction, traversability, and interpretation in the AWS schema."
+hidden: true
+---
+
+import AwsReferenceBetaNote from '/snippets/opengraph/extensions/aws-reference-beta-note.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<AwsReferenceBetaNote />
+
+Structural edge from an EKS cluster to one of its managed node groups (derived from the node group's clusterName). Traversable because a Kubernetes admin on the cluster can schedule a pod on the node group via nodeSelector and read the node role's credentials from IMDS.
+
+## Edge Schema
+
+- Source: [AWS_EKSCluster](/opengraph/extensions/aws/nodes/aws_ekscluster)
+- Destination: [AWS_EKSNodeGroup](/opengraph/extensions/aws/nodes/aws_eksnodegroup)
+- Traversable: ✅
+
+BloodHound can include this relationship in an Attack Path.
+
+### Endpoint pairs
+
+| Source Node Types | Destination Node Types |
+| --- | --- |
+| [AWS_EKSCluster](/opengraph/extensions/aws/nodes/aws_ekscluster) | [AWS_EKSNodeGroup](/opengraph/extensions/aws/nodes/aws_eksnodegroup) |
+
+## Diagram
+
+```mermaid
+graph LR
+    s0["AWS_EKSCluster"]
+    t0["AWS_EKSNodeGroup"]
+    s0 -->|AWS_ClusterHasNodeGroup| t0
+```
+
+## Interpretation
+
+The destination is a managed node group belonging to the source cluster. The model treats cluster administration as a path to node-group workloads; runtime scheduling and metadata access restrictions still matter.
+
+[AWS schema](/opengraph/extensions/aws/schema)

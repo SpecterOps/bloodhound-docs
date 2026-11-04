@@ -1,0 +1,54 @@
+---
+title: "AWS_S3BucketWrite"
+description: "AWS_S3BucketWrite direction, traversability, and interpretation in the AWS schema."
+hidden: true
+---
+
+import AwsReferenceBetaNote from '/snippets/opengraph/extensions/aws-reference-beta-note.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<AwsReferenceBetaNote />
+
+Principal has all S3 bucket read and write permissions (Read + PutObject).
+
+## Edge Schema
+
+- Source: [AWS_Role](/opengraph/extensions/aws/nodes/aws_role), [AWS_User](/opengraph/extensions/aws/nodes/aws_user)
+- Destination: [AWS_S3Bucket](/opengraph/extensions/aws/nodes/aws_s3bucket)
+- Traversable: ❌
+
+This relationship supplies structural or permission evidence and does not independently form an Attack Path step.
+
+### Endpoint pairs
+
+| Source Node Types | Destination Node Types |
+| --- | --- |
+| [AWS_Role](/opengraph/extensions/aws/nodes/aws_role) | [AWS_S3Bucket](/opengraph/extensions/aws/nodes/aws_s3bucket) |
+| [AWS_User](/opengraph/extensions/aws/nodes/aws_user) | [AWS_S3Bucket](/opengraph/extensions/aws/nodes/aws_s3bucket) |
+
+## Diagram
+
+```mermaid
+graph LR
+    s0["AWS_Role"]
+    s1["AWS_User"]
+    t0["AWS_S3Bucket"]
+    s0 -.->|AWS_S3BucketWrite| t0
+    s1 -.->|AWS_S3BucketWrite| t0
+```
+
+## Composite requirements
+
+The collector combines the following permission kinds for the same principal and target. Their presence must satisfy the collector's evaluation and resource-state checks.
+
+- [AWS_CanGetBucketACL](/opengraph/extensions/aws/edges/aws_cangetbucketacl)
+- [AWS_CanGetBucketPolicy](/opengraph/extensions/aws/edges/aws_cangetbucketpolicy)
+- [AWS_CanListBucket](/opengraph/extensions/aws/edges/aws_canlistbucket)
+- [AWS_CanPutObject](/opengraph/extensions/aws/edges/aws_canputobject)
+
+## Evaluation limits
+
+This edge represents the collector's model of collected authorization and resource state. It does not prove that every runtime request succeeds. Inspect unresolved `conditions` and `trust_policy_conditions` when present; `has_conditions` and `has_trust_policy_conditions` indicate retained evidence. Composite edges can include `methods` or `composite_components` describing their derivation.
+
+[AWS schema](/opengraph/extensions/aws/schema)
