@@ -4,33 +4,40 @@ description: "The Computer node represents a computer in Active Directory."
 icon: '/images/nodes/ad/computer.svg'
 ---
 
-import NodePropertiesIntro from '/snippets/resources/node-properties-intro.mdx';
+import NodePropertiesTableGuide from '/snippets/resources/node-properties-table-guide.mdx';
 import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
 
 <ResourceEditionPill />
 
 ## Node properties
 
-<NodePropertiesIntro />
+<NodePropertiesTableGuide />
 
-| **Entity Panel name**           | **Description**                                                                                                                                                                                                                                                                                                                      |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Tier Zero / High Value          | BloodHound Enterprise: Whether the object is part of Tier Zero of the Microsoft's Active Directory Tier Model, or the Control Plane of Microsoft's Enterprise Access Model. <br/> <br/>BloodHound CE: Whether the object is currently marked as High Value. By default any object that belongs to Tier Zero is marked as High Value. |
-| Display Name                    | The display name for the object.                                                                                                                                                                                                                                                                                                     |
-| Object ID                       | The object's security identifier (SID), a unique identifier in the directory.                                                                                                                                                                                                                                                        |
-| ACL Inheritance Denied          | Identifies whether an object is allowing DACL inheritance to itself. Corresponds to the `DACL_Protected` security descriptor flag.                                                                                                                                                                                                     |
-| Admin Count                     | Whether the object currently, or possibly ever has belonged to a certain set of highly privileged groups. For Active Directory nodes this is related to the AdminSDHolder object and the ProtectAdminGroups background task. Read more about that [here](https://specterops.io/resources/adminsdholder).                             |
-| AdminSDHolder Protected         | The authoritative security descriptor of this object matches that of the AdminSDHolder container and is therefore protected by it. AdminSDHolder is a security descriptor template that the ProtectAdminGroups background task stamps on protected objects.                                                                          |
-| Allows Unconstrained Delegation | Whether the object is allowed to perform unconstrained kerberos delegation. See more info about that here: [https://blog.harmj0y.net/redteaming/another-word-on-delegation/](https://blog.harmj0y.net/redteaming/another-word-on-delegation/)                                                                                        |
-| Created                         | The time when the object was created in the directory.                                                                                                                                                                                                                                                                               |
-| Description                     | The contents of the `description` field for the object.                                                                                                                                                                                                                                                                                |
-| Enabled                         | Whether the computer object is enabled.                                                                                                                                                                                                                                                                                              |
-| LAPS Enabled                    | Whether LAPS is running on the computer. This is determined by checking whether the associated MS LAPS properties are populated on the computer object.                                                                                                                                                                              |
-| Last Logon                      | The last time the domain controller you got this data from handled a logon request for the object. Attribute `lastLogon`.                                                                                                                                                                                                            |
-| Last Logon (Replicated)         | The last time any domain controller handled a logon for this object,<br/><br/>the value is, by default, only updated if the latest logon is greater than or equal to 14 days than the previous value. Attribute `lastLogonTimestamp`.                                                                                                |
-| Operating System                | The operating system running on the computer, according to the corresponding property on the object in the directory.                                                                                                                                                                                                                |
-| Owned                           | BloodHound Enterprise: Not applicable. <br/> <br/>BloodHound CE: Whether the object is marked as Owned, used to mark that the object has been compromised.                                                                                                                                                                           |
-| Password Last Set               | The human-readable date for when the user’s password last changed. This is stored internally in Unix epoch format                                                                                                                                                                                                                    |
+| Property key | Entity panel display name | Description |
+| --- | --- | --- |
+| — | Tier Zero | Whether BloodHound classifies the object as Tier Zero. This UI status is not a stored `highvalue` node property. |
+| `displayname` | Display Name | The display name for the object. |
+| `objectid` | Object ID | The object's security identifier (SID), a unique identifier in the directory. |
+| `isaclprotected` | ACL Inheritance Denied | Whether the object’s discretionary access control list (DACL) blocks inherited access control entries (ACEs). |
+| `admincount` | Admin Count | Indicates whether Active Directory has marked the account for protected-account handling. The flag can remain after privileged group membership is removed. |
+| `adminsdholderprotected` | AdminSDHolder Protected | The authoritative security descriptor of this object matches that of the AdminSDHolder container and is therefore protected by it. AdminSDHolder is a security descriptor template that the ProtectAdminGroups background task stamps on protected objects. |
+| `unconstraineddelegation` | Allows Unconstrained Delegation | Whether the account permits unconstrained Kerberos delegation. See [Kerberos delegation background](https://blog.harmj0y.net/redteaming/another-word-on-delegation/). |
+| `whencreated` | Created | The time when the object was created in the directory. |
+| `description` | Description | The contents of the `description` field for the object. |
+| `enabled` | Enabled | Whether the computer object is enabled. |
+| `haslaps` | LAPS Enabled | Whether LAPS is running on the computer. This is determined by checking whether the associated MS LAPS properties are populated on the computer object. |
+| `lastlogon` | Last Logon | The last time the domain controller you got this data from handled a logon request for the object. Attribute `lastLogon`. |
+| `lastlogontimestamp` | Last Logon (Replicated) | The replicated, approximate logon time from the directory’s `lastLogonTimestamp` attribute. Updates are periodic, so this value can lag recent logons. |
+| `operatingsystem` | Operating System | The operating system running on the computer, according to the corresponding property on the object in the directory. |
+| — | Is Owned | BloodHound Community Edition: whether the object is marked as owned. This UI status is not a stored `owned` node property. |
+| `pwdlastset` | Password Last Set | The human-readable date for when the user’s password last changed. This is stored internally in Unix epoch format |
+| `trustedtoauth` | Trusted For Constrained Delegation | Reports the `TRUSTED_TO_AUTH_FOR_DELEGATION` flag, which enables constrained delegation with protocol transition. This flag does not cover Kerberos-only constrained delegation.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → account Properties → Attribute Editor → `userAccountControl`; inspect flag 0x1000000. |
+| `sidhistory` | SID History | Additional security identifiers retained on this account, commonly after migration from another domain.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → account Properties → Attribute Editor → `sIDHistory`. |
+| `supportedencryptiontypes` | Supported Kerberos Encryption Types | The Kerberos encryption types advertised by this account for service-ticket encryption.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → account Properties → Attribute Editor → `msDS-SupportedEncryptionTypes`. |
+| `ntlmminserversec` | NTLM Minimum Server Session Security | The collected bitmask of minimum NTLM session-security requirements for servers, such as NTLMv2 session security and 128-bit encryption.<br /><br />Find this in Local Security Policy on the computer: Security Settings → Local Policies → Security Options → Network security: Minimum session security for NTLM SSP based (including secure RPC) servers. |
+| `ntlmminclientsec` | NTLM Minimum Client Session Security | The collected bitmask of minimum NTLM session-security requirements for clients, such as NTLMv2 session security and 128-bit encryption.<br /><br />Find this in Local Security Policy on the computer: Security Settings → Local Policies → Security Options → Network security: Minimum session security for NTLM SSP based (including secure RPC) clients. |
+| `lmcompatibilitylevel` | LAN Manager Compatibility Level | The collected LAN Manager authentication level, which controls LM, NTLM, and NTLMv2 authentication behavior.<br /><br />Find this in Local Security Policy on the computer: Security Settings → Local Policies → Security Options → Network security: LAN Manager authentication level. |
+| `ldapsepa` | LDAPS Extended Protection | Reports the LDAPS channel-binding test result. TRUE means authentication with invalid channel bindings did not succeed; it does not prove that channel binding is required for every client.<br /><br />Find this in Local Security Policy on the domain controller: Security Settings → Local Policies → Security Options → Domain controller: LDAP server channel binding token requirements. |
 
 ## Additional output property
 
@@ -39,3 +46,7 @@ SharpHound may add the lowercase Azure guest VM identifier as the `azvmid` prope
 ## References
 
 - [https://learn.microsoft.com/en-us/windows/win32/adschema/c-computer](https://learn.microsoft.com/en-us/windows/win32/adschema/c-computer)
+
+- [Windows local security policy settings](https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-localpoliciessecurityoptions)
+
+- [LDAP channel binding](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/ldap-channel-binding)
