@@ -1,0 +1,225 @@
+---
+title: "Deploy the CrowdStrike RTR Collector"
+description: "Deploy and configure the BloodHound Enterprise CrowdStrike RTR Collector through Azure Marketplace, then verify data collection and ingestion."
+sidebarTitle: Configure collector
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+Deploy the BloodHound Enterprise CrowdStrike RTR Collector through Azure Marketplace to collect data from Windows hosts with CrowdStrike Falcon sensors. This guide covers deployment, configuration, and verification of data ingestion into BloodHound Enterprise.
+
+The collector uses CrowdStrike Real-time Response (RTR) scripts to collect sessions, local groups, User Rights Assignment (LSA), and registry keys. It tracks hosts in a specified Falcon host group, polls for online hosts, and runs scripts for hosts with pending collection. After uploading the collected data to BloodHound Enterprise, it updates each host's daily collection status and retries pending hosts at the configured frequency.
+
+## Prerequisites
+
+Before you deploy, prepare the following:
+
+- An active Azure subscription and access to the **BloodHound Enterprise CrowdStrike RTR Collector** Azure Marketplace offer published by SpecterOps
+- The Azure permissions listed in [Azure roles and permissions](#azure-roles-and-permissions)
+- At least one Windows device with the CrowdStrike Falcon sensor installed and visible in **Host Management**. See CrowdStrike's [Falcon sensor installation guide](https://www.crowdstrike.com/en-us/resources/videos/how-to-install-falcon-sensor/).
+- A Falcon host group containing the target Windows devices and the host group ID to use during deployment
+- CrowdStrike API credentials and the four cloud-stored RTR scripts described below
+- BloodHound Enterprise credentials for data upload
+
+SpecterOps provides the container image and deployment package through the Marketplace offer. You do not need to build a Docker image, create a container registry, or create a Service Catalog Managed Application Definition.
+
+### Azure roles and permissions
+
+The integration administrator deploys and configures the managed application, configures the Container App Job, and performs the initial run. The integration user monitors the job and starts runs outside the configured cron schedule.
+
+| Responsibility | Azure role | Scope or purpose |
+| --- | --- | --- |
+| Deploy and configure the integration | `Owner`, or both `Contributor` and `User Access Administrator` | On the target subscription, to deploy the managed application and grant permissions to the managed resource group |
+| Start a job manually or stop an active execution | `Contributor` | On the managed resource group |
+| Review and query logs | `Log Analytics Reader` | To verify data ingestion |
+
+### CrowdStrike API credentials
+
+Create an API client in the Falcon console under **Support & Resources > API Clients and Keys**. Save its `CLIENT_ID` and `CLIENT_SECRET` for deployment.
+
+Assign the following scopes:
+
+| Scope | Access |
+| --- | --- |
+| `Real-time Response (Admin)` | `Write` |
+| `Real-time Response` | `Read` and `Write` |
+| `Host Groups` | `Read` |
+| `Hosts` | `Read` |
+
+For details, see CrowdStrike's [OAuth2 API documentation](https://falcon.crowdstrike.com/documentation/page/a2a7fc0e/crowdstrike-oauth2-based-apis).
+
+### CrowdStrike RTR scripts
+
+Download the following PowerShell scripts from [SpecterOps/CS-RTR-Scripts](https://github.com/SpecterOps/CS-RTR-Scripts). Upload each file to CrowdStrike Falcon as a cloud-stored script before deployment.
+
+| Script | Data collected |
+| --- | --- |
+| `fetch_session.ps1` | Sessions |
+| `fetch_userrights.ps1` | User Rights Assignment (LSA) |
+| `fetch_ntlmregistry.ps1` | Registry keys |
+| `fetch_localgroups.ps1` | Local groups |
+
+Keep these exact file names. They must match **Script File Names** in the deployment wizard.
+
+### BloodHound Enterprise credentials
+
+Prepare the following values. See [BloodHound API authentication](/integrations/bloodhound-api/working-with-api#authentication) for instructions to create an API key and ID pair.
+
+| Value | Description |
+| --- | --- |
+| Token ID | Your BloodHound Enterprise token ID |
+| Token key | Your BloodHound Enterprise token key |
+| Tenant domain | Your BloodHound Enterprise tenant URL, such as `https://demo.bloodhoundenterprise.io/` |
+
+## Deploy the managed application
+
+<Steps>
+  <Step title="Open the Marketplace offer">
+    In the Azure portal, open **Marketplace**. Search for and select **BloodHound Enterprise CrowdStrike RTR Collector**, then select **Create**.
+  </Step>
+  <Step title="Configure Basics">
+    Configure the fields on the **Basics** step.
+
+    | Field | Description |
+    | --- | --- |
+    | **Subscription** | The Azure subscription to deploy the resources to. |
+    | **Resource Group** | The resource group that contains the Managed Application. |
+    | **Region** | Region where you want to create all the resources. |
+    | **Application Name** | The name of the Managed App which will be created after the deployment |
+    | **Managed Resource Group** | The Managed Resource Group that Azure creates for the Container App Job and related resources. |
+  </Step>
+  <Step title="Configure CrowdStrike">
+    Configure the fields on the **CrowdStrike Configuration** step.
+
+    | Field | Description |
+    | --- | --- |
+    | **Container App Job Name** | Name of the Azure Container App Job to create. Use 1–31 characters: start with a lowercase letter, and use lowercase letters, numbers, or single hyphens. Other related resource names are auto-generated from this value. |
+    | **CrowdStrike Client ID** | CrowdStrike API Client ID used by the collector to authenticate with CrowdStrike APIs. |
+    | **CrowdStrike Client Secret** | CrowdStrike API Client Secret used by the collector to authenticate with CrowdStrike APIs (stored securely in key vault). |
+    | **Show advanced settings (optional)** | When checked, it shows Falcon API region and HTTP timeout (seconds). Leave unchecked for US-1 and the default 600 second timeout. |
+    | **Falcon API region** | CrowdStrike API base URL for your Falcon cloud (US-1, US-2, US-3, EU-1, US-GOV-1, US-GOV-2). Must match where your API client was created. |
+    | **HTTP timeout (seconds)** | CrowdStrike HTTP client timeout. Allowed values: 300, 600, 900, 1200, 1800, 3600 (default 600). Choose a value greater than the Batch Command Timeout. With the default 300-second batch timeout, use 600 seconds or more. |
+  </Step>
+  <Step title="Configure scripts and schedule">
+    Configure the fields on the **Script & Schedule Configuration** step.
+
+    | Field | Description |
+    | --- | --- |
+    | **Script File Names** | The name(s) of the CrowdStrike RTR script(s) to execute on endpoints. Should be a comma-separated list of script names (default: `fetch_session.ps1,fetch_userrights.ps1,fetch_ntlmregistry.ps1,fetch_localgroups.ps1`). These scripts must exist as cloud-stored scripts in your CrowdStrike Falcon environment. |
+    | **Host Group IDs** | Comma-separated 32-character CrowdStrike host group IDs used to fetch devices (each device is de-duplicated across groups). |
+    | **Host Group Members Page Size** | Pagination size for host group member fetch calls; controls how many records are requested per API call (allowed range: 1–5000, default: 500). |
+    | **Batch Chunk Size** | The number of devices grouped into a single batch for parallel processing during RTR script execution, controls the payload size sent to the CrowdStrike API per chunk. Available options are 500, 1000, 2500, and 5000 (default: 1000). |
+    | **Concurrent Chunk Workers** | The number of device batches processed simultaneously in parallel, controls the overall concurrency level of the integration. Available options are 1, 2, 3, and 4 (default: 2). Note: Total active devices processed concurrently equals Batch Chunk Size multiplied by Concurrent Chunk Workers. |
+    | **Batch Command Timeout** | The maximum duration to wait for a single script to complete execution across a batch of devices. This timeout is applied individually per script. Available options are 120s, 180s, and 300s (default: 300s). |
+    | **Cron Expression** | Five-field UTC schedule for the Container App Job. The wizard default is `*/4 * * * *` (every 4 minutes). For production, use a less frequent schedule, such as `0 0 * * *` (daily at midnight UTC) or `0 */6 * * *` (every 6 hours). |
+    | **Daily Runs Retention (days)** | Number of days to retain daily run records in Azure Table Storage before automatic cleanup. Allowed range: 1–50 days (default: 7 days). Older records beyond this retention period will be automatically deleted to manage storage costs and maintain data hygiene. |
+  </Step>
+  <Step title="Configure BloodHound">
+    Configure the fields on the **BloodHound Configuration** step.
+
+    | Field | Description |
+    | --- | --- |
+    | **BloodHound Token ID** | The value for the BloodHound token ID. This value is passed to the Container App Job as an environment variable. |
+    | **BloodHound Token Key** | The value for the BloodHound token key. This value will be stored in an Azure Key Vault secret. |
+    | **BloodHound Tenant Domain URL** | BloodHound Enterprise tenant URL (e.g., `https://tenant.bloodhoundenterprise.io`). |
+  </Step>
+  <Step title="Review and deploy">
+    Select **Next** to validate the settings. After validation, select **Review + Create** to deploy the managed application and its resources.
+  </Step>
+</Steps>
+
+## Verify deployment
+
+### Check the managed resources
+
+<Steps>
+  <Step title="Open the managed resource group">
+    In the Azure portal, open **Resource Groups**. Find and open the managed resource group created during deployment.
+  </Step>
+  <Step title="Confirm the resources exist">
+    Confirm that the resource list contains all five resources:
+
+    - Container App Environment
+    - Container App Job
+    - Log Analytics Workspace
+    - Storage Account
+    - Key Vault
+
+    If a resource is missing, review the deployment logs for errors.
+  </Step>
+</Steps>
+
+### Check job execution
+
+<Steps>
+  <Step title="Open the job">
+    In the Azure portal, open **Container App Jobs** and select the job created by the Marketplace deployment.
+  </Step>
+  <Step title="Review execution history">
+    Open **Monitoring > Execution History**. Confirm that successful executions show a completed status and that their timestamps match the configured schedule. Review logs for failed executions.
+  </Step>
+</Steps>
+
+## Verify data ingestion
+
+After a successful job execution, check the console logs, the BloodHound Enterprise upload status, and the Azure Storage tables.
+
+### Check console logs
+
+<Steps>
+  <Step title="Open execution logs">
+    In the Container App Job, open **Execution History > Console logs**.
+  </Step>
+  <Step title="Confirm collection and upload">
+    Check the log stream for the following indicators:
+
+    - A message stating `Saved consolidated data (X computers)` to `consolidated_sharphound.json`
+    - Confirmation that the BloodHound file upload started, including an upload ID that you can match in BloodHound Enterprise
+    - Confirmation that the consolidated data was uploaded and the upload session ended successfully
+    - A `Run complete` message showing devices uploaded and completed
+    - A `Run summary` line with collection counts and successful completion for each RTR script on online hosts
+  </Step>
+</Steps>
+
+If Falcon does not provide `machine_domain` for a device, the logs may contain a warning. BloodHound Enterprise ingests those computers with the domain `UNKNOWN.LOCAL` until Falcon supplies domain data.
+
+### Check BloodHound Enterprise
+
+<Steps>
+  <Step title="Open File Ingest">
+    Sign in to your BloodHound Enterprise tenant and open **Administration > File Ingest**.
+  </Step>
+  <Step title="Check the upload status">
+    Find the latest upload and confirm that **Upload Time** matches the execution time in the Azure logs. Confirm that **Status** is **Complete**, which indicates that BloodHound Enterprise has parsed the RTR data into the graph database.
+  </Step>
+</Steps>
+
+### Check Azure Storage tables
+
+The integration stores run state in the Storage Account created during deployment. Use these tables to audit which devices were processed and troubleshoot individual scripts.
+
+<Steps>
+  <Step title="Open the Storage Account tables">
+    Open Microsoft Azure Storage Explorer or **Storage browser** in the Azure portal. Locate the Storage Account in the managed resource group and expand **Tables**.
+  </Step>
+  <Step title="Review device and run state">
+    Check the following tables:
+
+    | Table | What to verify |
+    | --- | --- |
+    | `DailyRuns` | The target `device_id` has a `status` of `completed` for the current date |
+    | `Devices` and `ScriptResults` | Device state and individual script results when troubleshooting failed collection |
+    | `LastRun` | The entity with row key `last_run` records the last initialized date and time; confirm that `last_run_time` aligns with the expected schedule |
+  </Step>
+</Steps>
+
+## Troubleshoot collection
+
+| Problem or check | Action |
+| --- | --- |
+| Deployment or job execution errors | Review the Log Analytics Workspace or Container App Job execution history for error messages and status codes. |
+| RTR script failures | Confirm that all four scripts are uploaded as cloud-stored scripts, that their file names match the deployment wizard, and that the API client has the required scopes. |
+| CrowdStrike authentication failures with correct credentials | In the deployment wizard's **CrowdStrike Configuration** step, select **Show advanced settings**. Confirm that the Falcon API region matches the Falcon cloud where the API client was created. |
+| Azure permission errors | Confirm that the deploying user has `Owner`, or both `Contributor` and `User Access Administrator`, on the target subscription. |
+| Target devices do not return data | Confirm that the Windows devices are online, visible in Falcon, and capable of executing RTR commands. |
+| Persistent integration or BloodHound Enterprise issues | Contact [SpecterOps Support](/resources/community-support/getting-help#bloodhound-enterprise-support). |
