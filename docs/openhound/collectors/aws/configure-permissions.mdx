@@ -448,6 +448,27 @@ Save the following policy document as `openhound-collector-policy.json`. This po
 }
 ```
 
+## Allow KMS key reads
+
+Attaching the read-only IAM policy does not by itself grant access to every KMS key. Each customer managed key's policy must admit the collection role in that key's account through one of these paths:
+
+- **Direct permission**: the key policy names the collection role as a principal and allows the required key read actions. For a same-account role, this can grant access without a separate IAM allow for those actions.
+- **Delegation to IAM**: the key policy allows the account principal (`arn:aws:iam::<ACCOUNT_ID>:root`) to delegate the required actions through IAM policies, and the collection role's IAM policy allows those actions. The account-principal statement enables delegation; it does not grant every role access automatically.
+
+Explicit denies and other applicable policy restrictions still apply. See AWS's guidance on [KMS key access and permissions](https://docs.aws.amazon.com/kms/latest/developerguide/control-access.html) and [using IAM policies with KMS](https://docs.aws.amazon.com/kms/latest/developerguide/iam-policies.html).
+
+The read-only policy above includes `kms:ListKeys` and `kms:ListAliases` for regional inventory. For each customer managed key you want to collect fully, have its key administrator allow these key-scoped reads through one of the paths above:
+
+- `kms:DescribeKey`
+- `kms:GetKeyPolicy`
+- `kms:GetKeyRotationStatus`
+- `kms:ListGrants`
+- `kms:ListResourceTags`
+
+Grant access to the collection role assumed in the key's account, which may differ from the workload's initial identity. Review policies on existing keys as well as newly deployed keys; deploying a collector role does not update those key policies. Collection does not require cryptographic actions such as `kms:Decrypt` or permission to modify keys.
+
+If `kms:ListKeys` succeeds but one key denies `kms:DescribeKey`, the collector retains that key's listed ID and ARN, marks `key_metadata` unknown, and continues with the other keys in the region. Missing policy or metadata reads can also prevent relationships involving the key from appearing. Review [partial collection results](/openhound/collectors/aws/collect-data#interpret-partial-collection) before treating a missing key or relationship as evidence of absence.
+
 ## Configure permissions
 
 Click the tab that matches the AWS scope you want OpenHound to collect. Each path includes deployment model tabs for local or external workloads and AWS-hosted workloads.

@@ -486,6 +486,24 @@ The collector now assumes member-account roles through the management role inste
 | `Skipping AWS profile ...: failed to authenticate` | The collector could not authenticate that profile, for example because the member-account role is missing or does not trust the management role. Collection continues with the other accounts. When the message ends with `AWS Organizations data is not collected`, the skipped profile is the management profile. |
 | `No AWS profile in ... could authenticate; nothing to collect` | Collection stopped because every profile failed. Check the source credentials and the role chain of each profile. |
 
+## Interpret partial collection
+
+A collector identity with limited read access can produce an incomplete graph. When AWS lists a resource but denies a subsequent detail read, the collector retains the identifiers and attributes it already knows, records the failed read against that resource, and continues collecting its readable siblings. Recoverable transport errors and throttling that persists after SDK retries also produce partial reads. A failed read leaves the affected attribute unknown; it does not establish that the attribute or resource is absent.
+
+Collection records expose the following diagnostics. For resources that produce graph nodes, the corresponding node properties use the names in the second column.
+
+| Collection field | Graph node property | Meaning |
+| --- | --- | --- |
+| `CollectionPartial` | `collection_partial` | `true` when a recorded read failure leaves attributes unknown. |
+| `UnknownAttributes` | `unknown_attributes` | Names of the attributes the collector could not read. |
+| `CollectionErrors` | `collection_errors` | A JSON-encoded array of errors, each with `resource_arn`, `operation`, `attribute`, and `error_code`. |
+
+For example, a KMS key that denies `kms:DescribeKey` remains a key node with `collection_partial = true` and `key_metadata` in `unknown_attributes`. The collector logs a warning beginning `AWS collection is partial`, with the resource, operation, attribute, and error code. Use these diagnostics to identify the failed read and review the [collection role's permissions and KMS key policies](/openhound/collectors/aws/configure-permissions#allow-kms-key-reads), then collect again after resolving the failure.
+
+Some partial records cannot become graph nodes. EKS cluster and node-group list calls provide names without the native ARNs needed for conversion. When their description fails, the collector keeps a partial collection record but cannot emit the node. EKS access entries and Pod Identity associations are supporting records that do not emit their own nodes; their diagnostics remain on the collection records. Unknown role or policy details can also leave relationships missing from the graph.
+
+If an inventory call itself fails before returning resource identities, the collector cannot create partial records for unseen resources. Review collection logs as well as node properties: an empty graph result does not prove that no resources exist or that collection was complete.
+
 ## Deployment examples
 
 Before continuing, ensure that a valid `secrets.toml` file is available and contains the BloodHound Enterprise credentials, the AWS credential settings for your collection strategy, and optionally bucket collection policies. If `collector_profile_name` is omitted, the organization survey uses the AWS identity available to the collector's runtime.
