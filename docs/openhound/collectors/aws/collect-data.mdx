@@ -22,7 +22,9 @@ Before you configure the AWS collector, ensure that the following prerequisites 
 
 ## Configure OpenHound
 
-The AWS collector needs different settings based on the collection strategy you choose. You can set these values in one of two places:
+The AWS collector needs different settings based on the collection strategy you choose. Each configuration example has TOML and JSON tabs showing the same settings. For the file-based deployment on this page, use the TOML example in `secrets.toml`.
+
+You can set these values in one of two places:
 
 | Method | Set the values here |
 | --- | --- |
@@ -83,15 +85,39 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
 
     The source identity must be allowed to assume the management and member-account roles, and each target role must trust the source identity. If you omit `management_account_id`, the source identity needs `organizations:DescribeOrganization` to discover the management account.
 
-    ```toml title="~/.dlt/secrets.toml"
-    [sources.source.aws.credentials]
-    profile_name = "security-tooling"
-    region_name = "us-east-1"
-    source_account = "999999999999"
-    management_account_id = "111111111111"
-    management_role_name = "ManagementCollectorRole"
-    org_role_name = "OpenHoundCollectorRole"
-    ```
+    <Tabs>
+      <Tab title="TOML">
+        ```toml title="~/.dlt/secrets.toml"
+        [sources.source.aws.credentials]
+        profile_name = "security-tooling"
+        region_name = "us-east-1"
+        source_account = "999999999999"
+        management_account_id = "111111111111"
+        management_role_name = "ManagementCollectorRole"
+        org_role_name = "OpenHoundCollectorRole"
+        ```
+      </Tab>
+      <Tab title="JSON">
+        ```json
+        {
+          "sources": {
+            "source": {
+              "aws": {
+                "credentials": {
+                  "profile_name": "security-tooling",
+                  "region_name": "us-east-1",
+                  "source_account": "999999999999",
+                  "management_account_id": "111111111111",
+                  "management_role_name": "ManagementCollectorRole",
+                  "org_role_name": "OpenHoundCollectorRole"
+                }
+              }
+            }
+          }
+        }
+        ```
+      </Tab>
+    </Tabs>
 
     `include_management_account` defaults to `true` for this setup. Set it to `false` to omit management-account resources.
 
@@ -118,11 +144,31 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
 
     If a collector runs outside the management account, its AWS profile can use `role_arn` with `source_profile` or `credential_source` to resolve to the management-account role before OpenHound starts. If the configured profile already resolves to the management account, no AWS-profile AssumeRole hop is needed.
 
-    ```toml title="~/.dlt/secrets.toml"
-    [sources.source.aws.credentials]
-    profile_name = "managementaccount"
-    org_role_name = "OpenHoundCollectorRole"
-    ```
+    <Tabs>
+      <Tab title="TOML">
+        ```toml title="~/.dlt/secrets.toml"
+        [sources.source.aws.credentials]
+        profile_name = "managementaccount"
+        org_role_name = "OpenHoundCollectorRole"
+        ```
+      </Tab>
+      <Tab title="JSON">
+        ```json
+        {
+          "sources": {
+            "source": {
+              "aws": {
+                "credentials": {
+                  "profile_name": "managementaccount",
+                  "org_role_name": "OpenHoundCollectorRole"
+                }
+              }
+            }
+          }
+        }
+        ```
+      </Tab>
+    </Tabs>
 
     `include_management_account` defaults to `false` in this mode. Set it to `true` to collect management-account resources.
 
@@ -140,12 +186,29 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
     | --- | --- | --- | --- |
     | `profile_name` | No | Runtime identity | Name of the AWS SDK profile used for collection. If omitted, use the identity available to the runtime. |
 
-    **`secrets.toml`**
-
-    ```toml title="~/.dlt/secrets.toml"
-    [sources.source.aws.credentials]
-    profile_name = "production"
-    ```
+    <Tabs>
+      <Tab title="TOML">
+        ```toml title="~/.dlt/secrets.toml"
+        [sources.source.aws.credentials]
+        profile_name = "production"
+        ```
+      </Tab>
+      <Tab title="JSON">
+        ```json
+        {
+          "sources": {
+            "source": {
+              "aws": {
+                "credentials": {
+                  "profile_name": "production"
+                }
+              }
+            }
+          }
+        }
+        ```
+      </Tab>
+    </Tabs>
 
     **Environment variables**
 
@@ -160,12 +223,32 @@ Click the tab that matches the strategy of the AWS scope you want to collect.
     | --- | --- | --- | --- |
     | `profile_names` | Yes | None | Names of the AWS SDK profiles used for collection. |
 
-    **`secrets.toml`**
-
-    ```toml title="~/.dlt/secrets.toml"
-    [sources.source.aws.credentials]
-    profile_names = ["production", "testing"]
-    ```
+    <Tabs>
+      <Tab title="TOML">
+        ```toml title="~/.dlt/secrets.toml"
+        [sources.source.aws.credentials]
+        profile_names = ["production", "testing"]
+        ```
+      </Tab>
+      <Tab title="JSON">
+        ```json
+        {
+          "sources": {
+            "source": {
+              "aws": {
+                "credentials": {
+                  "profile_names": [
+                    "production",
+                    "testing"
+                  ]
+                }
+              }
+            }
+          }
+        }
+        ```
+      </Tab>
+    </Tabs>
 
     **Environment variables**
 
@@ -189,27 +272,65 @@ S3 bucket collection is disabled by default. Enable it with the `bucket_policy.i
 
 Buckets and objects are excluded from object collection by default. A bucket or object must match at least one rule where `include` is `true`. If a bucket or object also matches a rule where `include` is `false`, the exclusion wins.
 
-```toml
-[sources.source.aws.bucket_policy]
-include = true
-max_objects = 100
+<Tabs>
+  <Tab title="TOML">
+    ```toml title="~/.dlt/secrets.toml"
+    [sources.source.aws.bucket_policy]
+    include = true
+    max_objects = 100
 
-[[sources.source.aws.bucket_policy.rule]]
-include = true
-match_bucket = "^production.*$"
+    [[sources.source.aws.bucket_policy.rule]]
+    include = true
+    match_bucket = "^production.*$"
 
-[[sources.source.aws.bucket_policy.rule]]
-include = false
-match_bucket = ".*logs.*"
+    [[sources.source.aws.bucket_policy.rule]]
+    include = false
+    match_bucket = ".*logs.*"
 
-[[sources.source.aws.bucket_policy.rule]]
-include = true
-match_object = "\\.(json|csv)$"
+    [[sources.source.aws.bucket_policy.rule]]
+    include = true
+    match_object = "\\.(json|csv)$"
 
-[[sources.source.aws.bucket_policy.rule]]
-include = false
-match_object = ".*secret.*"
-```
+    [[sources.source.aws.bucket_policy.rule]]
+    include = false
+    match_object = ".*secret.*"
+    ```
+  </Tab>
+  <Tab title="JSON">
+    ```json
+    {
+      "sources": {
+        "source": {
+          "aws": {
+            "bucket_policy": {
+              "include": true,
+              "max_objects": 100,
+              "rule": [
+                {
+                  "include": true,
+                  "match_bucket": "^production.*$"
+                },
+                {
+                  "include": false,
+                  "match_bucket": ".*logs.*"
+                },
+                {
+                  "include": true,
+                  "match_object": "\\.(json|csv)$"
+                },
+                {
+                  "include": false,
+                  "match_object": ".*secret.*"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
 
 <Note>
   Bucket and object filters apply after AWS API responses are returned. Excluded buckets or objects can still appear in API responses, but the collector does not store excluded objects for further processing.
@@ -221,106 +342,279 @@ The following examples show how to configure the AWS collector for different col
 
 ### Single-account collection without buckets
 
-```toml 
-[destination.bloodhoundenterprise]
-token_key = "<BHE_TOKEN_KEY>"
-token_id = "<BHE_TOKEN_ID>"
-url = "https://your-tenant.bhe.io"
+<Tabs>
+  <Tab title="TOML">
+    ```toml title="~/.dlt/secrets.toml"
+    [destination.bloodhoundenterprise]
+    token_key = "<BHE_TOKEN_KEY>"
+    token_id = "<BHE_TOKEN_ID>"
+    url = "https://your-tenant.bhe.io"
 
-[sources.source.aws.credentials]
-profile_name = "<AWS_PROFILE_NAME>"
+    [sources.source.aws.credentials]
+    profile_name = "<AWS_PROFILE_NAME>"
 
-[sources.source.aws.bucket_policy]
-include = false
-max_objects = 0
-```
+    [sources.source.aws.bucket_policy]
+    include = false
+    max_objects = 0
+    ```
+  </Tab>
+  <Tab title="JSON">
+    ```json
+    {
+      "destination": {
+        "bloodhoundenterprise": {
+          "token_key": "<BHE_TOKEN_KEY>",
+          "token_id": "<BHE_TOKEN_ID>",
+          "url": "https://your-tenant.bhe.io"
+        }
+      },
+      "sources": {
+        "source": {
+          "aws": {
+            "credentials": {
+              "profile_name": "<AWS_PROFILE_NAME>"
+            },
+            "bucket_policy": {
+              "include": false,
+              "max_objects": 0
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
 
 ### Single-account collection with all buckets
 
-```toml
-[destination.bloodhoundenterprise]
-token_key = "<BHE_TOKEN_KEY>"
-token_id = "<BHE_TOKEN_ID>"
-url = "https://your-tenant.bhe.io"
+<Tabs>
+  <Tab title="TOML">
+    ```toml title="~/.dlt/secrets.toml"
+    [destination.bloodhoundenterprise]
+    token_key = "<BHE_TOKEN_KEY>"
+    token_id = "<BHE_TOKEN_ID>"
+    url = "https://your-tenant.bhe.io"
 
-[sources.source.aws.credentials]
-profile_name = "<AWS_PROFILE_NAME>"
+    [sources.source.aws.credentials]
+    profile_name = "<AWS_PROFILE_NAME>"
 
-[sources.source.aws.bucket_policy]
-include = true
-max_objects = 50
+    [sources.source.aws.bucket_policy]
+    include = true
+    max_objects = 50
 
-[[sources.source.aws.bucket_policy.rule]]
-include = true
-match_bucket = ".*"
+    [[sources.source.aws.bucket_policy.rule]]
+    include = true
+    match_bucket = ".*"
 
-[[sources.source.aws.bucket_policy.rule]]
-include = true
-match_object = ".*"
-```
+    [[sources.source.aws.bucket_policy.rule]]
+    include = true
+    match_object = ".*"
+    ```
+  </Tab>
+  <Tab title="JSON">
+    ```json
+    {
+      "destination": {
+        "bloodhoundenterprise": {
+          "token_key": "<BHE_TOKEN_KEY>",
+          "token_id": "<BHE_TOKEN_ID>",
+          "url": "https://your-tenant.bhe.io"
+        }
+      },
+      "sources": {
+        "source": {
+          "aws": {
+            "credentials": {
+              "profile_name": "<AWS_PROFILE_NAME>"
+            },
+            "bucket_policy": {
+              "include": true,
+              "max_objects": 50,
+              "rule": [
+                {
+                  "include": true,
+                  "match_bucket": ".*"
+                },
+                {
+                  "include": true,
+                  "match_object": ".*"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
 
 ### Multiple independent-account collection without buckets
 
-```toml
-[destination.bloodhoundenterprise]
-token_key = "<BHE_TOKEN_KEY>"
-token_id = "<BHE_TOKEN_ID>"
-url = "https://your-tenant.bhe.io"
+<Tabs>
+  <Tab title="TOML">
+    ```toml title="~/.dlt/secrets.toml"
+    [destination.bloodhoundenterprise]
+    token_key = "<BHE_TOKEN_KEY>"
+    token_id = "<BHE_TOKEN_ID>"
+    url = "https://your-tenant.bhe.io"
 
-[sources.source.aws.credentials]
-profile_names = [
-  "<AWS_PROFILE_NAME_1>",
-  "<AWS_PROFILE_NAME_2>",
-  "<AWS_PROFILE_NAME_3>"
-]
+    [sources.source.aws.credentials]
+    profile_names = [
+      "<AWS_PROFILE_NAME_1>",
+      "<AWS_PROFILE_NAME_2>",
+      "<AWS_PROFILE_NAME_3>"
+    ]
 
-[sources.source.aws.bucket_policy]
-include = false
-max_objects = 0
-```
+    [sources.source.aws.bucket_policy]
+    include = false
+    max_objects = 0
+    ```
+  </Tab>
+  <Tab title="JSON">
+    ```json
+    {
+      "destination": {
+        "bloodhoundenterprise": {
+          "token_key": "<BHE_TOKEN_KEY>",
+          "token_id": "<BHE_TOKEN_ID>",
+          "url": "https://your-tenant.bhe.io"
+        }
+      },
+      "sources": {
+        "source": {
+          "aws": {
+            "credentials": {
+              "profile_names": [
+                "<AWS_PROFILE_NAME_1>",
+                "<AWS_PROFILE_NAME_2>",
+                "<AWS_PROFILE_NAME_3>"
+              ]
+            },
+            "bucket_policy": {
+              "include": false,
+              "max_objects": 0
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
 
 ### Organization collection from a configured source account
 
-```toml
-[destination.bloodhoundenterprise]
-token_key = "<BHE_TOKEN_KEY>"
-token_id = "<BHE_TOKEN_ID>"
-url = "https://your-tenant.bhe.io"
+<Tabs>
+  <Tab title="TOML">
+    ```toml title="~/.dlt/secrets.toml"
+    [destination.bloodhoundenterprise]
+    token_key = "<BHE_TOKEN_KEY>"
+    token_id = "<BHE_TOKEN_ID>"
+    url = "https://your-tenant.bhe.io"
 
-[sources.source.aws.credentials]
-profile_name = "<AWS_SOURCE_PROFILE_NAME>"
-source_account = "<AWS_SOURCE_ACCOUNT_ID>"
-management_account_id = "<AWS_MANAGEMENT_ACCOUNT_ID>"
-management_role_name = "ManagementCollectorRole"
-org_role_name = "OpenHoundCollectorRole"
-org_role_session_name = "OpenHoundCollectorSession"
-include_management_account = true
+    [sources.source.aws.credentials]
+    profile_name = "<AWS_SOURCE_PROFILE_NAME>"
+    source_account = "<AWS_SOURCE_ACCOUNT_ID>"
+    management_account_id = "<AWS_MANAGEMENT_ACCOUNT_ID>"
+    management_role_name = "ManagementCollectorRole"
+    org_role_name = "OpenHoundCollectorRole"
+    org_role_session_name = "OpenHoundCollectorSession"
+    include_management_account = true
 
-[sources.source.aws.bucket_policy]
-include = false
-max_objects = 0
-```
+    [sources.source.aws.bucket_policy]
+    include = false
+    max_objects = 0
+    ```
+  </Tab>
+  <Tab title="JSON">
+    ```json
+    {
+      "destination": {
+        "bloodhoundenterprise": {
+          "token_key": "<BHE_TOKEN_KEY>",
+          "token_id": "<BHE_TOKEN_ID>",
+          "url": "https://your-tenant.bhe.io"
+        }
+      },
+      "sources": {
+        "source": {
+          "aws": {
+            "credentials": {
+              "profile_name": "<AWS_SOURCE_PROFILE_NAME>",
+              "source_account": "<AWS_SOURCE_ACCOUNT_ID>",
+              "management_account_id": "<AWS_MANAGEMENT_ACCOUNT_ID>",
+              "management_role_name": "ManagementCollectorRole",
+              "org_role_name": "OpenHoundCollectorRole",
+              "org_role_session_name": "OpenHoundCollectorSession",
+              "include_management_account": true
+            },
+            "bucket_policy": {
+              "include": false,
+              "max_objects": 0
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
 
 ### Organization collection from the management account
 
 Use this alternative when the collector's AWS identity resolves to the AWS Organizations management account.
 
-```toml
-[destination.bloodhoundenterprise]
-token_key = "<BHE_TOKEN_KEY>"
-token_id = "<BHE_TOKEN_ID>"
-url = "https://your-tenant.bhe.io"
+<Tabs>
+  <Tab title="TOML">
+    ```toml title="~/.dlt/secrets.toml"
+    [destination.bloodhoundenterprise]
+    token_key = "<BHE_TOKEN_KEY>"
+    token_id = "<BHE_TOKEN_ID>"
+    url = "https://your-tenant.bhe.io"
 
-[sources.source.aws.credentials]
-profile_name = "<AWS_MANAGEMENT_PROFILE_NAME>"
-org_role_name = "OpenHoundCollectorRole"
-org_role_session_name = "OpenHoundCollectorSession"
-include_management_account = true
+    [sources.source.aws.credentials]
+    profile_name = "<AWS_MANAGEMENT_PROFILE_NAME>"
+    org_role_name = "OpenHoundCollectorRole"
+    org_role_session_name = "OpenHoundCollectorSession"
+    include_management_account = true
 
-[sources.source.aws.bucket_policy]
-include = false
-max_objects = 0
-```
+    [sources.source.aws.bucket_policy]
+    include = false
+    max_objects = 0
+    ```
+  </Tab>
+  <Tab title="JSON">
+    ```json
+    {
+      "destination": {
+        "bloodhoundenterprise": {
+          "token_key": "<BHE_TOKEN_KEY>",
+          "token_id": "<BHE_TOKEN_ID>",
+          "url": "https://your-tenant.bhe.io"
+        }
+      },
+      "sources": {
+        "source": {
+          "aws": {
+            "credentials": {
+              "profile_name": "<AWS_MANAGEMENT_PROFILE_NAME>",
+              "org_role_name": "OpenHoundCollectorRole",
+              "org_role_session_name": "OpenHoundCollectorSession",
+              "include_management_account": true
+            },
+            "bucket_policy": {
+              "include": false,
+              "max_objects": 0
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
 
 ## Deployment examples
 
