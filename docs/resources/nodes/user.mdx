@@ -13,40 +13,40 @@ import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
 
 <NodePropertiesTableGuide />
 
-| Property key | Entity panel display name | Description |
+| Property key and value type | Entity panel display name | Description |
 | --- | --- | --- |
 | — | Tier Zero | Whether BloodHound classifies the object as Tier Zero. This UI status is not a stored `highvalue` node property. |
-| `displayname` | Display Name | The display name for the object. |
-| `objectid` | Object ID | The object's security identifier (SID), a unique identifier in the directory. |
-| `isaclprotected` | ACL Inheritance Denied | Whether the object’s discretionary access control list (DACL) blocks inherited access control entries (ACEs). |
-| `admincount` | Admin Count | Indicates whether Active Directory has marked this account for protected-account handling. The flag can remain after privileged group membership is removed.<br /><br />Find this in Active Directory Users and Computers: Enable View → Advanced Features, then open the user’s Properties → Attribute Editor → `adminCount`. |
-| `adminsdholderprotected` | AdminSDHolder Protected | The authoritative security descriptor of this object matches that of the AdminSDHolder container and is therefore protected by it. AdminSDHolder is a security descriptor template that the ProtectAdminGroups background task stamps on protected objects. |
-| `unconstraineddelegation` | Allows Unconstrained Delegation | Whether the account permits unconstrained Kerberos delegation. See [Kerberos delegation background](https://blog.harmj0y.net/redteaming/another-word-on-delegation/). |
-| `whencreated` | Created | The time when the object was created in the directory. |
-| `description` | Description | The contents of the `description` field for the object. |
-| `dontreqpreauth` | Do Not Require Pre-Authentication | Allows the account to request a Kerberos ticket-granting ticket without Kerberos pre-authentication.<br /><br />Find this in Active Directory Users and Computers: user Properties → Account → Account options → Do not require Kerberos preauthentication. |
-| `email` | Email | The contents of the `email` field for the object. |
-| `enabled` | Enabled | Whether the user account is enabled. |
-| `lastlogon` | Last Logon | The last time the domain controller you got this data from handled a logon request for the object. Attribute `lastLogon`. |
-| `lastlogontimestamp` | Last Logon (Replicated) | The replicated, approximate logon time from the directory’s `lastLogonTimestamp` attribute. Updates are periodic, so this value can lag recent logons. |
-| `logonscript` | Logon Script | The path for the user's logon script. |
-| `profilepath` | Profile Path | The path to the user's profile. |
-| `sidhistory` | SID History | Additional security identifiers retained on this account, commonly after migration from another domain.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → account Properties → Attribute Editor → `sIDHistory`. |
+| `displayname`<br />`string` | Display Name | The display name for the object. |
+| `objectid`<br />`string` | Object ID | Example: `S-1-5-21-…-500`. The object's security identifier (SID), a unique identifier in the directory. |
+| `isaclprotected`<br />`boolean` | ACL Inheritance Denied | Whether the object’s discretionary access control list (DACL) blocks inherited access control entries (ACEs). |
+| `admincount`<br />`boolean` | Admin Count | Indicates whether Active Directory has marked this account for protected-account handling. The flag can remain after privileged group membership is removed.<br /><br />Find this in Active Directory Users and Computers: Enable View → Advanced Features, then open the user’s Properties → Attribute Editor → `adminCount`. |
+| `adminsdholderprotected`<br />`boolean` | AdminSDHolder Protected | The authoritative security descriptor of this object matches that of the AdminSDHolder container and is therefore protected by it. AdminSDHolder is a security descriptor template that the ProtectAdminGroups background task stamps on protected objects. |
+| `unconstraineddelegation`<br />`boolean` | Allows Unconstrained Delegation | Whether the account permits unconstrained Kerberos delegation. See [Kerberos delegation background](https://blog.harmj0y.net/redteaming/another-word-on-delegation/). |
+| `whencreated`<br />Unix epoch seconds | Created | Example: `1568630538`. The time when the object was created in the directory. |
+| `description`<br />`string` | Description | The contents of the `description` field for the object. |
+| `dontreqpreauth`<br />`boolean` | Do Not Require Pre-Authentication | Allows the account to request a Kerberos ticket-granting ticket without Kerberos pre-authentication.<br /><br />Find this in Active Directory Users and Computers: user Properties → Account → Account options → Do not require Kerberos preauthentication. |
+| `email`<br />`string` | Email | The contents of the `email` field for the object. |
+| `enabled`<br />`boolean` | Enabled | Whether the user account is enabled. |
+| `lastlogon`<br />Unix epoch seconds | Last Logon | The last time the domain controller you got this data from handled a logon request for the object. Attribute `lastLogon`. |
+| `lastlogontimestamp`<br />Unix epoch seconds | Last Logon (Replicated) | The replicated, approximate logon time from the directory’s `lastLogonTimestamp` attribute. Updates are periodic, so this value can lag recent logons. |
+| `logonscript`<br />`string` | Logon Script | The path for the user's logon script. |
+| `profilepath`<br />`string` | Profile Path | The path to the user's profile. |
+| `sidhistory`<br />`string[]` | SID History | Example: `["S-1-5-21-…"]`. Additional security identifiers retained on this account, commonly after migration from another domain.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → account Properties → Attribute Editor → `sIDHistory`. |
 | — | Is Owned | BloodHound Community Edition: whether the object is marked as owned. This UI status is not a stored `owned` node property. |
-| `pwdlastset` | Password Last Set | The human-readable date for when the user's password last changed. This is stored internally in Unix epoch format |
-| `passwordnotreqd` | Password Not Required | Indicates a password-length policy exemption; it does not establish that the password is blank.<br /><br />Find this in Active Directory Users and Computers: Enable View → Advanced Features, then open the user’s Properties → Attribute Editor → `userAccountControl`. Inspect the `PASSWD_NOTREQD` flag (0x20 / 32). |
-| `pwdneverexpires` | Password Never Expires | Whether the account’s password is configured not to expire. |
-| `sensitive` | Marked Sensitive | Marks the account as sensitive and prevents delegation of its security context.<br /><br />Find this in Active Directory Users and Computers: Open the user’s Properties → Account → Account options → “Account is sensitive and cannot be delegated.” |
-| `serviceprincipalnames` | Service Principal Names | List of service principal names (SPNs) registered on the account, from the directory’s `servicePrincipalName` attribute. |
-| `title` | Title | The contents of the `title` field for the object. |
-| `trustedtoauth` | Trusted For Constrained Delegation | Reports the `TRUSTED_TO_AUTH_FOR_DELEGATION` flag, which enables constrained delegation with protocol transition. This flag does not cover Kerberos-only constrained delegation.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → account Properties → Attribute Editor → `userAccountControl`; inspect flag 0x1000000. |
-| `gmsa` | Group Managed Service Account | Identifies a group managed service account, whose password is managed by Active Directory and can be used by authorized hosts.<br /><br />Find this in Windows PowerShell with the Active Directory module: `Get-ADServiceAccount -Identity <account>`; ObjectClass is msDS-GroupManagedServiceAccount. |
-| `msa` | Standalone Managed Service Account | Identifies a standalone managed service account, whose password is managed by Active Directory for use on one computer.<br /><br />Find this in Windows PowerShell with the Active Directory module: `Get-ADServiceAccount -Identity <account>`; ObjectClass is msDS-ManagedServiceAccount. |
-| `sfupassword` | Services for UNIX Password | Legacy Services for UNIX password attribute that may contain a UNIX-format password hash.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → user Properties → Attribute Editor → `msSFU30Password`, when that schema attribute exists. |
-| `unixpassword` | UNIX Password | Legacy UNIX authentication password attribute; its contents depend on the software that populated it.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → user Properties → Attribute Editor → `unixUserPassword`, when that schema attribute exists. |
-| `userpassword` | User Password | Collected values from the `userPassword` directory attribute, whose behavior depends on directory configuration. An empty field does not mean the account has no password.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → user Properties → Attribute Editor → `userPassword`. |
-| `supportedencryptiontypes` | Supported Kerberos Encryption Types | The Kerberos encryption types advertised by this account for service-ticket encryption.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → account Properties → Attribute Editor → `msDS-SupportedEncryptionTypes`. |
-| `unicodepassword` | Unicode Password | Field associated with the directory’s `unicodePwd` attribute. Active Directory does not return `unicodePwd` in LDAP reads; an empty value here does not mean the account has no password. |
+| `pwdlastset`<br />Unix epoch seconds | Password Last Set | The human-readable date for when the user's password last changed. This is stored internally in Unix epoch format |
+| `passwordnotreqd`<br />`boolean` | Password Not Required | Indicates a password-length policy exemption; it does not establish that the password is blank.<br /><br />Find this in Active Directory Users and Computers: Enable View → Advanced Features, then open the user’s Properties → Attribute Editor → `userAccountControl`. Inspect the `PASSWD_NOTREQD` flag (0x20 / 32). |
+| `pwdneverexpires`<br />`boolean` | Password Never Expires | Whether the account’s password is configured not to expire. |
+| `sensitive`<br />`boolean` | Marked Sensitive | Marks the account as sensitive and prevents delegation of its security context.<br /><br />Find this in Active Directory Users and Computers: Open the user’s Properties → Account → Account options → “Account is sensitive and cannot be delegated.” |
+| `serviceprincipalnames`<br />`string[]` | Service Principal Names | Example: `["HTTP/web.example.com"]`. List of service principal names (SPNs) registered on the account, from the directory’s `servicePrincipalName` attribute. |
+| `title`<br />`string` | Title | The contents of the `title` field for the object. |
+| `trustedtoauth`<br />`boolean` | Trusted For Constrained Delegation | Reports the `TRUSTED_TO_AUTH_FOR_DELEGATION` flag, which enables constrained delegation with protocol transition. This flag does not cover Kerberos-only constrained delegation.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → account Properties → Attribute Editor → `userAccountControl`; inspect flag 0x1000000. |
+| `gmsa`<br />`boolean` | Group Managed Service Account | Identifies a group managed service account, whose password is managed by Active Directory and can be used by authorized hosts.<br /><br />Find this in Windows PowerShell with the Active Directory module: `Get-ADServiceAccount -Identity <account>`; ObjectClass is msDS-GroupManagedServiceAccount. |
+| `msa`<br />`boolean` | Standalone Managed Service Account | Identifies a standalone managed service account, whose password is managed by Active Directory for use on one computer.<br /><br />Find this in Windows PowerShell with the Active Directory module: `Get-ADServiceAccount -Identity <account>`; ObjectClass is msDS-ManagedServiceAccount. |
+| `sfupassword`<br />`string` or `null` | Services for UNIX Password | Legacy Services for UNIX password attribute that may contain a UNIX-format password hash.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → user Properties → Attribute Editor → `msSFU30Password`, when that schema attribute exists. |
+| `unixpassword`<br />`string` or `null` | UNIX Password | Legacy UNIX authentication password attribute; its contents depend on the software that populated it.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → user Properties → Attribute Editor → `unixUserPassword`, when that schema attribute exists. |
+| `userpassword`<br />`string` or `null` | User Password | Collected values from the `userPassword` directory attribute, whose behavior depends on directory configuration. An empty field does not mean the account has no password.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → user Properties → Attribute Editor → `userPassword`. |
+| `supportedencryptiontypes`<br />`string[]` | Supported Kerberos Encryption Types | Example: `["AES256-CTS-HMAC-SHA1-96"]`. The Kerberos encryption types advertised by this account for service-ticket encryption.<br /><br />Find this in Active Directory Users and Computers: View → Advanced Features → account Properties → Attribute Editor → `msDS-SupportedEncryptionTypes`. |
+| `unicodepassword`<br />`string` or `null` | Unicode Password | Field associated with the directory’s `unicodePwd` attribute. Active Directory does not return `unicodePwd` in LDAP reads; an empty value here does not mean the account has no password. |
 
 ## References
 
