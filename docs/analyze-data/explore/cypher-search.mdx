@@ -143,7 +143,7 @@ BloodHound allows you to import and export queries for easy sharing and backup.
 
 ## Write Custom Queries
 
-BloodHound lets you run raw Cypher queries directly in the user interface. Use Cypher when you need to inspect relationships, answer targeted questions, or build analyses that go beyond the prebuilt queries.
+BloodHound lets you run queries in its supported Cypher subset directly in the user interface. The [syntax reference](/analyze-data/explore/cypher-supported) describes v9.10.0 support and PostgreSQL-specific limitations. BloodHound rejects procedure calls and user-supplied query parameters before database execution. Use Cypher when you need to inspect relationships, answer targeted questions, or build analyses that go beyond the prebuilt queries.
 
 Cypher supports everything from simple lookups to complex identity attack-path analysis. For example, you can answer questions such as:
 
@@ -197,9 +197,18 @@ RETURN B
 
 Let's break down how this Cypher query is constructed. When querying the database, we start our queries with the MATCH keyword. The MATCH clause lets you specify a pattern in the database.
 
-* Each variable in the Cypher query is defined using an identifier, in this case, the following ones: B, A, and R. The identifier for variables can be anything you want, including entire words, such as 'groups'.
+* Variables use identifiers such as `B`, `A`, `R`, or `groups`. Use backticks for labels, relationship types, properties, variables, and aliases containing spaces, punctuation, or reserved words. A doubled backtick represents a literal backtick.
 * In Cypher queries, nodes are specified using parentheses, so B and R are nodes in the sample query above.
 * Relationships are specified using brackets, so in this example, A represents relationships.
+
+For example, use an alias to name a result column, and backticks to access a property containing punctuation:
+
+```cypher
+MATCH (n:User)
+RETURN n.objectid AS objectId, n.`external-id` AS `External ID`
+```
+
+Aliases preserve their requested case and spelling, including through `WITH` and `ORDER BY`.
 
 The dashes between the nodes and relationships can be used to specify direction. Relationships in BloodHound always go in the direction of compromise or further privilege, whether through group membership or user credentials from a session.
 
@@ -224,14 +233,16 @@ RETURN p
 ```
 
 <Note>
-  Cypher is case-sensitive, and the node property "name" is always all uppercase and postfixed with the directory's domain. In the code above, "Domain Admins" in the domain "internal.local" has become **"DOMAIN [ADMINS@INTERNAL.LOCAL](mailto:ADMINS@INTERNAL.LOCAL)"**.
+  String matching is case-sensitive. Active Directory names in these examples use uppercase values with a domain suffix, such as `DOMAIN ADMINS@INTERNAL.LOCAL`. Match the values stored in your environment.
 </Note>
 
-In this query, we add a few more elements to our previous ones. We still use labels to specify our nodes, but we also add another degree of specificity to our group node by restricting the group nodes that can be returned to only the **DOMAIN [ADMINS@INTERNAL.LOCAL](mailto:ADMINS@INTERNAL.LOCAL)** by specifying the name parameter. We also use the shortestPath function. Using this function, we ask the graph to give us the shortest path it can find between each node **n** and the Domain Admins group. Because we didn't specify any relationship labels, the query will use any possible relationship it can find. We also removed the limit on how many hops the database can search. By not specifying an upper limit, the database will go as many hops as possible to find a path.
+This query finds one minimum-length trail from each matching user to the specified group. A trail does not repeat a relationship. With no relationship type specified, the search can use any relationship type. If multiple shortest trails tie, `shortestPath` does not promise which one is selected. Use `allShortestPaths` to return every relationship-distinct minimum trail; doing so can consume more resources.
 
-There is also an allShortestPaths function available, which, as the name implies, will find every shortest path from each node to your target. Note that this results in more data analysis to perform the query and could result in higher resource consumption.
+In v9.10.0, PostgreSQL searches with no upper bound can reach beyond 15 hops. They are subject to execution budgets and cancellation; budget exhaustion returns an error rather than a successful truncated result. Use an explicit bound such as `*1..15` when you intend to limit search depth.
 
-Another important part of Cypher to note is that wildcard matches are possible using regex, although the syntax for the query changes slightly. As an example, here's the query that's run each time you type a letter in the search bar:
+Bind shortest paths with `MATCH p = shortestPath(...)`, then use functions such as `length(p)` in `RETURN`. PostgreSQL does not support generic undirected shortest searches or shortest-path minimum bounds greater than one. See the [current shortest-path limitations](/analyze-data/explore/cypher-supported#known-defects) before combining shortest paths with mutations.
+
+Use `=~` for regex matching. For example, this query finds names containing a search term without regard to case:
 
 ```cql
 MATCH (n)
@@ -240,38 +251,35 @@ RETURN n
 LIMIT 10
 ```
 
-In this query, we ask the graph to return any nodes of any type that match the search term given. The (**?i**) tells the graph this is a case-insensitive regex, with the **.**\* on each side indicating that we want to match anything on either side. We limit the number of items returned to the first ten using the **LIMIT** keyword.
+`(?i)` enables case-insensitive matching. On PostgreSQL, regex uses PostgreSQL syntax and matches substrings; add `^` and `$` for whole-string matching. Do not assume complete Java/Neo4j regex compatibility. For literal searches, use `STARTS WITH`, `CONTAINS`, or `ENDS WITH`; these are case-sensitive and do not treat `%`, `_`, or backslashes as wildcards.
 
 ### Advanced Concepts
 
-As you build into more complicated queries, the **WITH** keyword will become important. The **WITH** keyword allows you to use multiple queries and pass the results of each query to the next step. An example of this is in the BloodHound interface whenever you click on a group node. The "Session" section displays the number of places where users in this group (including its subgroups) currently have sessions.
+Use `WITH` to pass selected bindings between parts of one query. Only projected bindings remain in scope. `WITH` supports aliases, `DISTINCT`, aggregation, filtering, sorting, and pagination.
 
-The UI calculates the number of sessions for the group using two separate queries put together:
-
-```cql
-MATCH p=shortestPath((m:User)-[r:MemberOf*1..]->(n:Group))
-WHERE n.name = "$name_of_group"
-WITH m
-MATCH q=((m)<-[:HasSession]-(o:Computer))
-RETURN count(o)
-```
-
-This query looks more complicated than we had before, so let's break it down into two components.
+For example, count the distinct computers with sessions from users who are effective members of a group:
 
 ```cql
-MATCH p=shortestPath((m:User)-[r:MemberOf*1..]->(n:Group))
-WHERE n.name = "$name_of_group"
+MATCH (m:User)-[:MemberOf*1..]->(n:Group)
+WHERE n.name = 'DOMAIN ADMINS@INTERNAL.LOCAL'
+WITH DISTINCT m
+MATCH (m)<-[:HasSession]-(o:Computer)
+RETURN count(DISTINCT o) AS computers
 ```
 
-This is the first query we run. We ask BloodHound to find the shortestPath possible from any user node to the group we specify. Note that we allow the *MemberOf* relationship to span any number of hops, allowing us to include users inside nested groups. This first query gives us all the effective members of the group we ask for.
+The first part finds users through direct or nested membership. `WITH DISTINCT m` carries each user once into the session lookup. The final projection counts each matching computer once.
 
-```cql
-MATCH q=((m)<-[:HasSession]-(o:Computer))
-RETURN count(o)
+To limit users before matching their relationships, apply sorting and pagination at the `WITH` boundary:
+
+```cypher
+MATCH (u:User)
+WITH u ORDER BY u.name LIMIT 5
+MATCH p = (u)-[:MemberOf]->(:Group)
+RETURN p
 ```
 
-This is the second query that actually gives us the session data. The variable **m** is carried over from the previous query and contains all the users relevant to the group we're attempting to find sessions for. We ask BloodHound to find any computer where any of the users we found in the first step has a session using the *HasSession* relationship. We're not interested in returning the relationships in this particular case, so we don't assign a variable. Finally, we return the count of the number of computers we have sessions on. The two queries we execute are joined together using the **WITH** keyword. When using the keyword, you specify any variables you want to carry over from the previous part of the query. These variables will be available with the data for the next query in your chain.
+`WITH` applies its `ORDER BY`, `SKIP`, and `LIMIT` before its `WHERE` filters the output. Later projections have their own modifiers. PostgreSQL requires literal `SKIP` and `LIMIT` counts; calculated or parameterized counts are unsupported.
 
 ## Outcome
 
-Now that we've explained Cypher and the syntax and all the cool ways you can narrow down search results, the next step is for you to build some new and interesting queries and start examining how you can view relationships.
+Use the [supported syntax reference](/analyze-data/explore/cypher-supported) to build queries and check compatibility limits, then save useful queries for reuse.

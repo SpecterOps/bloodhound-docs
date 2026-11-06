@@ -1,736 +1,703 @@
 ---
 title: Supported Cypher Syntax
-description: "This page documents the supported openCypher Syntax that BloodHound officially supports"
+description: "Reference for BloodHound's supported Cypher clauses, operators, functions, and PostgreSQL compatibility limits."
 ---
 
 import CypherMutationsNote from '/snippets/cypher-mutations.mdx';
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
-# Purpose
+## Purpose
 
-This article describes how to use Cypher Search within BloodHound. Users of BloodHound should use it to extend the basic search functionality of BloodHound.
+Use this reference to write queries in the Cypher subset supported by BloodHound Enterprise and BloodHound Community Edition. For an introduction and saved-query workflows, see [Search with Cypher](/analyze-data/explore/cypher-search).
 
-# Supported Query Components
+This reference applies to BloodHound v9.10.0. PostgreSQL uses CySQL to translate Cypher into SQL; PostgreSQL-specific behavior and limitations are identified below.
 
-Below are the currently supported openCypher query components translated by [CySQL](https://github.com/SpecterOps/DAWGS/blob/main/cypher/Cypher%20Syntax%20Support.md).
+BloodHound parses queries before execution. A construct accepted by Cypher grammar or available directly in Neo4j is not necessarily supported in BloodHound. Procedure calls and user-supplied query parameters are rejected by the application, regardless of the database backend.
 
-## Pattern Matching
-### Node Matching
+## Identifiers and aliases
 
-``` Cypher
-match (n)
-where n.name = 'my name'
-return n
+Use backticks to quote labels, relationship types, properties, variables, or aliases containing spaces, punctuation, or reserved words. A doubled backtick represents a literal backtick. Empty escaped property names are rejected.
+
+```cypher
+MATCH (n:User)
+RETURN n.objectid AS objectId, n.`external-id` AS `External ID`
 ```
 
-### Inline Node Label Matchers
+Result aliases preserve their requested case and decoded spelling, including through `WITH` and `ORDER BY`. Raw result consumers must use the requested column key, such as `objectId`.
 
-``` Cypher
-match (n:User)
-return n
+## Pattern matching
+
+### Node matching
+
+Match all nodes, restrict labels, or use an inline property map:
+
+```cypher
+MATCH (n:User {name: 'ALICE@EXAMPLE.COM'})
+RETURN n
 ```
+
+```cypher
+MATCH (n)
+WHERE n.name = 'ALICE@EXAMPLE.COM'
+RETURN n
+```
+
+Combine labels with `:`, as in `(n:User:Tag_Tier_Zero)`.
 
 <Note>
-  BloodHound-specific labels also use this syntax. For example, Tier Zero membership is represented with the `Tag_Tier_Zero` label.
-
-  For guidance and examples, see [Write Custom Queries](/analyze-data/explore/cypher-search#write-custom-queries).
+  BloodHound represents Tier Zero membership with the `Tag_Tier_Zero` label. See [Write Custom Queries](/analyze-data/explore/cypher-search#write-custom-queries) for examples.
 </Note>
 
-### Inline Node Pattern Property Matchers
+### Relationship matching
 
-``` Cypher
-match (n {prop: 'value'})
-return n
+Use `->` for outgoing, `<-` for incoming, and `-` without an arrowhead for undirected matching. Use `|` to match alternative relationship types:
+
+```cypher
+MATCH (:User)-[r:MemberOf|GenericWrite]->()
+RETURN r
 ```
 
-### Relationship Matching
+Unknown labels and relationship types produce no matches. A list of alternative relationship types can still match its known alternatives.
 
-``` Cypher
-match (:User)-[r]->()
-return r
+A relationship cannot repeat within one ordinary `MATCH`, including across comma-separated patterns and consecutive expansions. Separate `MATCH` clauses have separate uniqueness scopes. Reusing a bound node or fixed relationship variable matches that entity by identity.
+
+### Recursive expansion
+
+Variable-length patterns follow multiple relationships. Bounds are inclusive:
+
+| Syntax | Relationship count |
+| --- | --- |
+| `*` or `*..` | One or more, with no upper bound |
+| `*k` | Exactly `k`, equivalent to `*k..k` |
+| `*k..` | At least `k`, with no upper bound |
+| `*..k` | One through `k` |
+| `*m..n` | `m` through `n` |
+| `*0..0` | Zero; the start and end are the same node |
+
+```cypher
+MATCH p = (:User)-[r:MemberOf*1..3]->(:Group)
+RETURN p, r
 ```
 
-``` Cypher
-match (:User)-[r:MemberOf|GenericWrite]->()
-return r
+A variable-length relationship binding such as `r` is a list of relationships. A path binding such as `p` includes the ordered nodes and relationships.
+
+An omitted upper bound has no implicit 15-hop cutoff in v9.10.0. Open-ended queries can return paths beyond 15 hops and remain subject to execution budgets and cancellation. Budget exhaustion produces an error rather than a successful truncated result. Use an explicit bound such as `*1..15` if you intend to search only that depth. This also limits which entities a mutation can reach.
+
+### Pattern projections and bound endpoints
+
+Bind a path to return it or use path functions:
+
+```cypher
+MATCH p = (:Computer)-[:HasSession]->(:User)
+RETURN p
 ```
 
-### Recursive Expansion
+Multiple reading clauses can reuse a bound endpoint on either side of a pattern:
 
-``` Cypher
-match (:User)-[r:MemberOf*..]->(:Group)
-return r
+```cypher
+MATCH (e:User)
+MATCH p = ()-[]->(e)
+RETURN p
+LIMIT 1
 ```
 
-### Ranges for Recursive Expansion
+### Optional match
 
-``` Cypher
-match (:User)-[r:MemberOf*2..]->(:Group)
-return r
+`OPTIONAL MATCH` preserves an incoming row when its pattern does not match, setting newly introduced bindings to null. Repeated input rows retain their multiplicity.
+
+```cypher
+MATCH (u:User)
+OPTIONAL MATCH (u)-[:MemberOf]->(g:Group)
+RETURN u.name, g.name
 ```
 
-``` Cypher
-match (:User)-[r:MemberOf*2..4]->(:Group)
-return r
+A `WHERE` attached to the optional match restricts that match while retaining unmatched incoming rows. Filtering later with `WITH ... WHERE` can remove those rows:
+
+```cypher
+MATCH (u:User)
+OPTIONAL MATCH (u)-[:MemberOf]->(g:Group)
+WHERE g.name = 'DOMAIN ADMINS@EXAMPLE.COM'
+WITH u, g
+WHERE g IS NOT NULL
+RETURN u, g
 ```
 
-### Pattern Projections
+A leading `OPTIONAL MATCH` starts with one implicit row. If nothing matches, it can return one row with null bindings.
 
-``` Cypher
-match p = (:Computer)-[:HasSession]->(:User)
-return p
+### Shortest paths
+
+`shortestPath` returns one minimum-length trail per endpoint pair. A trail does not repeat a relationship. When multiple trails tie, the selected trail is unspecified.
+
+```cypher
+MATCH p = shortestPath((u:User)-[*1..]->(:Domain))
+WHERE u.objectid = 'UUID-1234-567890'
+RETURN p, length(p)
 ```
 
-``` Cypher
-match p = (:User)-[:MemberOf*..]->(:Group)
-return p
+### All shortest paths
+
+`allShortestPaths` returns all relationship-distinct minimum-length trails per endpoint pair. Returning every tied trail can require substantially more resources.
+
+```cypher
+MATCH p = allShortestPaths((u:User)-[*1..]->(:Domain))
+WHERE u.objectid = 'UUID-1234-567890'
+RETURN p
 ```
 
-### Multiple Reading Clauses
-
-``` Cypher
-match (u:User) where u.is_eligible
-match p = (u)<-[:HasSession]-(c:Computer)
-return p
-```
-
-### Shortest Paths
-
-``` Cypher
-match p = shortestPath((u:User)-[*..]->(:Domain))
-where u.objectid = 'UUID-1234-567890'
-return p
-```
-
-### All Shortest Paths
-
-``` Cypher
-match p = allShortestPaths((u:User)-[*..]->(:Domain))
-where u.objectid = 'UUID-1234-567890'
-return p
-```
+Bind shortest paths in `MATCH` before using them. Expression forms such as `RETURN length(shortestPath(...))` are unsupported. See [Known limitations](#known-defects) for PostgreSQL direction, bound, and mutation restrictions.
 
 ## Build multi-part queries
 
-Use `WITH` to pass intermediate results from one query part to the next. You can use `WITH` to filter, aggregate, sort, or alias results before continuing the query.
+`WITH` passes only its projected bindings to the next query part. It supports aliases, `DISTINCT`, aggregation, filtering, sorting, and pagination. Constant projections preserve the incoming row count.
 
 ```cypher
-MATCH p = shortestPath((u:User)-[:MemberOf*1..]->(g:Group))
-WITH DISTINCT g AS targetGroup, COUNT(u) AS userCount
-RETURN targetGroup.name, userCount
-ORDER BY userCount DESC
-LIMIT 5
+MATCH (u:User)
+WITH u ORDER BY u.name LIMIT 5
+MATCH p = (u)-[:MemberOf]->(g:Group)
+RETURN p
 ```
 
-## Result Ordering and Pagination
+`ORDER BY`, `SKIP`, and `LIMIT` on `WITH` apply at that boundary, before its `WHERE` filters the output. Later `WITH` and `RETURN` projections have their own modifiers.
+
+## Result ordering and pagination
 
 ### `ORDER BY`
 
-Use `ORDER BY` with `RETURN` or `WITH` to sort results by a projected value. Ascending order is the default; append `DESC` for descending order.
+Sort by projection aliases or supported expressions. Ascending order is the default; append `DESC` for descending order.
 
 ```cypher
-match (u:User)
-return u.name
-order by u.name desc
-limit 10
+MATCH (u:User)
+RETURN u.name AS userName
+ORDER BY userName DESC
+LIMIT 10
 ```
 
 ### `SKIP` and `LIMIT`
 
-Use `SKIP` and `LIMIT` with `RETURN` or `WITH` to paginate or trim a result set after sorting.
+Use these clauses with `RETURN` or `WITH` to skip or limit rows after sorting. PostgreSQL requires literal counts; calculated and parameterized counts are unsupported.
 
 ```cypher
-match (n:User)
-return n
-order by n.name
-skip 10
-limit 100
+MATCH (n:User)
+RETURN n
+ORDER BY n.name
+SKIP 10
+LIMIT 100
 ```
 
-## Entity Creation[](#entity-creation)
+## Entity creation[](#entity-creation)
 
 <CypherMutationsNote clause="CREATE" />
 
-### Create nodes
+Create nodes and relationships with property maps. Property values retain their types; null-valued properties are omitted.
 
-``` Cypher
-create (n:User {name: 'alice', objectid: 'UUID-1234-567890'})
-return n
+```cypher
+CREATE (u:User {name: 'ALICE@EXAMPLE.COM', enabled: true})
+  -[r:MemberOf]->(g:Group {name: 'ADMINS@EXAMPLE.COM'})
+RETURN u, r, g
 ```
 
-### Create relationships
+Supported mutations preserve incoming rows. Multipart writes execute transactionally, and later query parts can observe earlier writes.
 
-``` Cypher
-create (u:User {name: 'alice'})-[r:MemberOf]->(g:Group {name: 'admins'})
-return r
+## Entity updates[](#entity-updates)
+
+<CypherMutationsNote clause="SET and REMOVE" />
+
+Set properties and add labels with `SET`; remove them with `REMOVE`:
+
+```cypher
+MATCH (n:User)
+SET n.reviewed = true
+REMOVE n.old_property
+RETURN n
 ```
 
-## Entity Updates[](#entity-updates)
-
-<CypherMutationsNote clause="SET" />
-
-### Setting Properties and Labels
-
-``` Cypher
-match (n:Base)
-where n.obviously_is_user
-set n.other = 1
-set n:User
-return n
+```cypher
+MATCH (n:Base)
+WHERE n.obviously_is_user
+SET n:User
+REMOVE n:OldLabel
+RETURN n
 ```
 
-``` Cypher
-match ()-[r:HasSession]->(:User)
-set r.special_property = true
+```cypher
+MATCH ()-[r:HasSession]->(:User)
+SET r.reviewed = true
+REMOVE r.old_property
+RETURN r
 ```
 
-### Removing Properties and Labels
+PostgreSQL preserves the order of `SET` and `REMOVE` intents, but an assignment expression in the same query part can still read an earlier property value. Insert a `WITH` boundary before an assignment that depends on a preceding update:
 
-``` Cypher
-match (n:User)
-remove n.name
-remove n:User
-return n
+```cypher
+MATCH (n:User)
+SET n.x = 1
+REMOVE n.x
+WITH n
+SET n.y = coalesce(n.x, -1)
+RETURN n.y
 ```
 
-``` Cypher
-match ()-[r:HasSession]->(:User)
-remove r.special_property
+## Entity deletion[](#entity-deletion)
+
+<CypherMutationsNote clause="DELETE and DETACH DELETE" />
+
+`DELETE` removes relationships or disconnected nodes. Deleting a connected node with plain `DELETE` fails and rolls back. `DETACH DELETE` also removes the node's incident relationships.
+
+```cypher
+MATCH ()-[r:MemberOf]->()
+DELETE r
 ```
 
-## Entity Deletion[](#entity-deletion)
+Capture values before deleting their entity. Deletion can be followed by scalar or count projections:
 
-<CypherMutationsNote clause="DELETE" />
-
-``` Cypher
-match (s:User)
-detach delete s
-```
-
-``` Cypher
-match ()-[r:MemberOf]->()
-delete r
+```cypher
+MATCH (n:User)
+WHERE n.objectid = 'UUID-1234-567890'
+WITH n, n.name AS deletedName
+DETACH DELETE n
+RETURN deletedName
 ```
 
 ## Unwind a list into rows
 
-Expand a list into individual rows for further filtering, aggregation, or sorting.
+`UNWIND` expands one list level into rows. It accepts literal lists, property arrays, and collected lists, preserving element types. Duplicate elements produce duplicate rows. The target variable must not shadow an existing binding.
 
 ```cypher
-match (u:User)
-where u.name contains "A"
-with collect(u.name) as temp
-unwind temp as usernames
-return usernames
-limit 100
+UNWIND ['ALICE@EXAMPLE.COM', 'BOB@EXAMPLE.COM'] AS userName
+MATCH (u:User)
+WHERE u.name = userName
+RETURN u
 ```
 
-<Note>
-  Queries that use `UNWIND` return tabular results only.
-</Note>
+You can follow `UNWIND` with matching, aggregation, sorting, or mutation clauses. Empty, null, and missing dynamic inputs produce no rows; a non-list property value produces one row.
 
-## Supported Query Filters
-
-### Comparison Expressions
-
-The following operators are supported in authoring comparison expressions:
-
-* `=`
-* `<>`
-* `<`
-* `>`
-* `<=`
-* `>=`
-
-When authoring comparison statements, users must be aware of the typing requirements of CySQL compared to Cypher as
-executed by Neo4j.
-
-For more information see the `Differences between Cypher and CySQL` subsection `Stricter Typing Requirements`.
-
-### Negation
-
-Negation in query filters is supported with the `not` operator:
-
-``` Cypher
-match (n:User)
-where not(n.eligible)
-return n
+```cypher
+MATCH (u:User)
+WHERE u.name CONTAINS 'A'
+WITH collect(u.name) AS names
+UNWIND names AS userName
+RETURN userName
+LIMIT 100
 ```
 
-### Conjunction and Disjunction
+This second example returns scalar values; `UNWIND` does not itself restrict queries to scalar results.
 
-Conjunction `and` and disjunction `or` operators are both supported:
+## Supported query filters
 
+### Comparison expressions
 
-``` Cypher
-match (n:User)
-where n.eligible and n.enabled
-return n
-```
+Supported comparisons are `=`, `<>`, `<`, `>`, `<=`, and `>=`. For PostgreSQL property typing rules, see [Backend differences](#cysql-differences).
 
-``` Cypher
-match (n:User)
-where n.eligible or n.seen_as_active
-return n
-```
+### Null, membership, and label predicates
 
-### String Searching
+Use `IS NULL` or `IS NOT NULL` to test absence. Missing properties, stored null properties, and unmatched optional bindings satisfy `IS NULL`. Do not use `= null` to check absence.
 
-Searching strings may be performed in a variety of ways. These matches are case-sensitive and do not support wildcard
-expansions.
-
-#### String Prefix Matching
-
-A string property may be filtered by prefix matching:
-
-``` Cypher
-match (n:User)
-where n.name starts with 'my prefix'
-return n
-```
-
-#### String Contains Matching
-
-A string property may be filtered by contains matching:
-
-``` Cypher
-match (n:User)
-where n.details contains 'something interesting'
-return n
-```
-
-#### String Suffix Matching
-
-A string property may be filtered by suffix matching:
-
-``` Cypher
-match (n:User)
-where n.name ends with 'my suffix'
-return n
-```
-
-### Regular Expressions
-
-``` Cypher
-match (n:User)
-where n.name =~ 'userPrefix.*'
-return n
-```
-
-### Pattern Predicates
-
-Query filters may also include pattern lookups. For example, searching for users with no active login sessions:
-
-``` Cypher
-match (n:User)
-where not((n)<-[:HasSession]-(:Computer))
-return n
-```
-
-## Quantifier Expressions
-
-### `any`
-Returns true if at least one item in the list contains the specified value.
-
-``` Cypher
-WITH "KEYWORD" as SPNKeyword
+```cypher
 MATCH (n:User)
-WHERE ANY(keyword IN n.serviceprincipalnames WHERE toUpper(keyword) CONTAINS toUpper(SPNKeyword))
+WHERE n.description IS NULL
 RETURN n
 ```
 
-### `single`
+```cypher
+RETURN null IS NULL AS value
+```
 
-Indicates that exactly one item in the list contains the specified value.
+Use `IN` for list membership, and `n:User` to test a node label:
 
-``` Cypher
-WITH "KEYWORD" as SPNKeyword
-MATCH (n:User)
-WHERE SINGLE(keyword IN n.serviceprincipalnames WHERE toUpper(keyword) CONTAINS toUpper(SPNKeyword))
+```cypher
+MATCH (n)
+WHERE n:User AND n.name IN ['ALICE@EXAMPLE.COM', 'BOB@EXAMPLE.COM']
 RETURN n
 ```
 
-### `none`
+Collected nodes and relationships support identity-based membership:
 
-Indicates that none of the objects in the list contain the specified value.
-
-``` Cypher
-WITH "KEYWORD" as SPNKeyword
+```cypher
 MATCH (n:User)
-WHERE NONE(keyword IN n.serviceprincipalnames WHERE toUpper(keyword) CONTAINS toUpper(SPNKeyword))
+WHERE n.disabled
+WITH collect(n) AS disabled
+MATCH p = (:Computer)-[:HasSession]->(u:User)
+WHERE NOT (u IN disabled)
+RETURN p
+LIMIT 1
+```
+
+Nodes, relationships, and numeric IDs remain distinct types even when their IDs have the same numeric value. This membership support does not imply arbitrary comparisons between entity-list expressions.
+
+Empty property-list equality and empty lists carried through `WITH` or `UNWIND` are supported:
+
+```cypher
+MATCH (n:User)
+WHERE n.auth_modes = []
 RETURN n
 ```
 
-### `all`
+### Boolean expressions
 
-Indicates that all objects in the list contain the specified value.
+Use `AND`, `OR`, `XOR`, and `NOT`. For non-null Boolean operands, `XOR` is true when exactly one operand is true. Null operands can produce null results.
 
-``` Cypher
-WITH "KEYWORD" as SPNKeyword
+```cypher
 MATCH (n:User)
-WHERE ALL(keyword IN n.serviceprincipalnames WHERE toUpper(keyword) CONTAINS toUpper(SPNKeyword))
+WHERE (n.enabled XOR n.disabled) AND NOT n.lockedout
 RETURN n
 ```
 
-## Supported Subquery Expressions[](#supported-subquery-expressions)
+Parentheses preserve grouping. Repeated `NOT` preserves parity: two negations cancel, and three act as one. Boolean expressions also work as values in `RETURN`, `WITH`, function arguments, and `SET`; they filter rows only when used in `WHERE`.
 
-### `collect`
+### String searching
 
-A collect subquery expression can be used to create a list with the rows returned by a given subquery.
+`STARTS WITH`, `CONTAINS`, and `ENDS WITH` are case-sensitive, literal string tests. `%`, `_`, and backslashes are not wildcard characters, including after supported functions and aliases.
 
-### `count`
-
-Aggregates and counts the results of the given subquery as an integer.
-
-## Supported Cypher Functions[](#supported-cypher-functions)
-
-### `duration` Function
-
-Parses a valid duration string into a time duration that can be used in conjunction with other duration or date types.
-
-``` Cypher
-match (s)
-where s.created_at = date() - duration('P1D')
-return s
+```cypher
+MATCH (n:User)
+WHERE n.name STARTS WITH 'ALICE' OR n.name ENDS WITH '@EXAMPLE.COM'
+RETURN n
 ```
 
-### `id` Function
-
-Returns the entity identifier of the node or relationship.
-
-``` Cypher
-match (s)
-where id(s) in [1, 2, 3, 4]
-return s
+```cypher
+MATCH (n:User)
+WHERE n.description CONTAINS 'service account'
+RETURN n
 ```
 
-### `localtime`
+PostgreSQL string predicates require strings. Non-string property operands yield null rather than matching an automatic text conversion. Use `toString` when you intend a textual comparison.
 
-Returns the local time without timezone information.
+### Regular expressions
 
-``` Cypher
-match (s)
-where s.created_at <= localtime()
-return s
+Use `=~` for regex matching:
+
+```cypher
+MATCH (n:User)
+WHERE n.name =~ '^ALICE.*@EXAMPLE[.]COM$'
+RETURN n
 ```
 
-### `localdatetime`
+On PostgreSQL, `=~` uses PostgreSQL regex syntax and searches for a matching substring. Add `^` and `$` when you intend to match the whole string. Do not assume complete compatibility with Neo4j's Java regex syntax.
 
-Returns the local datetime without timezone information.
+### Pattern predicates
 
-``` Cypher
-match (s)
-where s.created_at > localdatetime()
-return s
+Use fixed-length patterns in filters, for example to find users without sessions:
+
+```cypher
+MATCH (n:User)
+WHERE NOT ((n)<-[:HasSession]-(:Computer))
+RETURN n
 ```
 
-### `date`
+Recursive expansion inside pattern predicates is unsupported. The PostgreSQL aggregate traversal-count optimization also has a specific [pattern-predicate limitation](#known-defects).
 
-Returns the current date with timezone information.
+## Quantifier expressions
 
-``` Cypher
-match (s)
-where s.created_at = date()
-return s
+Use quantifiers in `WHERE` to test a predicate for list elements:
+
+| Quantifier | True when |
+| --- | --- |
+| `any` | At least one element satisfies the predicate |
+| `single` | Exactly one element satisfies the predicate |
+| `none` | No element satisfies the predicate |
+| `all` | Every element satisfies the predicate |
+
+```cypher
+MATCH (n:User)
+WHERE any(spn IN n.serviceprincipalnames WHERE toUpper(spn) CONTAINS 'HTTP')
+RETURN n
 ```
 
-### `datetime`
+Replace `any` with `single`, `none`, or `all` to apply the other tests. PostgreSQL does not support scalar quantifier projections such as `RETURN all(x IN [1] WHERE x = 1)` or corresponding `WITH` projections; they return translation errors.
 
-Returns the current datetime with timezone information.
+## Arithmetic expressions
 
-``` Cypher
-match (s)
-where s.created_at < datetime()
-return s
+Numeric arithmetic supports `+`, `-`, `*`, `/`, `%`, and `^`. Addition also supports string concatenation and list addition.
+
+```cypher
+MATCH (n:User)
+RETURN n.logoncount + n.badpwdcount AS combinedCount
 ```
+
+```cypher
+MATCH (n:User)
+WITH n.logoncount AS logons, n.badpwdcount AS failures
+RETURN logons + failures AS combinedCount
+```
+
+PostgreSQL arithmetic on dynamic properties uses their stored types. Integer division truncates toward zero. Missing or null operands yield null; incompatible operands and integer overflow produce query errors. See [Known limitations](#known-defects) for remaining property-alias expression restrictions.
+
+<span id="supported-subquery-expressions" />
+
+## Aggregate functions
+
+Aggregate functions summarize rows in `RETURN` or `WITH`. Non-aggregate projected expressions define groups:
+
+```cypher
+MATCH (u:User)
+RETURN u.enabled, count(*) AS users
+```
+
+| Function | Behavior |
+| --- | --- |
+| `count(*)` | Counts rows |
+| `count(expr)` | Counts non-null values; supports `count(DISTINCT expr)` |
+| `collect(expr)` | Builds a list of non-null values, preserving their types; supports `collect(DISTINCT expr)` |
+| `sum(expr)` | Sums numeric values; supports `sum(DISTINCT expr)` |
+| `avg(expr)` | Computes an average using floating-point conversion |
+| `min(expr)`, `max(expr)` | Select minimum and maximum values |
+
+`collect` excludes missing/null values and returns an empty list for empty or all-null input. `sum` ignores nulls, returns integer zero for empty or all-null input, and preserves signed 64-bit integer precision for integer sums. Floating-point or mixed numeric inputs use floating-point arithmetic. Nonnumeric input and integer overflow produce errors. `avg` returns null for empty input. Empty grouped input produces no groups.
+
+```cypher
+MATCH (u:User)
+RETURN min(u.logoncount), max(u.logoncount), min(u.name), max(u.name)
+```
+
+These are functions, not support for `COLLECT { ... }` or `COUNT { ... }` subqueries.
+
+## Supported Cypher functions[](#supported-cypher-functions)
+
+### Temporal functions
+
+| Function | No-argument result | Text construction example |
+| --- | --- | --- |
+| `date()` | Current date, without a time zone | `date('2020-01-01')` |
+| `datetime()` | Current timestamp with time zone | `datetime('2020-01-01T00:00:00Z')` |
+| `localdatetime()` | Current timestamp without time zone | `localdatetime('2020-01-01T00:00:00')` |
+| `localtime()` | Current time without time zone | `localtime('12:00:00')` |
+
+`duration` requires a string literal. Use durations in temporal arithmetic:
+
+```cypher
+MATCH (n)
+WHERE n.created_at < date() - duration('P1D')
+RETURN n
+```
+
+Current-instant `.epochseconds` and `.epochmillis` access are supported. For example, for a password timestamp stored in epoch seconds:
+
+```cypher
+MATCH (u:User)
+WHERE u.pwdlastset < datetime().epochseconds - (180 * 86400)
+RETURN u
+```
+
+General calendar components such as `.year` are unsupported. Components on explicitly constructed values, such as `date('2020-01-01').year` and `datetime('2020-01-01').epochmillis`, return translation errors. Temporal map constructors are outside the supported subset.
+
+### `id` function
+
+Returns a node or relationship identifier:
+
+```cypher
+MATCH (n:User)
+WHERE id(n) IN [1, 2, 3, 4]
+RETURN n
+```
+
+### `labels` function
+
+Returns a node's label names as a list of strings:
+
+```cypher
+MATCH (n)
+RETURN labels(n)
+```
+
+Prefer label patterns such as `MATCH (n:User)` for ordinary label filtering.
 
 ### `type`
 
-Returns the type of the given relationship reference. This function returns the relationship's type as a text value.
-Type checks utilizing this function will not be index accelerated and may exhibit poor performance.
+Returns a relationship's type as text. Prefer a typed pattern for ordinary filtering:
 
-``` Cypher
-match ()-[r]->()
-where type(r) = 'EdgeKind1'
-return r
+```cypher
+MATCH ()-[r:MemberOf]->()
+RETURN type(r)
 ```
 
-### `split`
+### String and conversion functions
 
-Takes a given expression and text delimiter and returns a text array containing split components, if any. If the
-given expression does not evaluate to a text value this function will raise an error.
+| Function | Behavior |
+| --- | --- |
+| `split(value, delimiter)` | Splits a string into a list of strings |
+| `toLower(value)` | Returns a lowercase string |
+| `toUpper(value)` | Returns an uppercase string |
+| `toString(value)` | Converts a supported value to text |
+| `toInteger(value)` | Converts a supported value to an integer |
 
-``` Cypher
-match (u:User)
-where '255' in split(u.ip_addr, '.')
-return u
-```
+String functions require string inputs; unsupported conversions can raise errors. PostgreSQL also accepts the legacy spelling `toint` for `toInteger`.
 
-### `tolower`
+`toInteger` truncates numeric inputs toward zero: `1.9` becomes `1`, and `-1.5` becomes `-1`. Integer inputs preserve signed 64-bit precision. Invalid strings and out-of-range conversions remain compatibility limits; do not rely on Neo4j's failure behavior.
 
-Returns the localized lower-case variant of a given expression. If the given expression does not evaluate to a text
-value this function will raise an error.
-
-``` Cypher
-match (u:User)
-return tolower(u.name)
-```
-
-### `toupper`
-
-Returns the localized upper-case variant of a given expression. If the given expression does not evaluate to a text
-value this function will raise an error.
-
-``` Cypher
-match (u:User)
-return toupper(u.name)
-```
-
-### `tostring`
-
-Returns the text value of a given expression. If the given expression represents a type that can not be converted to
-text this function will raise an error.
-
-``` Cypher
-match (u:User)
-return tostring(u.num_active_logins)
-```
-
-### `toint`
-
-Returns the integer value of a given expression. If the given expression represents a type that can not be converted or
-parsed to an integer this function will raise an error.
-
-``` Cypher
-match (u:User)
-return toint(u.integer_in_text_property)
+```cypher
+MATCH (u:User)
+RETURN split(u.name, '@'), toLower(u.name), toInteger(u.logoncount)
 ```
 
 ### `coalesce`
 
-Returns the first non-null value in a list of expressions. This is critically useful for navigating differences in
-`null` behavior between Cypher and CySQL.
+Returns the first non-null value:
 
-``` Cypher
-match (n:NodeKind1)
-where n.target = coalesce(n.a, n.b, 'last_resort')
-return n
+```cypher
+MATCH (n:User)
+WITH coalesce(n.description, '') AS description
+RETURN description
 ```
+
+PostgreSQL preserves the selected dynamic property's type through `WITH`, including when a fallback has a different type. Statically typed argument combinations can still have compatibility restrictions.
 
 ### `size`
 
-Returns the number of items in an expression that evaluates to any array type.
+Counts list elements or Unicode characters in a string. Direct properties and values carried through `WITH` are supported; null input remains null.
 
-``` Cypher
-match (n:NodeKind1)
-where size(n.array_value) > 0
-return n
+```cypher
+MATCH (u:User)
+WITH u.name AS userName, u.serviceprincipalnames AS spns
+RETURN size(userName), size(spns)
 ```
 
-#### Caveats
+### `length`
 
-The `size` function is expected to behave differently if the given expression evaluates to a text value. In this case,
-the function returns the number of Unicode characters present in the text value. This behavior is currently not
-supported in CySQL translation.
+Returns the relationship count of a bound path:
+
+```cypher
+MATCH p = (a)-[:MemberOf*1..3]->(b)
+RETURN length(p)
+```
 
 ### `nodes`
 
-Returns an ordered list of all nodes in a matched path.
+Returns the ordered node list of a matched path:
 
 ```cypher
-match p = ()-[]->()
-return nodes(p)
+MATCH p = ()-[]->()
+RETURN nodes(p)
 ```
 
 ### `relationships`
 
-Returns the ordered relationship list for a path.
+Returns the ordered relationship list of a matched path:
 
 ```cypher
-match p = ()-[]->()
-return relationships(p)
+MATCH p = ()-[]->()
+RETURN relationships(p)
 ```
 
 ### `startNode`
 
-Returns the start node for a relationship reference.
+Returns a relationship's start node:
 
 ```cypher
-match p = (a)-[*1..]->(b)
-where none(r in relationships(p) where startNode(r).name = 'blocked')
-return p
+MATCH p = (a)-[*1..3]->(b)
+WHERE none(r IN relationships(p) WHERE startNode(r).name = 'BLOCKED')
+RETURN p
 ```
 
 ### `endNode`
 
-Returns the end node for a relationship reference.
+Returns a relationship's end node:
 
 ```cypher
-match ()-[r]->() return endNode(r)
+MATCH ()-[r]->()
+RETURN endNode(r)
 ```
 
 ### `head`
 
-Returns the first element of a list.
+Returns the first list element:
 
 ```cypher
-match p = ()-[]->()
-return head(nodes(p))
+MATCH p = ()-[]->()
+RETURN head(nodes(p))
 ```
 
 ### `tail`
 
-Returns all elements of a list except the first.
+Returns all list elements except the first:
 
 ```cypher
-match p = ()-[]->()
-return tail(nodes(p))
+MATCH p = ()-[]->()
+RETURN tail(nodes(p))
 ```
 
-## Known Defects in Supported Components[](#known-defects)
+<span id="known-defects" />
 
-The below issues are known defects. They are classified as defects of CySQL as the intent is to correctly support their
-use.
+## Known limitations
 
-### `labels` Function
+The following PostgreSQL restrictions remain in v9.10.0:
 
-Returns the labels of the given node reference. This function returns the node's labels as a text array value. Label
-checks utilizing this function will not be index accelerated and may exhibit poor performance.
+- Generic undirected shortest-path searches and shortest-path minimum bounds greater than one are unsupported.
+- Bounded `allShortestPaths` with equal endpoints and a minimum of zero can return no row instead of a zero-hop path.
+- `shortestPath` followed by `SET ... RETURN p` can lose the path representation.
+- Scalar quantifier projections in `RETURN` or `WITH` return translation errors.
+- Pattern predicates in the optimized aggregate traversal-count shape (`MATCH ... WITH s, count(t) AS c RETURN ... ORDER BY ... LIMIT ...`) fail with `unsupported aggregate traversal count predicate: pattern predicates in MATCH WHERE are not supported`. This does not prohibit all aggregates combined with pattern predicates.
+- Unary negation of a carried property in sorting, such as `RETURN n.logoncount AS x ORDER BY -x`, can fail with PostgreSQL's unsupported `- jsonb` operation.
+- Some property-arithmetic alias filters remain unsupported; support for arithmetic projections does not establish support for every later alias filter.
+- Same-part assignment expressions can read earlier property values. Use the [update boundary example](#entity-updates) for dependent assignments.
+- Literal-only `SKIP`/`LIMIT`, temporal components, invalid conversions, and list typing retain the restrictions described above. Mixed-type literal lists are not generally supported.
 
-``` Cypher
-match (n)
-where 'User' in labels(n)
-return n
+### Open traversal execution budgets
+
+PostgreSQL open traversal defaults to 100,000 candidate states and 64 MiB of cumulative estimated trail state. Exhaustion raises SQLSTATE `54000`. These are execution accounting limits, not a depth cutoff or a measured process-memory cap.
+
+For DAWGS operators, positive `dawgs.traversal_state_limit` and `dawgs.traversal_byte_limit` session or transaction settings control these budgets. They are not BloodHound configuration-file options. Deploying the upgraded compiler requires the matching DAWGS schema helpers.
+
+## Unsupported constructs[](#unsupported-constructs)
+
+The following constructs are outside BloodHound's supported subset and return parse or translation errors:
+
+- `CASE` expressions
+- List and pattern comprehensions
+- Existential subqueries and `COLLECT { ... }` / `COUNT { ... }` subqueries
+- `MERGE`
+- Recursive expansion inside pattern predicates
+- List indexing, including negative, parameterized, or chained indexes; use `head` or `tail` where sufficient
+- List slicing, including omitted or negative bounds
+- `UNION` and `UNION ALL`
+- Standalone and in-query `CALL`, including procedure arguments and `YIELD`
+- `LOAD CSV` and `CREATE UNIQUE`
+- Shortest paths in expression positions; bind the path in `MATCH` instead
+- `FOREACH`, `REDUCE`, legacy `START`, `EXPLAIN`, `PROFILE`, and periodic/bulk-import clauses
+
+<span id="cysql-differences" />
+
+## Backend differences
+
+### Property types and numeric results
+
+PostgreSQL scalar equality uses stored property types rather than assuming that a string compared to a number must be parsed as an integer. Numeric-looking strings remain strings.
+
+For ordered dynamic-property comparisons, numbers compare numerically, strings by Unicode order, Booleans with false before true, and lists lexicographically. Incompatible types and null operands yield null. Values carried through `WITH` preserve their stored types. Native casts and functions still have specific type restrictions; this is not complete Neo4j type compatibility.
+
+Raw PostgreSQL results preserve signed 64-bit integers and floating-point values. Stored JSON can erase the distinction between an integral float and an integer; queries cannot recover type information already lost during storage.
+
+### Index utilization
+
+PostgreSQL property indexes do not require a label specifier. If `name` is indexed, both queries can use that index:
+
+```cypher
+MATCH (n:User)
+WHERE n.name = 'ALICE@EXAMPLE.COM'
+RETURN n
 ```
 
-#### Caveats
-
-While currently implemented this function returns the smallint array of labels associated with a node when referenced in
-CySQL. Future support to convert the smallint array of node labels into text values is planned.
-
-### Unpacking Arrays of Entities for Comparison
-
-Arrays containing graph entities are not unpacked during comparisons:
-
-``` Cypher
-match (n:User) where n.disabled
-with collect(n) as disabled
-match p = (:Computer)-[:HasSession]->(u:User)
-where not u in disabled
-return p limit 1
+```cypher
+MATCH (n)
+WHERE n.name = 'ALICE@EXAMPLE.COM'
+RETURN n
 ```
 
-Queries that contain similar constructs will result in the following translation error:
-`ERROR: column notation .id applied to type nodecomposite[], which is not a composite type (SQLSTATE 42809)`.
+### Null behavior
 
-### Right-Hand Bound Node Lookups
+`WHERE` retains only rows whose predicate evaluates to true. Projecting a missing or null property through `WITH` keeps it null; equality does not become true, so a later filter removes the row:
 
-Patterns that utilize a bound reference in the right-hand node pattern will not correctly author the required SQL joins:
-
-``` Cypher
-match (e)
-match p = ()-[]->(e)
-return p
-limit 1
+```cypher
+MATCH (n:User)
+WITH n.name AS userName
+WHERE userName = 'ALICE@EXAMPLE.COM'
+RETURN userName
 ```
 
-Queries that contain similar constructs will result in the following translation error:
-`ERROR: invalid reference to FROM-clause entry for table "s0" (SQLSTATE 42P01)`.
+Use `IS NULL` to check absence and `coalesce` to select a fallback explicitly:
 
-### Untyped Array References and Literals
-
-Untyped array references, including empty arrays, fail to pass type inference checks in CySQL. Support for additional
-type hinting and inference is required to better support these use-cases.
-
-``` Cypher
-match (n:User)
-where n.auth_modes = []
-return n
+```cypher
+MATCH (n:User)
+WHERE coalesce(n.description, '') CONTAINS 'service account'
+RETURN n
 ```
-
-Queries that contain similar constructs will result in the following translation error:
-`Error: array literal has no available type hints`.
-
-## Unsupported Constructs[](#unsupported-constructs)
-
-Below are constructs of the Cypher language that did not make the 1.0 definition of the CySQL specification. Future
-efforts may be pursued to add support for these language features.
-
-* XOR Operations
-* Case Expressions
-* List Comprehensions
-* Pattern Comprehensions
-* Existential Subqueries (e.g. exists)
-* Merge Statements
-* Pattern Predicates using Recursive Expansion
-
-## Differences between Cypher and CySQL[](#cysql-differences)
-
-Translating Cypher to SQL via CySQL comes with a few semantic differences that users should be aware of.
-
-### Stricter Typing Requirements
-
-SQL comparisons are stricter than comparisons executed in Neo4j. Some of these typing constraints are handled
-automatically by CySQL, however, some type mismatches do make it down to the underlying SQL database.
-
-Given the Cypher query: `match (n:User) where n.name = 123 return n limit 1;`
-
-The translated SQL, when executed, results in the following error:
-`Error: ERROR: invalid input syntax for type bigint: "MYUSER@DOMAIN.COM" (SQLSTATE 22P02)`
-
-This indicates that there is a node with a value for `n.name` that is not parsable as an integer.
-
-In the future, CySQL translation will cover most of the strict typing requirements automatically for users.
-
-### Index Utilization
-
-Indexing in CySQL does not require a label specifier to be utilized. If the node property `name` is indexed in CySQL,
-both:
-
-``` Cypher
-match (n:User)
-where n.name = '1234'
-return n
-```
-
-and
-
-``` Cypher
-match (n)
-where n.name = '1234'
-return n
-```
-
-will use the `name` index regardless of node label.
-
-### null Behavior
-
-Behavior around `null` in SQL differs from how Neo4j executes Cypher. Certain expression operators in Neo4j's
-implementation of Cypher will treat `null` differently than their SQL counterparts while some semantics are very
-similar.
-
-Ideally, entity properties should strive to remove `null` as a conditional case as much as possible. In cases where this
-is not possible, users are advised to exercise the `coalesce(...)` function:
-
-``` Cypher
-match (n:User)
-where coalesce(n.name, '') contains '123'
-return n
-limit 1
-```
-
-#### Silent Query Failure
-
-`null` can taint result sets and also further complicate future comparisons in the query:
-
-``` Cypher
-match (n:User)
-with n.name as n
-where n = '123'
-return 1
-```
-
-The reference `n` is being projected by the multipart `with` statement but this projection removes the resultset from
-the original query, allowing for ambiguity to slip into future operations against `n.name` where some values of
-`n.name` may be `null`.
