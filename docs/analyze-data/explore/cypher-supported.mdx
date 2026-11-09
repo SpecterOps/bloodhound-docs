@@ -1,6 +1,6 @@
 ---
 title: Supported Cypher Syntax
-description: "Reference for BloodHound's supported Cypher clauses, operators, functions, and PostgreSQL compatibility limits."
+description: "Reference for BloodHound's supported Cypher clauses, operators, functions, and any known limitations."
 ---
 
 import CypherMutationsNote from '/snippets/cypher-mutations.mdx';
@@ -82,7 +82,9 @@ RETURN p, r
 
 A variable-length relationship binding such as `r` is a list of relationships. A path binding such as `p` includes the ordered nodes and relationships.
 
-An omitted upper bound has no implicit 15-hop cutoff in v9.10.0. Open-ended queries can return paths beyond 15 hops and remain subject to execution budgets and cancellation. Budget exhaustion produces an error rather than a successful truncated result. Use an explicit bound such as `*1..15` if you intend to search only that depth. This also limits which entities a mutation can reach.
+An omitted upper bound has no implicit 15-hop cutoff. Open-ended queries can return paths beyond 15 hops and remain subject to execution budgets and cancellation. Budget exhaustion produces an error rather than a successful truncated result.
+
+Use an explicit bound such as `*1..15` if you intend to search only that depth. This also limits which entities a mutation can reach.
 
 ### Pattern projections and bound endpoints
 
@@ -315,7 +317,7 @@ Collected nodes and relationships support identity-based membership:
 
 ```cypher
 MATCH (n:User)
-WHERE n.disabled
+WHERE NOT n.enabled
 WITH collect(n) AS disabled
 MATCH p = (:Computer)-[:HasSession]->(u:User)
 WHERE NOT (u IN disabled)
@@ -339,7 +341,7 @@ Use `AND`, `OR`, `XOR`, and `NOT`. For non-null Boolean operands, `XOR` is true 
 
 ```cypher
 MATCH (n:User)
-WHERE (n.enabled XOR n.disabled) AND NOT n.lockedout
+WHERE (n.enabled XOR n.hasspn) AND NOT n.lockedout
 RETURN n
 ```
 

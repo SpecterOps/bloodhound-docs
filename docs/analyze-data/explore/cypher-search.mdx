@@ -143,7 +143,9 @@ BloodHound allows you to import and export queries for easy sharing and backup.
 
 ## Write Custom Queries
 
-BloodHound lets you run queries in its supported Cypher subset directly in the user interface. The [syntax reference](/analyze-data/explore/cypher-supported) describes v9.10.0 support and PostgreSQL-specific limitations. BloodHound rejects procedure calls and user-supplied query parameters before database execution. Use Cypher when you need to inspect relationships, answer targeted questions, or build analyses that go beyond the prebuilt queries.
+BloodHound lets you run queries in its supported Cypher subset directly in the user interface. Cypher support expanded significantly in v9.10. The [syntax reference](/analyze-data/explore/cypher-supported) describes the supported syntax and PostgreSQL-specific limitations.
+
+BloodHound rejects procedure calls and user-supplied query parameters before database execution. Use Cypher when you need to inspect relationships, answer targeted questions, or build analyses that go beyond the prebuilt queries.
 
 Cypher supports everything from simple lookups to complex identity attack-path analysis. For example, you can answer questions such as:
 
@@ -222,7 +224,11 @@ MATCH p=(n)-[r:MemberOf*1..3]->(m)
 RETURN p
 ```
 
-This query is a bit more refined than the previous one. By using labels on both nodes and edges, we can make our query a lot more specific. We also pre-assign the variables **n** and **m** and give them labels to make the query easier to read. In this particular case, we're asking BloodHound to find nodes with the labels User and Group, and then match those nodes using the *MemberOf* relationship. We added a length modifier as well to the relationship. Adding \***1..3** limits the search to relationships that are between one and three links. In simple terms, give me any users that are a member of a group up to three links away. Additionally, we're assigning the result of the pattern to the variable **p** and returning that variable. When we get **p** back, it will contain the result of each path it can find that matches our pattern we asked for.
+This query is a bit more refined than the previous one. By using labels on both nodes and edges, we can make our query a lot more specific. We also pre-assign the variables **n** and **m** and give them labels to make the query easier to read.
+
+In this particular case, we're asking BloodHound to find nodes with the labels User and Group, and then match those nodes using the *MemberOf* relationship. We added a length modifier as well to the relationship. Adding \***1..3** limits the search to relationships that are between one and three links. In simple terms, give me any users that are a member of a group up to three links away.
+
+Additionally, we're assigning the result of the pattern to the variable **p** and returning that variable. When we get **p** back, it will contain the result of each path it can find that matches our pattern we asked for.
 
 Now that we've looked at the basic building blocks of queries, let's look at a more complicated one. As an example, here's the query we use to calculate shortest paths to Domain Admins, one of the most important queries in the BloodHound interface:
 
@@ -236,9 +242,11 @@ RETURN p
   String matching is case-sensitive. Active Directory names in these examples use uppercase values with a domain suffix, such as `DOMAIN ADMINS@INTERNAL.LOCAL`. Match the values stored in your environment.
 </Note>
 
-This query finds one minimum-length trail from each matching user to the specified group. A trail does not repeat a relationship. With no relationship type specified, the search can use any relationship type. If multiple shortest trails tie, `shortestPath` does not promise which one is selected. Use `allShortestPaths` to return every relationship-distinct minimum trail; doing so can consume more resources.
+This query finds one minimum-length trail from each matching user to the specified group. A trail does not repeat a relationship. With no relationship type specified, the search can use any relationship type.
 
-In v9.10.0, PostgreSQL searches with no upper bound can reach beyond 15 hops. They are subject to execution budgets and cancellation; budget exhaustion returns an error rather than a successful truncated result. Use an explicit bound such as `*1..15` when you intend to limit search depth.
+If multiple shortest trails tie, `shortestPath` does not promise which one is selected. Use `allShortestPaths` to return every relationship-distinct minimum trail; doing so can consume more resources.
+
+On PostgreSQL, searches with no upper bound can reach beyond 15 hops. They are subject to execution budgets and cancellation; budget exhaustion returns an error rather than a successful truncated result. Use an explicit bound such as `*1..15` when you intend to limit search depth.
 
 Bind shortest paths with `MATCH p = shortestPath(...)`, then use functions such as `length(p)` in `RETURN`. PostgreSQL does not support generic undirected shortest searches or shortest-path minimum bounds greater than one. See the [current shortest-path limitations](/analyze-data/explore/cypher-supported#known-defects) before combining shortest paths with mutations.
 
