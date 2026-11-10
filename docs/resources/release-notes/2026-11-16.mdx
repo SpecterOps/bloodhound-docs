@@ -1,0 +1,182 @@
+---
+title: 2026-11-16 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-11-16"
+---
+
+import CollectorDeprecationNotice from '/snippets/resources/collector-deprecation-notice.mdx';
+
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-11-16 | v9.10.0 | v0.5.1 | v2.18.0 | No release |
+
+<CollectorDeprecationNotice />
+
+<Update label="BloodHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-6182*/}
+  ## AD CS ESC11 support
+
+  BloodHound analyzes the `RPCEncryptionEnforced` property collected from Active Directory Certificate Services (AD CS) certificate authorities to identify those that may be vulnerable to ESC11 and model vulnerable RPC enrollment paths.
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  BloodHound Enterprise also reports a finding for the new `CoerceAndRelayNTLMToADCSRPC` edge.
+
+  <Note>
+    **Dependency**
+
+    This enhancement requires SharpHound v2.18.0 to collect the corresponding [AD CS ESC11 data](/resources/release-notes/2026-11-16#collect-ad-cs-esc11-properties).
+  </Note>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-6176*/}
+  ## AD CS ESC16 support
+
+  BloodHound analyzes the `DisabledExtensions` setting collected from certificate authorities to identify those that disable the security extension and may be vulnerable to ESC16.
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  BloodHound Enterprise also reports a finding for the new ESC16 attack path.
+
+  <Note>
+    **Dependency**
+
+    This enhancement requires SharpHound v2.18.0 to collect the corresponding [AD CS ESC16 data](/resources/release-notes/2026-11-16#collect-ad-cs-esc16-properties).
+  </Note>
+</Update>
+
+<Update label="BloodHound" description="New Feature" tags={["Attack Paths"]}>
+  {/*BED-10045, BED-10047*/}
+  ## Findings remediation drawer
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Open a finding's remediation drawer from the Findings Table to review its context without switching between pages. The drawer includes object-specific information for both the source and target principals.
+</Update>
+
+<Update label="OpenHound" description="New Feature" tags={["GitHub"]}>
+  {/*BED-10447*/}
+  ## GitHub enterprise OIDC identity collection
+
+  Collect GitHub enterprise identity providers and external identities for enterprises that use OIDC federation, alongside the existing SAML support. The graph now represents OIDC providers and their identity relationships.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["GitHub"]}>
+  {/*BED-10454*/}
+  ## GitHub enterprise app installations
+
+  Inspect the GitHub App installation used for enterprise collection, including its granted permissions. The collector now represents enterprise-level installations as `GH_AppInstallation` nodes in addition to organization installations.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["GitHub"]}>
+  {/*BED-10295*/}
+  ## Identify GitHub App registration owners
+
+  See who registered a GitHub App and whether the registration belongs to the collected tenant or a third party. This registration ownership is distinct from where the app is installed.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Okta"]}>
+  {/*BED-10093, BED-10053, BED-10052, BED-10007*/}
+  ## Okta collection for large environments
+
+  Tune Okta collection for large organizations with options to limit application-user and MFA collection, while improved request concurrency and rate-limit handling help collections make better use of Okta API capacity. The Okta extension also provides entity panel details for collected relationships to help investigate their composition.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  {/*BED-10091*/}
+  ## Preserve Privilege Zone rule settings
+
+  Keep your chosen enabled state for Privilege Zone rules when an extension bundle is updated. The bundle's `enabled` default now applies when a rule is created, while updates preserve an administrator's existing choice unless the rule becomes always enabled.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["PostgreSQL"]}>
+  {/*BED-10455*/}
+  ## Upgrade the DAWGS PostgreSQL driver
+
+  BloodHound upgrades DAWGS to PostgreSQL driver v2.
+</Update>
+
+<Update label="SharpHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-6182*/}
+  ## Collect AD CS ESC11 properties
+
+  Collect AD CS ESC11 data with SharpHound v2.18.0.
+
+  SharpHound collects the certificate authority's RPC encryption setting and exposes it as `RPCEncryptionEnforced` for BloodHound analysis.
+
+  See [AD CS ESC11 support](/resources/release-notes/2026-11-16#ad-cs-esc11-support) to learn how BloodHound uses this data.
+</Update>
+
+<Update label="SharpHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-6176*/}
+  ## Collect AD CS ESC16 properties
+
+  Collect AD CS ESC16 data with SharpHound v2.18.0.
+
+  SharpHound collects the certificate authority's `DisableExtensionList` setting and reports whether the value was collected successfully.
+
+  See [AD CS ESC16 support](/resources/release-notes/2026-11-16#ad-cs-esc16-support) to learn how BloodHound uses this data.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-9676, BED-10262*/}
+  ## Unified findings support in Attack Paths
+
+  The Attack Paths graph and streamed details endpoint can use the unified findings model when the `attack_paths_unified_findings_switchover` feature flag is enabled. This keeps graph findings and acceptance status consistent with the Findings Table while preserving the existing streamed response contract.
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-9834*/}
+  ## Filter findings by principal object
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Filter findings through the API by a principal object's ID. The filter matches findings where the object is either the source or target principal.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-9963*/}
+  ## Identify regressed findings in the API
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Use the `is_regression` field in findings responses to identify active findings that match a previously remediated finding for the same finding and principal objects.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-9521*/}
+  ## Find findings by object
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Search for an object in the Findings Table filters to narrow results to findings involving that object.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-9979*/}
+  ## Relative Last Analysis time
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  See how recently an analysis ran in the Attack Paths graph view. The Last Analysis value now uses readable relative timestamps such as “28 minutes ago” or “2 days ago.”
+</Update>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## Fixed Issues
+
+  The following issues have been fixed in this release:
+
+  ### Post-Processing
+
+  {/*BED-10064*/} Resolved an issue where failed processing could remove valid DCA relationships. Existing relationships are preserved when processing fails, and pruning occurs only after successful processing.
+</Update>
+
+{/* Manual review: BED-9148 and BED-9687 have no merged implementation in the available bloodhound-enterprise history. BED-10064 matches the DCA fix in BloodHound, but the commit subject is mislabeled BED-6182. BED-10455 is included on the user's instruction to assume the DAWGS driver upgrade will land before release. Local release refs are candidates: BloodHound main (no v9.10.0 tag), Enterprise v9.10.0-rc1, and SharpHound v2.18.0-rc1; OpenHound v0.5.1 has no local tag. */}
