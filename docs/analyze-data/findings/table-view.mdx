@@ -4,6 +4,7 @@ description: Review, filter, and sort Attack Path findings at scale in BloodHoun
 ---
 
 import EarlyAccessAccessNote from '/snippets/feature-flag-user-managed.mdx';
+import FeatureFlagNote from '/snippets/feature-flag-so-managed.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
@@ -108,6 +109,8 @@ Select a finding to open an action menu and continue your investigation or remed
       </Tab>
 
       <Tab title="Status">
+        <FeatureFlagNote />
+
         Displays the finding's current status. Select it to choose a different status:
 
         - **In Progress:** Marks the finding as being worked on so you and your coworkers can track remediation work.
@@ -251,15 +254,19 @@ flowchart LR
     subgraph active["Active findings"]
         direction TB
         open["<b>Open</b><br/>No active acceptance"]
-        inProgress["<b>In Progress</b><br/>Marked as being worked on"]
         accepted["<b>Accepted</b><br/>Risk acceptance is active"]
-        open -->|"Start work"| inProgress
-        inProgress -->|"Mark as Open"| open
-        inProgress -->|"Accept risk"| accepted
-        accepted -->|"Remove acceptance<br/>and start work"| inProgress
         open -->|"Accept risk"| accepted
         accepted -->|"Remove or expire<br/>acceptance"| open
     end
+
+    subgraph gated["In Progress workflow (when enabled for your instance)"]
+        inProgress["<b>In Progress</b><br/>Marked as being worked on"]
+    end
+
+    open -.->|"Start work"| inProgress
+    inProgress -.->|"Mark as Open"| open
+    inProgress -.->|"Accept risk"| accepted
+    accepted -.->|"Remove acceptance<br/>and start work"| inProgress
 
     open --> systemChange
     inProgress --> systemChange
