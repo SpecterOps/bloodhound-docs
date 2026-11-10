@@ -246,7 +246,7 @@ This query finds one minimum-length trail from each matching user to the specifi
 
 If multiple shortest trails tie, `shortestPath` does not promise which one is selected. Use `allShortestPaths` to return every relationship-distinct minimum trail; doing so can consume more resources.
 
-On PostgreSQL, searches with no upper bound can reach beyond 15 hops. They are subject to execution budgets and cancellation; budget exhaustion returns an error rather than a successful truncated result. Use an explicit bound such as `*1..15` when you intend to limit search depth.
+On PostgreSQL, searches with no upper bound are subject to execution budgets and cancellation. If a budget is exhausted, the query returns an error rather than partial results. Use an explicit bound, such as `*1..3`, when you intend to limit search depth. See [Recursive expansion](/analyze-data/explore/cypher-supported#recursive-expansion) for details.
 
 Bind shortest paths with `MATCH p = shortestPath(...)`, then use functions such as `length(p)` in `RETURN`. PostgreSQL does not support generic undirected shortest searches or shortest-path minimum bounds greater than one. See the [current shortest-path limitations](/analyze-data/explore/cypher-supported#known-defects) before combining shortest paths with mutations.
 
