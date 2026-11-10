@@ -21,12 +21,12 @@ A common way for attackers to abuse unconstrained delegation is for the attacker
 
 The attack will fail if the target is a member of Protected Users or marked as sensitive, as the TGT of those principals will not be sent to the principal with unconstrained delegation. You can find all the protected principals with this Cypher query:
 
-```bash
-MATCH (g:Group)
+```cypher
+OPTIONAL MATCH (n:Base)
+WHERE n.sensitive = TRUE
+OPTIONAL MATCH p = (:Base)-[:MemberOf*..]->(g:Group)
 WHERE g.objectid ENDS WITH "-525"
-MATCH (n:Base)
-WHERE n.sensitive = TRUE OR (n)-[:MemberOf*..]->(g)
-RETURN n
+RETURN n,p
 LIMIT 1000
 ```
 
