@@ -4,7 +4,6 @@ description: Review, filter, and sort Attack Path findings at scale in BloodHoun
 ---
 
 import EarlyAccessAccessNote from '/snippets/feature-flag-user-managed.mdx';
-import FeatureFlagNote from '/snippets/feature-flag-so-managed.mdx';
 
 <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
 
@@ -28,7 +27,7 @@ Each row in the table represents a single finding. The table displays the follow
 | **Target Principal** | The principal where the Attack Path ends. |
 | **First Seen** | When BloodHound Enterprise first created the finding. |
 | **Last Seen** | When BloodHound Enterprise last updated the finding. |
-| **Status** | The current status of the finding:<ul><li>**Open**</li><li>**In Progress**</li><li>**Accepted**</li><li>**Remediated**</li><li>**Deprecated**</li><li>**Orphaned**</li></ul> See [Finding status lifecycle](#finding-status-lifecycle) for definitions and the actions that move a finding between statuses. |
+| **Status** | The current status of the finding:<ul><li>**Open**</li><li>**Accepted**</li><li>**Remediated**</li><li>**Deprecated**</li><li>**Orphaned**</li></ul> See [Finding status lifecycle](#finding-status-lifecycle) for definitions and the actions that move a finding between statuses. |
 
 <Note>
   Some findings, typically called [list-based findings](/analyze-data/findings/attack-paths#list-based-finding), do not have a source principal.
@@ -41,7 +40,7 @@ Use the **Findings Table** to focus an investigation on a set of findings:
 - **Triage findings at scale:** Review a dense list of Attack Path findings and sort by Risk, date, status, or contextual columns. When Findings Prioritization is disabled, sort by severity instead.
 - **Focus an investigation:** Filter by Attack Path, object, severity, platform, environment, zone, and status to move from a broad result set to a smaller set that matches your investigation goal.
 - **Compare scope across environments or zones:** Select multiple environments or zones and review the matching findings together.
-- **Review finding state and recency:** Use **Status**, **First Seen**, and **Last Seen** to understand whether findings are open, in progress, accepted, remediated, deprecated, or orphaned, and when BloodHound Enterprise last updated them.
+- **Review finding state and recency:** Use **Status**, **First Seen**, and **Last Seen** to understand whether findings are open, accepted, remediated, deprecated, or orphaned, and when BloodHound Enterprise last updated them.
 - **Investigate or remediate a finding:** Select a finding to open it in **Explore** or review its remediation plan.
 - **Preserve table context:** Use the page URL to return to or share the same view, filters, and sort order.
 
@@ -92,40 +91,12 @@ Select a finding to open an action menu and continue your investigation or remed
   <Step title="Choose an action">
     Select one of the following actions:
 
-    <Tabs>
-      <Tab title="Remediation Plan">
-        Opens the **Remediation** page filtered to the selected finding, environment, and privilege zone.
-      </Tab>
-
-      <Tab title="Explore">
-        Opens the finding in **Explore**.
-
-        - Relationship-based findings open in **Pathfinding** with the path between the source and target principals.
-        - List-based findings open in **Search**.
-      </Tab>
-
-      <Tab title="Copy">
-        Opens a submenu with **Copy Source** and **Copy Target** options to copy a principal's name to your clipboard.
-      </Tab>
-
-      <Tab title="Status">
-        <FeatureFlagNote />
-
-        Displays the finding's current status. Select it to choose a different status:
-
-        - **In Progress:** Marks the finding as being worked on so you and your coworkers can track remediation work.
-        - **Open:** Marks the finding as needing attention without indicating that work is in progress.
-        - **Accepted:** Opens a dialog to [accept the risk](/analyze-data/findings/risk-acceptance) for a set duration.
-
-        The menu excludes the finding's current status. After a successful status change, the table refreshes.
-
-        Changing an **Accepted** finding to **Open** or **In Progress** removes its risk acceptance.
-
-        <Tip>
-          The default **Status** filter includes **In Progress**. If you customize the filter, include **In Progress** to keep findings visible after you mark them as being worked on.
-        </Tip>
-      </Tab>
-    </Tabs>
+    - **Remediation Plan:** Opens the **Remediation** page filtered to the selected finding, environment, and privilege zone.
+    - **Explore:** Opens the finding in **Explore**.
+    
+      - Relationship-based findings open in **Pathfinding** with the path between the source and target principals.
+      - List-based findings open in **Search**.
+    - **Copy:** Opens a submenu with **Copy Source** and **Copy Target** options to copy a principal's name to your clipboard.
   </Step>
 </Steps>
 
@@ -140,7 +111,7 @@ Use filters to narrow the result set:
 | **Attack Paths** | Search for and select one or more Attack Path finding types. |
 | **Environment** | Select one or more environments, such as an Active Directory domain, Azure tenant, or OpenGraph environment. |
 | **Zone** | Select one or more privilege zones to focus on findings within those zones. |
-| **Status** | Select one or more finding statuses: **Open**, **In Progress**, **Accepted**, **Remediated**, **Deprecated**, and **Orphaned**.<br/><br/>By default, the table shows **Open**, **In Progress**, and **Accepted** findings. Hover over the information icon next to **Status** for status definitions. |
+| **Status** | Select one or more finding statuses: **Open**, **Accepted**, **Remediated**, **Deprecated**, and **Orphaned**. By default, the table shows **Open** and **Accepted** findings. |
 | **Objects** | Search for and select one or more objects. The table shows findings where a selected object is the source or target principal. |
 
 The filters support multi-select. For **Objects**, search by an object's name or identifier, then select it from the results. Selecting **All Objects** removes the object filter.
@@ -260,17 +231,7 @@ flowchart LR
         accepted -->|"Remove or expire<br/>acceptance"| open
     end
 
-    subgraph gated["In Progress workflow (when enabled for your instance)"]
-        inProgress["<b>In Progress</b><br/>Marked as being worked on"]
-    end
-
-    open -.->|"Start work"| inProgress
-    inProgress -.->|"Mark as Open"| open
-    inProgress -.->|"Accept risk"| accepted
-    accepted -.->|"Remove acceptance<br/>and start work"| inProgress
-
     open --> systemChange
-    inProgress --> systemChange
     accepted --> systemChange
 
     subgraph archived["System-archived outcomes"]
@@ -290,13 +251,12 @@ flowchart LR
 The following table describes the stored value and meaning of each finding status, and whether the status marks a finding as archived.
 
 <Tip>
-  Open and in-progress findings use normal emphasis, while accepted and archived findings are dimmed so you can focus on findings that need attention without checking the **Status** column for every row.
+  Open findings use normal emphasis, while accepted and archived findings are dimmed so you can focus on findings that need attention without checking the **Status** column for every row.
 </Tip>
 
 | Status | Stored value | Meaning | Archived |
 | --- | --- | --- | --- |
 | **Open** | `active` | BloodHound currently detects the finding and no acceptance applies. This is the default state for a newly detected finding, and it needs attention. | No |
-| **In Progress** | `in_progress` | You marked the finding as being worked on. The finding remains active while remediation is underway. | No |
 | **Accepted** | `accepted` | You accepted the finding as a known risk and the acceptance has not expired. Accepted findings remain in posture calculations. | No |
 | **Remediated** | `remediated` | A later analysis run no longer detects the Attack Path, so BloodHound archived the finding. This reflects actual risk reduction. | Yes |
 | **Orphaned** | `orphaned` | The environment or OpenGraph extension associated with the finding was archived or removed and is no longer collected, so BloodHound archived the finding. | Yes |
@@ -304,13 +264,10 @@ The following table describes the stored value and meaning of each finding statu
 
 ### User-driven transitions
 
-Use the [action menu](#take-action-on-a-finding) to change a finding's status:
+You control the transition between **Open** and **Accepted**:
 
-- **Open to In Progress:** Mark the finding as being worked on.
-- **In Progress to Open:** Mark the finding as open when it is no longer being worked on.
-- **Open or In Progress to Accepted:** Accept the finding and set an acceptance duration. BloodHound records an acceptance expiration for the finding. For steps, see [Risk Acceptance](/analyze-data/findings/risk-acceptance).
+- **Open to Accepted:** Accept the finding and set an acceptance duration. BloodHound records an acceptance expiration for the finding. For steps, see [Risk Acceptance](/analyze-data/findings/risk-acceptance).
 - **Accepted to Open:** Remove the acceptance manually, or wait for the acceptance period to expire. In both cases, the finding returns to **Open**.
-- **Accepted to In Progress:** Mark the finding as being worked on. This removes its risk acceptance.
 
 ### System-driven transitions
 
@@ -323,5 +280,5 @@ BloodHound sets the archived statuses automatically during analysis. You cannot 
 <Note>
   **Remediated**, **Orphaned**, and **Deprecated** are terminal, archived states. When BloodHound archives a finding, it records an archive time and updates the finding's last-updated time.
 
-  **First Seen** reflects when the finding was first created, and **Last Seen** reflects the most recent update, including a status change. **Open**, **In Progress**, and **Accepted** findings are not archived and continue to count toward your posture.
+  **First Seen** reflects when the finding was first created, and **Last Seen** reflects the most recent update, including a status change. **Open** and **Accepted** findings are not archived and continue to count toward your posture.
 </Note>
