@@ -3,34 +3,19 @@ title: 'GH_CanDeployToEnvironment'
 description: '[Computed] Repository, branch, repo role, or reviewer can deploy to this GitHub environment after evaluating deployment branch policy, reviewer gates, and admin bypass behavior; reviewer edges require both self-approval and a deployable code path'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
 
 ## Edge Schema
 
 - Traversable: ✅
 
-| Start | Kind | End |
-|-------|-----------|-------|
-| [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | GH_CanDeployToEnvironment | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
-| [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) | GH_CanDeployToEnvironment | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
-| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | GH_CanDeployToEnvironment | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
-| [GH_User](/opengraph/extensions/github/nodes/gh_user) | GH_CanDeployToEnvironment | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
-| [GH_Team](/opengraph/extensions/github/nodes/gh_team) | GH_CanDeployToEnvironment | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
-
-```mermaid
-flowchart LR
-    GH_Branch["GH_Branch"]
-    GH_Environment["GH_Environment"]
-    GH_RepoRole["GH_RepoRole"]
-    GH_Repository["GH_Repository"]
-    GH_Team["GH_Team"]
-    GH_User["GH_User"]
-    GH_Branch -- GH_CanDeployToEnvironment --> GH_Environment
-    GH_RepoRole -- GH_CanDeployToEnvironment --> GH_Environment
-    GH_Repository -- GH_CanDeployToEnvironment --> GH_Environment
-    GH_Team -- GH_CanDeployToEnvironment --> GH_Environment
-    GH_User -- GH_CanDeployToEnvironment --> GH_Environment
-```
+| Source | Destination |
+| --- | --- |
+| [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
+| [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
+| [GH_Team](/opengraph/extensions/github/nodes/gh_team) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
+| [GH_User](/opengraph/extensions/github/nodes/gh_user) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
 
 ## General Information
 
@@ -41,16 +26,6 @@ This edge is computed from environment deployment branch policy, branch protecti
 When required reviewers are configured and self-review is allowed, a configured [GH_User](/opengraph/extensions/github/nodes/gh_user) or [GH_Team](/opengraph/extensions/github/nodes/gh_team) reviewer receives GH_CanDeployToEnvironment only when the same actor can also supply deployable code. For unrestricted environments this means the actor can create a branch in the repository. For protected-branch-only or custom branch policy environments this means the actor can write to an eligible branch under the existing [GH_CanWriteBranch](/opengraph/extensions/github/edges/gh_canwritebranch) rules.
 
 Self-review alone is not sufficient for this edge. [GH_ApprovesDeploymentTo](/opengraph/extensions/github/edges/gh_approvesdeploymentto) remains the non-traversable representation of reviewer authority, while GH_CanDeployToEnvironment represents the combined ability to satisfy both the approval gate and the code-supply path. When prevent_self_review is enabled, no direct deploy edge is emitted for the reviewer because the required split-principal flow is not currently modeled.
-
-## Edge Schema
-
-| Source | Destination | Traversable |
-| --- | --- | --- |
-| [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | `true` |
-| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | `true` |
-| [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | `true` |
-| [GH_Team](/opengraph/extensions/github/nodes/gh_team) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | `true` |
-| [GH_User](/opengraph/extensions/github/nodes/gh_user) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | `true` |
 
 ## Diagram
 
@@ -68,3 +43,55 @@ graph LR
     n4 -->|GH_CanDeployToEnvironment| n1
     n5 -->|GH_CanDeployToEnvironment| n1
 ```
+
+## Abuse Info
+
+A source repository, branch, role or reviewer can reach an environment only when the modeled deployment policy and reviewer/admin conditions are satisfied. The reviewer edge requires both self-approval and a deployable code path; review assignment alone is [GH_ApprovesDeploymentTo](/opengraph/extensions/github/edges/gh_approvesdeploymentto).
+
+Abuse using GitHub UI:
+
+Open the run's Review deployments view and compare it with repository Settings > Environments. Confirm the run ref is eligible before interpreting approval as a complete attack path.
+
+Abuse using API:
+
+1. Authenticate in the source context and set the exact destination identifiers. These examples require Bash, curl and jq. URL-encode path values that contain reserved characters. Use the configured server API root for GitHub Enterprise Server.
+
+```bash
+set -euo pipefail
+export GITHUB_API="https://api.github.com"
+export GITHUB_TOKEN="REPLACE_WITH_AUTHORIZED_TOKEN"
+export OWNER="controlled-org"
+export REPO="controlled-repo"
+export ENVIRONMENT="controlled-canary"
+export RUN_ID="1"
+api() {
+  curl --fail-with-body -sS \
+    -H "Authorization: Bearer $GITHUB_TOKEN" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "$GITHUB_API$1"
+}
+```
+
+2. Check the source grant or execution context. Successful JSON reads return HTTP 200; authorization failures do not validate the path.
+
+```bash
+api "/repos/$OWNER/$REPO/environments/$ENVIRONMENT" | jq '{id,name,protection_rules,deployment_branch_policy,can_admins_bypass}'
+```
+
+3. Verify the destination or adjacent control, then interpret the result within the edge's scope. Paginated listings require following all pages when used for complete coverage.
+
+```bash
+api "/repos/$OWNER/$REPO/actions/runs/$RUN_ID/pending_deployments" | jq '.[]|{environment,current_user_can_approve,reviewers}'
+```
+
+An environment record plus current_user_can_approve is supporting evidence, not completed deployment. Inspect the actual run's ref, reviewer identity, self-review policy and custom protection rules. A successful job after those gates is needed to establish a live deployment.
+
+## Opsec Considerations
+
+Deployment review history, Actions run logs and audit events identify the actor and environment. Do not treat an existing reviewer relationship as evidence that the actor approved a particular run.
+
+## References
+
+- [Deployment environments API](https://docs.github.com/en/rest/deployments/environments)
+- [Workflow runs API](https://docs.github.com/en/rest/actions/workflow-runs)

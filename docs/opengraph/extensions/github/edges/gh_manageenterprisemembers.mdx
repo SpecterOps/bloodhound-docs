@@ -3,32 +3,19 @@ title: 'GH_ManageEnterpriseMembers'
 description: '[Enterprise] Enterprise role can manage enterprise members'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
 
 ## Edge Schema
 
 - Traversable: ✅
 
-| Start | Kind | End |
-|-------|-----------|-------|
-| [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | GH_ManageEnterpriseMembers | [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) |
-
-```mermaid
-flowchart LR
-    GH_Enterprise["GH_Enterprise"]
-    GH_EnterpriseRole["GH_EnterpriseRole"]
-    GH_EnterpriseRole -- GH_ManageEnterpriseMembers --> GH_Enterprise
-```
+| Source | Destination |
+| --- | --- |
+| [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) |
 
 ## General Information
 
 [Enterprise] Enterprise role can manage enterprise members.
-
-## Edge Schema
-
-| Source | Destination | Traversable |
-| --- | --- | --- |
-| [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | `true` |
 
 ## Diagram
 
@@ -38,3 +25,55 @@ graph LR
     n1["GH_Enterprise"]
     n0 -->|GH_ManageEnterpriseMembers| n1
 ```
+
+## Abuse Info
+
+An authenticated principal holding the source enterprise role can manage enterprise membership within the destination enterprise. Confirm the actual capability in the role permissions; a traversable capability is not proof of unrestricted enterprise-owner access.
+
+Abuse using GitHub UI:
+
+Inspect the enterprise role and its user/team assignments in enterprise settings, then the specific administrators or members view for this capability. For provisioned identities, use the authoritative IdP lifecycle workflow.
+
+Abuse using API:
+
+1. Authenticate in the source context and set the exact destination identifiers. These examples require Bash, curl and jq. URL-encode path values that contain reserved characters. Use the configured server API root for GitHub Enterprise Server.
+
+```bash
+set -euo pipefail
+export GITHUB_API="https://api.github.com"
+export GITHUB_TOKEN="REPLACE_WITH_AUTHORIZED_TOKEN"
+export OWNER="controlled-org"
+export REPO="controlled-repo"
+export ENTERPRISE="example-enterprise"
+export ROLE_ID="1"
+api() {
+  curl --fail-with-body -sS \
+    -H "Authorization: Bearer $GITHUB_TOKEN" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "$GITHUB_API$1"
+}
+```
+
+2. Check the source grant or execution context. Successful JSON reads return HTTP 200; authorization failures do not validate the path.
+
+```bash
+api "/enterprises/$ENTERPRISE/enterprise-roles/$ROLE_ID" | jq '{id,name,source,permissions}'
+```
+
+3. Verify the destination or adjacent control, then interpret the result within the edge's scope. Paginated listings require following all pages when used for complete coverage.
+
+```bash
+api "/enterprises/$ENTERPRISE/enterprise-roles/$ROLE_ID/users?per_page=100" | jq 'map({login,node_id,assignment})'
+```
+
+Use enterprise-authorized credentials and confirm the relevant permission plus a controlled assignee. Team assignments require the role teams endpoint as well. These read operations inspect the grant; they do not demonstrate that a member-management mutation succeeds or bypasses enterprise managed-user provisioning.
+
+## Opsec Considerations
+
+Enterprise role/membership audit logs and IdP provisioning logs are the relevant sources. A membership operation has different effects from editing an enterprise role, so retain the actor and target identity for each.
+
+## References
+
+- [Enterprise roles](https://docs.github.com/en/enterprise-cloud@latest/rest/enterprise-admin/enterprise-roles)
+- [Enterprise SCIM API](https://docs.github.com/en/enterprise-cloud@latest/rest/enterprise-admin/scim)
