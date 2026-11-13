@@ -3,15 +3,22 @@ title: 'GH_CanCreateBranch'
 description: '[Repository - Computed] Role can create new branches in this repository (unprotected branches that bypass the merge gate)'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 ## Edge Schema
 
 - Traversable: ✅
 
-| Source | Destination |
-| --- | --- |
-| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) |
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | GH_CanCreateBranch | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) |
+
+```mermaid
+flowchart LR
+    GH_RepoRole["GH_RepoRole"]
+    GH_Repository["GH_Repository"]
+    GH_RepoRole -- GH_CanCreateBranch --> GH_Repository
+```
 
 ## General Information
 
@@ -23,6 +30,12 @@ The traversable GH_CanCreateBranch edge is a computed edge indicating that a rol
 
 No wildcard (`*`) BPR with `blocks_creations` exists. Any write-capable role can create new branches.
 
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | `false` |
+
 ## Diagram
 
 ```mermaid
@@ -31,54 +44,3 @@ graph LR
     n1["GH_Repository"]
     n0 -.->|GH_CanCreateBranch| n1
 ```
-
-## Abuse Info
-
-A principal holding the source repository role may create a branch that satisfies the modeled creation constraints. A new ref does not guarantee workflow execution: rulesets, token workflow permissions, Actions policy and trigger configuration still apply.
-
-Abuse using GitHub UI:
-
-Review repository Rules and Actions settings before creating a uniquely named controlled branch through the normal branch selector. The graph predicts capability from the collected policies.
-
-Abuse using API:
-
-1. Authenticate in the source context and set the exact destination identifiers. These examples require Bash, curl and jq. URL-encode path values that contain reserved characters. Use the configured server API root for GitHub Enterprise Server.
-
-```bash
-set -euo pipefail
-export GITHUB_API="https://api.github.com"
-export GITHUB_TOKEN="REPLACE_WITH_AUTHORIZED_TOKEN"
-export OWNER="controlled-org"
-export REPO="controlled-repo"
-export BRANCH="main"
-api() {
-  curl --fail-with-body -sS \
-    -H "Authorization: Bearer $GITHUB_TOKEN" \
-    -H "Accept: application/vnd.github+json" \
-    -H "X-GitHub-Api-Version: 2022-11-28" \
-    "$GITHUB_API$1"
-}
-```
-
-2. Check the source grant or execution context. Successful JSON reads return HTTP 200; authorization failures do not validate the path.
-
-```bash
-api "/repos/$OWNER/$REPO/git/ref/heads/$BRANCH" | jq '{ref,object}'
-```
-
-3. Verify the destination or adjacent control, then interpret the result within the edge's scope. Paginated listings require following all pages when used for complete coverage.
-
-```bash
-api "/repos/$OWNER/$REPO/actions/workflows?per_page=100" | jq '.workflows[]|{id,path,state}'
-```
-
-Inspect a controlled existing ref and the workflows applicable to it. A complete live validation needs a unique test branch, a permitted ref-creation request and a read-back of its SHA; the verification reads here deliberately make no new ref. Do not confuse raw [GH_WriteRepoContents](/opengraph/extensions/github/edges/gh_writerepocontents) with the computed creation decision.
-
-## Opsec Considerations
-
-Branch creation and subsequent commits/workflow runs create repository activity and Actions history. A metadata read does not validate those state changes.
-
-## References
-
-- [Git references API](https://docs.github.com/en/rest/git/refs)
-- [Branch protection API](https://docs.github.com/en/rest/branches/branch-protection)

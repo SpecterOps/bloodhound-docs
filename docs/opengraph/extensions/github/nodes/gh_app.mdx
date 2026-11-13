@@ -4,13 +4,37 @@ description: 'A GitHub App definition representing the registered application. T
 icon: '/images/extensions/github/gh_app.png'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 ## General Information
 
-Represents a GitHub App definition — the registered application entity. The app owner holds the private key that can generate installation access tokens for **every** [GH_AppInstallation](/opengraph/extensions/github/nodes/gh_appinstallation) of this app. If the private key is compromised, all installations across all organizations and enterprises are affected.
+Represents a GitHub App definition — the registered application entity. The app owner holds the private key that can generate installation access tokens for **every** [GH_AppInstallation](/opengraph/extensions/github/nodes/gh_appinstallation) of this app. If the private key is compromised, all installations across all organizations are affected.
 
-App definitions are retrieved via `GET /apps/{app_slug}` after discovering app slugs from organization installations or the collector app's enterprise installation. Authenticated lookup can also retrieve private/internal apps where GitHub permits access. The `permissions` property records requested app permissions; each installation separately records its granted permissions.
+App definitions are retrieved via the public `GET /apps/{app_slug}` endpoint (no authentication required) after discovering unique app slugs from the organization's app installations.
+
+## Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | The node name used for matching and display. |
+| `displayname` | `string` | The human-readable display name. |
+| `environmentid` | `string` | The identifier of the GitHub environment where this node was collected. |
+| `last_seen` | `datetime` | The timestamp when this node was last observed during collection. |
+| `node_id` | `string` | The stable identifier used as the OpenGraph node ID; this is the native GitHub node ID where available. |
+| `id` | `integer` | The GitHub App's numeric ID. |
+| `client_id` | `string` | The app's OAuth client ID. |
+| `slug` | `string` | The app's URL-friendly slug identifier. |
+| `description` | `string` | The app's description. |
+| `external_url` | `string` | The app's external homepage URL. |
+| `html_url` | `string` | URL to the app's GitHub page. |
+| `owner_login` | `string` | The login of the user or organization that owns the app. |
+| `owner_node_id` | `string` | The node_id of the user or organization that owns the app. |
+| `owner_type` | `string` | The type of the owner (e.g., `User`, `Organization`). |
+| `events` | `list[string]` | JSON string of the default webhook events the app subscribes to. |
+| `installations_count` | `integer` | The total number of installations of this app across all organizations. |
+| `created_at` | `datetime` | When the app was created. |
+| `updated_at` | `datetime` | When the app was last updated. |
+| `query_installations` | `string` | Query for installations. |
 
 ## Diagram
 
@@ -18,13 +42,7 @@ App definitions are retrieved via `GET /apps/{app_slug}` after discovering app s
 graph LR
     n0["GH_App"]
     n1["GH_AppInstallation"]
-    n2["GH_Enterprise"]
-    n3["GH_Organization"]
-    n4["GH_User"]
     n0 -->|GH_InstalledAs| n1
-    n2 -->|GH_Owns| n0
-    n3 -->|GH_Owns| n0
-    n4 -->|GH_Owns| n0
 ```
 
 ## Edges
@@ -33,48 +51,44 @@ graph LR
 The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
 </Note>
 
+```mermaid
+flowchart LR
+
+    GH_App["GH_App"]
+    GH_AppInstallation["GH_AppInstallation"]
+    GH_App -- GH_InstalledAs --> GH_AppInstallation
+```
+
 ### Inbound Edges
 
-| Edge | Source Node | Traversable |
-| --- | --- | --- |
-| [GH_Owns](/opengraph/extensions/github/edges/gh_owns) | [GH_Enterprise](/opengraph/extensions/github/nodes/gh_enterprise) | ✅ |
-| [GH_Owns](/opengraph/extensions/github/edges/gh_owns) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ✅ |
-| [GH_Owns](/opengraph/extensions/github/edges/gh_owns) | [GH_User](/opengraph/extensions/github/nodes/gh_user) | ✅ |
+No inbound edges are defined by the GitHub extension for this node.
 
 ### Outbound Edges
 
-| Edge | Destination Node | Traversable |
-| --- | --- | --- |
+| Edge Type | Destination Node Types | Traversable |
+| --------- | ---------------------- | ----------- |
 | [GH_InstalledAs](/opengraph/extensions/github/edges/gh_installedas) | [GH_AppInstallation](/opengraph/extensions/github/nodes/gh_appinstallation) | ✅ |
 
 ## Properties
 
-| Name | Type | Description |
-| --- | --- | --- |
-| `client_id` | `null \| string` | The app&#39;s OAuth client ID. |
-| `created_at` | `datetime \| null` | When the app was created. |
-| `description` | `null \| string` | The app&#39;s description. |
-| `displayname` | `string` |  |
-| `environment_slug` | `null \| string` | The organization login or enterprise slug where the app was collected. |
-| `environmentid` | `string` |  |
-| `events` | `array<string> \| null` | JSON string of the default webhook events the app subscribes to. |
-| `external_url` | `null \| string` | The app&#39;s external homepage URL. |
-| `html_url` | `null \| string` | URL to the app&#39;s GitHub page. |
-| `id` | `integer \| null` | The GitHub App&#39;s numeric ID. |
-| `installations_count` | `integer \| null` | The total number of installations of this app across all organizations. |
-| `last_seen` | `datetime` |  |
-| `name` | `string` |  |
-| `node_id` | `string` |  |
-| `owner_login` | `null \| string` | The login of the user or organization that owns the app. |
-| `owner_node_id` | `null \| string` | The node_id of the user or organization that owns the app. |
-| `owner_type` | `null \| string` | The type of the owner (e.g., `User`, `Organization`). |
-| `permissions` | `array<string> \| null` | Requested app permissions in `scope:access` form. |
-| `query_installations` | `null \| string` | Query for installations. |
-| `query_owner` | `null \| string` | Query for the account that registered the app. |
-| `registration_origin` | `null \| string` | Whether the app is tenant-owned, third-party, or unknown. |
-| `slug` | `null \| string` | The app&#39;s URL-friendly slug identifier. |
-| `updated_at` | `datetime \| null` | When the app was last updated. |
-
-## References
-
-- [GitHub App installation authentication](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-as-a-github-app-installation)
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `name` | `str` | - |
+| `displayname` | `str` | - |
+| `environmentid` | `str` | - |
+| `last_seen` | `datetime` | - |
+| `node_id` | `str` | - |
+| `id` | `int \| None` | The GitHub App's numeric ID. |
+| `client_id` | `str \| None` | The app's OAuth client ID. |
+| `slug` | `str \| None` | The app's URL-friendly slug identifier. |
+| `description` | `str \| None` | The app's description. |
+| `external_url` | `str \| None` | The app's external homepage URL. |
+| `html_url` | `str \| None` | URL to the app's GitHub page. |
+| `owner_login` | `str \| None` | The login of the user or organization that owns the app. |
+| `owner_node_id` | `str \| None` | The node_id of the user or organization that owns the app. |
+| `owner_type` | `str \| None` | The type of the owner (e.g., `User`, `Organization`). |
+| `events` | `list[str] \| None` | JSON string of the default webhook events the app subscribes to. |
+| `installations_count` | `int \| None` | The total number of installations of this app across all organizations. |
+| `created_at` | `datetime \| None` | When the app was created. |
+| `updated_at` | `datetime \| None` | When the app was last updated. |
+| `query_installations` | `str \| None` | Query for installations. |

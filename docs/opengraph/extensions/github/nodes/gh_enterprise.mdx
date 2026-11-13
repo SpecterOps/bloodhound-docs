@@ -4,11 +4,36 @@ description: 'A GitHub Enterprise account that contains organizations, enterpris
 icon: '/images/extensions/github/gh_enterprise.png'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 ## General Information
 
 A GitHub Enterprise account that contains organizations, enterprise teams, roles, and managed users.
+
+## Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | The node name used for matching and display. |
+| `displayname` | `string` | The human-readable display name. |
+| `environmentid` | `string` | The identifier of the GitHub environment where this node was collected. |
+| `last_seen` | `datetime` | The timestamp when this node was last observed during collection. |
+| `node_id` | `string` | The stable identifier used as the OpenGraph node ID; this is the native GitHub node ID where available. |
+| `collected` | `boolean` | Whether this node was collected directly. |
+| `slug` | `string` | The enterprise slug. |
+| `enterprise_name` | `string` | The enterprise display name. |
+| `description` | `string` | The enterprise description. |
+| `location` | `string` | The enterprise location. |
+| `url` | `string` | The enterprise GitHub URL. |
+| `website_url` | `string` | The enterprise website URL. |
+| `created_at` | `string` | When the enterprise was created. |
+| `updated_at` | `string` | When the enterprise was last updated. |
+| `billing_email` | `string` | The enterprise billing email. |
+| `viewer_is_admin` | `boolean` | Whether the authenticated viewer is an enterprise admin. |
+| `github_deployment_type` | `string` | The GitHub deployment type, such as `ghec` or `ghes`. |
+| `ghes_version` | `string` | The GitHub Enterprise Server version, when applicable. |
+| `environment_name` | `string` | The enterprise environment name. |
+| `query_organizations` | `string` | Query for contained organizations. |
 
 ## Diagram
 
@@ -62,10 +87,55 @@ graph LR
 The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
 </Note>
 
+```mermaid
+flowchart LR
+
+    GH_ClassicPersonalAccessToken["GH_ClassicPersonalAccessToken"]
+    GH_Enterprise["GH_Enterprise"]
+    GH_EnterpriseManagedUser["GH_EnterpriseManagedUser"]
+    GH_EnterpriseRole["GH_EnterpriseRole"]
+    GH_EnterpriseRunnerGroup["GH_EnterpriseRunnerGroup"]
+    GH_EnterpriseTeam["GH_EnterpriseTeam"]
+    GH_Organization["GH_Organization"]
+    GH_SamlIdentityProvider["GH_SamlIdentityProvider"]
+    GH_User["GH_User"]
+    GH_Enterprise -- GH_Contains --> GH_ClassicPersonalAccessToken
+    GH_Enterprise -- GH_Contains --> GH_EnterpriseRole
+    GH_Enterprise -- GH_Contains --> GH_EnterpriseRunnerGroup
+    GH_Enterprise -- GH_Contains --> GH_EnterpriseTeam
+    GH_Enterprise -- GH_Contains --> GH_Organization
+    GH_Enterprise -- GH_HasMember --> GH_EnterpriseManagedUser
+    GH_Enterprise -- GH_HasMember --> GH_User
+    GH_Enterprise -- GH_HasSamlIdentityProvider --> GH_SamlIdentityProvider
+    GH_EnterpriseRole -- GH_CreateEnterpriseOrganizations --> GH_Enterprise
+    GH_EnterpriseRole -- GH_EditEnterpriseCustomPropertiesForOrganizations --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ManageEnterpriseAdmins --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ManageEnterpriseIdentityProvider --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ManageEnterpriseMembers --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ManageEnterpriseOrganizationAdmins --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ManageEnterpriseOrganizations --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ManageEnterpriseReferrals --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ManageEnterpriseTeams --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ReadEnterpriseAuditLog --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ReadEnterpriseDomainVerification --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ReadEnterpriseMembers --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ReadEnterpriseOrganizationAdmin --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ReadEnterpriseOrgProjects --> GH_Enterprise
+    GH_EnterpriseRole -- GH_SetEnterpriseInteractionLimits --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ViewEnterpriseActionsUsageMetrics --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ViewEnterpriseBilling --> GH_Enterprise
+    GH_EnterpriseRole -- GH_ViewEnterpriseSecretScanningAlerts --> GH_Enterprise
+    GH_EnterpriseRole -- GH_WriteEnterpriseActionsPolicies --> GH_Enterprise
+    GH_EnterpriseRole -- GH_WriteEnterpriseBilling --> GH_Enterprise
+    GH_EnterpriseRole -- GH_WriteEnterprisePersonalAccessTokenPolicies --> GH_Enterprise
+    GH_EnterpriseRole -- GH_WriteEnterpriseSso --> GH_Enterprise
+    GH_EnterpriseRole -- GH_WriteEnterpriseTeamMembers --> GH_Enterprise
+```
+
 ### Inbound Edges
 
-| Edge | Source Node | Traversable |
-| --- | --- | --- |
+| Edge Type | Source Node Types | Traversable |
+| --------- | ----------------- | ----------- |
 | [GH_CreateEnterpriseOrganizations](/opengraph/extensions/github/edges/gh_createenterpriseorganizations) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | ❌ |
 | [GH_EditEnterpriseCustomPropertiesForOrganizations](/opengraph/extensions/github/edges/gh_editenterprisecustompropertiesfororganizations) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | ❌ |
 | [GH_ManageEnterpriseAdmins](/opengraph/extensions/github/edges/gh_manageenterpriseadmins) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | ✅ |
@@ -78,8 +148,8 @@ The tables below list edges defined by the GitHub extension only. Additional edg
 | [GH_ReadEnterpriseAuditLog](/opengraph/extensions/github/edges/gh_readenterpriseauditlog) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | ❌ |
 | [GH_ReadEnterpriseDomainVerification](/opengraph/extensions/github/edges/gh_readenterprisedomainverification) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | ❌ |
 | [GH_ReadEnterpriseMembers](/opengraph/extensions/github/edges/gh_readenterprisemembers) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | ❌ |
-| [GH_ReadEnterpriseOrgProjects](/opengraph/extensions/github/edges/gh_readenterpriseorgprojects) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | ❌ |
 | [GH_ReadEnterpriseOrganizationAdmin](/opengraph/extensions/github/edges/gh_readenterpriseorganizationadmin) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | ❌ |
+| [GH_ReadEnterpriseOrgProjects](/opengraph/extensions/github/edges/gh_readenterpriseorgprojects) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | ❌ |
 | [GH_SetEnterpriseInteractionLimits](/opengraph/extensions/github/edges/gh_setenterpriseinteractionlimits) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | ❌ |
 | [GH_ViewEnterpriseActionsUsageMetrics](/opengraph/extensions/github/edges/gh_viewenterpriseactionsusagemetrics) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | ❌ |
 | [GH_ViewEnterpriseBilling](/opengraph/extensions/github/edges/gh_viewenterprisebilling) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | ❌ |
@@ -92,45 +162,33 @@ The tables below list edges defined by the GitHub extension only. Additional edg
 
 ### Outbound Edges
 
-| Edge | Destination Node | Traversable |
-| --- | --- | --- |
-| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_AppInstallation](/opengraph/extensions/github/nodes/gh_appinstallation) | ❌ |
-| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_ClassicPersonalAccessToken](/opengraph/extensions/github/nodes/gh_classicpersonalaccesstoken) | ❌ |
-| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole) | ❌ |
-| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_EnterpriseRunnerGroup](/opengraph/extensions/github/nodes/gh_enterpriserunnergroup) | ❌ |
-| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_EnterpriseTeam](/opengraph/extensions/github/nodes/gh_enterpriseteam) | ❌ |
-| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
-| [GH_HasMember](/opengraph/extensions/github/edges/gh_hasmember) | [GH_EnterpriseManagedUser](/opengraph/extensions/github/nodes/gh_enterprisemanageduser) | ❌ |
-| [GH_HasMember](/opengraph/extensions/github/edges/gh_hasmember) | [GH_User](/opengraph/extensions/github/nodes/gh_user) | ❌ |
-| [GH_HasOidcIdentityProvider](/opengraph/extensions/github/edges/gh_hasoidcidentityprovider) | [GH_OidcIdentityProvider](/opengraph/extensions/github/nodes/gh_oidcidentityprovider) | ❌ |
+| Edge Type | Destination Node Types | Traversable |
+| --------- | ---------------------- | ----------- |
+| [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_ClassicPersonalAccessToken](/opengraph/extensions/github/nodes/gh_classicpersonalaccesstoken), [GH_EnterpriseRole](/opengraph/extensions/github/nodes/gh_enterpriserole), [GH_EnterpriseRunnerGroup](/opengraph/extensions/github/nodes/gh_enterpriserunnergroup), [GH_EnterpriseTeam](/opengraph/extensions/github/nodes/gh_enterpriseteam), [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
+| [GH_HasMember](/opengraph/extensions/github/edges/gh_hasmember) | [GH_EnterpriseManagedUser](/opengraph/extensions/github/nodes/gh_enterprisemanageduser), [GH_User](/opengraph/extensions/github/nodes/gh_user) | ❌ |
 | [GH_HasSamlIdentityProvider](/opengraph/extensions/github/edges/gh_hassamlidentityprovider) | [GH_SamlIdentityProvider](/opengraph/extensions/github/nodes/gh_samlidentityprovider) | ❌ |
-| [GH_Owns](/opengraph/extensions/github/edges/gh_owns) | [GH_App](/opengraph/extensions/github/nodes/gh_app) | ✅ |
 
 ## Properties
 
-| Name | Type | Description |
-| --- | --- | --- |
-| `billing_email` | `null \| string` | The enterprise billing email. |
-| `collected` | `boolean` | Whether this node was collected directly. |
-| `created_at` | `null \| string` | When the enterprise was created. |
-| `description` | `null \| string` | The enterprise description. |
-| `displayname` | `string` |  |
-| `enterprise_name` | `null \| string` | The enterprise display name. |
-| `environment_name` | `null \| string` | The enterprise environment name. |
-| `environmentid` | `string` |  |
-| `ghes_version` | `null \| string` | The GitHub Enterprise Server version, when applicable. |
-| `github_deployment_type` | `null \| string` | The GitHub deployment type, such as `ghec` or `ghes`. |
-| `last_seen` | `datetime` |  |
-| `location` | `null \| string` | The enterprise location. |
-| `name` | `string` |  |
-| `node_id` | `string` |  |
-| `query_organizations` | `null \| string` | Query for contained organizations. |
-| `slug` | `null \| string` | The enterprise slug. |
-| `updated_at` | `null \| string` | When the enterprise was last updated. |
-| `url` | `null \| string` | The enterprise GitHub URL. |
-| `viewer_is_admin` | `boolean \| null` | Whether the authenticated viewer is an enterprise admin. |
-| `website_url` | `null \| string` | The enterprise website URL. |
-
-## References
-
-- [Enterprise roles](https://docs.github.com/en/enterprise-cloud@latest/rest/enterprise-admin/enterprise-roles)
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `name` | `str` | - |
+| `displayname` | `str` | - |
+| `environmentid` | `str` | - |
+| `last_seen` | `datetime` | - |
+| `node_id` | `str` | - |
+| `collected` | `bool` | Whether this node was collected directly. |
+| `slug` | `str \| None` | The enterprise slug. |
+| `enterprise_name` | `str \| None` | The enterprise display name. |
+| `description` | `str \| None` | The enterprise description. |
+| `location` | `str \| None` | The enterprise location. |
+| `url` | `str \| None` | The enterprise GitHub URL. |
+| `website_url` | `str \| None` | The enterprise website URL. |
+| `created_at` | `str \| None` | When the enterprise was created. |
+| `updated_at` | `str \| None` | When the enterprise was last updated. |
+| `billing_email` | `str \| None` | The enterprise billing email. |
+| `viewer_is_admin` | `bool \| None` | Whether the authenticated viewer is an enterprise admin. |
+| `github_deployment_type` | `str \| None` | The GitHub deployment type, such as `ghec` or `ghes`. |
+| `ghes_version` | `str \| None` | The GitHub Enterprise Server version, when applicable. |
+| `environment_name` | `str \| None` | The enterprise environment name. |
+| `query_organizations` | `str \| None` | Query for contained organizations. |

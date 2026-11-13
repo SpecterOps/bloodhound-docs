@@ -3,19 +3,32 @@ title: 'GH_CreateTeam'
 description: '[Organization] Org role can create teams in the organization'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 ## Edge Schema
 
 - Traversable: ❌
 
-| Source | Destination |
-| --- | --- |
-| [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) |
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole) | GH_CreateTeam | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) |
+
+```mermaid
+flowchart LR
+    GH_Organization["GH_Organization"]
+    GH_OrgRole["GH_OrgRole"]
+    GH_OrgRole -- GH_CreateTeam --> GH_Organization
+```
 
 ## General Information
 
 The non-traversable GH_CreateTeam edge represents that a role has the ability to create teams within the organization. Teams are the primary mechanism for granting groups of users access to repositories, so team creation is a stepping stone to broader access. This edge is created by the collector when enumerating organization role permissions, and its security significance lies in the fact that a newly created team can be granted repository access and then populated with controlled accounts.
+
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | `false` |
 
 ## Diagram
 
@@ -25,8 +38,3 @@ graph LR
     n1["GH_Organization"]
     n0 -.->|GH_CreateTeam| n1
 ```
-
-## References
-
-- [Organization roles](https://docs.github.com/en/organizations/managing-peoples-access-to-your-organization-with-roles/roles-in-an-organization)
-- [Custom organization role API](https://docs.github.com/en/enterprise-cloud@latest/rest/orgs/organization-roles)

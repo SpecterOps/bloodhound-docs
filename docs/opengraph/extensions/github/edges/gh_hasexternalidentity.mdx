@@ -1,34 +1,40 @@
 ---
 title: 'GH_HasExternalIdentity'
-description: 'SAML or OIDC identity provider has this external identity'
+description: 'SAML identity provider has this external identity'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 ## Edge Schema
 
 - Traversable: ❌
 
-| Source | Destination |
-| --- | --- |
-| [GH_IdentityProvider](/opengraph/extensions/github/nodes/gh_identityprovider) | [GH_ExternalIdentity](/opengraph/extensions/github/nodes/gh_externalidentity) |
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_SamlIdentityProvider](/opengraph/extensions/github/nodes/gh_samlidentityprovider) | GH_HasExternalIdentity | [GH_ExternalIdentity](/opengraph/extensions/github/nodes/gh_externalidentity) |
+
+```mermaid
+flowchart LR
+    GH_ExternalIdentity["GH_ExternalIdentity"]
+    GH_SamlIdentityProvider["GH_SamlIdentityProvider"]
+    GH_SamlIdentityProvider -- GH_HasExternalIdentity --> GH_ExternalIdentity
+```
 
 ## General Information
 
-The non-traversable GH_HasExternalIdentity edge represents the relationship between a SAML or OIDC identity provider and the external identities (SSO users) it manages. This edge links each external identity to its identity provider. External identities are a key component in cross-platform attack path analysis because they bridge the gap between corporate identity providers and GitHub user accounts via the [GH_MapsToUser](/opengraph/extensions/github/edges/gh_mapstouser) edge. Enumerating external identities reveals which corporate users have linked GitHub accounts and enables mapping from IdP compromise to GitHub access.
+The non-traversable GH_HasExternalIdentity edge represents the relationship between a SAML identity provider and the external identities (SSO users) it manages. This edge links each external identity to the SAML provider that authenticated it. External identities are a key component in cross-platform attack path analysis because they bridge the gap between corporate identity providers and GitHub user accounts via the [GH_MapsToUser](/opengraph/extensions/github/edges/gh_mapstouser) edge. Enumerating external identities reveals which corporate users have linked GitHub accounts and enables mapping from IdP compromise to GitHub access.
+
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_SamlIdentityProvider](/opengraph/extensions/github/nodes/gh_samlidentityprovider) | [GH_ExternalIdentity](/opengraph/extensions/github/nodes/gh_externalidentity) | `false` |
 
 ## Diagram
 
 ```mermaid
 graph LR
-    n0["GH_IdentityProvider"]
+    n0["GH_SamlIdentityProvider"]
     n1["GH_ExternalIdentity"]
     n0 -.->|GH_HasExternalIdentity| n1
 ```
-
-[`GH_IdentityProvider`](/opengraph/extensions/github/nodes/gh_identityprovider) is a shared secondary kind on SAML and OIDC providers. Provider association is resolved from collected provider metadata, without duplicating provider properties on external identity nodes.
-
-## References
-
-- [SAML single sign-on](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-single-sign-on/about-authentication-with-single-sign-on)
-- [Enterprise roles](https://docs.github.com/en/enterprise-cloud@latest/rest/enterprise-admin/enterprise-roles)
