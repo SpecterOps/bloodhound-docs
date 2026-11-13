@@ -4,11 +4,30 @@ description: 'The permission granted to a user or team on a repository (e.g., ad
 icon: '/images/extensions/github/gh_reporole.png'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 ## General Information
 
 Represents a repository-level permission role. Each repository has five default roles (Read, Write, Admin, Triage, Maintain) plus any custom repository roles defined at the organization level. Repo roles define what actions a user or team can perform on a specific repository. Default roles form an inheritance hierarchy (Triage -> Read, Maintain -> Write, Admin includes all), and custom roles inherit from one of the base roles.
+
+## Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | The node name used for matching and display. |
+| `displayname` | `string` | The human-readable display name. |
+| `environmentid` | `string` | The identifier of the GitHub environment where this node was collected. |
+| `last_seen` | `datetime` | The timestamp when this node was last observed during collection. |
+| `node_id` | `string` | The stable identifier used as the OpenGraph node ID; this is the native GitHub node ID where available. |
+| `short_name` | `string` | The short role name (e.g., `read`, `write`, `admin`, `triage`, `maintain`, or custom role name). |
+| `repository_name` | `string` | The name of the repository this role belongs to. |
+| `repository_id` | `string` | The node_id of the repository this role belongs to. |
+| `environment_name` | `string` | The name of the environment (GitHub organization). |
+| `type` | `string` | `default` for built-in roles or `custom` for custom repository roles. |
+| `query_explicit_users` | `string` | Query for explicit users. |
+| `query_explicit_teams` | `string` | Query for explicit teams. |
+| `query_unrolled_members` | `string` | Query for unrolled members. |
+| `query_repository_permissions` | `string` | Query for repository permissions. |
 
 ## Diagram
 
@@ -99,18 +118,99 @@ graph LR
 The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
 </Note>
 
+```mermaid
+flowchart LR
+
+    GH_Branch["GH_Branch"]
+    GH_Environment["GH_Environment"]
+    GH_RepoRole["GH_RepoRole"]
+    GH_Repository["GH_Repository"]
+    GH_SecretScanningAlert["GH_SecretScanningAlert"]
+    GH_Team["GH_Team"]
+    GH_User["GH_User"]
+    GH_RepoRole -- GH_AddAssignee --> GH_Repository
+    GH_RepoRole -- GH_AddLabel --> GH_Repository
+    GH_RepoRole -- GH_AdminTo --> GH_Repository
+    GH_RepoRole -- GH_BypassBranchProtection --> GH_Repository
+    GH_RepoRole -- GH_CanCreateBranch --> GH_Repository
+    GH_RepoRole -- GH_CanCreateEnvironment --> GH_Repository
+    GH_RepoRole -- GH_CanDeployToEnvironment --> GH_Environment
+    GH_RepoRole -- GH_CanEditEnvironment --> GH_Environment
+    GH_RepoRole -- GH_CanEditProtection --> GH_Branch
+    GH_RepoRole -- GH_CanPwnRequest --> GH_Branch
+    GH_RepoRole -- GH_CanPwnRequest --> GH_Repository
+    GH_RepoRole -- GH_CanReadSecretScanningAlert --> GH_SecretScanningAlert
+    GH_RepoRole -- GH_CanWriteBranch --> GH_Branch
+    GH_RepoRole -- GH_CloseDiscussion --> GH_Repository
+    GH_RepoRole -- GH_CloseIssue --> GH_Repository
+    GH_RepoRole -- GH_ClosePullRequest --> GH_Repository
+    GH_RepoRole -- GH_ConvertIssuesToDiscussions --> GH_Repository
+    GH_RepoRole -- GH_CreateDiscussionCategory --> GH_Repository
+    GH_RepoRole -- GH_CreateSoloMergeQueueEntry --> GH_Repository
+    GH_RepoRole -- GH_CreateTag --> GH_Repository
+    GH_RepoRole -- GH_DeleteAlertsCodeScanning --> GH_Repository
+    GH_RepoRole -- GH_DeleteDiscussion --> GH_Repository
+    GH_RepoRole -- GH_DeleteDiscussionComment --> GH_Repository
+    GH_RepoRole -- GH_DeleteIssue --> GH_Repository
+    GH_RepoRole -- GH_DeleteTag --> GH_Repository
+    GH_RepoRole -- GH_EditCategoryOnDiscussion --> GH_Repository
+    GH_RepoRole -- GH_EditDiscussionCategory --> GH_Repository
+    GH_RepoRole -- GH_EditDiscussionComment --> GH_Repository
+    GH_RepoRole -- GH_EditRepoAnnouncementBanners --> GH_Repository
+    GH_RepoRole -- GH_EditRepoCustomPropertiesValues --> GH_Repository
+    GH_RepoRole -- GH_EditRepoMetadata --> GH_Repository
+    GH_RepoRole -- GH_EditRepoProtections --> GH_Repository
+    GH_RepoRole -- GH_HasBaseRole --> GH_RepoRole
+    GH_RepoRole -- GH_JumpMergeQueue --> GH_Repository
+    GH_RepoRole -- GH_ManageDeployKeys --> GH_Repository
+    GH_RepoRole -- GH_ManageDiscussionBadges --> GH_Repository
+    GH_RepoRole -- GH_ManageRepoSecurityProducts --> GH_Repository
+    GH_RepoRole -- GH_ManageSecurityProducts --> GH_Repository
+    GH_RepoRole -- GH_ManageSettingsMergeTypes --> GH_Repository
+    GH_RepoRole -- GH_ManageSettingsPages --> GH_Repository
+    GH_RepoRole -- GH_ManageSettingsProjects --> GH_Repository
+    GH_RepoRole -- GH_ManageSettingsWiki --> GH_Repository
+    GH_RepoRole -- GH_ManageTopics --> GH_Repository
+    GH_RepoRole -- GH_ManageWebhooks --> GH_Repository
+    GH_RepoRole -- GH_MarkAsDuplicate --> GH_Repository
+    GH_RepoRole -- GH_PushProtectedBranch --> GH_Repository
+    GH_RepoRole -- GH_ReadCodeScanning --> GH_Repository
+    GH_RepoRole -- GH_ReadRepoContents --> GH_Repository
+    GH_RepoRole -- GH_RemoveAssignee --> GH_Repository
+    GH_RepoRole -- GH_RemoveLabel --> GH_Repository
+    GH_RepoRole -- GH_ReopenDiscussion --> GH_Repository
+    GH_RepoRole -- GH_ReopenIssue --> GH_Repository
+    GH_RepoRole -- GH_ReopenPullRequest --> GH_Repository
+    GH_RepoRole -- GH_RequestPrReview --> GH_Repository
+    GH_RepoRole -- GH_ResolveDependabotAlerts --> GH_Repository
+    GH_RepoRole -- GH_ResolveSecretScanningAlerts --> GH_Repository
+    GH_RepoRole -- GH_RunOrgMigration --> GH_Repository
+    GH_RepoRole -- GH_SetInteractionLimits --> GH_Repository
+    GH_RepoRole -- GH_SetIssueType --> GH_Repository
+    GH_RepoRole -- GH_SetMilestone --> GH_Repository
+    GH_RepoRole -- GH_SetSocialPreview --> GH_Repository
+    GH_RepoRole -- GH_ToggleDiscussionAnswer --> GH_Repository
+    GH_RepoRole -- GH_ToggleDiscussionCommentMinimize --> GH_Repository
+    GH_RepoRole -- GH_ViewDependabotAlerts --> GH_Repository
+    GH_RepoRole -- GH_ViewSecretScanningAlerts --> GH_Repository
+    GH_RepoRole -- GH_WriteCodeScanning --> GH_Repository
+    GH_RepoRole -- GH_WriteRepoContents --> GH_Repository
+    GH_RepoRole -- GH_WriteRepoPullRequests --> GH_Repository
+    GH_Team -- GH_HasRole --> GH_RepoRole
+    GH_User -- GH_HasRole --> GH_RepoRole
+```
+
 ### Inbound Edges
 
-| Edge | Source Node | Traversable |
-| --- | --- | --- |
-| [GH_HasBaseRole](/opengraph/extensions/github/edges/gh_hasbaserole) | GH_RepoRole | ✅ |
-| [GH_HasRole](/opengraph/extensions/github/edges/gh_hasrole) | [GH_Team](/opengraph/extensions/github/nodes/gh_team) | ✅ |
-| [GH_HasRole](/opengraph/extensions/github/edges/gh_hasrole) | [GH_User](/opengraph/extensions/github/nodes/gh_user) | ✅ |
+| Edge Type | Source Node Types | Traversable |
+| --------- | ----------------- | ----------- |
+| [GH_HasBaseRole](/opengraph/extensions/github/edges/gh_hasbaserole) | [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | ✅ |
+| [GH_HasRole](/opengraph/extensions/github/edges/gh_hasrole) | [GH_Team](/opengraph/extensions/github/nodes/gh_team), [GH_User](/opengraph/extensions/github/nodes/gh_user) | ✅ |
 
 ### Outbound Edges
 
-| Edge | Destination Node | Traversable |
-| --- | --- | --- |
+| Edge Type | Destination Node Types | Traversable |
+| --------- | ---------------------- | ----------- |
 | [GH_AddAssignee](/opengraph/extensions/github/edges/gh_addassignee) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
 | [GH_AddLabel](/opengraph/extensions/github/edges/gh_addlabel) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
 | [GH_AdminTo](/opengraph/extensions/github/edges/gh_adminto) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ✅ |
@@ -120,8 +220,7 @@ The tables below list edges defined by the GitHub extension only. Additional edg
 | [GH_CanDeployToEnvironment](/opengraph/extensions/github/edges/gh_candeploytoenvironment) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | ✅ |
 | [GH_CanEditEnvironment](/opengraph/extensions/github/edges/gh_caneditenvironment) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | ✅ |
 | [GH_CanEditProtection](/opengraph/extensions/github/edges/gh_caneditprotection) | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) | ✅ |
-| [GH_CanPwnRequest](/opengraph/extensions/github/edges/gh_canpwnrequest) | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) | ✅ |
-| [GH_CanPwnRequest](/opengraph/extensions/github/edges/gh_canpwnrequest) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ✅ |
+| [GH_CanPwnRequest](/opengraph/extensions/github/edges/gh_canpwnrequest) | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch), [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ✅ |
 | [GH_CanReadSecretScanningAlert](/opengraph/extensions/github/edges/gh_canreadsecretscanningalert) | [GH_SecretScanningAlert](/opengraph/extensions/github/nodes/gh_secretscanningalert) | ✅ |
 | [GH_CanWriteBranch](/opengraph/extensions/github/edges/gh_canwritebranch) | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) | ✅ |
 | [GH_CloseDiscussion](/opengraph/extensions/github/edges/gh_closediscussion) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
@@ -143,7 +242,7 @@ The tables below list edges defined by the GitHub extension only. Additional edg
 | [GH_EditRepoCustomPropertiesValues](/opengraph/extensions/github/edges/gh_editrepocustompropertiesvalues) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
 | [GH_EditRepoMetadata](/opengraph/extensions/github/edges/gh_editrepometadata) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
 | [GH_EditRepoProtections](/opengraph/extensions/github/edges/gh_editrepoprotections) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
-| [GH_HasBaseRole](/opengraph/extensions/github/edges/gh_hasbaserole) | GH_RepoRole | ✅ |
+| [GH_HasBaseRole](/opengraph/extensions/github/edges/gh_hasbaserole) | [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | ✅ |
 | [GH_JumpMergeQueue](/opengraph/extensions/github/edges/gh_jumpmergequeue) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
 | [GH_ManageDeployKeys](/opengraph/extensions/github/edges/gh_managedeploykeys) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
 | [GH_ManageDiscussionBadges](/opengraph/extensions/github/edges/gh_managediscussionbadges) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | ❌ |
@@ -182,23 +281,19 @@ The tables below list edges defined by the GitHub extension only. Additional edg
 
 ## Properties
 
-| Name | Type | Description |
-| --- | --- | --- |
-| `displayname` | `string` |  |
-| `environment_name` | `string` | The name of the environment (GitHub organization). |
-| `environmentid` | `string` |  |
-| `last_seen` | `datetime` |  |
-| `name` | `string` |  |
-| `node_id` | `string` |  |
-| `query_explicit_teams` | `null \| string` | Query for explicit teams. |
-| `query_explicit_users` | `null \| string` | Query for explicit users. |
-| `query_repository_permissions` | `null \| string` | Query for repository permissions. |
-| `query_unrolled_members` | `null \| string` | Query for unrolled members. |
-| `repository_id` | `string` | The node_id of the repository this role belongs to. |
-| `repository_name` | `string` | The name of the repository this role belongs to. |
-| `short_name` | `string` | The short role name (e.g., `read`, `write`, `admin`, `triage`, `maintain`, or custom role name). |
-| `type` | `string` | `default` for built-in roles or `custom` for custom repository roles. |
-
-## References
-
-- [Repository roles](https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-roles-for-an-organization)
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `name` | `str` | - |
+| `displayname` | `str` | - |
+| `environmentid` | `str` | - |
+| `last_seen` | `datetime` | - |
+| `node_id` | `str` | - |
+| `short_name` | `str` | The short role name (e.g., `read`, `write`, `admin`, `triage`, `maintain`, or custom role name). |
+| `repository_name` | `str` | The name of the repository this role belongs to. |
+| `repository_id` | `str` | The node_id of the repository this role belongs to. |
+| `environment_name` | `str` | The name of the environment (GitHub organization). |
+| `type` | `str` | `default` for built-in roles or `custom` for custom repository roles. |
+| `query_explicit_users` | `str \| None` | Query for explicit users. |
+| `query_explicit_teams` | `str \| None` | Query for explicit teams. |
+| `query_unrolled_members` | `str \| None` | Query for unrolled members. |
+| `query_repository_permissions` | `str \| None` | Query for repository permissions. |

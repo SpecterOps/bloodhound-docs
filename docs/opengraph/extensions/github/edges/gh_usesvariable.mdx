@@ -3,20 +3,35 @@ title: 'GH_UsesVariable'
 description: '[Workflow] Job or step references a variable by name — GH_WorkflowJob / GH_WorkflowStep → GH_RepoVariable / GH_OrgVariable / GH_EnvironmentVariable (scope match)'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 ## Edge Schema
 
 - Traversable: ❌
 
-| Source | Destination |
-| --- | --- |
-| [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | [GH_EnvironmentVariable](/opengraph/extensions/github/nodes/gh_environmentvariable) |
-| [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable) |
-| [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | [GH_RepoVariable](/opengraph/extensions/github/nodes/gh_repovariable) |
-| [GH_WorkflowStep](/opengraph/extensions/github/nodes/gh_workflowstep) | [GH_EnvironmentVariable](/opengraph/extensions/github/nodes/gh_environmentvariable) |
-| [GH_WorkflowStep](/opengraph/extensions/github/nodes/gh_workflowstep) | [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable) |
-| [GH_WorkflowStep](/opengraph/extensions/github/nodes/gh_workflowstep) | [GH_RepoVariable](/opengraph/extensions/github/nodes/gh_repovariable) |
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_WorkflowStep](/opengraph/extensions/github/nodes/gh_workflowstep) | GH_UsesVariable | [GH_RepoVariable](/opengraph/extensions/github/nodes/gh_repovariable) |
+| [GH_WorkflowStep](/opengraph/extensions/github/nodes/gh_workflowstep) | GH_UsesVariable | [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable) |
+| [GH_WorkflowStep](/opengraph/extensions/github/nodes/gh_workflowstep) | GH_UsesVariable | [GH_EnvironmentVariable](/opengraph/extensions/github/nodes/gh_environmentvariable) |
+| [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | GH_UsesVariable | [GH_RepoVariable](/opengraph/extensions/github/nodes/gh_repovariable) |
+| [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | GH_UsesVariable | [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable) |
+| [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | GH_UsesVariable | [GH_EnvironmentVariable](/opengraph/extensions/github/nodes/gh_environmentvariable) |
+
+```mermaid
+flowchart LR
+    GH_EnvironmentVariable["GH_EnvironmentVariable"]
+    GH_OrgVariable["GH_OrgVariable"]
+    GH_RepoVariable["GH_RepoVariable"]
+    GH_WorkflowJob["GH_WorkflowJob"]
+    GH_WorkflowStep["GH_WorkflowStep"]
+    GH_WorkflowJob -- GH_UsesVariable --> GH_EnvironmentVariable
+    GH_WorkflowJob -- GH_UsesVariable --> GH_OrgVariable
+    GH_WorkflowJob -- GH_UsesVariable --> GH_RepoVariable
+    GH_WorkflowStep -- GH_UsesVariable --> GH_EnvironmentVariable
+    GH_WorkflowStep -- GH_UsesVariable --> GH_OrgVariable
+    GH_WorkflowStep -- GH_UsesVariable --> GH_RepoVariable
+```
 
 ## General Information
 
@@ -39,6 +54,17 @@ The edge carries a `context` property indicating where the reference was found:
 - `env` — inside the step's `env:` block
 - `run` — inline within a `run:` shell script
 
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | [GH_EnvironmentVariable](/opengraph/extensions/github/nodes/gh_environmentvariable) | `false` |
+| [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable) | `false` |
+| [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | [GH_RepoVariable](/opengraph/extensions/github/nodes/gh_repovariable) | `false` |
+| [GH_WorkflowStep](/opengraph/extensions/github/nodes/gh_workflowstep) | [GH_EnvironmentVariable](/opengraph/extensions/github/nodes/gh_environmentvariable) | `false` |
+| [GH_WorkflowStep](/opengraph/extensions/github/nodes/gh_workflowstep) | [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable) | `false` |
+| [GH_WorkflowStep](/opengraph/extensions/github/nodes/gh_workflowstep) | [GH_RepoVariable](/opengraph/extensions/github/nodes/gh_repovariable) | `false` |
+
 ## Diagram
 
 ```mermaid
@@ -55,7 +81,3 @@ graph LR
     n4 -.->|GH_UsesVariable| n2
     n4 -.->|GH_UsesVariable| n3
 ```
-
-## References
-
-- [Actions variables API](https://docs.github.com/en/rest/actions/variables)

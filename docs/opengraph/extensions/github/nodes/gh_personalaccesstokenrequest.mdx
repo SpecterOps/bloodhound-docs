@@ -4,13 +4,33 @@ description: 'A pending request from an organization member to access organizati
 icon: '/images/extensions/github/gh_personalaccesstokenrequest.png'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 ## General Information
 
 Represents a pending request from an organization member to access organization resources with a fine-grained personal access token. PAT requests are linked to their owning user and the organization. An all-repository request also has a non-traversable [GH_RequestsAccessTo](/opengraph/extensions/github/edges/gh_requestsaccessto) edge to the organization's repository/all [GH_Scope](/opengraph/extensions/github/nodes/gh_scope).
 
 The requested permissions are stored separately as `organization_permissions` and `repository_permissions`. Each property is a list of `scope:access` values such as `members:read` or `contents:write`, matching the permission format used on [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) nodes.
+
+## Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | The node name used for matching and display. |
+| `displayname` | `string` | The human-readable display name. |
+| `environmentid` | `string` | The identifier of the GitHub environment where this node was collected. |
+| `last_seen` | `datetime` | The timestamp when this node was last observed during collection. |
+| `node_id` | `string` | The stable identifier used as the OpenGraph node ID; this is the native GitHub node ID where available. |
+| `token_name` | `string` | The user-assigned display name of the token. |
+| `owner_login` | `string` | The login handle of the user who submitted the request. |
+| `repository_selection` | `string` | Whether the request targets `all`, `subset`, or `none` of the organization's repositories. |
+| `reason` | `string` | The rationale provided by the requester for the access request. |
+| `org_name` | `string` | The org name property. |
+| `organization_permissions` | `list[string]` | Requested organization-scoped permissions in `scope:access` form. |
+| `repository_permissions` | `list[string]` | Requested repository-scoped permissions in `scope:access` form. |
+| `query_organization_permissions` | `string` | Query for organization permissions. |
+| `query_user` | `string` | Query for user. |
+| `query_repositories` | `string` | Query for repositories. |
 
 ## Diagram
 
@@ -31,39 +51,47 @@ graph LR
 The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
 </Note>
 
+```mermaid
+flowchart LR
+
+    GH_Organization["GH_Organization"]
+    GH_PersonalAccessTokenRequest["GH_PersonalAccessTokenRequest"]
+    GH_Scope["GH_Scope"]
+    GH_User["GH_User"]
+    GH_Organization -- GH_Contains --> GH_PersonalAccessTokenRequest
+    GH_PersonalAccessTokenRequest -- GH_RequestsAccessTo --> GH_Scope
+    GH_User -- GH_HasPersonalAccessTokenRequest --> GH_PersonalAccessTokenRequest
+```
+
 ### Inbound Edges
 
-| Edge | Source Node | Traversable |
-| --- | --- | --- |
+| Edge Type | Source Node Types | Traversable |
+| --------- | ----------------- | ----------- |
 | [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | ❌ |
 | [GH_HasPersonalAccessTokenRequest](/opengraph/extensions/github/edges/gh_haspersonalaccesstokenrequest) | [GH_User](/opengraph/extensions/github/nodes/gh_user) | ❌ |
 
 ### Outbound Edges
 
-| Edge | Destination Node | Traversable |
-| --- | --- | --- |
+| Edge Type | Destination Node Types | Traversable |
+| --------- | ---------------------- | ----------- |
 | [GH_RequestsAccessTo](/opengraph/extensions/github/edges/gh_requestsaccessto) | [GH_Scope](/opengraph/extensions/github/nodes/gh_scope) | ❌ |
 
 ## Properties
 
-| Name | Type | Description |
-| --- | --- | --- |
-| `displayname` | `string` |  |
-| `environmentid` | `string` |  |
-| `last_seen` | `datetime` |  |
-| `name` | `string` |  |
-| `node_id` | `string` |  |
-| `org_name` | `null \| string` | The org name property. |
-| `organization_permissions` | `array<string> \| null` | Requested organization-scoped permissions in `scope:access` form. |
-| `owner_login` | `null \| string` | The login handle of the user who submitted the request. |
-| `query_organization_permissions` | `null \| string` | Query for organization permissions. |
-| `query_repositories` | `null \| string` | Query for repositories. |
-| `query_user` | `null \| string` | Query for user. |
-| `reason` | `null \| string` | The rationale provided by the requester for the access request. |
-| `repository_permissions` | `array<string> \| null` | Requested repository-scoped permissions in `scope:access` form. |
-| `repository_selection` | `null \| string` | Whether the request targets `all`, `subset`, or `none` of the organization&#39;s repositories. |
-| `token_name` | `null \| string` | The user-assigned display name of the token. |
-
-## References
-
-- [Personal access token API](https://docs.github.com/en/rest/orgs/personal-access-tokens)
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `name` | `str` | - |
+| `displayname` | `str` | - |
+| `environmentid` | `str` | - |
+| `last_seen` | `datetime` | - |
+| `node_id` | `str` | - |
+| `token_name` | `str \| None` | The user-assigned display name of the token. |
+| `owner_login` | `str \| None` | The login handle of the user who submitted the request. |
+| `repository_selection` | `str \| None` | Whether the request targets `all`, `subset`, or `none` of the organization's repositories. |
+| `reason` | `str \| None` | The rationale provided by the requester for the access request. |
+| `org_name` | `str \| None` | The org name property. |
+| `organization_permissions` | `list[str] \| None` | Requested organization-scoped permissions in `scope:access` form. |
+| `repository_permissions` | `list[str] \| None` | Requested repository-scoped permissions in `scope:access` form. |
+| `query_organization_permissions` | `str \| None` | Query for organization permissions. |
+| `query_user` | `str \| None` | Query for user. |
+| `query_repositories` | `str \| None` | Query for repositories. |

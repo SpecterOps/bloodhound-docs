@@ -3,15 +3,22 @@ title: 'GH_RunsOn'
 description: '[Workflow] Job can be scheduled on this self-hosted runner based on its static runs-on selector — GH_WorkflowJob → GH_Runner'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 ## Edge Schema
 
 - Traversable: ❌
 
-| Source | Destination |
-| --- | --- |
-| [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | [GH_Runner](/opengraph/extensions/github/nodes/gh_runner) |
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | GH_RunsOn | [GH_Runner](/opengraph/extensions/github/nodes/gh_runner) |
+
+```mermaid
+flowchart LR
+    GH_Runner["GH_Runner"]
+    GH_WorkflowJob["GH_WorkflowJob"]
+    GH_WorkflowJob -- GH_RunsOn --> GH_Runner
+```
 
 ## General Information
 
@@ -21,6 +28,12 @@ This edge is schedulability evidence, not historical execution evidence. It does
 
 The collector emits GH_RunsOn only for static selectors. Dynamic selectors that contain GitHub Actions expressions such as `${{ matrix.runner }}` or `${{ inputs.runner }}` are intentionally left unresolved in this first implementation.
 
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | [GH_Runner](/opengraph/extensions/github/nodes/gh_runner) | `false` |
+
 ## Diagram
 
 ```mermaid
@@ -29,8 +42,3 @@ graph LR
     n1["GH_Runner"]
     n0 -.->|GH_RunsOn| n1
 ```
-
-## References
-
-- [Secure use of GitHub Actions](https://docs.github.com/en/actions/reference/security/secure-use)
-- [Workflow jobs API](https://docs.github.com/en/rest/actions/workflow-jobs)

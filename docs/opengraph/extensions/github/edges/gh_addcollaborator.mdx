@@ -3,19 +3,32 @@ title: 'GH_AddCollaborator'
 description: '[Organization] Org role can add outside collaborators'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 ## Edge Schema
 
 - Traversable: ❌
 
-| Source | Destination |
-| --- | --- |
-| [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) |
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole) | GH_AddCollaborator | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) |
+
+```mermaid
+flowchart LR
+    GH_Organization["GH_Organization"]
+    GH_OrgRole["GH_OrgRole"]
+    GH_OrgRole -- GH_AddCollaborator --> GH_Organization
+```
 
 ## General Information
 
 The non-traversable GH_AddCollaborator edge represents that a role has the ability to add outside collaborators to organization repositories. This permission is typically restricted to Owners, as it grants repository access to external users who are not members of the organization. Outside collaborators bypass organizational membership controls, making this permission significant for security because it can be used to grant access to untrusted external identities without the visibility that full membership provides.
+
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_OrgRole](/opengraph/extensions/github/nodes/gh_orgrole) | [GH_Organization](/opengraph/extensions/github/nodes/gh_organization) | `false` |
 
 ## Diagram
 
@@ -25,8 +38,3 @@ graph LR
     n1["GH_Organization"]
     n0 -.->|GH_AddCollaborator| n1
 ```
-
-## References
-
-- [Organization roles](https://docs.github.com/en/organizations/managing-peoples-access-to-your-organization-with-roles/roles-in-an-organization)
-- [Custom organization role API](https://docs.github.com/en/enterprise-cloud@latest/rest/orgs/organization-roles)
