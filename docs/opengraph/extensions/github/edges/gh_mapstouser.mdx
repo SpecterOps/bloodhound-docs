@@ -3,36 +3,23 @@ title: 'GH_MapsToUser'
 description: 'External identity maps to a GitHub user or identity provider user'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
 
 ## Edge Schema
 
 - Traversable: ❌
 
-| Start | Kind | End |
-|-------|-----------|-------|
-| [GH_ExternalIdentity](/opengraph/extensions/github/nodes/gh_externalidentity) | GH_MapsToUser | [GH_User](/opengraph/extensions/github/nodes/gh_user) |
-| [GH_EnterpriseManagedUser](/opengraph/extensions/github/nodes/gh_enterprisemanageduser) | GH_MapsToUser | [GH_User](/opengraph/extensions/github/nodes/gh_user) |
-
-```mermaid
-flowchart LR
-    GH_EnterpriseManagedUser["GH_EnterpriseManagedUser"]
-    GH_ExternalIdentity["GH_ExternalIdentity"]
-    GH_User["GH_User"]
-    GH_EnterpriseManagedUser -- GH_MapsToUser --> GH_User
-    GH_ExternalIdentity -- GH_MapsToUser --> GH_User
-```
+| Source | Destination |
+| --- | --- |
+| [GH_EnterpriseManagedUser](/opengraph/extensions/github/nodes/gh_enterprisemanageduser) | [GH_User](/opengraph/extensions/github/nodes/gh_user) |
+| [GH_ExternalIdentity](/opengraph/extensions/github/nodes/gh_externalidentity) | [AZUser](https://bloodhound.specterops.io/resources/nodes/az-user) |
+| [GH_ExternalIdentity](/opengraph/extensions/github/nodes/gh_externalidentity) | [GH_User](/opengraph/extensions/github/nodes/gh_user) |
+| [GH_ExternalIdentity](/opengraph/extensions/github/nodes/gh_externalidentity) | [Okta_User](https://bloodhound.specterops.io/opengraph/extensions/okta/nodes/okta_user) |
+| [GH_ExternalIdentity](/opengraph/extensions/github/nodes/gh_externalidentity) | `PingOne_User` |
 
 ## General Information
 
-The non-traversable GH_MapsToUser edge maps an external identity (provisioned via SAML or SCIM) to a GitHub user within the organization, or to an external IdP user (such as [AZUser](/resources/nodes/az-user), [Okta_User](/opengraph/extensions/okta/nodes/okta_user), or [PingOneUser](https://github.com/andyrobbins/PingOneHound?tab=readme-ov-file#schema)) in hybrid graph scenarios. This edge represents identity correlation rather than an attack path, connecting a user's external IdP account to their GitHub account for visibility into federated identity mappings.
-
-## Edge Schema
-
-| Source | Destination | Traversable |
-| --- | --- | --- |
-| [GH_EnterpriseManagedUser](/opengraph/extensions/github/nodes/gh_enterprisemanageduser) | [GH_User](/opengraph/extensions/github/nodes/gh_user) | `false` |
-| [GH_ExternalIdentity](/opengraph/extensions/github/nodes/gh_externalidentity) | [GH_User](/opengraph/extensions/github/nodes/gh_user) | `false` |
+The non-traversable GH_MapsToUser edge maps an external identity (provisioned via SAML or SCIM) to a GitHub user within the organization, or to an external IdP user (such as [AZUser](https://bloodhound.specterops.io/resources/nodes/az-user), [Okta_User](https://bloodhound.specterops.io/opengraph/extensions/okta/nodes/okta_user), or [PingOneUser](https://github.com/andyrobbins/PingOneHound?tab=readme-ov-file#schema)) in hybrid graph scenarios. This edge represents identity correlation rather than an attack path, connecting a user's external IdP account to their GitHub account for visibility into federated identity mappings.
 
 ## Diagram
 
@@ -43,4 +30,12 @@ graph LR
     n2["GH_ExternalIdentity"]
     n0 -.->|GH_MapsToUser| n1
     n2 -.->|GH_MapsToUser| n1
+    n2 -.->|GH_MapsToUser| azure["AZUser"]
+    n2 -.->|GH_MapsToUser| okta["Okta_User"]
+    n2 -.->|GH_MapsToUser| ping["PingOne_User"]
 ```
+
+## References
+
+- [SAML single sign-on](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-single-sign-on/about-authentication-with-single-sign-on)
+- [SCIM account linking](https://docs.github.com/en/enterprise-cloud@latest/rest/scim/scim)

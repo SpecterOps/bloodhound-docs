@@ -4,7 +4,7 @@ description: 'A job within a GitHub Actions workflow, with a runner, permissions
 icon: '/images/extensions/github/gh_workflowjob.png'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
 
 ## General Information
 
@@ -17,37 +17,6 @@ When present, `job_permissions` captures the job-level `permissions` declaration
 [GH_CanAccessSecret](/opengraph/extensions/github/edges/gh_canaccesssecret) edges identify secrets statically referenced by the job's modeled steps or job-level `env` block that the job execution context can access. [GH_CanInterceptJob](/opengraph/extensions/github/edges/gh_caninterceptjob) edges from [GH_Runner](/opengraph/extensions/github/nodes/gh_runner) nodes not explicitly marked ephemeral identify jobs whose future execution context may be exposed if that runner is controlled. When a job targets an environment and its effective permissions include `id-token:write`, [GH_CanRequestOIDCTokenFor](/opengraph/extensions/github/edges/gh_canrequestoidctokenfor) identifies a static upper-bound OIDC capability for that environment. Runtime permission recalculation, such as forked `pull_request` permission downgrades, may prevent a specific execution from requesting OIDC even when this edge exists.
 
 When `runs_on_is_dynamic` is true, runner matching and interception status remain unresolved: the collector does not emit [GH_CanInterceptJob](/opengraph/extensions/github/edges/gh_caninterceptjob) edges for the job, so `query_interceptable_jobs` cannot match it and the absence of an edge must not be treated as evidence that the job is definitively non-interceptable.
-
-## Properties
-
-| Property | Type | Description |
-| --- | --- | --- |
-| `name` | `string` | The node name used for matching and display. |
-| `displayname` | `string` | The human-readable display name. |
-| `environmentid` | `string` | The identifier of the GitHub environment where this node was collected. |
-| `last_seen` | `datetime` | The timestamp when this node was last observed during collection. |
-| `node_id` | `string` | The stable identifier used as the OpenGraph node ID; this is the native GitHub node ID where available. |
-| `job_key` | `string` | The YAML key for the job. |
-| `runs_on` | `list[string]` | The runner label expression for the job. |
-| `runs_on_group` | `string` | The statically declared runner group, if any. |
-| `runs_on_labels` | `list[string]` | The normalized runner labels from runs-on. |
-| `runs_on_is_dynamic` | `boolean` | Whether runs-on contains a GitHub Actions expression. |
-| `is_self_hosted` | `boolean` | Whether the job targets self-hosted runners. |
-| `container` | `string` | The optional container configuration. |
-| `environment` | `string` | The deployment environment name. |
-| `permissions` | `list[string]` | Applicable declared workflow or job permissions after job-over-workflow precedence. |
-| `job_permissions` | `list[string]` | Optional permissions declared at the job level; absent when the job has no declaration. |
-| `effective_github_token_permissions` | `list[string]` | Calculated GITHUB_TOKEN permissions after repository defaults and declarations are applied. |
-| `uses_reusable` | `string` | The reusable workflow reference used by this job. |
-| `workflow_node_id` | `string` | The parent workflow node ID. |
-| `repository_name` | `string` | The containing repository name. |
-| `repository_id` | `string` | The containing repository node ID. |
-| `environment_name` | `string` | The name of the GitHub organization. |
-| `query_repository` | `string` | Query for repository. |
-| `query_steps` | `string` | Query for workflow steps. |
-| `query_references` | `string` | Query for workflow references (secrets and variables). |
-| `query_runners` | `string` | Query for eligible self-hosted runners. |
-| `query_accessible_secrets` | `string` | Query for secrets accessible to the job execution context. |
 
 ## Diagram
 
@@ -89,88 +58,65 @@ graph LR
 The tables below list edges defined by the GitHub extension only. Additional edges to or from this node may be created by other extensions.
 </Note>
 
-```mermaid
-flowchart LR
-
-    GH_Environment["GH_Environment"]
-    GH_EnvironmentSecret["GH_EnvironmentSecret"]
-    GH_EnvironmentVariable["GH_EnvironmentVariable"]
-    GH_OrgSecret["GH_OrgSecret"]
-    GH_OrgVariable["GH_OrgVariable"]
-    GH_RepoSecret["GH_RepoSecret"]
-    GH_RepoVariable["GH_RepoVariable"]
-    GH_Workflow["GH_Workflow"]
-    GH_WorkflowJob["GH_WorkflowJob"]
-    GH_WorkflowStep["GH_WorkflowStep"]
-    
-    GH_Runner -- GH_CanInterceptJob --> GH_WorkflowJob
-    GH_Workflow -- GH_Contains --> GH_WorkflowJob
-    GH_WorkflowJob -- GH_CallsWorkflow --> GH_Workflow
-    GH_WorkflowJob -- GH_CanAccessSecret --> GH_EnvironmentSecret
-    GH_WorkflowJob -- GH_CanAccessSecret --> GH_OrgSecret
-    GH_WorkflowJob -- GH_CanAccessSecret --> GH_RepoSecret
-    GH_WorkflowJob -- GH_CanRequestOIDCTokenFor --> GH_Environment
-    GH_WorkflowJob -- GH_Contains --> GH_WorkflowStep
-    GH_WorkflowJob -- GH_DependsOn --> GH_WorkflowJob
-    GH_WorkflowJob -- GH_DeploysTo --> GH_Environment
-    GH_WorkflowJob -- GH_RunsOn --> GH_Runner
-    GH_WorkflowJob -- GH_UsesSecret --> GH_EnvironmentSecret
-    GH_WorkflowJob -- GH_UsesSecret --> GH_OrgSecret
-    GH_WorkflowJob -- GH_UsesSecret --> GH_RepoSecret
-    GH_WorkflowJob -- GH_UsesVariable --> GH_EnvironmentVariable
-    GH_WorkflowJob -- GH_UsesVariable --> GH_OrgVariable
-    GH_WorkflowJob -- GH_UsesVariable --> GH_RepoVariable
-```
-
 ### Inbound Edges
 
-| Edge Type | Source Node Types | Traversable |
-| --------- | ----------------- | ----------- |
+| Edge | Source Node | Traversable |
+| --- | --- | --- |
 | [GH_CanInterceptJob](/opengraph/extensions/github/edges/gh_caninterceptjob) | [GH_Runner](/opengraph/extensions/github/nodes/gh_runner) | ✅ |
 | [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_Workflow](/opengraph/extensions/github/nodes/gh_workflow) | ❌ |
-| [GH_DependsOn](/opengraph/extensions/github/edges/gh_dependson) | [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | ❌ |
+| [GH_DependsOn](/opengraph/extensions/github/edges/gh_dependson) | GH_WorkflowJob | ❌ |
 
 ### Outbound Edges
 
-| Edge Type | Destination Node Types | Traversable |
-| --------- | ---------------------- | ----------- |
+| Edge | Destination Node | Traversable |
+| --- | --- | --- |
 | [GH_CallsWorkflow](/opengraph/extensions/github/edges/gh_callsworkflow) | [GH_Workflow](/opengraph/extensions/github/nodes/gh_workflow) | ❌ |
-| [GH_CanAccessSecret](/opengraph/extensions/github/edges/gh_canaccesssecret) | [GH_EnvironmentSecret](/opengraph/extensions/github/nodes/gh_environmentsecret), [GH_OrgSecret](/opengraph/extensions/github/nodes/gh_orgsecret), [GH_RepoSecret](/opengraph/extensions/github/nodes/gh_reposecret) | ✅ |
+| [GH_CanAccessSecret](/opengraph/extensions/github/edges/gh_canaccesssecret) | [GH_EnvironmentSecret](/opengraph/extensions/github/nodes/gh_environmentsecret) | ✅ |
+| [GH_CanAccessSecret](/opengraph/extensions/github/edges/gh_canaccesssecret) | [GH_OrgSecret](/opengraph/extensions/github/nodes/gh_orgsecret) | ✅ |
+| [GH_CanAccessSecret](/opengraph/extensions/github/edges/gh_canaccesssecret) | [GH_RepoSecret](/opengraph/extensions/github/nodes/gh_reposecret) | ✅ |
 | [GH_CanRequestOIDCTokenFor](/opengraph/extensions/github/edges/gh_canrequestoidctokenfor) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | ✅ |
 | [GH_Contains](/opengraph/extensions/github/edges/gh_contains) | [GH_WorkflowStep](/opengraph/extensions/github/nodes/gh_workflowstep) | ❌ |
-| [GH_DependsOn](/opengraph/extensions/github/edges/gh_dependson) | [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob) | ❌ |
+| [GH_DependsOn](/opengraph/extensions/github/edges/gh_dependson) | GH_WorkflowJob | ❌ |
 | [GH_DeploysTo](/opengraph/extensions/github/edges/gh_deploysto) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | ❌ |
 | [GH_RunsOn](/opengraph/extensions/github/edges/gh_runson) | [GH_Runner](/opengraph/extensions/github/nodes/gh_runner) | ❌ |
-| [GH_UsesSecret](/opengraph/extensions/github/edges/gh_usessecret) | [GH_EnvironmentSecret](/opengraph/extensions/github/nodes/gh_environmentsecret), [GH_OrgSecret](/opengraph/extensions/github/nodes/gh_orgsecret), [GH_RepoSecret](/opengraph/extensions/github/nodes/gh_reposecret) | ❌ |
-| [GH_UsesVariable](/opengraph/extensions/github/edges/gh_usesvariable) | [GH_EnvironmentVariable](/opengraph/extensions/github/nodes/gh_environmentvariable), [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable), [GH_RepoVariable](/opengraph/extensions/github/nodes/gh_repovariable) | ❌ |
+| [GH_UsesSecret](/opengraph/extensions/github/edges/gh_usessecret) | [GH_EnvironmentSecret](/opengraph/extensions/github/nodes/gh_environmentsecret) | ❌ |
+| [GH_UsesSecret](/opengraph/extensions/github/edges/gh_usessecret) | [GH_OrgSecret](/opengraph/extensions/github/nodes/gh_orgsecret) | ❌ |
+| [GH_UsesSecret](/opengraph/extensions/github/edges/gh_usessecret) | [GH_RepoSecret](/opengraph/extensions/github/nodes/gh_reposecret) | ❌ |
+| [GH_UsesVariable](/opengraph/extensions/github/edges/gh_usesvariable) | [GH_EnvironmentVariable](/opengraph/extensions/github/nodes/gh_environmentvariable) | ❌ |
+| [GH_UsesVariable](/opengraph/extensions/github/edges/gh_usesvariable) | [GH_OrgVariable](/opengraph/extensions/github/nodes/gh_orgvariable) | ❌ |
+| [GH_UsesVariable](/opengraph/extensions/github/edges/gh_usesvariable) | [GH_RepoVariable](/opengraph/extensions/github/nodes/gh_repovariable) | ❌ |
 
 ## Properties
 
-| Property | Type | Description |
-| -------- | ---- | ----------- |
-| `name` | `str` | - |
-| `displayname` | `str` | - |
-| `environmentid` | `str` | - |
-| `last_seen` | `datetime` | - |
-| `node_id` | `str` | - |
-| `job_key` | `str \| None` | The YAML key for the job. |
-| `runs_on` | `list[str] \| None` | The runner label expression for the job. |
-| `runs_on_group` | `str \| None` | The statically declared runner group, if any. |
-| `runs_on_labels` | `list[str] \| None` | The normalized runner labels from runs-on. |
-| `runs_on_is_dynamic` | `bool` | Whether runs-on contains a GitHub Actions expression. |
-| `is_self_hosted` | `bool` | Whether the job targets self-hosted runners. |
-| `container` | `str \| None` | The optional container configuration. |
-| `environment` | `str \| None` | The deployment environment name. |
-| `permissions` | `list[str] \| None` | Applicable declared workflow or job permissions after job-over-workflow precedence. |
-| `job_permissions` | `list[str] \| None` | Optional permissions declared at the job level; absent when the job has no declaration. |
-| `effective_github_token_permissions` | `list[str] \| None` | Calculated GITHUB_TOKEN permissions after repository defaults and declarations are applied. |
-| `uses_reusable` | `str \| None` | The reusable workflow reference used by this job. |
-| `workflow_node_id` | `str \| None` | The parent workflow node ID. |
-| `repository_name` | `str \| None` | The containing repository name. |
-| `repository_id` | `str \| None` | The containing repository node ID. |
-| `environment_name` | `str \| None` | The name of the GitHub organization. |
-| `query_repository` | `str \| None` | Query for repository. |
-| `query_steps` | `str \| None` | Query for workflow steps. |
-| `query_references` | `str \| None` | Query for workflow references (secrets and variables). |
-| `query_runners` | `str \| None` | Query for eligible self-hosted runners. |
-| `query_accessible_secrets` | `str \| None` | Query for secrets accessible to the job execution context. |
+| Name | Type | Description |
+| --- | --- | --- |
+| `container` | `null \| string` | The optional container configuration. |
+| `displayname` | `string` |  |
+| `effective_github_token_permissions` | `array<string> \| null` | Calculated GITHUB_TOKEN permissions after repository defaults and declarations are applied. |
+| `environment` | `null \| string` | The deployment environment name. |
+| `environment_name` | `null \| string` | The name of the GitHub organization. |
+| `environmentid` | `string` |  |
+| `is_self_hosted` | `boolean` | Whether the job targets self-hosted runners. |
+| `job_key` | `null \| string` | The YAML key for the job. |
+| `job_permissions` | `array<string> \| null` | Optional permissions declared at the job level; absent when the job has no declaration. |
+| `last_seen` | `datetime` |  |
+| `name` | `string` |  |
+| `node_id` | `string` |  |
+| `permissions` | `array<string> \| null` | Applicable declared workflow or job permissions after job-over-workflow precedence. |
+| `query_accessible_secrets` | `null \| string` | Query for secrets accessible to the job execution context. |
+| `query_references` | `null \| string` | Query for workflow references (secrets and variables). |
+| `query_repository` | `null \| string` | Query for repository. |
+| `query_runners` | `null \| string` | Query for eligible self-hosted runners. |
+| `query_steps` | `null \| string` | Query for workflow steps. |
+| `repository_id` | `null \| string` | The containing repository node ID. |
+| `repository_name` | `null \| string` | The containing repository name. |
+| `runs_on` | `array<string> \| null` | The runner label expression for the job. |
+| `runs_on_group` | `null \| string` | The statically declared runner group, if any. |
+| `runs_on_is_dynamic` | `boolean` | Whether runs-on contains a GitHub Actions expression. |
+| `runs_on_labels` | `array<string> \| null` | The normalized runner labels from runs-on. |
+| `uses_reusable` | `null \| string` | The reusable workflow reference used by this job. |
+| `workflow_node_id` | `null \| string` | The parent workflow node ID. |
+
+## References
+
+- [Workflow jobs API](https://docs.github.com/en/rest/actions/workflow-jobs)
