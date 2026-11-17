@@ -15,9 +15,11 @@ SharpHound CE can be obtained in a few ways:
 ## Basic Usage
 
 You can collect plenty of data with SharpHound CE by simply running the binary itself with no flags set:
+
+```powershell
+SharpHound.exe
 ```
-C:\> SharpHound.exe
-```
+
 SharpHound CE will automatically determine what domain your current user belongs to, find a domain controller for that domain, and start the “default” collection method. The default collection method will collect the following pieces of information from the domain controller:
 
 * Security group memberships
@@ -42,34 +44,43 @@ BloodHound uses graph theory to find attack paths in Active Directory, and the m
 
 User sessions are a bit different because users, especially privileged users, log on and off different systems daily. How many systems does a typical help desk user or server admin log into on any given day?
 
-SharpHound CE’s Session Loop collection method makes this very easy:
+SharpHound CE 's Session Loop collection method makes this very easy:
+
+```powershell
+SharpHound.exe --CollectionMethods Session --Loop
 ```
-C:\> SharpHound.exe --CollectionMethods Session --Loop
-```
-This will run SharpHound CE’s session collection method for 2 hours, generating a zip file after each loop ends. When done, collect all the zip files and drag and drop them into the BloodHound GUI.
+
+This will run SharpHound CE 's session collection method for 2 hours, generating a zip file after each loop ends. When done, collect all the zip files and drag and drop them into the BloodHound GUI.
 
 If you want to specify a different loop time, use the --Loopduration flag with the HH:MM:SS format to specify how long you want SharpHound CE to perform looped session collection. For example, if you want SharpHound CE to perform looped session collection for 3 hours, 9 minutes, and 41 seconds:
+
+```powershell
+SharpHound.exe --CollectionMethods Session --Loop --Loopduration 03:09:41
 ```
-C:\> SharpHound.exe --CollectionMethods Session --Loop --Loopduration 03:09:41
-```
+
 ## Running SharpHound CE from a Non Domain-Joined System
 
 While not an officially supported collection method, and not a collection method we recommend you do, it is possible to collect data for a domain from a system that is not joined to that domain. To do so, carefully follow these steps:
 
 1. Configure your system DNS server to be the IP address of a domain controller in the target domain.
-2. Spawn a CMD shell as a user in that domain using \`runas\` its `/netonly` flag. You will be prompted to enter a password. Enter the password and hit enter.
-```
-    C:\> runas /netonly /user:CONTOSO\Jeff.Dimmock cmd.exe
-```
-3. A new CMD window will appear. If you type \`whoami\`, you will not see the name of the user you’re impersonating. This is because of the `/netonly` flag: the instance of CMD will only authenticate as that user when you authenticate to other systems over the network, but you are still the same user you were before when authenticating locally.
-4. Verify you’ve got valid domain authentiation by using the \`net\` binary. If you can see the SYSVOL and NETLOGON folders, you’re good.
-```
-    C:\> net view \\\contoso\
-```
-5. Run SharpHound CE, using the `-d` flag to specify the AD domain you want to collect information from. You can also use any other flags you wish.
-```
-    C:\> SharpHound.exe -d contoso.local
-```
+1. Spawn a CMD shell as a user in that domain using \`runas\` its `/netonly` flag. You will be prompted to enter a password. Enter the password and hit enter.
+
+   ```powershell
+   runas /netonly /user:CONTOSO\Jeff.Dimmock cmd.exe
+   ```
+
+1. A new CMD window will appear. If you type \`whoami\`, you will not see the name of the user you 're impersonating. This is because of the `/netonly` flag: the instance of CMD will only authenticate as that user when you authenticate to other systems over the network, but you are still the same user you were before when authenticating locally.
+1. Verify you 've got valid domain authentiation by using the \`net\` binary. If you can see the SYSVOL and NETLOGON folders, you 're good.
+
+   ```powershell
+   net view \\\contoso\
+   ```
+
+1. Run SharpHound CE, using the `-d` flag to specify the AD domain you want to collect information from. You can also use any other flags you wish.
+
+   ```powershell
+   SharpHound.exe -d contoso.local
+   ```
 
 ## Building SharpHound CE from Source
 
@@ -81,9 +92,9 @@ Building the project will generate an executable and a PowerShell script that en
 
 ## SharpHound CE vs. Antivirus
 
-Many anti-virus engines have signatures for SharpHound CE. You may even find that Chrome or other browsers will warn you against downloading SharpHound CE, saying the binary is malicious. This isn’t completely unexpected, as BloodHound is primarily a tool used by penetration testers and red teamers to find attack paths in Active Directory. While BloodHound has plenty of defensive value, antivirus and browser vendors continue to flag SharpHound CE as malicious.
+Many anti-virus engines have signatures for SharpHound CE. You may even find that Chrome or other browsers will warn you against downloading SharpHound CE, saying the binary is malicious. This isn 't completely unexpected, as BloodHound is primarily a tool used by penetration testers and red teamers to find attack paths in Active Directory. While BloodHound has plenty of defensive value, antivirus and browser vendors continue to flag SharpHound CE as malicious.
 
-If you are on the red team side, you can employ AV bypass strategies to avoid getting caught by AV. One of the best things you can do is stay completely off-disk when running SharpHound CE. Many command-and-control tools have in-memory .net assembly execution capabilities, such as Cobalt Strike’s **execute-assembly** and Covenant’s **assembly** commands. Using these commands will keep SharpHound CE totally off-disk when run on your target, which will go a very long way toward evading basic AV signatures.
+If you are on the red team side, you can employ AV bypass strategies to avoid getting caught by AV. One of the best things you can do is stay completely off-disk when running SharpHound CE. Many command-and-control tools have in-memory .net assembly execution capabilities, such as Cobalt Strike 's **execute-assembly** and Covenant's **assembly** commands. Using these commands will keep SharpHound CE totally off-disk when run on your target, which will go a very long way toward evading basic AV signatures.
 
 If you are on the blue team side, we recommend you use BloodHound Enterprise which is built for defenders and has a trusted and signed SharpHound Enterprise binary that does not get flagged by antivirus. You can also use the same AV bypass techniques used by the red team, or you can request an exception for the SharpHound CE binary itself or possibly a folder that you run SharpHound CE out of. Be aware, though, that AV-excluded folders and files can commonly be enumerated by low-privilege users running on the same system, so try to be as specific as possible with your allowlist exceptions.
 
