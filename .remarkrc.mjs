@@ -1,21 +1,9 @@
+import { basePlugins } from "./.remarkrc.shared.mjs";
+
 export default {
-  plugins: [
-    "remark-mdx",
-    "remark-frontmatter",
-    "remark-lint",
-    ["remark-lint-heading-style", "atx"],
-    ["remark-lint-first-heading-level", 2],
-    "remark-lint-no-heading-content-indent",
-    ["remark-lint-list-item-indent", "one"],
-    "remark-lint-list-item-content-indent",
-    ["remark-lint-ordered-list-marker-style", "."],
-    ["remark-lint-ordered-list-marker-value", "one"],
-    ["remark-lint-unordered-list-marker-style", "consistent"],
-    ["remark-lint-code-block-style", "fenced"],
-    ["remark-lint-fenced-code-flag", { allowEmpty: false }],
-    ["remark-lint-fenced-code-marker", "`"],
-    "remark-lint-no-duplicate-definitions",
-    "remark-lint-no-unused-definitions",
-    ["remark-lint-no-undefined-references", { allow: ["BHE only", "CE only"] }],
-  ],
+  // Full pages must start at H2 (the Mintlify page title fills H1).
+  // Nested fragments like docs/snippets/ override this rule locally
+  // because they're embedded under an existing heading and legitimately
+  // start below H2.
+  plugins: [...basePlugins, ["remark-lint-first-heading-level", 2]],
 };

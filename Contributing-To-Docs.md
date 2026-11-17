@@ -17,6 +17,9 @@ To set up your local environment for docs:
 1. Install Mintlify, our documentation publishing platform.
    1. Install node.js (version 20.17.0 or higher).
    2. Install the Mintlify CLI with `npm i -g mint`.
+1. Install the Markdown/MDX linting dependencies.
+   1. Install Node.js 26 (matching `.github/workflows/lint.yaml`).
+   2. From the repository root, run `npm install`.
 
 ### 1. Write the docs
 
@@ -64,6 +67,7 @@ To edit the docs:
    | `mint broken-links` | Checks for broken links |
    | `mint a11y` | Checks for accessibility issues |
    | `mint dev` | Starts a local development server for previewing the documentation site |
+   | `npm run lint:docs` (run from the repository root) | Lints Markdown/MDX formatting; requires Node 26 and `npm install` (see [Set up your environment](#0-set-up-your-environment)) |
 
    If you get stuck on local development, see the [Mintlify documentation](https://mintlify.com/docs/development).
 
