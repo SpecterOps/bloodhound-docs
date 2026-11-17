@@ -1,0 +1,24 @@
+export default {
+  plugins: [
+    "remark-mdx",
+    "remark-lint",
+    ["remark-lint-first-heading-level", 2],
+    ["remark-lint-code-block-style", "fenced"],
+    ["remark-lint-fenced-code-flag", { allowEmpty: false }],
+    ["remark-lint-fenced-code-marker", "`"],
+    "remark-lint-hard-break-spaces",
+    ["remark-lint-heading-style", "atx"],
+    "remark-lint-list-item-content-indent",
+    ["remark-lint-list-item-indent", "one"],
+    "remark-lint-no-blockquote-without-marker",
+    "remark-lint-no-duplicate-definitions",
+    "remark-lint-no-heading-content-indent",
+    [
+      "remark-lint-no-undefined-references",
+      { allow: ["BHE only", "CE only"] },
+    ],
+    "remark-lint-no-unused-definitions",
+    ["remark-lint-ordered-list-marker-style", "."],
+    ["remark-lint-ordered-list-marker-value", "one"],
+  ],
+};
