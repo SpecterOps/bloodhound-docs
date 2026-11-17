@@ -1,17 +1,23 @@
 ---
 title: AZUserAccessAdministrator
-description: "The User Access Admin role can edit roles against many other objects."
+description: "An Entra principal has been granted the Azure Resource Manager 'User Access Administrator' role over an Azure Resource Manager asset."
 ---
 
 import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
 
 <ResourceEditionPill />
 
+AZUserAccessAdministrator targets resources in Azure Resource Manager (for example [AZResourceGroup](/resources/nodes/az-resource-group), [AZSubscription](/resources/nodes/az-subscription), and [AZVM](/resources/nodes/az-vm)) through a role assignment called "User Access Administrator".
+
+
 
 
 ## Abuse Info
 
+The User Access Administrator role can manage access by assigning roles to principals within its scope.
+
 This role can be used to grant yourself or another principal any privilege you want against Automation Accounts, VMs, Key Vaults, and Resource Groups. For example, you can make yourself an administrator of an Azure Subscription by assigning the Owner role at the Subscription scope.
+The edge terminates at the role assignment's scope. A role assignment scoped to an [AZManagementGroup](/resources/nodes/az-management-group), [AZSubscription](/resources/nodes/az-subscription), or [AZResourceGroup](/resources/nodes/az-resource-group) is inherited by all child resources. In BloodHound, that inheritance is traversable through the Azure Resource Manager hierarchy via [AZContains](/resources/edges/az-contains) edges. One scoped to a specific resource applies to that resource and, where applicable, its nested child resources.
 
 The simplest way to execute this attack is to use the Azure portal to add a new, abusable role assignment against the target object for yourself.
 
@@ -26,4 +32,5 @@ Using that token, you can make a call to the AzureRM API to create a new role as
 Azure will log any role activation event for any object type.
 
 ## References
+* [User Access Administrator](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/privileged#user-access-administrator)
 * [https://blog.netspi.com/maintaining-azure-persistence-via-automation-accounts/](https://blog.netspi.com/maintaining-azure-persistence-via-automation-accounts/)
