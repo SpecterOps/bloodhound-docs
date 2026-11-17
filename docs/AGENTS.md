@@ -31,7 +31,7 @@ Relevant repositories include BloodHound Community Edition, BloodHound Enterpris
 - Identify whether each page, feature, command, permission, or procedure applies to BloodHound Enterprise, BloodHound Community Edition, or both. For product pages, use the established edition pill asset at the top of the page; label edition-specific sections explicitly when a page covers both editions.
 - Never imply that an Enterprise-only capability is available in Community Edition, or that a Community Edition workflow applies unchanged to Enterprise.
 - When editions require different workflows, separate and label them clearly.
-- Use [`resources/glossary/overview.mdx`](resources/glossary/overview.mdx) as the source of truth for BloodHound terminology, definitions, capitalization, and product-specific usage. If implementation evidence conflicts with the glossary, verify the current product behavior and update or flag the glossary separately.
+- Use `docs/resources/glossary/overview.mdx` as the source of truth for BloodHound terminology, definitions, capitalization, and product-specific usage. If implementation evidence conflicts with the glossary, verify the current product behavior and update or flag the glossary separately.
 
 ## Page requirements
 

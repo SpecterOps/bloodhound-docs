@@ -24,9 +24,7 @@ When generating release notes from Jira exports, follow the repository release-n
 
 ### Example
 
-Use the following files as examples of how the summary and detailed release notes pages should be structured and formatted:
-
-- [Summary page example](/resources/release-notes/summary.mdx)
+Use the following files as examples of how the summary and detailed release notes pages should be structured and formatted: `docs/resources/release-notes/summary.mdx`
 
 ## Detailed release notes
 
@@ -54,7 +52,7 @@ For each release, we provide detailed release notes that include:
 - Use a deterministic sort order that applies stakeholder constraints in priority order: group by update type first, then split by applicability (shared first, enterprise-only second), then rank by reader impact or value. This keeps the notes scannable, consistent, and defensible release over release.
 - Use visuals only when they materially improve understanding of a workflow, visual state change, graph interaction, or collector experience
 
-See the [detailed release notes for the 2026-03-23 release](/resources/release-notes/2026-03-23.mdx) and the [2026-06-17 release](/resources/release-notes/2026-06-17.mdx) for examples of how to format and structure detailed release notes using the `<Update>` component.
+See the `docs/resources/release-notes/2026-03-23.mdx` and the `docs/resources/release-notes/2026-06-17.mdx` for examples of how to format and structure detailed release notes using the `<Update>` component.
 
 ### Ordering updates in detailed release notes
 
