@@ -1,0 +1,167 @@
+---
+title: 2026-11-16 Release Notes
+description: Learn about new features, enhancements, and fixed issues in BloodHound.
+sidebarTitle: "2026-11-16"
+---
+
+import CollectorDeprecationNotice from '/snippets/resources/collector-deprecation-notice.mdx';
+
+<Tip>
+  Use the filters on the right side of this page to narrow down the updates by component. You can select multiple filters at the same time to refine your results.
+</Tip>
+
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Release** | **BloodHound** | **OpenHound** | **SharpHound** | **AzureHound** |
+| 2026-11-16 | v9.10.0 | v0.5.1 | v2.18.0 | No release |
+
+<CollectorDeprecationNotice />
+
+<Update label="BloodHound" description="New Feature" tags={["Administration"]}>
+  {/*BED-10067*/}
+  ## Community Edition Marketplace
+
+  Discover supported OpenGraph extensions, community extensions, and integrations from the new **Marketplace** page in BloodHound Community Edition.
+
+  Search the catalog and filter listings by type, publisher, or availability. Select the <Icon icon="grid-2" /> icon in the left navigation panel to open the **Marketplace** page.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-6182*/}
+  ## ADCS ESC11 support
+
+  BloodHound now ingests and analyzes the `RPCEncryptionEnforced` property collected from Active Directory Certificate Services (ADCS) certificate authorities.
+  
+  This allows BloodHound to identify certificate authorities that may be vulnerable to ESC11 and model vulnerable RPC enrollment paths with the new [CoerceAndRelayNTLMToADCSRPC](/resources/edges/coerce-and-relay-ntlm-to-adcs-rpc) edge. See the [EnterpriseCA node](/resources/nodes/enterprise-ca) for details about the collected property.
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  BloodHound Enterprise also reports a **Tier Zero Coerce And Relay NTLM To ADCS RPC** finding for the new edge.
+
+  <Note>
+    **Dependency**
+
+    This enhancement requires SharpHound v2.18.0 to collect the corresponding [ADCS ESC11 data](/resources/release-notes/2026-11-16#adcs-esc11-collection).
+  </Note>
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-6176*/}
+  ## ADCS ESC16 support
+
+  BloodHound now ingests and analyzes the `DisabledExtensions` setting collected from certificate authorities.
+  
+  This allows BloodHound to identify certificate authorities that disable the security extension and may be vulnerable to ESC16, represented by the [ADCSESC16](/resources/edges/adcs-esc16) edge. See the [EnterpriseCA node](/resources/nodes/enterprise-ca) for details about the collected property.
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  BloodHound Enterprise also reports a **Non-Tier Zero Principals With ADCS ESC16 Privileges** finding for the new edge.
+
+  <Note>
+    **Dependency**
+
+    This enhancement requires SharpHound v2.18.0 to collect the corresponding [ADCS ESC16 data](/resources/release-notes/2026-11-16#adcs-esc16-collection).
+  </Note>
+</Update>
+
+<Update label="SharpHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-6182*/}
+  ## ADCS ESC11 collection
+
+  Collect ADCS ESC11 data with SharpHound v2.18.0.
+
+  SharpHound collects the certificate authority's RPC encryption setting and exposes it as `RPCEncryptionEnforced` for BloodHound analysis.
+
+  See [ADCS ESC11 support](/resources/release-notes/2026-11-16#adcs-esc11-support) to learn how BloodHound uses this data.
+</Update>
+
+<Update label="SharpHound" description="Enhancement" tags={["Data Collection"]}>
+  {/*BED-6176*/}
+  ## ADCS ESC16 collection
+
+  Collect ADCS ESC16 data with SharpHound v2.18.0.
+
+  SharpHound collects the certificate authority's `DisableExtensionList` setting and reports whether the value was collected successfully.
+
+  See [ADCS ESC16 support](/resources/release-notes/2026-11-16#adcs-esc16-support) to learn how BloodHound uses this data.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["GitHub"]}>
+  ## GitHub collection
+
+  - {/*BED-10447*/} Collect GitHub enterprise identity providers and external identities for enterprises that use OIDC federation, alongside the existing SAML support. The graph now represents OIDC providers and their identity relationships.
+  - {/*BED-10454*/} Inspect the GitHub App installation used for enterprise collection, including its granted permissions. The collector now represents enterprise-level installations as `GH_AppInstallation` nodes in addition to organization installations.
+  - {/*BED-10295*/} See who registered a GitHub App and whether the registration belongs to the collected tenant or a third party. Registration ownership is distinct from where the app is installed.
+</Update>
+
+<Update label="OpenHound" description="Enhancement" tags={["Okta"]}>
+  {/*BED-10093, BED-10053, BED-10052, BED-10007*/}
+  ## Okta collection
+
+  - Limit application-user and MFA collection to reduce request volume in large organizations. See [Large Environment Settings](/openhound/collectors/okta/large-environment-settings) for collection scope options.
+  - Tune request concurrency, rate-limit handling, and page sizes to make better use of Okta API capacity. See [Large Environment Settings](/openhound/collectors/okta/large-environment-settings) for configuration details and [Performance Telemetry](/openhound/collectors/okta/performance-telemetry) to diagnose collection performance.
+  - Inspect Entity panel details for collected relationships to investigate their composition.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["PostgreSQL"]}>
+  {/*BED-10455*/}
+  ## PostgreSQL performance improvements
+
+  A top-to-bottom rewrite of the PostgreSQL driver significantly improves performance across BloodHound.
+
+  See the [supported Cypher syntax reference](/analyze-data/explore/cypher-supported) for PostgreSQL-specific behavior and limitations.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["OpenGraph"]}>
+  {/*BED-10091*/}
+  ## Privilege Zone rule settings
+
+  Keep your chosen enabled state for Privilege Zone rules when an extension bundle is updated.
+
+  The bundle's `enabled` default now applies when a rule is created, while updates preserve an administrator's existing choice unless the rule becomes always enabled.
+
+  Administrators can learn more in [Update an extension](/opengraph/extensions/manage#update-an-extension). Extension developers can learn more in [Privilege Zone rules for extension bundles](/opengraph/developer/extension-bundles#privilege-zone-rules).
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-9521*/}
+  ## Object filter
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Search for objects in the **Findings Table** on the **Attack Paths** page to narrow results.
+
+  Use the new **Objects** multi-select [filter](/analyze-data/findings/table-view#filter-findings) to narrow results to findings involving specific objects.
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-9979*/}
+  ## Relative Last Analysis time
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  See how recently an analysis ran in the **Graph** on the **Attack Paths** page.
+
+  The **Last Analysis** value now uses readable relative timestamps such as “28 minutes ago” or “2 days ago.”
+</Update>
+
+<Update label="BloodHound" description="Enhancement" tags={["Attack Paths"]}>
+  {/*BED-9834, BED-9963*/}
+  ## Findings API enhancements
+
+  <img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" style={{ width: "25%" }}/>
+
+  Use [`GET /api/v2/attack-paths/findings`](/reference/attack-paths/list-attack-path-findings) to filter findings by a principal object's ID with `principal_object_id`. The filter matches findings where the object is either the source or target principal.
+
+  Use the `is_regression` field to identify unarchived findings that match a previously archived, remediated finding by type, name, environment, zone, and principal identity.
+</Update>
+
+<Update label="BloodHound" tags={["Fixed Issues"]}>
+  ## Fixed Issues
+
+  The following issues have been fixed in this release:
+
+  ### Post-Processing
+
+  {/*BED-10064*/} Resolved an issue where failed processing could remove valid post-processed relationships. Existing relationships are preserved when processing fails, and pruning occurs only after successful processing.
+</Update>
