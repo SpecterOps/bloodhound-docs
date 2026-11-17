@@ -10,7 +10,6 @@ export default {
     ["remark-lint-heading-style", "atx"],
     "remark-lint-list-item-content-indent",
     ["remark-lint-list-item-indent", "one"],
-    "remark-lint-no-blockquote-without-marker",
     "remark-lint-no-duplicate-definitions",
     "remark-lint-no-heading-content-indent",
     [
