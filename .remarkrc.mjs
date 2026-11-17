@@ -1,6 +1,7 @@
 export default {
   plugins: [
     "remark-mdx",
+    "remark-frontmatter",
     "remark-lint",
     ["remark-lint-heading-style", "atx"],
     ["remark-lint-first-heading-level", 2],
