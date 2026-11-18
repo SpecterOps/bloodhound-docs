@@ -12,7 +12,7 @@ import CloudCollectorBetaNote from '/snippets/feature-beta.mdx';
 
 Cloud Collector reduces the infrastructure you operate for AWS organization collection, but your organization remains responsible for granting collection permissions and protecting the credential you provide.
 
-This page describes the beta credential and data-handling model. BloodHound Enterprise submits the collection plan and its related records, while the managed service processes collection jobs outside of BloodHound Enterprise.
+This page describes the beta credential and data-handling model. BloodHound Enterprise submits the collection plan and its related records, while Cloud Collector processes collection jobs outside of BloodHound Enterprise.
 
 ## Understand the security model
 
@@ -52,11 +52,9 @@ Each collection plan uses one AWS access key pair, either newly supplied or sele
 
 When you save a new credential, BloodHound Enterprise sends the secret access key to AWS Secrets Manager and stores its reference and access key ID. The collector jobs database stores this metadata, not the secret access key.
 
-BloodHound Enterprise does not read the secret access key back or display it after saving. The managed service obtains the access key ID from the claimed job and retrieves the referenced secret access key using its own service identity. It supplies the pair to the collection worker's environment for that job; you do not configure AWS profiles or credential files on the managed host.
+BloodHound Enterprise does not read the secret access key back or display it after saving. Cloud Collector obtains the access key ID from the job and retrieves the referenced secret access key.
 
-The worker authenticates as the starting key identity and uses STS to assume the configured roles. Those assumptions return temporary role credentials. Supporting STS during collection does not mean the beta accepts a role ARN or an initial temporary key/session-token combination instead of the access key pair.
-
-BloodHound Enterprise handles customer-secret lifecycle requests, while the managed collector retrieves the secret for collection rather than creating or updating it. In this beta, you cannot edit a collection plan and select a different saved credential after saving it, and you cannot edit the saved key pair itself.
+BloodHound Enterprise handles customer-secret lifecycle requests, while Cloud Collector retrieves the secret for collection rather than creating or updating it. In this beta, you cannot edit a collection plan and select a different saved credential after saving it, and you cannot edit the saved key pair itself.
 
 The Cloud Collector user interface does not provide a self-service way to delete credential reference metadata from the Cloud Collector service. Contact your SpecterOps account team for more information.
 
@@ -80,7 +78,7 @@ Review the scope whenever you change the AWS policy. A policy that is too narrow
 
 ### Configure AWS permissions
 
-An AWS administrator must configure the following before you create the plan. The starting user may be in the management account or another account. Do not use the managed service's infrastructure identity as a principal in these customer role trust policies.
+An AWS administrator must configure the following before you create the plan. The starting user may be in the management account or another account. Do not use Cloud Collector's infrastructure identity as a principal in these customer role trust policies.
 
 The examples use:
 
@@ -321,15 +319,15 @@ The beta supports AWS organization survey and collection using either member-rol
 
 ## Allow Cloud Collector traffic
 
-If your AWS or network controls require source allowlisting, request the current managed-service network requirements and change-notification process from your SpecterOps account team. Do not infer the range from a self-deployed collector's address.
+If your AWS or network controls require source allowlisting, request the current Cloud Collector network requirements and change-notification process from your SpecterOps account team. Do not infer the range from a self-deployed collector's address.
 
 {/* TODO: Document the Cloud Collector egress IP range and allowlisting requirements when available. */}
 
 ## Understand logs and diagnostics
 
-BloodHound Enterprise displays basic collection errors and plan results. Do not include secret values in diagnostic reports.
+BloodHound Enterprise displays basic collection errors and plan results. Secret creation and deletion are logged for operational auditing.
 
-Diagnostic retention and access to managed-service logs vary by support arrangement. Contact your SpecterOps account team for current support procedures.
+Diagnostic retention and access to Cloud Collector logs vary by support arrangement. Contact your SpecterOps account team for current support procedures.
 
 ## Protect collected data
 
@@ -343,7 +341,7 @@ Cloud Collector job history is self-contained and separate from graph data. It c
 
 ## Understand tenant isolation
 
-Your BloodHound Enterprise instance is called a tenant. Cloud Collector credentials use tenant-scoped secret storage and Identity and Access Management (IAM) controls according to the deployment configuration. Your tenant cannot access other tenants' secrets, and other tenants cannot access yours.
+Cloud Collector credentials use tenant-scoped secret storage and Identity and Access Management (IAM) controls according to the deployment configuration. Your tenant cannot access other tenants' secrets, and other tenants cannot access yours.
 
 BloodHound Enterprise and the jobs engine manage the credential lifecycle, while the collector reads the credential to perform collection. The security design targets zero cross-tenant secret access and removal of orphaned secrets as operational outcomes.
 

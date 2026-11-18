@@ -18,7 +18,7 @@ You configure credentials, collection plans, and schedules in BloodHound Enterpr
 <Note>
   Self-deployed collectors remain a fully supported option when you must operate collector infrastructure in your own environment. Cloud Collector is a cloud-hosted convenience, not a requirement for collecting a supported platform.
 
-  See [managed vs self-hosted collection](/collect-data/enterprise-collection/cloud-collector/overview#managed-vs-self-hosted-collection) for more details.
+  See [Cloud Collector vs self-hosted collection](/collect-data/enterprise-collection/cloud-collector/overview#cloud-collector-vs-self-hosted-collection) for more details.
 </Note>
 
 ## Beta scope
@@ -27,16 +27,16 @@ The Cloud Collector beta supports the following capabilities:
 
 | Capability | Beta behavior |
 | --- | --- |
-| **Collector** | SpecterOps-managed OpenHound |
+| **Collector** | Cloud Collector, powered by OpenHound |
 | **Extension** | AWS |
 | **Collection scope** | Organization survey followed by collection from the management account and accessible active member accounts |
-| **Authentication** | An AWS access key pair for the starting identity, followed by STS assumptions of collection roles |
+| **Authentication** | An AWS access key pair entered in BloodHound Enterprise for the starting identity, followed by STS assumptions of collection roles |
 | **Member-role paths** | Directly from the starting identity (`source`), or through the management role (`management`) |
 | **Configuration delivery** | A non-secret JSON object entered in BloodHound Enterprise; the access key pair is supplied separately |
 | **Collection plans** | Multiple plans supported; each plan describes one collection configuration (profile, secret, and optional schedule) |
 | **Schedule** | One optional daily schedule per collection plan |
 
-The managed beta does not yet support single-account, independent-account, or custom finished-config workflows. You do not provide local AWS profiles or upload AWS files. Self-hosted OpenHound has separate configuration capabilities; its examples are not interchangeable with managed plans.
+The Cloud Collector beta does not yet support single-account, independent-account, or custom finished-config workflows. You do not provide local AWS profiles or upload AWS files. Self-hosted OpenHound has separate configuration capabilities; its examples are not interchangeable with cloud collection plans.
 
 ## AWS collection
 
@@ -53,9 +53,9 @@ Before diving into the workflow, it's important to understand the following key 
 | Term | Definition |
 | --- | --- |
 | **Collector** | A piece of software designed to collect attack path data from your environment. Current collectors include SharpHound, AzureHound, and OpenHound. Cloud Collector uses OpenHound.|
-| **Managed collector** | A cloud-hosted collector service that SpecterOps deploys, operates, and maintains. |
+| **Cloud Collector** | A cloud-hosted collector service that SpecterOps deploys, operates, and maintains. |
 | **Self-hosted collector** | A collector that you install, configure, deploy, operate, and maintain in your own infrastructure. SharpHound, AzureHound, and OpenHound can perform self-hosted collection. |
-| **Collection plan** | A managed collector configuration that includes a collection profile, a secret, and an optional schedule. The profile defines what to collect and the secret provides the credentials. You can use a plan to queue an on-demand job or schedule automatic collection. |
+| **Collection plan** | A Cloud Collector configuration that includes a collection profile, a secret, and an optional schedule. The profile defines what to collect and the secret provides the credentials. You can use a plan to queue an on-demand job or schedule automatic collection. |
 | **Job** | A unit of work for a collector to execute. A job defines what data should be collected and from where. |
 | **On-demand collection** | A job execution mode in which you manually queue a job instead of relying on a schedule. |
 | **Schedule collection** (or schedule) | Defines when or how often a particular job should be queued. |
@@ -69,7 +69,7 @@ sequenceDiagram
     actor Administrator
     participant BHE as BloodHound Enterprise
     participant Secrets as AWS Secrets Manager
-    participant Collector as Managed OpenHound
+    participant Collector as Cloud Collector
     participant AWS as Customer AWS environment
 
     Administrator->>BHE: Create a collection plan
@@ -90,7 +90,7 @@ sequenceDiagram
 
 The collection plan is the reusable configuration. Each scheduled collection creates a job from the plan, so later edits affect future jobs rather than changing a job that is already in progress.
 
-BloodHound Enterprise provides the profile, schedule, secret, queue, and Cloud Collector job history. The collector does not run inside BloodHound Enterprise. The Cloud Collector service claims and processes jobs, so collection results still depend on tenant enablement and managed-service availability.
+BloodHound Enterprise provides the profile, schedule, secret, queue, and Cloud Collector job history. The collector does not run inside BloodHound Enterprise. The Cloud Collector service claims and processes jobs, so collection results still depend on tenant enablement and Cloud Collector availability.
 
 <Note>
   Cloud Collector job history is self-contained and is available from a collection plan. Cloud Collector jobs do not appear on the **Administration** > **Manage Clients** or **Administration** > **Finished Jobs Log** pages.
@@ -110,16 +110,16 @@ The collector uses your access key pair to authenticate, then uses AWS Security 
 
 <DataExploration />
 
-## Managed vs self-hosted collection
+## Cloud Collector vs self-hosted collection
 
-The following table provides a comparison of managed versus self-hosted collection:
+The following table compares Cloud Collector with self-hosted collection:
 
 | Area | Cloud Collector | Self-hosted collection |
 | --- | --- | --- |
 | **Deployment** | SpecterOps deploys and operates the OpenHound collector | You deploy and operate a collector in your environment |
 | **Maintenance** | SpecterOps manages the collector runtime and upgrades | You manage the runtime, upgrades, and troubleshooting |
-| **Credentials** | BloodHound Enterprise stores a reference to credentials held in the managed service's external secret store | You choose and operate the credential store for your collector |
-| **Network path** | Collection traffic originates from the managed service | Collection traffic originates from your collector host |
+| **Credentials** | BloodHound Enterprise stores a reference to credentials held in Cloud Collector's external secret store | You choose and operate the credential store for your collector |
+| **Network path** | Collection traffic originates from Cloud Collector | Collection traffic originates from your collector host |
 | **Best fit** | You want collection without the burden of managing infrastructure | Your network or governance policy requires customer-operated collection |
 
 ## Next steps

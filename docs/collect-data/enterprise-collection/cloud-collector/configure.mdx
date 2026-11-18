@@ -11,7 +11,7 @@ import CloudCollectorBetaNote from '/snippets/feature-beta.mdx';
 
 <CloudCollectorBetaNote feature="Cloud Collector" />
 
-Use a collection plan to collect AWS organization data with SpecterOps-managed OpenHound. You supply non-secret configuration, an AWS access key pair, and an optional daily schedule. You do not deploy a collector or upload AWS configuration files.
+Use a collection plan to define cloud service credentials, collection scope, and an optional schedule for Cloud Collector.
 
 After the beta is enabled in your tenant, create or edit a plan, use on-demand collection, and review its job history to confirm collection activity.
 
@@ -37,7 +37,7 @@ Before you configure a collection plan, confirm that the following prerequisites
 
 ## AWS collection scope
 
-The managed beta surveys an AWS organization, discovers its active accounts, and builds the configuration used for collection. It reads AWS Organizations metadata through the management identity and collects resources from the management account and accessible active member accounts.
+The Cloud Collector beta surveys an AWS organization, discovers its active accounts, and builds the configuration used for collection. It reads AWS Organizations metadata through the management identity and collects resources from the management account and accessible active member accounts.
 
 The beta supports both member-role paths below. It does not yet support single-account collection, independent-account collection, custom finished AWS configurations, or customer-provided AWS files and named profiles.
 
@@ -52,7 +52,7 @@ Choose `member_role_source` according to the identity trusted by your member-acc
 | `source` | The starting key identity assumes the management role. | The starting key identity directly assumes each member role. Member roles must trust that starting principal. |
 | `management` | The starting key identity assumes the management role. | The management role assumes each member role. Member roles must trust that management role. |
 
-The starting identity may belong to the management account or another account. This choice does not describe where the managed collector runs. Both paths require the caller's `sts:AssumeRole` permissions and the target role's trust policy. Follow [Configure AWS permissions](/collect-data/enterprise-collection/cloud-collector/security-and-compliance#configure-aws-permissions) to establish both.
+The starting identity may belong to the management account or another account. This choice does not describe where Cloud Collector runs. Both paths require the caller's `sts:AssumeRole` permissions and the target role's trust policy. Follow [Configure AWS permissions](/collect-data/enterprise-collection/cloud-collector/security-and-compliance#configure-aws-permissions) to establish both.
 
 ## AWS configuration
 
@@ -119,22 +119,20 @@ The following settings belong inside `sources.source.aws.credentials`. Despite t
 | `management_role_name` | Set explicitly as shown. The role the starting identity assumes for organization survey, Organizations data, and management-account resource collection. |
 | `collector_assumed_role_name` | Required. The role assumed in every active member account. |
 | `member_role_source` | Required. Use `source` or `management` according to the [member-role path](#choose-a-member-role-path). |
-| `runtime_auth_mode` | Use `default_chain` as shown so the AWS SDK selects the key pair supplied by the managed service. |
+| `runtime_auth_mode` | Use `default_chain` as shown so the AWS SDK selects the key pair supplied by Cloud Collector. |
 | `collector_assumed_role_session_name` | Optional. The STS role session name; defaults to `openhound-aws-collection`. |
 
 <Warning>
-  Set `management_role_name` explicitly even if the access key belongs to a user in the management account. If you omit it, the extension defaults the role name to `collector_assumed_role_name`, but uses a starting identity already in management without a role hop. That no-hop path cannot be represented using the environment credentials supplied by the managed beta. An explicit management role makes the collector assume that role instead.
+  Set `management_role_name` explicitly even if the access key belongs to a user in the management account. If you omit it, the extension defaults the role name to `collector_assumed_role_name`, but uses a starting identity already in management without a role hop. That no-hop path cannot be represented using the environment credentials supplied by Cloud Collector. An explicit management role makes the collector assume that role instead.
 </Warning>
 
-Do not add a `params` wrapper or a full API enqueue request around these objects. Do not include comments, raw AWS keys, a `destination` section, or BloodHound Enterprise tokens. Enter the access key pair only in the separate **Secrets** step.
-
-Do not add self-hosted file/profile settings such as `aws_config_file`, `source_config_file`, `credentials_file`, or `collector_profile_name`, and do not enable `survey_only`. The managed service supplies the collection credentials and handles the generated configuration.
+Do not add self-hosted file/profile settings such as `aws_config_file`, `source_config_file`, `credentials_file`, or `collector_profile_name`, and do not enable `survey_only`. Cloud Collector supplies the collection credentials and handles the generated configuration.
 
 ### Optional S3 inventory
 
 S3 bucket and object inventory is disabled by default. Account-level S3 public access block settings are collected independently of this switch. Object inventory contains names and metadata, not object contents.
 
-To enable bucket and object inventory, use a complete configuration such as the following. This example uses the `source` member-role path and explicitly sets a limit of **50** objects per bucket; **50 is not the default**.
+To enable bucket and object inventory, use a complete configuration such as the following. This example uses the `source` member-role path.
 
 ```json
 {
@@ -150,7 +148,7 @@ To enable bucket and object inventory, use a complete configuration such as the 
         },
         "bucket_policy": {
           "include": true,
-          "max_objects": 50,
+          "max_objects": 10,
           "rule": [
             {
               "include": true,
@@ -164,8 +162,6 @@ To enable bucket and object inventory, use a complete configuration such as the 
   }
 }
 ```
-
-Keep `bucket_policy` directly under `sources.source.aws`, alongside `credentials`, not inside it.
 
 | Setting | Default | Behavior |
 | --- | --- | --- |
