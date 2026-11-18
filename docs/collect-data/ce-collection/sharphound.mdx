@@ -17,7 +17,7 @@ SharpHound CE can be obtained in a few ways:
 You can collect plenty of data with SharpHound CE by simply running the binary itself with no flags set:
 
 ```powershell
-SharpHound.exe
+.\SharpHound.exe
 ```
 
 SharpHound CE will automatically determine what domain your current user belongs to, find a domain controller for that domain, and start the “default” collection method. The default collection method will collect the following pieces of information from the domain controller:
@@ -47,7 +47,7 @@ User sessions are a bit different because users, especially privileged users, lo
 SharpHound CE 's Session Loop collection method makes this very easy:
 
 ```powershell
-SharpHound.exe --CollectionMethods Session --Loop
+.\SharpHound.exe --CollectionMethods Session --Loop
 ```
 
 This will run SharpHound CE 's session collection method for 2 hours, generating a zip file after each loop ends. When done, collect all the zip files and drag and drop them into the BloodHound GUI.
@@ -55,7 +55,7 @@ This will run SharpHound CE 's session collection method for 2 hours, generating
 If you want to specify a different loop time, use the --Loopduration flag with the HH:MM:SS format to specify how long you want SharpHound CE to perform looped session collection. For example, if you want SharpHound CE to perform looped session collection for 3 hours, 9 minutes, and 41 seconds:
 
 ```powershell
-SharpHound.exe --CollectionMethods Session --Loop --Loopduration 03:09:41
+.\SharpHound.exe --CollectionMethods Session --Loop --Loopduration 03:09:41
 ```
 
 ## Running SharpHound CE from a Non Domain-Joined System
@@ -63,14 +63,16 @@ SharpHound.exe --CollectionMethods Session --Loop --Loopduration 03:09:41
 While not an officially supported collection method, and not a collection method we recommend you do, it is possible to collect data for a domain from a system that is not joined to that domain. To do so, carefully follow these steps:
 
 1. Configure your system DNS server to be the IP address of a domain controller in the target domain.
-1. Spawn a CMD shell as a user in that domain using \`runas\` its `/netonly` flag. You will be prompted to enter a password. Enter the password and hit enter.
+
+1. Spawn a CMD shell as a user in that domain using `runas` its `/netonly` flag. You will be prompted to enter a password. Enter the password and hit enter.
 
    ```powershell
    runas /netonly /user:CONTOSO\Jeff.Dimmock cmd.exe
    ```
 
-1. A new CMD window will appear. If you type \`whoami\`, you will not see the name of the user you 're impersonating. This is because of the `/netonly` flag: the instance of CMD will only authenticate as that user when you authenticate to other systems over the network, but you are still the same user you were before when authenticating locally.
-1. Verify you 've got valid domain authentiation by using the \`net\` binary. If you can see the SYSVOL and NETLOGON folders, you 're good.
+1. A new CMD window will appear. If you type `whoami`, you will not see the name of the user you 're impersonating. This is because of the `/netonly` flag: the instance of CMD will only authenticate as that user when you authenticate to other systems over the network, but you are still the same user you were before when authenticating locally.
+
+1. Verify you 've got valid domain authentiation by using the `net` binary. If you can see the SYSVOL and NETLOGON folders, you 're good.
 
    ```powershell
    net view \\\contoso\
@@ -79,7 +81,7 @@ While not an officially supported collection method, and not a collection method
 1. Run SharpHound CE, using the `-d` flag to specify the AD domain you want to collect information from. You can also use any other flags you wish.
 
    ```powershell
-   SharpHound.exe -d contoso.local
+   .\SharpHound.exe -d contoso.local
    ```
 
 ## Building SharpHound CE from Source

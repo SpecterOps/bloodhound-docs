@@ -47,12 +47,12 @@ Here are the less common CollectionMethods and what they do:
 For example, to collect sessions:
 
 ```powershell
-SharpHound.exe --CollectionMethods session
+.\SharpHound.exe --CollectionMethods session
 ```
 To collect Azure VM identifiers:
 
 ```powershell
-SharpHound.exe --CollectionMethods AzureRegistry
+.\SharpHound.exe --CollectionMethods AzureRegistry
 ```
 
 `AzureRegistry` is included in `ComputerOnly` and `All`. It is not included in `Default`.
@@ -70,7 +70,7 @@ Image credit: [https://twitter.com/SadProcessor](https://twitter.com/SadProcesso
 Tell SharpHound which Active Directory domain you want to gather information from. Importantly, you must be able to resolve DNS in that domain for SharpHound to work correctly. For example, to collect data from the \`contoso.local\` domain:
 
 ```powershell
-SharpHound.exe --Domain contoso.local
+.\SharpHound.exe --Domain contoso.local
 ```
 
 ### SearchForest or 's'
@@ -82,7 +82,7 @@ This flag would instruct SharpHound to automatically collect data from all domai
 Perform “stealth” data collection. This switch modifies your data collection method. For example, if you want to perform user session collection, but only touch systems that are the most likely to have user session data:
 
 ```powershell
-SharpHound.exe --CollectionMethods Session --Stealth
+.\SharpHound.exe --CollectionMethods Session --Stealth
 ```
 
 Stealth mode removes `AzureRegistry` along with other computer-based collection methods.
@@ -96,7 +96,7 @@ Load a list of computer names or IP addresses for SharpHound to collect informat
 Base DistinguishedName to start search at. Use this to limit your search. Equivalent to the old `--OU` and '--SearchBase' option.
 
 ```powershell
-SharpHound.exe --DistinguishedName "OU=New York,DC=Contoso,DC=Local"
+.\SharpHound.exe --DistinguishedName "OU=New York,DC=Contoso,DC=Local"
 ```
 
 ### LDAPFilter or 'f'
@@ -104,7 +104,7 @@ SharpHound.exe --DistinguishedName "OU=New York,DC=Contoso,DC=Local"
 Instruct SharpHound to only collect information from principals that match a given LDAP filter. For example, to only gather abusable ACEs on a user with a certain display name, run this:
 
 ```powershell
-SharpHound.exe --LDAPFilter "(displayName=John Smith)"
+.\SharpHound.exe --LDAPFilter "(displayName=John Smith)"
 ```
 
 ### ExcludeDCs
@@ -112,7 +112,7 @@ SharpHound.exe --LDAPFilter "(displayName=John Smith)"
 Instruct SharpHound to not touch domain controllers. By not touching domain controllers, you will not be able to collect anything specified in the `DCOnly_`_ collection method, but you will also likely avoid detection by e.g., Microsoft ATA/ATP.
 
 ```powershell
-SharpHound.exe -d contoso.local --ExcludeDCs
+.\SharpHound.exe -d contoso.local --ExcludeDCs
 ```
 
 ### RealDNSName
@@ -120,7 +120,7 @@ SharpHound.exe -d contoso.local --ExcludeDCs
 In some networks, DNS is not controlled by Active Directory, or is otherwise not synchronized to Active Directory. This causes issues when a computer joined to AD has an AD FQDN of COMPUTER.CONTOSO.LOCAL, but also has a DNS FQDN of, for example, COMPUTER.COMPANY.COM. You can help SharpHound find systems in DNS by providing the latter DNS suffix, like this:
 
 ```powershell
-SharpHound.exe --RealDNSName COMPANY.COM
+.\SharpHound.exe --RealDNSName COMPANY.COM
 ```
 
 ### OverrideUserName
@@ -138,7 +138,7 @@ Collect every LDAP property where the value is a string from each enumerated Act
 By default, SharpHound will output zipped JSON files to the directory SharpHound was launched from. You can specify a different folder for SharpHound to write files to. For example, to instruct SharpHound to write output to C:temp:
 
 ```powershell
-SharpHound.exe --OutputDirectory C:\temp\
+.\SharpHound.exe --OutputDirectory C:\temp\
 ```
 
 ### OutputPrefix
@@ -146,7 +146,7 @@ SharpHound.exe --OutputDirectory C:\temp\
 Add a prefix to your JSON and ZIP files. For example, to have the JSON and ZIP file names start with “Financial Audit”:
 
 ```powershell
-SharpHound.exe --OutputPrefix "Financial Audit"
+.\SharpHound.exe --OutputPrefix "Financial Audit"
 ```
 
 ### NoZip
@@ -180,21 +180,21 @@ Adds a CSV tracking requests to computers by dumping error codes from attempted 
 Instruct SharpHound to loop computer-based collection methods. For example, attempt to collect local group memberships across all systems in a loop:
 
 ```powershell
-SharpHound.exe --CollectionMethods LocalGroup --Loop
+.\SharpHound.exe --CollectionMethods LocalGroup --Loop
 ```
 
 ### LoopDuration
 
 By default, SharpHound will loop for 2 hours. You can specify whatever duration you like using the HH:MM:SS format. For example, to loop session collection for 12 hours, 30 minutes and 12 seconds:
 ```powershell
-SharpHound.exe --CollectionMethods Session --Loop --LoopDuration 12:30:12
+.\SharpHound.exe --CollectionMethods Session --Loop --LoopDuration 12:30:12
 ```
 ### LoopInterval
 
 How long to pause for between loops, also given in HH:MM:SS format. For example, to loop session collection for 12 hours, 30 minutes and 12 seconds, with a 15 minute interval between loops:
 
 ```powershell
-SharpHound.exe --CollectionMethods Session --Loop --Loopduration 12:30:12 --LoopInterval 00:15:00
+.\SharpHound.exe --CollectionMethods Session --Loop --Loopduration 12:30:12 --LoopInterval 00:15:00
 ```
 
 ## Connection Options
@@ -250,7 +250,7 @@ Password for local Administrator to be used if DoLocalAdminSessionEnum is set.
 When SharpHound is scanning a remote system to collect user sessions and local group memberships, it first checks to see if port 445 is open on that system. This helps speed up SharpHound collection by not attempting unnecessary function calls when systems aren't even online. By default, SharpHound will wait 2000 milliseconds (2 seconds) to get a response when scanning 445 on the remote system. You can decrease this if you're on a fast LAN, or increase it if you need to. For example, to tell SharpHound to wait just 1000 milliseconds (1 second) before skipping to the next host:
 
 ```powershell
-SharpHound.exe --PortCheckTimeout 1000
+.\SharpHound.exe --PortCheckTimeout 1000
 ```
 
 ### SkipPortCheck
@@ -283,7 +283,7 @@ Number of threads to run enumeration with
 SharpHound will create a local cache file to dramatically speed up data collection. It does this primarily by storing a map of principal names to SIDs and IPs to computer names. By default, SharpHound will auto-generate a name for the file, but you can use this flag to control what that name will be. For example, to name the cache file \`Accounting.bin\`:
 
 ```powershell
-SharpHound.exe --CacheName Accounting.bin
+.\SharpHound.exe --CacheName Accounting.bin
 ```
 
 ### MemCache
