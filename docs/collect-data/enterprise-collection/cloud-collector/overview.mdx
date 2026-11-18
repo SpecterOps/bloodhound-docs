@@ -29,9 +29,22 @@ The Cloud Collector beta supports the following capabilities:
 | --- | --- |
 | **Collector** | SpecterOps-managed OpenHound |
 | **Extension** | AWS |
-| **Authentication** | Access key and secret access key for third-party cloud service credentials |
+| **Collection scope** | Organization survey followed by collection from the management account and accessible active member accounts |
+| **Authentication** | An AWS access key pair for the starting identity, followed by STS assumptions of collection roles |
+| **Member-role paths** | Directly from the starting identity (`source`), or through the management role (`management`) |
+| **Configuration delivery** | A non-secret JSON object entered in BloodHound Enterprise; the access key pair is supplied separately |
 | **Collection plans** | Multiple plans supported; each plan describes one collection configuration (profile, secret, and optional schedule) |
 | **Schedule** | One optional daily schedule per collection plan |
+
+The managed beta does not yet support single-account, independent-account, or custom finished-config workflows. You do not provide local AWS profiles or upload AWS files. Self-hosted OpenHound has separate configuration capabilities; its examples are not interchangeable with managed plans.
+
+## AWS collection
+
+The collector surveys AWS Organizations for active accounts, then collects organization and account metadata and supported IAM, EC2, EKS, KMS, Lambda, SSM, and CloudFormation data. Optional S3 inventory adds bucket metadata and a bounded inventory of object metadata. It does not download S3 object contents or retrieve SSM parameter values.
+
+The management account is included in organization collection. Member accounts use the same configured role name and member-role path. Authentication or permission failures can leave accounts or resource attributes uncollected; a successful job is not a guarantee of complete coverage.
+
+Choose a member-role path based on IAM trust, not on where the collector runs or which account owns the starting key. The [configuration guide](/collect-data/enterprise-collection/cloud-collector/configure#choose-a-member-role-path) includes both paths, supported settings, and complete JSON examples. The [security guide](/collect-data/enterprise-collection/cloud-collector/security-and-compliance#configure-aws-permissions) includes the required IAM permissions and trust policies.
 
 ## Key concepts
 
@@ -60,7 +73,7 @@ sequenceDiagram
     participant AWS as Customer AWS environment
 
     Administrator->>BHE: Create a collection plan
-    BHE->>Secrets: Store the AWS credential
+    BHE->>Secrets: Store the secret access key
     BHE->>BHE: Store the plan and secret reference
     alt Schedule fires
         BHE->>BHE: Queue a scheduled job
@@ -69,7 +82,7 @@ sequenceDiagram
         BHE->>BHE: Queue an on-demand job
     end
     Collector->>BHE: Discover and claim the job
-    Collector->>Secrets: Read the referenced credential
+    Collector->>Secrets: Read the referenced secret access key
     Collector->>AWS: Collect AWS data with read-only access
     Collector->>BHE: Upload collected data
     BHE->>BHE: Process data and update the graph
@@ -87,8 +100,10 @@ BloodHound Enterprise provides the profile, schedule, secret, queue, and Cloud C
 
 Cloud Collector uses an external secret store for AWS credentials. BloodHound Enterprise keeps a reference and an operator-visible key identifier, but does not return the secret value after it is saved. The Cloud Collector service reads the credential when it needs to run a job.
 
+The collector uses your access key pair to authenticate, then uses AWS Security Token Service (STS) to assume the configured roles. You do not supply temporary role credentials or a BloodHound Enterprise upload token in the configuration.
+
 <Note>
-  Use an AWS principal with only the read permissions required for the resources you collect. Review [Configure AWS permissions](/openhound/collectors/aws/configure-permissions) before you create a plan.
+  Use a dedicated starting principal with only the required role-assumption permissions, and grant read-only collection permissions to the target roles. Review [Configure AWS permissions](/collect-data/enterprise-collection/cloud-collector/security-and-compliance#configure-aws-permissions) before you create a plan.
 </Note>
 
 ## Data exploration
