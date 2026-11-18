@@ -1,41 +1,53 @@
 ## Getting started
 
-Like BloodHound CE, our documentation is open-source! Perusing our docs and found a typo or an opportunity to expand the documentation? You can contribute directly to fixing and enhancing our documentation. We're incredibly grateful for any contributions, and will make sure to recognize your contribution in the next release notes, and will get you a sweet package of BloodHound swag to boot!
+Like BloodHound Community Edition, our documentation is open source! Perusing our docs and found a typo or an opportunity to expand the documentation? You can contribute directly to fixing and enhancing our documentation. We're incredibly grateful for any contributions, and will make sure to recognize your contribution in the next release notes, and will get you a sweet package of BloodHound swag to boot!
 
 ## Before you start
 
 This document covers the necessary steps for contributing to our documentation. Review the [Contributing](./Contributing.md) document first for the repository-wide issue and pull request process, branch and commit conventions, and pull request etiquette.
 
-## Contributing to our Documentation
-
-### 0. Set up your environment
+## Set up your environment
 
 To set up your local environment for docs:
 
 1. Create a fork of the BloodHound Docs repository.
-1. Clone your fork into your local development environment.
-1. Install Mintlify, our documentation publishing platform.
-   1. Install node.js (version 20.17.0 or higher).
-   2. Install the Mintlify CLI with `npm i -g mint`.
-1. Install the Markdown/MDX linting dependencies.
-   1. Install Node.js 26 (matching `.github/workflows/lint.yaml`).
-   2. From the repository root, run `npm install`.
 
-### 1. Write the docs
+1. Clone your fork into your local development environment.
+
+1. Install Node.js 26. Our CI lint checks run on this version (see `.github/workflows/lint.yaml`), so using it locally lets you reproduce CI results.
+
+1. Install the Mintlify CLI for our documentation publishing platform
+
+   ```bash
+   npm i -g mint
+   ```
+
+1. Install the Markdown/MDX linting dependencies from the repository root.
+
+   ```bash
+   npm ci
+   ```
+
+   > [!NOTE]
+   > Unlike `npm install`, `npm ci` installs strictly from `package-lock.json` and never modifies it, so your local dependency tree matches CI exactly.
+
+## Write the docs
 
 Write or edit docs in your fork of the BloodHound Docs repository. Before adding or moving a page, use the [information architecture guide](.agents/info-architecture.md) to choose its location and navigation group.
 
 To edit an existing page:
 
 1. Create a branch.
-2. Go to the file you want to edit and make your changes.
+
+1. Go to the file you want to edit and make your changes.
 
 To add a new page:
 
 1. Create a branch.
+
 1. Go to the directory where you want the page to live and create a new `.mdx` file.
 
-   >[!TIP]
+   > [!TIP]
    > Look at an existing page and copy or modify its [metadata](https://mintlify.com/docs/page). Include `title` and `description` frontmatter on every new page.
 
 1. Include the audience-specific image at the top of the page, below the metadata.
@@ -47,19 +59,22 @@ To add a new page:
    | BloodHound Community Edition users only                      | `<img noZoom src="/assets/community-edition-pill-tag.svg" alt="Applies to BloodHound CE only"/>`                          |
 
 1. Fill out the page.
+
 1. Add your new page to the doc sidebar.
+
    1. Open the `docs/docs.json` file.
+
    1. Add your page to the corresponding group under `navigation`.
 
 When you add, move, or remove a page, update the `docs/docs.json` file in the same change.
 
-## 2. Review and validate the docs
+## Review and validate the docs
 
 To edit the docs:
 
 1. Follow the [documentation style guide](.agents/style-guide.md) and [Mintlify guidance](.agents/mintlify-guidance.md) while writing and formatting the page.
 
-2. _(Optional)_ Run the following commands to validate your changes:
+1. _(Optional)_ Run the following commands to validate your changes:
 
    | Command | Description |
    | ------- | ----------- |
@@ -71,7 +86,7 @@ To edit the docs:
 
    If you get stuck on local development, see the [Mintlify documentation](https://mintlify.com/docs/development).
 
-3. Use this checklist to review your docs for quality.
+1. Use this checklist to review your docs for quality.
    
    - **Task-ify page titles and headings**: Where possible, use task-based titles like “Create a data collection schedule” instead of “Creating a data collection schedule”.
 
@@ -85,15 +100,17 @@ To edit the docs:
 
      Orient the content around the user journey. Add framing sentences so the content connects to the reader’s goals. Be directive and tell the reader what to do (don’t present too many options).
 
-## 3. Get your docs reviewed
+## Get your docs reviewed
 
 To get your docs reviewed:
 
 1. Commit and push your changes.
+
 1. Create a pull request.
+
 1. Address any feedback from the reviewers.
 
-## 4. Publish the docs
+## Publish the docs
 
 After you’ve addressed all the feedback and your pull request has been approved by the reviewers, the reviewers will merge your changes into the main branch and they will automatically deploy!
 
