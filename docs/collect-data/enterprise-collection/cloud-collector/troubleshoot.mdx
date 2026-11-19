@@ -12,7 +12,7 @@ import CloudCollectorBetaNote from '/snippets/feature-beta.mdx';
 
 Use this page to identify whether a Cloud Collector problem originates from beta availability, AWS authentication, permissions, scheduling, or the Cloud Collector service.
 
-The BloodHound Enterprise user interface supports collection plan create, edit, and queue operations, but the feature is tenant-gated and collection processing occurs in the managed service. Record the plan name, time of the attempt, visible result, and error text before you contact your SpecterOps account team.
+The BloodHound Enterprise user interface supports collection plan create, edit, and queue operations, but the feature is tenant-gated and collection processing occurs in Cloud Collector. Record the plan name, time of the attempt, visible result, and error text before you contact your SpecterOps account team.
 
 ## Check beta availability
 
@@ -22,7 +22,7 @@ The feature is SpecterOps-managed, disabled by default, and not user-updatable. 
 
 ## Understand beta health signals
 
-The beta exposes collection plan activity and the latest job result in the **Collection Plans** page. It does not expose a separate managed-worker health panel.
+The beta exposes collection plan activity and the latest job result in the **Collection Plans** page. It does not expose a separate Cloud Collector health panel.
 
 If several plans stop producing results, provide the plan names and expected run times to your SpecterOps account team so they can review collection health and detailed logs.
 
@@ -35,12 +35,16 @@ On **Collection Plans**, inspect the plan tile and its schedule:
 | **No schedule set** | The plan will not create recurring jobs. |
 | **Not run yet** | The plan has no completed collection history. |
 | **Success** | The latest job completed successfully. |
-| **Partial Success** | The latest job completed only partially. Select **History** to inspect the result and failure reason. |
+| **Warning** | The latest job reported partial success. Select **History** to inspect the result and failure reason. |
 | **Failed** | The latest job ended with an error. The current tile shows the outcome and timestamp, but not the full failure metadata. |
 | **Cancelled** | The latest job was cancelled before completion. |
 | **Disabled** | The schedule is paused. |
 
-Click **History** on the plan tile to open its history drawer. Use the **Run Results** filter to narrow the list, sort by Started at or Completed at, and hover a failed or partial success result to view its failure reason.
+Click **History** on the plan tile to open its history drawer. Use the **Run Results** filter to narrow the list, sort by **Started at** or **Completed at**, and hover a **Failed** or **Warning** result to view its failure reason.
+
+<Warning>
+  **Success** means the job completed, not that every account and resource was readable. Individual account authentication failures can be skipped, and resource-read failures can leave attributes unknown without changing the job result to **Warning**.
+</Warning>
 
 <Note>
   Cloud Collector job history is self-contained. These jobs do not appear on the **Administration** > **Manage Clients** or **Administration** > **Finished Jobs Log** pages.
@@ -52,7 +56,7 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
 
 <AccordionGroup>
   <Accordion title="The AWS credential is rejected">
-    **Likely cause:** The access key ID or secret access key is incorrect, inactive, expired, or not available to the Cloud Collector service.
+    **Likely cause:** The access key ID or secret access key is incorrect, inactive, deleted, or not available to the Cloud Collector service. A temporary STS key pair also requires a session token, which the beta does not accept as an initial credential.
 
     **Action:** Verify the key pair in AWS without sharing the secret value and confirm that the key is active. If the credential must be replaced, follow [Rotate a credential](/collect-data/enterprise-collection/cloud-collector/configure#rotate-a-credential). Deleting the old plan does not revoke the old AWS key or automatically delete its secret reference.
   </Accordion>
@@ -60,13 +64,37 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
   <Accordion title="The configuration JSON is rejected">
     **Likely cause:** The **Configuration** field contains malformed JSON or a valid JSON value that is not an object, such as an array, string, number, or `null`.
 
-    **Action:** Follow [Enter profile details and configuration](/collect-data/enterprise-collection/cloud-collector/configure#profile) to correct the JSON object and validation message. If the JSON is accepted but collection fails, review the AWS collector schema, collection scope, and required permissions. Do not include credentials or tokens in the configuration.
+    **Action:** Replace the field with a complete [AWS configuration example](/collect-data/enterprise-collection/cloud-collector/configure#aws-configuration) and update its non-secret values. Do not add JSON comments, credentials, or tokens. Formatting or saving valid JSON does not validate AWS settings or permissions.
   </Accordion>
 
-  <Accordion title="The collection lacks AWS permissions">
-    **Likely cause:** The collection principal cannot read one or more AWS services or accounts in the configured scope.
+  <Accordion title="The JSON saves, but the AWS settings are rejected">
+    **Likely cause:** The plan lacks a required survey setting, includes removed legacy settings, or depends on customer-local files or profiles.
 
-    **Action:** Compare the plan's scope with the principal's policy. Grant only the read permissions required by the scope, following [Configure AWS permissions](/openhound/collectors/aws/configure-permissions), then create a new plan if the credential also changed.
+    **Action:** Supply `management_account_id`, `collector_assumed_role_name`, and an explicit `member_role_source` of `source` or `management`. Set `management_role_name` and `runtime_auth_mode` as shown in [AWS settings](/collect-data/enterprise-collection/cloud-collector/configure#aws-settings). Remove file/profile settings and `survey_only`. Do not use removed settings such as `profile_name`, `profile_names`, `source_account`, `org_role_name`, `org_role_session_name`, `region_name`, or `include_management_account`.
+  </Accordion>
+
+  <Accordion title="Organization survey or management-role access fails">
+    **Likely cause:** The management account ID or role name is wrong, the starting key identity cannot assume the management role, or that role cannot list organization accounts.
+
+    **Action:** Check the management role's trust of the starting IAM user, the user's permission to assume that role, and the management role's Organizations read policy. See [Configure AWS permissions](/collect-data/enterprise-collection/cloud-collector/security-and-compliance#configure-aws-permissions). A survey authentication or account-listing failure stops collection.
+  </Accordion>
+
+  <Accordion title="Environment credentials cannot be the management identity">
+    **Likely cause:** The access key belongs to a user in management and the plan omits `management_role_name`. The collector then tries to use the starting identity without a management-role hop, which is not supported with the environment credentials supplied by Cloud Collector.
+
+    **Action:** Set `management_role_name` explicitly to a role that the starting user can assume, and configure its permissions and trust. Do not try to upload a credentials file or select a local profile as a workaround.
+  </Accordion>
+
+  <Accordion title="Member accounts are missing or role assumption is denied">
+    **Likely cause:** A discovered member lacks the configured collection role, or its trust does not match `member_role_source`.
+
+    **Action:** For `source`, member roles must trust the starting key identity, which needs permission to assume them. For `management`, member roles must trust the management role, which needs permission to assume them. Confirm the same `collector_assumed_role_name` exists in each active member and review explicit denies. See [Choose a member-role path](/collect-data/enterprise-collection/cloud-collector/configure#choose-a-member-role-path).
+  </Accordion>
+
+  <Accordion title="The collection lacks service read permissions">
+    **Likely cause:** A collection role cannot read one or more AWS services, or an explicit deny overrides its allow policy.
+
+    **Action:** Compare the management and member roles with the [read-only collection policies](/collect-data/enterprise-collection/cloud-collector/security-and-compliance#configure-aws-permissions). Grant the required reads to those roles, not administrator access to the starting user. If the access key also changes, follow [Rotate a credential](/collect-data/enterprise-collection/cloud-collector/configure#rotate-a-credential).
   </Accordion>
 
   <Accordion title="The plan has no collection results">
@@ -76,7 +104,7 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
   </Accordion>
 
   <Accordion title="The Cloud Collector service appears unavailable">
-    **Likely cause:** The managed worker is not processing jobs, or several plans are affected by a service-level problem. You can see collection plan results, not the managed worker's health state or detailed logs.
+    **Likely cause:** Cloud Collector is not processing jobs, or several plans are affected by a service-level problem. You can see collection plan results, not Cloud Collector's health state or detailed logs.
 
     **Action:** Confirm that the affected plans have active schedules and record the expected run times. If several plans are affected, contact your SpecterOps account team with the affected plan names and timestamps so they can review service health and detailed logs.
   </Accordion>
@@ -84,19 +112,25 @@ If the page cannot load a schedule or latest result, use the page's **Retry** ac
   <Accordion title="The schedule time is unexpected">
     **Likely cause:** The form displays local time and the GMT offset, while the recurrence is stored in UTC.
 
-    **Action:** Follow [Configure a schedule](/collect-data/enterprise-collection/cloud-collector/configure#schedule) to review the detected timezone, GMT offset, and saved recurrence. Select the desired start time again and save the plan.
+    **Action:** Follow [Configure a schedule](/collect-data/enterprise-collection/cloud-collector/configure#schedule) to review the detected timezone, GMT offset, and saved recurrence. Existing schedules are read-only in this beta. To change the timing, choose **New Schedule** while editing the plan and save a replacement schedule.
   </Accordion>
 
-  <Accordion title="The collection is incomplete or shows Partial Success">
-    **Likely cause:** The AWS principal does not have read access to all resources in the configured scope, the scope excludes the resources you expect, or the latest job completed only partially.
+  <Accordion title="The collection is incomplete or shows Warning">
+    **Likely cause:** Some account profiles could not authenticate, service reads were denied, or the expected resources are outside the collection behavior supported by this beta.
 
-    **Action:** Confirm the AWS account or organization scope and review the required read-only policy. Use the AWS permissions page to check service-specific permissions, select **History**, and inspect the failure reason for the partial success or failed result. Review the next collection result after correcting the scope or permissions.
+    **Action:** Confirm the organization management account, member-role path, and role permissions. Review **History** for any failure reason. If resources are still missing, provide the affected account IDs, services, regions, and job ID to your SpecterOps account team so they can check skipped profiles and detailed collection diagnostics. Do this even when the result is **Success**.
   </Accordion>
 
-  <Accordion title="The credential is close to expiration">
-    **Likely cause:** The beta does not provide proactive credential or certificate expiry warnings.
+  <Accordion title="S3 buckets or objects are missing">
+    **Likely cause:** Bucket inventory is disabled, bucket or object inclusion rules are missing, an exclusion matches, the per-bucket listing limit is reached, or S3 reads are denied.
 
-    **Action:** Track the AWS key lifecycle in your organization's credential-management process. Create a replacement plan before the key expires, confirm a successful result, disable or delete the old key in AWS, and follow the SpecterOps-provided process for deleting the old secret reference.
+    **Action:** Review [Optional S3 inventory](/collect-data/enterprise-collection/cloud-collector/configure#optional-s3-inventory). Put `bucket_policy` alongside `credentials`, enable it, and include both bucket and object matches for object inventory. The default `max_objects` is `10` per bucket; `0` skips objects. Filters do not suppress bucket metadata when inventory is enabled, and the listing limit applies before object filtering.
+  </Accordion>
+
+  <Accordion title="An AWS key is due for rotation">
+    **Likely cause:** Your organization's rotation deadline is approaching. The beta does not provide proactive credential-lifecycle warnings.
+
+    **Action:** Track the key lifecycle in your organization's credential-management process. Follow [Rotate a credential](/collect-data/enterprise-collection/cloud-collector/configure#rotate-a-credential) to validate a replacement plan, retire the old plan, revoke the old key, and request stored-secret cleanup.
   </Accordion>
 
   <Accordion title="A network allowlist blocks collection">
@@ -118,7 +152,9 @@ Provide the following non-secret details when you request support:
 
 - Tenant name
 - Collection plan name
-- AWS collection scope
+- AWS organization management account ID and affected member account IDs
+- `member_role_source`, management role name, and member collection role name
+- Job ID, if available
 - Expected schedule and detected timezone
 - Time of the attempted or scheduled run
 - Result shown in BloodHound Enterprise and the complete visible error text

@@ -25,14 +25,155 @@ Before you configure a collection plan, confirm that the following prerequisites
 
 - Your BloodHound Enterprise tenant has Cloud Collector enabled by SpecterOps and your account has the Administrator role.
 - You have an [AWS access key ID and secret access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/access-keys-admin-managed.html) for a collection principal.
-- The collection principal has the required [read-only permissions](/openhound/collectors/aws/configure-permissions) for your target AWS account or organization.
-- You know the AWS account and [collection scope](/openhound/collectors/aws/collect-data) that the plan should use.
+- You know your AWS Organizations management account ID and the names of the management and member-account collection roles.
+- You have [configured AWS permissions](/collect-data/enterprise-collection/cloud-collector/security-and-compliance#configure-aws-permissions), including role trust and permission to assume the roles.
+- You have chosen a [member-role path](#choose-a-member-role-path) that matches those trust relationships.
 
 <Warning>
-  The beta uses an AWS access key and secret access key. Cross-account IAM role assumption through AWS Security Token Service (STS) is not a Cloud Collector beta authentication option.
+  The beta accepts an access key ID and secret access key for the starting AWS identity. It does not accept an initial STS session token or role-only authentication instead of that key pair. After authenticating, the collector uses AWS Security Token Service (STS) to assume the configured collection roles.
 
-  Check your company's guidelines for collecting data from the intended AWS scope before you configure a plan.
+  Check your company's guidelines for granting this access before you configure a plan.
 </Warning>
+
+## AWS collection scope
+
+The Cloud Collector beta surveys an AWS organization, discovers its active accounts, and builds the configuration used for collection. It reads AWS Organizations metadata through the management identity and collects resources from the management account and accessible active member accounts.
+
+The beta supports both member-role paths below. It does not yet support single-account collection, independent-account collection, custom finished AWS configurations, or customer-provided AWS files and named profiles.
+
+The survey uses one collection role name across member accounts. It does not select different role names or trust paths per member. All discovered active members are collection targets; missing roles or denied access can leave accounts uncollected.
+
+## Choose a member-role path
+
+Choose `member_role_source` according to the identity trusted by your member-account roles:
+
+| Value | Management-account access | Member-account access |
+| --- | --- | --- |
+| `source` | The starting key identity assumes the management role. | The starting key identity directly assumes each member role. Member roles must trust that starting principal. |
+| `management` | The starting key identity assumes the management role. | The management role assumes each member role. Member roles must trust that management role. |
+
+The starting identity may belong to the management account or another account. This choice does not describe where Cloud Collector runs. Both paths require the caller's `sts:AssumeRole` permissions and the target role's trust policy. Follow [Configure AWS permissions](/collect-data/enterprise-collection/cloud-collector/security-and-compliance#configure-aws-permissions) to establish both.
+
+## AWS configuration
+
+Paste one of the following complete objects into the plan's **Configuration** field. Replace `111111111111` with your management account ID and replace the role names if yours differ. Choose the tab that matches your member-role trust.
+
+<Tabs>
+  <Tab title="Direct from source identity">
+    Use this object when member roles trust the starting key identity:
+
+    ```json
+    {
+      "sources": {
+        "source": {
+          "aws": {
+            "credentials": {
+              "management_account_id": "111111111111",
+              "management_role_name": "OpenHoundManagementRole",
+              "collector_assumed_role_name": "OpenHoundCollectorRole",
+              "member_role_source": "source",
+              "runtime_auth_mode": "default_chain"
+            },
+            "bucket_policy": {
+              "include": false
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Through management identity">
+    Use this object when member roles trust the management role:
+
+    ```json
+    {
+      "sources": {
+        "source": {
+          "aws": {
+            "credentials": {
+              "management_account_id": "111111111111",
+              "management_role_name": "OpenHoundManagementRole",
+              "collector_assumed_role_name": "OpenHoundCollectorRole",
+              "member_role_source": "management",
+              "runtime_auth_mode": "default_chain"
+            },
+            "bucket_policy": {
+              "include": false
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### AWS settings
+
+The following settings belong inside `sources.source.aws.credentials`. Despite the section name, the examples contain only non-secret authentication settings, not the access key pair.
+
+| Setting | Requirement and behavior |
+| --- | --- |
+| `management_account_id` | Required. The AWS Organizations management account ID; it is not discovered automatically. |
+| `management_role_name` | Set explicitly as shown. The role the starting identity assumes for organization survey, Organizations data, and management-account resource collection. |
+| `collector_assumed_role_name` | Required. The role assumed in every active member account. |
+| `member_role_source` | Required. Use `source` or `management` according to the [member-role path](#choose-a-member-role-path). |
+| `runtime_auth_mode` | Use `default_chain` as shown so the AWS SDK selects the key pair supplied by Cloud Collector. |
+| `collector_assumed_role_session_name` | Optional. The STS role session name; defaults to `openhound-aws-collection`. |
+
+<Warning>
+  Set `management_role_name` explicitly even if the access key belongs to a user in the management account. If you omit it, the extension defaults the role name to `collector_assumed_role_name`, but uses a starting identity already in management without a role hop. That no-hop path cannot be represented using the environment credentials supplied by Cloud Collector. An explicit management role makes the collector assume that role instead.
+</Warning>
+
+Do not add self-hosted file/profile settings such as `aws_config_file`, `source_config_file`, `credentials_file`, or `collector_profile_name`, and do not enable `survey_only`. Cloud Collector supplies the collection credentials and handles the generated configuration.
+
+### Optional S3 inventory
+
+S3 bucket and object inventory is disabled by default. Account-level S3 public access block settings are collected independently of this switch. Object inventory contains names and metadata, not object contents.
+
+To enable bucket and object inventory, use a complete configuration such as the following. This example uses the `source` member-role path.
+
+```json
+{
+  "sources": {
+    "source": {
+      "aws": {
+        "credentials": {
+          "management_account_id": "111111111111",
+          "management_role_name": "OpenHoundManagementRole",
+          "collector_assumed_role_name": "OpenHoundCollectorRole",
+          "member_role_source": "source",
+          "runtime_auth_mode": "default_chain"
+        },
+        "bucket_policy": {
+          "include": true,
+          "max_objects": 10,
+          "rule": [
+            {
+              "include": true,
+              "match_bucket": "\\A[\\s\\S]*\\Z",
+              "match_object": "\\A[\\s\\S]*\\Z"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+| Setting | Default | Behavior |
+| --- | --- | --- |
+| `include` | `false` | Enables bucket inventory. When enabled, bucket metadata is collected even for buckets excluded from object inventory by rules. |
+| `max_objects` | `10` | Per-bucket limit on the object listing considered for collection. Set to `0` to skip objects while retaining bucket inventory. |
+| `rule[].include` | `true` | Includes matching names unless an exclusion also matches. |
+| `rule[].match_bucket` | None | Regular expression searched against the bucket name to select buckets for object inventory. |
+| `rule[].match_object` | None | Regular expression searched against object keys to select object metadata. |
+
+Bucket and object matching are independent: a bucket must match an inclusion in the bucket rules, and an object must match an inclusion in the object rules. Exclusions win in each set, regardless of rule order. A rule containing both expressions contributes to both sets; it is not a paired bucket-and-key condition.
+
+Rules are applied locally, not as AWS permission boundaries. Object filtering occurs after the per-bucket listing limit, so fewer than `max_objects` matching objects may be stored. Enabling buckets without object inclusion rules collects bucket metadata but no objects.
 
 ## Configure a collection plan
 
@@ -52,9 +193,9 @@ In the left navigation menu, go to **Administration** > **Data Collection** > **
       The **Service** field defaults to **AWS Collection** and cannot be changed.
     </Note>
 
-    In the **Profile** section, enter the JSON object that defines the collection job. The form starts with a JSON structure. The expected structure is specific to the collector type.
+    In the **Profile** section, replace the initial JSON object with an [AWS configuration example](#aws-configuration) from this page.
 
-    For JSON examples of the AWS collector configuration, see [Configure the collector](/openhound/collectors/aws/collect-data).
+    Confirm that the management account ID, role names, and `member_role_source` match your AWS permissions.
 
     The field accepts a JSON object, not a TOML file, array, or scalar value. The form checks JSON syntax and that the value is an object; it does not confirm that the settings are semantically valid or that the credential has the required permissions.
 
@@ -128,9 +269,9 @@ On-demand collection is the quickest method for validating a saved credential be
   <Step title="Review the result">
     Review the plan's latest run and result in the tile or **History**.
 
-    A **Failed** or **Partial Success** result indicates that you should check the credential, collection scope, and required permissions before relying on scheduled collection.
+    A **Failed** or **Warning** result indicates that you should check the credential, role trust, and required permissions before relying on scheduled collection. A **Success** result does not prove that every account and resource was readable; review unexpected gaps with your SpecterOps account team.
 
-    If **Run** does not queue a job, record the plan name, time of the attempt, and visible error text, contact your SpecterOps account team. Do not include credential values.
+    If **Run** does not queue a job, record the plan name, time of the attempt, and visible error text, and contact your SpecterOps account team. Do not include credential values.
   </Step>
 </Steps>
 
@@ -151,9 +292,9 @@ A tile can show:
 | Tile field | What it shows |
 | --- | --- |
 | Plan name | The name of the collection plan |
-| Schedule | The schedule (or **No schedule set** when the plan has no schedule) |
+| Schedule | The schedule, with **Disabled** when paused, or **No schedule set** when the plan has no schedule |
 | Latest run time | The latest run time (or **Not run yet** when the plan has not produced a completed run) |
-| Latest result | The result of the latest job:<ul><li>**No schedule set**: The plan has no schedule.</li><li>**Not run yet**: The plan has no completed collection history.</li><li>**Success**: The latest job completed successfully.</li><li>**Partial Success**: The latest job completed only partially.</li><li>**Failed**: The latest job ended with an error. The tile shows the outcome and timestamp; open **History** for the failure reason.</li><li>**Cancelled**: The latest job was cancelled before completion.</li><li>**Disabled**: The schedule is paused.</li></ul> |
+| Latest result | **Success**, **Warning** (partial success), **Failed**, or **Cancelled**. Open **History** for a failure reason. |
 
 Click **History** on a plan tile to open its **Job History** drawer. The **Job History** drawer shows:
 
@@ -164,7 +305,7 @@ Click **History** on a plan tile to open its **Job History** drawer. The **Job H
 | **Completed at** | The time the job completed. |
 | **Run Result** | The outcome of the job. |
 
-Use the **Run Results** filter, sort the **Started at** or **Completed at** columns, and hover a failed or partial success result to view its failure reason.
+Use the **Run Results** filter, sort the **Started at** or **Completed at** columns, and hover a **Failed** or **Warning** result to view its failure reason.
 
 <Note>
   This history is specific to Cloud Collector; it does not appear on the **Administration** > **Manage Clients** or **Administration** > **Finished Jobs Log** pages.
