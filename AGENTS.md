@@ -20,5 +20,6 @@ When working under `docs/`, read [`docs/AGENTS.md`](docs/AGENTS.md) and the supp
 | Validating documentation changes | [`.agents/validation.md`](.agents/validation.md) |
 | Updating OpenAPI spec for REST API reference | [`.agents/skills/update-openapi-spec/SKILL.md`](.agents/skills/update-openapi-spec/SKILL.md) |
 | Generating release notes from Jira exports | [`.agents/skills/generate-release-notes/SKILL.md`](.agents/skills/generate-release-notes/SKILL.md) |
+| Converting vendor integration materials into documentation | [`.agents/skills/vendor-integration-doc-conversion/SKILL.md`](.agents/skills/vendor-integration-doc-conversion/SKILL.md) |
 
 Keep the root `AGENTS.md` focused on repository-wide guidance and this routing map. Put documentation-specific rules in `docs/AGENTS.md` or a more specific nested file.
