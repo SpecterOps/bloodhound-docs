@@ -54,9 +54,11 @@ When you save a new credential, BloodHound Enterprise sends the secret access ke
 
 BloodHound Enterprise does not read the secret access key back or display it after saving. Cloud Collector obtains the access key ID from the job and retrieves the referenced secret access key.
 
-BloodHound Enterprise handles customer-secret lifecycle requests, while Cloud Collector retrieves the secret for collection rather than creating or updating it. In this beta, you cannot edit a collection plan and select a different saved credential after saving it, and you cannot edit the saved key pair itself.
+BloodHound Enterprise handles customer-secret lifecycle requests, while Cloud Collector retrieves the secret for collection rather than creating or updating it.
 
-The Cloud Collector user interface does not provide a self-service way to delete credential reference metadata from the Cloud Collector service. Contact your SpecterOps account team for more information.
+In [Manage credentials](/collect-data/enterprise-collection/cloud-collector/configure#manage-credentials), you can edit a saved credential's name and access key ID, or replace its secret access key. BloodHound Enterprise writes a replacement secret access key to the existing AWS Secrets Manager reference, and the change applies to every collection plan that uses the credential. You can also edit a collection plan and select a different saved credential.
+
+Deleting a credential deletes its secret access key from AWS Secrets Manager and its reference metadata. It does not revoke the AWS access key.
 
 The **Configuration** field is for non-secret collection settings. Do not paste AWS keys, BloodHound Enterprise tokens, or other credential material into the JSON configuration. Configuration is retained with plan and job records, including history. Use the separate **Secrets** section for the AWS access key pair.
 
@@ -66,9 +68,9 @@ The **Configuration** field is for non-secret collection settings. Do not paste 
 
 ## Rotate or revoke a credential
 
-To rotate a credential, follow [Rotate a credential](/collect-data/enterprise-collection/cloud-collector/configure#rotate-a-credential). That procedure covers creating and validating a replacement plan, revoking the old AWS key, and removing the old secret reference through the supported process.
+To rotate a credential, follow [Rotate a credential](/collect-data/enterprise-collection/cloud-collector/configure#rotate-a-credential). That procedure covers updating or replacing the saved credential, validating the new key pair, and revoking the old AWS key.
 
-Deleting the old plan removes its profile and schedule links; it does not automatically delete the secret reference or revoke the AWS key. Secret deletion is a separate operation that detaches referencing profiles. A job that BloodHound Enterprise already created keeps its captured key reference, but it can fail if the underlying AWS key is revoked.
+Deleting a plan does not delete its credential or revoke the AWS key. Deleting a credential detaches it from the plans that use it, so edit each affected plan and select another saved credential. A job that BloodHound Enterprise already created keeps its captured key reference, but it can fail if the underlying AWS key changes or is revoked.
 
 ## Apply least privilege in AWS
 
