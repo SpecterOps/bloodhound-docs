@@ -2,37 +2,41 @@
 title: SharpHound Community Edition Flags
 ---
 
+import BinaryLocation from '/snippets/hounds/binary-location.mdx'
+
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 SharpHound Community Edition has several optional flags that let you control scan scope, performance, output, and other behaviors.
+
+<BinaryLocation binary="SharpHound.exe" />
 
 ## Enumeration Options
 
 ### CollectionMethods or 'c'
 
-This tells SharpHound what kind of data you want to collect. These are the most common options you’ll likely use:
+This tells SharpHound what kind of data you want to collect. These are the most common options you'll likely use:
 
 * **Default:** SharpHound will use the default collection method if you specify “Default” or don't use the CollectionMethods option. Default collection includes Active Directory security group membership, domain trusts, abusable permissions on AD objects (incl. ADCS objects), OU tree structure, Group Policy links, Site objects, the most relevant AD object properties, local groups from domain-joined Windows systems, and user sessions.
 * **All:** Performs all collection methods.
-* **DCOnly:** Collects data ONLY from the domain controller, will not touch other domain-joined Windows systems. Collects AD security group memberships, domain trusts, abusable permissions on AD objects (incl. ADCS objects), OU tree structure, Group Policy links, Site objects, the most relevant AD object properties, and will attempt to correlate Group Policy-enforced local groups to affected computers.
-* **ComputerOnly:** Collects user sessions (_Session_), local groups (_LocalGroup_), User Rights Assignment (_UserRights_), and Azure VM registry (_AzureRegistry_) data from domain-joined Windows systems. Additionally, CA registry (_CARegistry_) data and DC registry (_DCRegistry_) data is collected. Will NOT collect the data collected with the DCOnly collection method.
+* **DCOnly:** Collects data ONLY from the domain controller, will not touch other domain-joined Windows systems. Collects AD security group memberships, domain trusts, abusable permissions on AD objects (incl. ADCS objects), OU tree structure, Group Policy links, Site objects, the most relevant AD object properties, and will attempt to correlate Group Policy-enforced local groups to affected computers.
+* **ComputerOnly:** Collects user sessions (_Session_), local groups (_LocalGroup_), User Rights Assignment (_UserRights_), and Azure VM registry (_AzureRegistry_) data from domain-joined Windows systems. Additionally, CA registry (_CARegistry_) data and DC registry (_DCRegistry_) data is collected. Will NOT collect the data collected with the DCOnly collection method.
 * **Session:** Just does user session collection. You will likely couple this with the `--Loop` option. See SharpHound examples below for more info on that.
-* **LoggedOn:** Does session collection using the privileged collection method. Use this if you are running as a user with local admin rights on lots of systems for the best user session data.
+* **LoggedOn:** Does session collection using the privileged collection method. Use this if you are running as a user with local admin rights on lots of systems for the best user session data.
 
 Here are the less common CollectionMethods and what they do:
 
-* **Group:** Just collect security group memberships from Active Directory
-* **ACL:** Just collect abusable permissions on objects in Active Directory
-* **GPOLocalGroup:** Just attempt GPO to computer correlation to determine members of the relevant local groups on each computer in the domain. Doesn’t actually touch domain-joined systems, just gets info from domain controllers
-* **Trusts:** Just collect domain trusts
-* **Container:** Just collect the OU tree structure and Group Policy links
+* **Group:** Just collect security group memberships from Active Directory
+* **ACL:** Just collect abusable permissions on objects in Active Directory
+* **GPOLocalGroup:** Just attempt GPO to computer correlation to determine members of the relevant local groups on each computer in the domain. Doesn't actually touch domain-joined systems, just gets info from domain controllers
+* **Trusts:** Just collect domain trusts
+* **Container:** Just collect the OU tree structure and Group Policy links
 * **Site:** Collect Active Directory Site, SiteServer, and SiteSubnet objects from the configuration partition; their site-to-server and site-to-subnet mappings; site GPO links; and ACLs on Site objects
-* **LocalGroup:** Just collect the members of all interesting local groups on each domain-joined computer. Equivalent for _LocalAdmin_ + _RDP_ + _DCOM_ + _PSRemote_
-* **LocalAdmin:** Just collect the members of the local Administrators group on each domain-joined computer
-* **RDP:** Just collect the members of the Remote Desktop Users group on each domain-joined computer
-* **DCOM:** Just collect the members of the Distributed COM Users group on each domain-joined computer
-* **PSRemote:** Just collect the members of the Remote Management group on each domain-joined computer
-* **ObjectProps** \- Performs Object Properties collection for properties such as LastLogon or PwdLastSet
+* **LocalGroup:** Just collect the members of all interesting local groups on each domain-joined computer. Equivalent for _LocalAdmin_ + _RDP_ + _DCOM_ + _PSRemote_
+* **LocalAdmin:** Just collect the members of the local Administrators group on each domain-joined computer
+* **RDP:** Just collect the members of the Remote Desktop Users group on each domain-joined computer
+* **DCOM:** Just collect the members of the Distributed COM Users group on each domain-joined computer
+* **PSRemote:** Just collect the members of the Remote Management group on each domain-joined computer
+* **ObjectProps** \- Performs Object Properties collection for properties such as LastLogon or PwdLastSet
 * **SPNTargets** \- Just collect Service Principal Name (SPN) target information from Active Directory objects. This helps identify service relationships such as MSSQL service accounts and related target systems.
 * **UserRights** \- Just collect User Rights Assignment from domain computers (needs admin)
 * **CARegistry** \- Just collect ADCS properties from registry of Certificate Authority servers
@@ -45,12 +49,14 @@ Here are the less common CollectionMethods and what they do:
 * **AzureRegistry** \- Read the Azure guest VM `VmId` value from `HKLM\SOFTWARE\Microsoft\Windows Azure` on domain-joined Windows systems and add it to the Computer object's `azvmid` property. SharpHound tries WMI first and Remote Registry as a fallback. If the key or value is unavailable, collection continues without a usable VM ID.
 
 For example, to collect sessions:
-```
-C:\> SharpHound.exe --CollectionMethods session
+
+```powershell
+.\SharpHound.exe --CollectionMethods session
 ```
 To collect Azure VM identifiers:
-```
-C:\> SharpHound.exe --CollectionMethods AzureRegistry
+
+```powershell
+.\SharpHound.exe --CollectionMethods AzureRegistry
 ```
 
 `AzureRegistry` is included in `ComputerOnly` and `All`. It is not included in `Default`.
@@ -61,14 +67,16 @@ Collection methods visualization:
   <img src="/assets/image-87.webp" alt=""/>
 </Frame>
 
-Image credit: [https://twitter.com/SadProcessor](https://twitter.com/SadProcessor)
+Image credit: [https://twitter.com/SadProcessor](https://twitter.com/SadProcessor)
 
 ### Domain or 'd'
 
 Tell SharpHound which Active Directory domain you want to gather information from. Importantly, you must be able to resolve DNS in that domain for SharpHound to work correctly. For example, to collect data from the \`contoso.local\` domain:
+
+```powershell
+.\SharpHound.exe --Domain contoso.local
 ```
-C:\> SharpHound.exe --Domain contoso.local
-```
+
 ### SearchForest or 's'
 
 This flag would instruct SharpHound to automatically collect data from all domains in your current forest.
@@ -76,8 +84,9 @@ This flag would instruct SharpHound to automatically collect data from all domai
 ### Stealth
 
 Perform “stealth” data collection. This switch modifies your data collection method. For example, if you want to perform user session collection, but only touch systems that are the most likely to have user session data:
-```
-C:\> SharpHound.exe --CollectionMethods Session --Stealth
+
+```powershell
+.\SharpHound.exe --CollectionMethods Session --Stealth
 ```
 
 Stealth mode removes `AzureRegistry` along with other computer-based collection methods.
@@ -89,27 +98,35 @@ Load a list of computer names or IP addresses for SharpHound to collect informat
 ### DistinguishedName
 
 Base DistinguishedName to start search at. Use this to limit your search. Equivalent to the old `--OU` and '--SearchBase' option.
+
+```powershell
+.\SharpHound.exe --DistinguishedName "OU=New York,DC=Contoso,DC=Local"
 ```
-C:\> SharpHound.exe --DistinguishedName "OU=New York,DC=Contoso,DC=Local"
-```
+
 ### LDAPFilter or 'f'
 
 Instruct SharpHound to only collect information from principals that match a given LDAP filter. For example, to only gather abusable ACEs on a user with a certain display name, run this:
+
+```powershell
+.\SharpHound.exe --LDAPFilter "(displayName=John Smith)"
 ```
-C:\> SharpHound.exe --LDAPFilter "(displayName=John Smith)"
-```
+
 ### ExcludeDCs
 
 Instruct SharpHound to not touch domain controllers. By not touching domain controllers, you will not be able to collect anything specified in the `DCOnly_`_ collection method, but you will also likely avoid detection by e.g., Microsoft ATA/ATP.
+
+```powershell
+.\SharpHound.exe -d contoso.local --ExcludeDCs
 ```
-C:\> SharpHound.exe -d contoso.local --ExcludeDCs
-```
+
 ### RealDNSName
 
 In some networks, DNS is not controlled by Active Directory, or is otherwise not synchronized to Active Directory. This causes issues when a computer joined to AD has an AD FQDN of COMPUTER.CONTOSO.LOCAL, but also has a DNS FQDN of, for example, COMPUTER.COMPANY.COM. You can help SharpHound find systems in DNS by providing the latter DNS suffix, like this:
+
+```powershell
+.\SharpHound.exe --RealDNSName COMPANY.COM
 ```
-C:\> SharpHound.exe --RealDNSName COMPANY.COM
-```
+
 ### OverrideUserName
 
 When running SharpHound from a \`runas /netonly\`-spawned command shell, you may need to let SharpHound know what username you are authenticating to other systems as.
@@ -123,18 +140,22 @@ Collect every LDAP property where the value is a string from each enumerated Act
 ### OutputDirectory
 
 By default, SharpHound will output zipped JSON files to the directory SharpHound was launched from. You can specify a different folder for SharpHound to write files to. For example, to instruct SharpHound to write output to C:temp:
+
+```powershell
+.\SharpHound.exe --OutputDirectory C:\temp\
 ```
-C:\> SharpHound.exe --OutputDirectory C:\temp\
-```
+
 ### OutputPrefix
 
 Add a prefix to your JSON and ZIP files. For example, to have the JSON and ZIP file names start with “Financial Audit”:
+
+```powershell
+.\SharpHound.exe --OutputPrefix "Financial Audit"
 ```
-C:\> SharpHound.exe --OutputPrefix "Financial Audit"
-```
+
 ### NoZip
 
-Instruct SharpHound to **not** zip the JSON files when collection finishes
+Instruct SharpHound to **not** zip the JSON files when collection finishes
 
 ### ZipPassword
 
@@ -161,21 +182,25 @@ Adds a CSV tracking requests to computers by dumping error codes from attempted 
 ### Loop or 'l'
 
 Instruct SharpHound to loop computer-based collection methods. For example, attempt to collect local group memberships across all systems in a loop:
+
+```powershell
+.\SharpHound.exe --CollectionMethods LocalGroup --Loop
 ```
-C:\> SharpHound.exe --CollectionMethods LocalGroup --Loop
-```
+
 ### LoopDuration
 
 By default, SharpHound will loop for 2 hours. You can specify whatever duration you like using the HH:MM:SS format. For example, to loop session collection for 12 hours, 30 minutes and 12 seconds:
-```
-C:\> SharpHound.exe --CollectionMethods Session --Loop --LoopDuration 12:30:12
+```powershell
+.\SharpHound.exe --CollectionMethods Session --Loop --LoopDuration 12:30:12
 ```
 ### LoopInterval
 
 How long to pause for between loops, also given in HH:MM:SS format. For example, to loop session collection for 12 hours, 30 minutes and 12 seconds, with a 15 minute interval between loops:
+
+```powershell
+.\SharpHound.exe --CollectionMethods Session --Loop --Loopduration 12:30:12 --LoopInterval 00:15:00
 ```
-C:\> SharpHound.exe --CollectionMethods Session --Loop --Loopduration 12:30:12 --LoopInterval 00:15:00
-```
+
 ## Connection Options
 
 ### DomainController
@@ -226,10 +251,12 @@ Password for local Administrator to be used if DoLocalAdminSessionEnum is set.
 
 ### PortCheckTimeout
 
-When SharpHound is scanning a remote system to collect user sessions and local group memberships, it first checks to see if port 445 is open on that system. This helps speed up SharpHound collection by not attempting unnecessary function calls when systems aren’t even online. By default, SharpHound will wait 2000 milliseconds (2 seconds) to get a response when scanning 445 on the remote system. You can decrease this if you’re on a fast LAN, or increase it if you need to. For example, to tell SharpHound to wait just 1000 milliseconds (1 second) before skipping to the next host:
+When SharpHound is scanning a remote system to collect user sessions and local group memberships, it first checks to see if port 445 is open on that system. This helps speed up SharpHound collection by not attempting unnecessary function calls when systems aren't even online. By default, SharpHound will wait 2000 milliseconds (2 seconds) to get a response when scanning 445 on the remote system. You can decrease this if you're on a fast LAN, or increase it if you need to. For example, to tell SharpHound to wait just 1000 milliseconds (1 second) before skipping to the next host:
+
+```powershell
+.\SharpHound.exe --PortCheckTimeout 1000
 ```
-C:\> SharpHound.exe --PortCheckTimeout 1000
-```
+
 ### SkipPortCheck
 
 Instruct SharpHound to not perform the port 445 check before attempting to enumerate information from a remote host. This can result in significantly slower collection periods.
@@ -258,9 +285,11 @@ Number of threads to run enumeration with
 ### CacheName
 
 SharpHound will create a local cache file to dramatically speed up data collection. It does this primarily by storing a map of principal names to SIDs and IPs to computer names. By default, SharpHound will auto-generate a name for the file, but you can use this flag to control what that name will be. For example, to name the cache file \`Accounting.bin\`:
+
+```powershell
+.\SharpHound.exe --CacheName Accounting.bin
 ```
-C:\> SharpHound.exe --CacheName Accounting.bin
-```
+
 ### MemCache
 
 This will instruct SharpHound to NOT create the local cache file. Future enumeration will be slower than they would be with a cache file, but this will prevent SharpHound from putting the cache file on disk, which can help with AV and EDR evasion.

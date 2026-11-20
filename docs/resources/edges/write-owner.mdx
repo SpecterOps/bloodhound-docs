@@ -16,16 +16,18 @@ This clip shows an example of abusing this edge:
 
 To change the ownership of the object, you may use the Set-DomainObjectOwner function in PowerView.
 
-To abuse this privilege with PowerView’s Set-DomainObjectOwner, first import PowerView into your agent session or into a PowerShell instance at the console. You may need to authenticate to the Domain Controller as the user with the password reset privilege if you are not running a process as that user.
+To abuse this privilege with PowerView's Set-DomainObjectOwner, first import PowerView into your agent session or into a PowerShell instance at the console. You may need to authenticate to the Domain Controller as the user with the password reset privilege if you are not running a process as that user.
 
 To do this in conjunction with Set-DomainObjectOwner, first create a PSCredential object (these examples comes from the PowerView help documentation):
-```
+
+```powershell
 $SecPassword = ConvertTo-SecureString 'Password123!' -AsPlainText -Force
 $Cred = New-Object System.Management.Automation.PSCredential('TESTLAB\\\dfm.a', $SecPassword)
 ```
 
 Then, use Set-DomainObjectOwner, optionally specifying $Cred if you are not already running a process as the user with this privilege:
-```
+
+```powershell
 Set-DomainObjectOwner -Credential $Cred -TargetIdentity "Domain Admins" -OwnerIdentity harmj0y
 ```
 
