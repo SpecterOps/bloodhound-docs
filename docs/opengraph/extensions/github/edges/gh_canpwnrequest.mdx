@@ -3,25 +3,16 @@ title: 'GH_CanPwnRequest'
 description: '[Computed] Repo role can exploit a pwn-requestable workflow to execute arbitrary code with the target''s secrets and permissions — GH_RepoRole → GH_Repository / GH_Branch'
 ---
 
-<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and Community Edition" />
 
 ## Edge Schema
 
 - Traversable: ✅
 
-| Start | Kind | End |
-|-------|-----------|-------|
-| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | GH_CanPwnRequest | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) |
-| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | GH_CanPwnRequest | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) |
-
-```mermaid
-flowchart LR
-    GH_Branch["GH_Branch"]
-    GH_RepoRole["GH_RepoRole"]
-    GH_Repository["GH_Repository"]
-    GH_RepoRole -- GH_CanPwnRequest --> GH_Branch
-    GH_RepoRole -- GH_CanPwnRequest --> GH_Repository
-```
+| Source | Destination |
+| --- | --- |
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) |
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) |
 
 ## General Information
 
@@ -66,13 +57,6 @@ An attacker who exploits a pwn request gains code execution in the workflow runn
 
 - **OIDC traversal requires `id-token: write`**: The attack chain from GH_CanPwnRequest through [GH_CanAssumeIdentity](/opengraph/extensions/github/edges/gh_canassumeidentity) to a cloud role is only valid if the pwn-requestable job's calculated `effective_github_token_permissions` includes `id-token:write`. The `id-token` permission defaults to `none` and is never implicitly granted — even when the workflow has no `permissions:` block at all. Inspect `workflow_permissions` on [GH_Workflow](/opengraph/extensions/github/nodes/gh_workflow), `job_permissions` on [GH_WorkflowJob](/opengraph/extensions/github/nodes/gh_workflowjob), and the job's `effective_github_token_permissions` to understand how the effective value was derived.
 - **GITHUB_TOKEN permissions**: The `permissions:` block controls what the `GITHUB_TOKEN` can do (e.g., push commits, create releases), but has no effect on secret access, OIDC token requests (governed separately by `id-token`), or arbitrary code execution. A workflow with `contents: read` is still fully exploitable via pwn request for secret exfiltration and lateral movement — only write-back to the repository is limited.
-
-## Edge Schema
-
-| Source | Destination | Traversable |
-| --- | --- | --- |
-| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) | `true` |
-| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | `true` |
 
 ## Diagram
 
