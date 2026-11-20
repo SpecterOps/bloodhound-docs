@@ -215,12 +215,14 @@ In the left navigation menu, go to **Administration** > **Data Collection** > **
   </Step>
 
   <Step id="credential" title="Add or select a credential">
-    In the **Secrets** section, choose whether to use a new credential or a saved credential from an existing collection plan.
+    In the **Secrets** section, select **New Credentials** or **Existing Credentials**.
 
     For a new credential, enter a **Secret Name**, **Access Key ID**, and **Secret Access Key**. The **Authentication Type** is **Access Key**. For an existing credential, select it by its saved name.
 
+    When you edit a plan, you can only select an existing credential. To use a new key pair, first create the credential in [Manage credentials](#manage-credentials), then select it in the plan.
+
     <Note>
-      BloodHound Enterprise does not display a saved secret access key again. You cannot edit credentials after saving the plan. See [Rotate a credential](/collect-data/enterprise-collection/cloud-collector/configure#rotate-a-credential) for guidance on updating credentials.
+      BloodHound Enterprise does not display a saved secret access key again. To change a saved credential, see [Manage credentials](#manage-credentials).
     </Note>
 
     Your credentials are encrypted and stored securely.
@@ -315,22 +317,105 @@ Use the **Run Results** filter, sort the **Started at** or **Completed at** colu
   <img src="/images/data_collectors/cloud-collector/collection-plan-history.png" alt="History drawer showing cloud collector job details" />
 </Frame>
 
+## Manage credentials
+
+Use the **Manage Credentials** drawer to view saved credentials and the collection plans that use them, and to create, edit, or delete credentials.
+
+On the **Collection Plans** page, click the key icon (**Manage Credentials**) to open the drawer. The credentials table shows:
+
+| Column | Description |
+| --- | --- |
+| **Credential Name** | The saved name of the credential. |
+| **Access Key ID** | The AWS access key ID. |
+| **Created** | The date the credential was created. |
+| **Plans** | The number of collection plans that use the credential, or **Unused** when no plan uses it. |
+| **Actions** | Edit and delete actions for the credential. |
+
+Enter a name in **Search credentials by name** to filter the table.
+
+<Note>
+  Users without permission to manage collection plans can view the table, but they do not see **Create Credential** or the **Actions** column.
+</Note>
+
+### Create a credential
+
+Create a credential before you need it in a plan, for example to rotate a key pair.
+
+<Steps>
+  <Step title="Open the dialog">
+    In the **Manage Credentials** drawer, click **Create Credential**.
+  </Step>
+
+  <Step title="Enter the key pair">
+    Enter a **Secret Name**, **Access Key ID**, and **Secret Access Key**. The **Authentication Type** is **Access Key**.
+
+    Credential names must be unique.
+  </Step>
+
+  <Step title="Save the credential">
+    Click **Create Credential**. The credential appears in the table as **Unused** until you select it in a collection plan.
+  </Step>
+</Steps>
+
+### Edit a credential
+
+<Steps>
+  <Step title="Open the dialog">
+    In the credentials table, click the edit icon for the credential.
+
+    The **Edit Credential** dialog lists the collection plans that use the credential.
+  </Step>
+
+  <Step title="Update the credential">
+    Update the **Secret Name** or **Access Key ID**. To replace the secret access key, click **Replace** and enter the new **Secret Access Key**. Click **Keep existing** to cancel the replacement.
+  </Step>
+
+  <Step title="Save your changes">
+    Click **Save**.
+
+    Changes apply to every collection plan that uses the credential.
+  </Step>
+</Steps>
+
+### Delete a credential
+
+Deleting a credential permanently deletes it and removes its association with every collection plan that uses it. Those plans cannot collect successfully until you edit each one and select another existing credential.
+
+<Steps>
+  <Step title="Open the dialog">
+    In the credentials table, click the delete icon for the credential.
+
+    The dialog lists any affected collection plans.
+  </Step>
+
+  <Step title="Confirm deletion">
+    Type the credential name to confirm, then click **Delete Credential**.
+  </Step>
+</Steps>
+
+<Note>
+  Deleting a credential does not revoke the AWS access key. Revoke the key in AWS according to your organization's credential policy.
+</Note>
+
 ## Rotate a credential
 
-To rotate a credential, you must create a new collection plan and add the replacement key pair as a new credential. You cannot edit an existing plan and select the new credential.
+To rotate a credential, update the saved credential or switch your plans to a new one:
 
-Deleting a collection plan removes its profile and schedule links but does not revoke the secret or automatically delete the secret reference in the Cloud Collector service.
+- **Update the saved credential:** [edit the credential](#edit-a-credential), enter the new **Access Key ID**, and replace the **Secret Access Key**. Every plan that uses the credential uses the new key pair.
+- **Switch to a new credential:** [create a credential](#create-a-credential) with the new key pair, then edit each plan and select it in the **Secrets** step. When no plan uses the old credential, [delete it](#delete-a-credential).
 
-You should manually revoke secrets according to your organization's credential policy and contact your SpecterOps account team to remove the secret reference from the Cloud Collector service. Revoking the credential used by a queued or running job can still cause that job to fail.
+Run a collection on demand to validate the new key pair, then revoke the old AWS key according to your organization's credential policy.
+
+Cloud Collector jobs keep the access key ID that they captured when BloodHound Enterprise created them. A job that is already queued or running when you change or revoke the key can fail.
 
 ## Delete a collection plan
 
-Delete a collection plan when you no longer need it or when you [rotate a credential](/collect-data/enterprise-collection/cloud-collector/configure#rotate-a-credential) it uses.
+Delete a collection plan when you no longer need it.
 
 Cloud Collector jobs that BloodHound Enterprise created before the plan's deletion are independent snapshots. Deleting or editing the plan does not rewrite a job that is already queued or running.
 
 <Note>
-  Deleting a plan does not revoke the AWS key or automatically delete its secret reference in the Cloud Collector service.
+  Deleting a plan does not revoke the AWS key or delete its credential. To delete a credential that no plan uses, see [Delete a credential](#delete-a-credential).
 </Note>
 
 <Steps>
