@@ -636,9 +636,9 @@ The following PostgreSQL restrictions remain:
 
 ### Open traversal execution budgets
 
-PostgreSQL open traversal defaults to 100,000 candidate states and 64 MiB of cumulative estimated trail state. Exhaustion raises SQLSTATE `54000`. These are execution accounting limits, not a depth cutoff or a measured process-memory cap.
+PostgreSQL open traversal limits how many candidate states and how much cumulative estimated trail state a query can admit. Exhaustion raises SQLSTATE `54000`. These are execution accounting limits, not a depth cutoff or a measured process-memory cap.
 
-For DAWGS operators, positive `dawgs.traversal_state_limit` and `dawgs.traversal_byte_limit` session or transaction settings control these budgets. They are not BloodHound configuration-file options. Deploying the upgraded compiler requires the matching DAWGS schema helpers.
+In BloodHound v9.10.1 and later, the [`database.traversal_state_limit`](/manage-bloodhound/bh-config) and [`database.traversal_byte_limit`](/manage-bloodhound/bh-config) configuration options set these budgets. They default to 5,000,000 candidate states and 2 GiB. A positive value overrides the `dawgs.traversal_state_limit` or `dawgs.traversal_byte_limit` session or transaction setting. When an option is `0`, the session setting applies, and an unset or empty session setting falls back to 100,000 candidate states or 64 MiB. Deploying the upgraded compiler requires the matching DAWGS schema helpers.
 
 ## Unsupported constructs[](#unsupported-constructs)
 
