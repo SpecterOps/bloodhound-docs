@@ -74,7 +74,9 @@ function itemToDoc(item, { edition, section, categoryLabel, type, publicRoot, li
 
 function mapItems(items, options) {
   if (!Array.isArray(items)) fail(`${options.edition} catalog is missing the ${options.section} array.`);
-  return items.map((item) => itemToDoc(item, options));
+  return items
+    .filter((item) => item?.availability !== 'coming-soon')
+    .map((item) => itemToDoc(item, options));
 }
 
 function makeCatalog(catalogs, roots) {
