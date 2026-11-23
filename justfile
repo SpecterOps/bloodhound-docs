@@ -21,23 +21,11 @@ update-openapi VERSION:
     # Download openapi.json from the stage branch in the BloodHound repo for the given version and save it to docs/openapi.json
     curl -L --fail "https://raw.githubusercontent.com/SpecterOps/BloodHound/stage/{{ VERSION }}/packages/go/openapi/doc/openapi.json" -o docs/openapi.json || (echo "Failed to download OpenAPI spec for version {{ VERSION }}" && exit 1)
 
-# Generate OpenGraph library data from the JSON source files
-generate-opengraph-library:
+# Generate the docs Marketplace catalog and copy logos from local code repositories
+sync-opengraph-marketplace bh_root="../BloodHound" bhe_root="../bloodhound-enterprise":
     #!/usr/bin/env bash
     set -euo pipefail
-    node scripts/generate-opengraph-library-data.mjs
-
-# Refresh cached vendor favicons used by the OpenGraph library
-fetch-opengraph-library-favicons:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    node scripts/fetch-opengraph-vendor-favicons.mjs
-
-# Validate OpenGraph library data and fail if generated data is stale
-check-opengraph-library:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    node scripts/generate-opengraph-library-data.mjs --check
+    node --experimental-strip-types scripts/sync-opengraph-marketplace.mjs --bh-root "{{ bh_root }}" --bhe-root "{{ bhe_root }}"
 
 # Check docs coverage for edge help texts vs code registry
 check-edges bh_root="../BloodHound":
