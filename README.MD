@@ -41,17 +41,6 @@ For documentation-specific guidance, also review the following resources:
 - [Mintlify guidance](.agents/mintlify-guidance.md)
 - [Validation checklist](.agents/validation.md)
 
-## Sync the OpenGraph Marketplace
-
-The Marketplace page is generated from the local BloodHound and bloodhound-enterprise code repositories. Make sure both repositories are checked out next to this docs repository, then run:
-
-```bash
-just sync-opengraph-marketplace
-```
-
->[!NOTE]
->This updates `docs/snippets/opengraph/library/data/data.generated.jsx` and copies the catalog logos into `docs/assets/opengraph-marketplace/`. Do not edit generated catalog data or copied logos directly.
-
 ## Contact
 
 Please check out the [Contact page](https://github.com/SpecterOps/BloodHound/wiki/Contact) in our wiki for details on how to reach out with questions and suggestions.
