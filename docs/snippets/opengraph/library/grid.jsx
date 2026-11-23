@@ -35,6 +35,8 @@ export const OpenGraphLibrary = ({ catalog = [], communityExtensionsDisclaimer =
         <p>Explore OpenGraph extensions and integrations listed in the BloodHound applications.</p>
       </header>
 
+      <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
       <div className="og-marketplace-controls" role="search" aria-label="Marketplace filters">
         <label>
           <span>Search</span>

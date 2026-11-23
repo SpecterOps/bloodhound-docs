@@ -17,8 +17,8 @@ prune-my-branches nuclear='no':
     echo "Remaining Git Branches:"
     git --no-pager branch
 
+# Download openapi.json from the stage branch in the BloodHound repo for the given version and save it to docs/openapi.json
 update-openapi VERSION:
-    # Download openapi.json from the stage branch in the BloodHound repo for the given version and save it to docs/openapi.json
     curl -L --fail "https://raw.githubusercontent.com/SpecterOps/BloodHound/stage/{{ VERSION }}/packages/go/openapi/doc/openapi.json" -o docs/openapi.json || (echo "Failed to download OpenAPI spec for version {{ VERSION }}" && exit 1)
 
 # Generate the docs Marketplace catalog and copy logos from local code repositories
