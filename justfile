@@ -3,7 +3,7 @@ _default:
 
 set positional-arguments
 
-# run git pruning on merged branches to clean up local workspace (run with `nuclear` to clean up orphaned branches)
+# Run git pruning on merged branches to clean up local workspace (run with `nuclear` to clean up orphaned branches)
 prune-my-branches nuclear='no':
     #!/usr/bin/env bash
     git branch --merged| egrep -v "(^\*|master|main|dev)" | xargs git branch -d
@@ -27,8 +27,20 @@ sync-opengraph-marketplace bh_root="../BloodHound" bhe_root="../bloodhound-enter
     set -euo pipefail
     node --experimental-strip-types scripts/sync-opengraph-marketplace.mjs --bh-root "{{ bh_root }}" --bhe-root "{{ bhe_root }}"
 
-# Check docs coverage for edge help texts vs code registry
+# Check docs coverage for documentable edges in the BloodHound CUE schema
 check-edges bh_root="../BloodHound":
     #!/usr/bin/env bash
     set -euo pipefail
     python3 scripts/check_edge_docs.py --bh-root "{{ bh_root }}"
+
+# Find images in docs/assets and docs/images no longer referenced anywhere in the repo
+find-unused-images:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/find_unused_images.py
+
+# Delete images in docs/assets and docs/images no longer referenced anywhere in the repo
+delete-unused-images:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/find_unused_images.py --delete

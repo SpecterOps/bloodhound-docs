@@ -1,28 +1,54 @@
 ---
 title: 'GH_MemberOf'
-description: 'Team role is a member of a team, or team is a nested member of a parent team'
+description: 'Team role is a member of a team, team is nested under a parent team, or enterprise team maps to its projected organization team'
 ---
 
 <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
 
 ## Edge Schema
 
-- Source: [GH_TeamRole](/opengraph/extensions/github/nodes/gh_teamrole), [GH_Team](/opengraph/extensions/github/nodes/gh_team)
-- Destination: [GH_Team](/opengraph/extensions/github/nodes/gh_team)
 - Traversable: ✅
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_EnterpriseTeam](/opengraph/extensions/github/nodes/gh_enterpriseteam) | GH_MemberOf | [GH_Team](/opengraph/extensions/github/nodes/gh_team) |
+| [GH_Team](/opengraph/extensions/github/nodes/gh_team) | GH_MemberOf | [GH_Team](/opengraph/extensions/github/nodes/gh_team) |
+| [GH_TeamRole](/opengraph/extensions/github/nodes/gh_teamrole) | GH_MemberOf | [GH_EnterpriseTeam](/opengraph/extensions/github/nodes/gh_enterpriseteam) |
+| [GH_TeamRole](/opengraph/extensions/github/nodes/gh_teamrole) | GH_MemberOf | [GH_Team](/opengraph/extensions/github/nodes/gh_team) |
+
+```mermaid
+flowchart LR
+    GH_EnterpriseTeam["GH_EnterpriseTeam"]
+    GH_Team["GH_Team"]
+    GH_TeamRole["GH_TeamRole"]
+    GH_EnterpriseTeam -- GH_MemberOf --> GH_Team
+    GH_Team -- GH_MemberOf --> GH_Team
+    GH_TeamRole -- GH_MemberOf --> GH_EnterpriseTeam
+    GH_TeamRole -- GH_MemberOf --> GH_Team
+```
 
 ## General Information
 
-The traversable GH_MemberOf edge represents team membership, linking a team role to its parent team or a child team to a parent team in nested team hierarchies. This edge is traversable because team membership extends access transitively -- a user who holds a role in a child team inherits the repository permissions of all ancestor teams in the nesting hierarchy, making it a key component of attack path analysis.
+The traversable GH_MemberOf edge represents team membership and projection relationships, linking a team role to its parent team, a child team to a parent team in nested team hierarchies, or a [GH_EnterpriseTeam](/opengraph/extensions/github/nodes/gh_enterpriseteam) to its projected [GH_Team](/opengraph/extensions/github/nodes/gh_team) in an organization. This edge is traversable because these relationships carry effective team membership context through the graph: a user who holds a role in a child team inherits the repository permissions of ancestor teams, and enterprise-managed team membership flows into the projected organization team.
 
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_EnterpriseTeam](/opengraph/extensions/github/nodes/gh_enterpriseteam) | [GH_Team](/opengraph/extensions/github/nodes/gh_team) | `true` |
+| [GH_Team](/opengraph/extensions/github/nodes/gh_team) | [GH_Team](/opengraph/extensions/github/nodes/gh_team) | `false` |
+| [GH_TeamRole](/opengraph/extensions/github/nodes/gh_teamrole) | [GH_EnterpriseTeam](/opengraph/extensions/github/nodes/gh_enterpriseteam) | `true` |
+| [GH_TeamRole](/opengraph/extensions/github/nodes/gh_teamrole) | [GH_Team](/opengraph/extensions/github/nodes/gh_team) | `true` |
+
+## Diagram
 
 ```mermaid
 graph LR
-    teamRole1("GH_TeamRole security-team\\maintainer")
-    teamRole2("GH_TeamRole appsec-team\\member")
-    childTeam("GH_Team appsec-team")
-    parentTeam("GH_Team security-team")
-    teamRole1 -- GH_MemberOf --> parentTeam
-    teamRole2 -- GH_MemberOf --> childTeam
-    childTeam -- GH_MemberOf --> parentTeam
+    n0["GH_EnterpriseTeam"]
+    n1["GH_Team"]
+    n2["GH_TeamRole"]
+    n0 -->|GH_MemberOf| n1
+    n1 -.->|GH_MemberOf| n1
+    n2 -->|GH_MemberOf| n0
+    n2 -->|GH_MemberOf| n1
 ```

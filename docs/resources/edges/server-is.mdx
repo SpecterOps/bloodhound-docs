@@ -1,0 +1,29 @@
+---
+title: ServerIs
+description: This edge connects an Active Directory site server object to the Computer object it represents.
+---
+
+import ResourceEditionPill from '/snippets/resources/edition-pill.mdx';
+
+<ResourceEditionPill />
+
+The ServerIs relationship is created from a [SiteServer](/resources/nodes/site-server) to the [Computer](/resources/nodes/computer) object referenced by its `serverReference` attribute. In Active Directory Domain Services, this identifies the computer object for the domain controller represented by the site server.
+
+## Abuse Info
+
+ServerIs does not grant a principal control of the referenced computer on its own. It makes the impact of control over a [Site](/resources/nodes/site) traversable: if a malicious GPO is linked to the site, it can apply to the site server's referenced domain controller. Review the site's inbound control and [GPLink](/resources/edges/gp-link) relationships to identify the preceding privilege.
+
+## Opsec Considerations
+
+This relationship is collected directory metadata. Abuse occurs through the preceding site-control or GPO-control relationship, not by using ServerIs directly.
+
+## Edge Schema
+
+Source: [SiteServer](/resources/nodes/site-server)  
+Destination: [Computer](/resources/nodes/computer)  
+Traversable: ✅
+
+## References
+
+- [Microsoft: Server object](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-adts/9164e4e8-f892-4ca2-8067-059f6f9387a4)
+- [Microsoft: DC existence and object relationships](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-adts/803edcd5-476d-4554-a700-a9f27480c0f1)

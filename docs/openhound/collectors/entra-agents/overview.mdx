@@ -1,0 +1,68 @@
+---
+title: Collector overview
+description: Collect Microsoft agent identities, permissions, and connections with OpenHound Entra Agents.
+hidden: true
+---
+
+import EntraAgentsBetaNote from '/snippets/hounds/openhound-entra-agents-beta-note.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only" />
+
+<EntraAgentsBetaNote />
+
+OpenHound Entra Agents is a read-only collector for Microsoft Entra Agent ID,
+Copilot Studio, Power Platform connections and flows, Azure AI Foundry, Model Context Protocol (MCP)
+servers, and external Agent2Agent (A2A) endpoints.
+
+<Note>
+  The collector extends the Azure graph and connects agent data to AzureHound
+  objects. Ingest an AzureHound collection for the same tenant before ingesting
+  Entra Agents data.
+</Note>
+
+## What the collector collects
+
+- Microsoft Entra agent identities, their associated blueprints and blueprint
+  principals, agent users, owners, sponsors, and built-in directory roles that permit
+  blueprint credential administration.
+- Copilot Studio agents, ownership, co-author access, public-agent invocation,
+  configured connector and MCP tools, and delegation to other agents and flows.
+- Power Platform connection references and their use by agents and flows.
+- Connection sharing permissions and supported configured authentication
+  identities (requires the optional [Power Platform management registration](/openhound/collectors/entra-agents/configure-permissions#optional-connection-detail-and-sharing-visibility)).
+- Power Automate flow metadata, ownership, connection references, and child-flow
+  relationships.
+- Azure AI Foundry projects and agents, associated identities, project
+  connections, account and project role assignments, and Key Vault references.
+- MCP server metadata and external Agent2Agent (A2A) endpoints referenced in
+  agent configurations.
+
+Collection coverage depends on the collector's permissions and the environments
+and projects it can access.
+
+See [Collector limitations](/openhound/collectors/entra-agents/collector-limitations)
+for coverage gaps and guidance on interpreting the results.
+
+## Collection options
+
+Beta users run the collector using the OpenHound container image. Configure the
+collector's service principal and secrets using the guides below, then follow
+the image deployment instructions provided for the beta.
+
+Choose how to run collection:
+
+| Collection option | Use this option to |
+| --- | --- |
+| Automated BloodHound Enterprise collection | Run OpenHound as a service to collect and ingest data on a schedule configured for your [OpenHound client](/collect-data/enterprise-collection/create-collector) in BloodHound Enterprise. |
+| Manual collection | Run the collector with `uv run openhound collect entra_id ./openhound-raw`, then convert the raw data into OpenGraph JSON files for manual upload with `uv run openhound convert entra_id ./openhound-raw/entra_id ./openhound-opengraph`. |
+
+## Next steps
+
+- [Configure permissions](/openhound/collectors/entra-agents/configure-permissions): provision the
+  service principal and configure access to the services and environments in scope.
+- [Configure the collector](/openhound/collectors/entra-agents/collect-data): set collector secrets, run collection,
+  and verify the collected data.
+- [Collector limitations](/openhound/collectors/entra-agents/collector-limitations): understand coverage
+  gaps and how to interpret collected results.
+- [Cypher queries](/openhound/collectors/entra-agents/queries): investigate the collected data using the
+  existing queries.

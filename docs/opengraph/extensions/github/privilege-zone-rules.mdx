@@ -26,13 +26,13 @@ This rule is defined in the [t0-all-repo-admin-role.json](https://github.com/Spe
 
 ## Tier Zero App Installations (All Repositories)
 
-GitHub App installations scoped to all repositories in the organization that have at least one write permission. A compromised app credential grants write access to every repository. Installations with only read permissions are excluded — they pose a data exfiltration risk but do not grant control over the organization.
+GitHub App installations scoped to all repositories in the organization that have repository-control write permissions. A compromised app credential may grant code, workflow, Actions, or administrative control across every repository. Installations with only read or lower-impact write permissions are excluded.
 
 Zone: Tier Zero
 
 ```cypher
-MATCH (n:GH_AppInstallation {repository_selection:'all'})
-WHERE n.permissions CONTAINS '"write"'
+MATCH (n:GH_AppInstallation)-[:GH_CanAccess]->(:GH_Scope {scope_type:'repository', scope:'all'})
+WHERE ANY(permission IN n.permissions WHERE permission IN ['contents:write', 'administration:write', 'workflows:write', 'actions:write'])
 RETURN n
 ```
 
@@ -40,17 +40,30 @@ This rule is defined in the [t0-app-installations-all-repos.json](https://github
 
 ## Tier Zero Apps (All-Repository Installations)
 
-GitHub App definitions whose installations have write access to all repositories. The app owner controls the private key that can generate tokens for any installation. Compromise of the app's private key grants write access to every repository in organizations where it is installed. Apps whose installations have only read permissions are excluded.
+GitHub App definitions whose installations have repository-control write permissions across all repositories. The app owner controls the private key that can generate tokens for any installation. Compromise of the app's private key may grant code, workflow, Actions, or administrative control across every repository in organizations where it is installed. Apps whose installations have only read or lower-impact write permissions are excluded.
 
 Zone: Tier Zero
 
 ```cypher
-MATCH (n:GH_App)-[:GH_InstalledAs]->(i:GH_AppInstallation {repository_selection:'all'})
-WHERE i.permissions CONTAINS '"write"'
+MATCH (n:GH_App)-[:GH_InstalledAs]->(i:GH_AppInstallation)-[:GH_CanAccess]->(:GH_Scope {scope_type:'repository', scope:'all'})
+WHERE ANY(permission IN i.permissions WHERE permission IN ['contents:write', 'administration:write', 'workflows:write', 'actions:write'])
 RETURN n
 ```
 
 This rule is defined in the [t0-apps-all-repos.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/privilege_zone_rules/t0-apps-all-repos.json) file.
+
+## Tier Zero Enterprise Owners Role
+
+The enterprise owners role grants administrative control over the GitHub Enterprise account, including enterprise organizations, members, identity provider configuration, and enterprise-wide security settings.
+
+Zone: Tier Zero
+
+```cypher
+MATCH (n:GH_EnterpriseRole {short_name:'owners'})
+RETURN n
+```
+
+This rule is defined in the [t0-enterprise-owners-role.json](https://github.com/SpecterOps/openhound-github/tree/main/extension/privilege_zone_rules/t0-enterprise-owners-role.json) file.
 
 ## Tier Zero External Identities (Owner-Mapped)
 
@@ -106,13 +119,13 @@ This rule is defined in the [t0-owners-role.json](https://github.com/SpecterOps/
 
 ## Tier Zero PATs (All Repositories)
 
-Fine-grained personal access tokens scoped to all repositories in the organization that have at least one write permission. A single compromised token grants write access to every repository. PATs with only read permissions are excluded — they pose a data exfiltration risk but do not grant control over the organization.
+Fine-grained personal access tokens scoped to all repositories in the organization that have repository-control write permissions. A single compromised token may grant code, workflow, Actions, or administrative control across every repository. PATs with only read or lower-impact write permissions are excluded.
 
 Zone: Tier Zero
 
 ```cypher
-MATCH (n:GH_PersonalAccessToken {repository_selection:'all'})
-WHERE n.permissions CONTAINS '"write"'
+MATCH (n:GH_PersonalAccessToken)-[:GH_CanAccess]->(:GH_Scope {scope_type:'repository', scope:'all'})
+WHERE ANY(permission IN n.repository_permissions WHERE permission IN ['contents:write', 'administration:write', 'workflows:write', 'actions:write'])
 RETURN n
 ```
 

@@ -135,3 +135,9 @@ For domain controllers, you can create exceptions by adding the required DC regi
 ### NTLM Relay Registry Paths
 
 Registry paths for NTLM relay edges exist on all Windows hosts. By default, only `Administrators` can access these paths remotely. To enable least-privileged collection, use Group Policy to add these specific paths to `AllowedExactPaths`. This grants `Authenticated Users` remote read access, following the same method described above.
+
+### Azure VM Registry
+
+Azure VM identity collection reads `HKLM\SOFTWARE\Microsoft\Windows Azure\VmId` from domain-joined Windows computers. If SharpHound uses the Remote Registry fallback, add `HKLM\SOFTWARE\Microsoft\Windows Azure` to `AllowedExactPaths` with the GPO setting described above. The target computer's registry key permissions must also allow the collector account to read the key and value.
+
+SharpHound tries WMI before Remote Registry. This delegation guidance covers the Remote Registry fallback; verify WMI permissions and network access separately if your deployment relies on the WMI strategy.

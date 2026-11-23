@@ -1,0 +1,70 @@
+---
+title: 'GH_CanDeployToEnvironment'
+description: '[Computed] Repository, branch, repo role, or reviewer can deploy to this GitHub environment after evaluating deployment branch policy, reviewer gates, and admin bypass behavior; reviewer edges require both self-approval and a deployable code path'
+---
+
+<img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
+
+## Edge Schema
+
+- Traversable: ✅
+
+| Start | Kind | End |
+|-------|-----------|-------|
+| [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | GH_CanDeployToEnvironment | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
+| [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) | GH_CanDeployToEnvironment | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | GH_CanDeployToEnvironment | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
+| [GH_User](/opengraph/extensions/github/nodes/gh_user) | GH_CanDeployToEnvironment | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
+| [GH_Team](/opengraph/extensions/github/nodes/gh_team) | GH_CanDeployToEnvironment | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) |
+
+```mermaid
+flowchart LR
+    GH_Branch["GH_Branch"]
+    GH_Environment["GH_Environment"]
+    GH_RepoRole["GH_RepoRole"]
+    GH_Repository["GH_Repository"]
+    GH_Team["GH_Team"]
+    GH_User["GH_User"]
+    GH_Branch -- GH_CanDeployToEnvironment --> GH_Environment
+    GH_RepoRole -- GH_CanDeployToEnvironment --> GH_Environment
+    GH_Repository -- GH_CanDeployToEnvironment --> GH_Environment
+    GH_Team -- GH_CanDeployToEnvironment --> GH_Environment
+    GH_User -- GH_CanDeployToEnvironment --> GH_Environment
+```
+
+## General Information
+
+The traversable GH_CanDeployToEnvironment edge represents the ability for a repository, branch, repository role, or reviewer to satisfy the modeled deployment constraints for a GitHub Environment.
+
+This edge is computed from environment deployment branch policy, branch protection state, required reviewer behavior, and administrator bypass behavior. For environments without required reviewers, unrestricted environments emit repository and branch edges, protected-branch-only environments emit edges only for protected branches unless no branch protection rules exist, and custom branch policies emit edges only for matching branches.
+
+When required reviewers are configured and self-review is allowed, a configured [GH_User](/opengraph/extensions/github/nodes/gh_user) or [GH_Team](/opengraph/extensions/github/nodes/gh_team) reviewer receives GH_CanDeployToEnvironment only when the same actor can also supply deployable code. For unrestricted environments this means the actor can create a branch in the repository. For protected-branch-only or custom branch policy environments this means the actor can write to an eligible branch under the existing [GH_CanWriteBranch](/opengraph/extensions/github/edges/gh_canwritebranch) rules.
+
+Self-review alone is not sufficient for this edge. [GH_ApprovesDeploymentTo](/opengraph/extensions/github/edges/gh_approvesdeploymentto) remains the non-traversable representation of reviewer authority, while GH_CanDeployToEnvironment represents the combined ability to satisfy both the approval gate and the code-supply path. When prevent_self_review is enabled, no direct deploy edge is emitted for the reviewer because the required split-principal flow is not currently modeled.
+
+## Edge Schema
+
+| Source | Destination | Traversable |
+| --- | --- | --- |
+| [GH_Branch](/opengraph/extensions/github/nodes/gh_branch) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | `true` |
+| [GH_RepoRole](/opengraph/extensions/github/nodes/gh_reporole) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | `true` |
+| [GH_Repository](/opengraph/extensions/github/nodes/gh_repository) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | `true` |
+| [GH_Team](/opengraph/extensions/github/nodes/gh_team) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | `true` |
+| [GH_User](/opengraph/extensions/github/nodes/gh_user) | [GH_Environment](/opengraph/extensions/github/nodes/gh_environment) | `true` |
+
+## Diagram
+
+```mermaid
+graph LR
+    n0["GH_Branch"]
+    n1["GH_Environment"]
+    n2["GH_RepoRole"]
+    n3["GH_Repository"]
+    n4["GH_Team"]
+    n5["GH_User"]
+    n0 -->|GH_CanDeployToEnvironment| n1
+    n2 -->|GH_CanDeployToEnvironment| n1
+    n3 -->|GH_CanDeployToEnvironment| n1
+    n4 -->|GH_CanDeployToEnvironment| n1
+    n5 -->|GH_CanDeployToEnvironment| n1
+```
