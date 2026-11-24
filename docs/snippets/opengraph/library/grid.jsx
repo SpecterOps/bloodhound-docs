@@ -46,7 +46,9 @@ export const OpenGraphLibrary = ({ catalog = [], communityExtensionsDisclaimer =
           <span>Edition</span>
           <select value={edition} onChange={(event) => setEdition(event.target.value)}>
             <option value="all">All editions</option>
-            {optionValues('edition').map((value) => <option key={value} value={value}>{value}</option>)}
+            {['Enterprise', 'CE'].filter((value) => optionValues('edition').includes(value)).map((value) => (
+              <option key={value} value={value}>{value}</option>
+            ))}
           </select>
         </label>
         <label>

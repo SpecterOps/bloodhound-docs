@@ -88,6 +88,18 @@ function makeCatalog(catalogs, roots) {
   rmSync(join(assetRoot, 'enterprise'), { recursive: true, force: true });
 
   items.push(
+    ...mapItems(catalogs.bhe.enterpriseExtensions, {
+      edition: 'Enterprise', section: 'OpenGraph Enterprise Extensions', categoryLabel: 'Enterprise Extension', type: 'extension', publicRoot: bhePublic, linkLabel: 'Learn More',
+    }),
+    ...mapItems(catalogs.bhe.comingSoonExtensions, {
+      edition: 'Enterprise', section: 'OpenGraph Enterprise Extensions in Development', categoryLabel: 'Enterprise Extension', type: 'extension', publicRoot: bhePublic, linkLabel: 'Sign up to learn more',
+    }),
+    ...mapItems(catalogs.bhe.communityExtensions, {
+      edition: 'Enterprise', section: 'Community Extensions', categoryLabel: 'Community Extension', type: 'extension', publicRoot: bhePublic, linkLabel: 'View on GitHub',
+    }),
+    ...mapItems(catalogs.bhe.integrations, {
+      edition: 'Enterprise', section: 'Integrations', categoryLabel: 'Integration', type: 'integration', publicRoot: bhePublic, linkLabel: 'Learn More',
+    }),
     ...mapItems(catalogs.ce.communityExtensions, {
       edition: 'CE', section: 'Community Extensions', categoryLabel: 'Community Extension', type: 'extension', publicRoot: cePublic, linkLabel: 'View on GitHub',
     }),
@@ -102,18 +114,6 @@ function makeCatalog(catalogs, roots) {
     }),
     ...mapItems(catalogs.ce.enterpriseIntegrations, {
       edition: 'CE', section: 'Enterprise Integrations', categoryLabel: 'Integration', type: 'integration', publicRoot: cePublic, linkLabel: 'Learn More',
-    }),
-    ...mapItems(catalogs.bhe.enterpriseExtensions, {
-      edition: 'Enterprise', section: 'OpenGraph Enterprise Extensions', categoryLabel: 'Enterprise Extension', type: 'extension', publicRoot: bhePublic, linkLabel: 'Learn More',
-    }),
-    ...mapItems(catalogs.bhe.comingSoonExtensions, {
-      edition: 'Enterprise', section: 'OpenGraph Enterprise Extensions in Development', categoryLabel: 'Enterprise Extension', type: 'extension', publicRoot: bhePublic, linkLabel: 'Sign up to learn more',
-    }),
-    ...mapItems(catalogs.bhe.communityExtensions, {
-      edition: 'Enterprise', section: 'Community Extensions', categoryLabel: 'Community Extension', type: 'extension', publicRoot: bhePublic, linkLabel: 'View on GitHub',
-    }),
-    ...mapItems(catalogs.bhe.integrations, {
-      edition: 'Enterprise', section: 'Integrations', categoryLabel: 'Integration', type: 'integration', publicRoot: bhePublic, linkLabel: 'Learn More',
     }),
   );
 
