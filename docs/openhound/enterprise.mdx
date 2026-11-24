@@ -87,7 +87,70 @@ Use these requirements to size the host, virtual machine, or container service t
 | Storage   | 50 GB               | 80 GB or more           |
 
 <Note>
-  The requirements vary depending on the size of the environment being collected/converted. Container storage persistence is not required. However, it is recommended to have a persistent storage for the logs for troubleshooting.
+  The requirements vary depending on the size of the environment being collected/converted. Container storage persistence is not required. However, it is recommended to have a persistent storage for the logs for troubleshooting and for [saved runs](/openhound/configuration#saved-run-parameters), which OpenHound never deletes automatically.
   
   OpenHound stores logs in the `~/.local/share/openhound/logs` directory. You can configure log rotation by time or file size in the `config.toml` file.
 </Note>
+
+## Recover a saved run
+
+If a collection job fails after OpenHound finishes collecting data from the source, for example because the container ran out of memory during conversion, you can recover the graph files from the job's [saved run](/openhound/configuration#saved-run-parameters) and upload them to BloodHound Enterprise manually. Recovery never calls the source API again.
+
+<Note>
+  Recovery creates a separate manual upload. It does not reopen, retry, or change the original collection job in BloodHound Enterprise.
+</Note>
+
+Before you begin, ensure that you have the following:
+
+- The saved run directory for the failed job. The scheduler logs the directory when the job starts, for example `/var/lib/openhound/runs/<run-id>`.
+- The same OpenHound and collector versions, and the same collector configuration, that the job used.
+- A BloodHound Enterprise user with permission to upload data.
+
+The following steps use the `scheduler-okta` Docker Compose service as an example. The OpenHound container image does not include a shell, so run each command with `python -m openhound`. Outside a container, run `openhound runs ...` instead.
+
+<Steps>
+  <Step title="Inspect the saved run">
+    Show the run's job association, phase checkpoints, and pending pipeline packages:
+
+    ```bash
+    docker compose exec scheduler-okta python -m openhound runs inspect /var/lib/openhound/runs/<run-id>
+    ```
+
+    Collection must have completed for the run. A `running` status can mean that a process was interrupted, so do not treat it as a success.
+  </Step>
+
+  <Step title="Recover the graph files">
+    Generate graph files from the saved resources:
+
+    ```bash
+    docker compose exec scheduler-okta python -m openhound runs resume /var/lib/openhound/runs/<run-id> --workers 1
+    ```
+
+    The `--workers` option sets the number of normalization workers and defaults to `1`. OpenHound writes the recovered files under the run's `recovery/graph` directory and does not upload anything to BloodHound Enterprise. If you run the command again after recovery completes, OpenHound returns the existing output instead of generating duplicates.
+  </Step>
+
+  <Step title="Create an upload package">
+    Package the recovered graph files into a ZIP file:
+
+    ```bash
+    docker compose exec scheduler-okta python -m openhound runs package /var/lib/openhound/runs/<run-id> --output /var/lib/openhound/recovered-okta.zip
+    ```
+
+    The command creates the ZIP file and a `recovered-okta.zip.manifest.json` file that records the run and job, node and edge counts, and SHA-256 checksums. The command never overwrites existing files, so choose a new output name to create another package. The output directory must already exist.
+  </Step>
+
+  <Step title="Copy the files out of the container">
+    ```bash
+    docker compose cp scheduler-okta:/var/lib/openhound/recovered-okta.zip ./recovered-okta.zip
+    docker compose cp scheduler-okta:/var/lib/openhound/recovered-okta.zip.manifest.json ./recovered-okta.zip.manifest.json
+    ```
+  </Step>
+
+  <Step title="Upload the ZIP file">
+    In BloodHound Enterprise, click **Administration** > **File Ingest**, then click **Upload File(s)** and upload only the ZIP file. See [Upload data to BloodHound Enterprise](/collect-data/enterprise-collection/ad-hoc-collection#upload-data-to-bloodhound-enterprise) for details.
+
+    Keep the manifest file locally as an audit record.
+  </Step>
+</Steps>
+
+The `inspect`, `resume`, and `package` commands refuse to run while another process is using the same saved run. To recover a run in a larger container, copy the entire run directory after the run is idle, then pass the new directory path to the commands.
