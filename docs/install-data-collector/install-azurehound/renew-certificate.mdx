@@ -39,7 +39,9 @@ The following steps guide you through renewing the certificate used by AzureHoun
   <Step title="Generate a new certificate and private key">
 
     1. Create a protected working directory for the generated files, such as `C:\AzureHound-Renewal`.
-    1. Run `azurehound.exe configure` with `--config` set to a temporary config path in that directory. This keeps the command from replacing the service configuration or another config in your user profile.
+    1. Run `azurehound.exe configure` with `--config` set to a temporary config path in that directory.
+    
+       This keeps the command from replacing the service configuration or another config in your user profile.
 
        ```cmd
        azurehound.exe configure --config "C:\AzureHound-Renewal\config.json"
@@ -47,21 +49,38 @@ The following steps guide you through renewing the certificate used by AzureHoun
 
     1. Enter the existing Azure region, Directory (tenant) ID, and Application (client) ID from the service configuration.
     1. Select **Certificate**, confirm that you want to generate a certificate and key, and enter an optional private key passphrase.
-    1. Complete the remaining configuration prompts. The command writes a separate `config.json` and prints the locations of the generated `cert.pem` and `key.pem` files beside it. Do not point the command at the service's `ProgramData` configuration file.
-    1. Keep track of the generated certificate and key paths. Do not use the newly generated `config.json` as the service configuration.
+    1. Complete the remaining configuration prompts. The command writes a separate `config.json` and prints the locations of the generated `cert.pem` and `key.pem` files beside it.
+    
+       <Note>
+         Do not point the command at the service's `ProgramData` configuration file.
+       </Note>
+
+    1. Keep track of the generated certificate and key paths.
+    
+       <Note>
+         Do not use the newly generated `config.json` file as the service configuration.
+       </Note>
 
   </Step>
   <Step title="Upload the new certificate to Microsoft Entra ID">
 
-    Upload the generated `cert.pem` to the AzureHound application registration by following [Upload certificate](/install-data-collector/install-azurehound/azure-configuration#certificate). Keep the existing certificate registered until you verify the collector is working with the new one.
+    Upload the generated `cert.pem` to the AzureHound application registration by following [Upload certificate](/install-data-collector/install-azurehound/azure-configuration#certificate).
+
+    Keep the existing certificate registered until you verify the collector is working with the new one.
 
   </Step>
   <Step title="Replace the certificate and key used by the service">
 
     1. Stop the **AzureHound** service from the Windows Services application (`services.msc`).
-    1. Copy the new `cert.pem` and `key.pem` to the locations recorded for `cert` and `key`. Preserve the configured paths so the service continues to read the same files.
+
+    1. Copy the new `cert.pem` and `key.pem` to the locations recorded for `cert` and `key`.
+    
+       Preserve the configured paths so the service continues to read the same files.
+
     1. If you set a private key passphrase, update the `keypass` value in the service's existing `config.json`. If you did not set a passphrase, remove any old `keypass` value.
+
     1. Remove the separate generated `config.json` after you have copied the certificate and key. It can contain sensitive configuration values.
+
     1. Start the **AzureHound** service.
 
   </Step>
