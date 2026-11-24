@@ -37,7 +37,7 @@ export const OpenGraphMarketplace = ({ catalog = [], communityExtensionsDisclaim
           </div>
         </div>
         <div className="mt-2 text-lg prose prose-gray dark:prose-invert [&>*]:[overflow-wrap:anywhere]">
-          <p>Explore OpenGraph extensions and integrations available in BloodHound Enterprise and Community Edition.</p>
+          <p className="og-marketplace-intro">Explore OpenGraph extensions and integrations available in BloodHound Enterprise and Community Edition.</p>
           <img noZoom src="/assets/enterprise-AND-community-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise and CE"/>
         </div>
       </header>
