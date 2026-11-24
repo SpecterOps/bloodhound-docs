@@ -20,6 +20,6 @@ When working under `docs/`, read [`docs/AGENTS.md`](docs/AGENTS.md) and the supp
 | Validating documentation changes | [`.agents/validation.md`](.agents/validation.md) |
 | Updating OpenAPI spec for REST API reference | [`.agents/skills/update-openapi-spec/SKILL.md`](.agents/skills/update-openapi-spec/SKILL.md) |
 | Generating release notes from Jira exports | [`.agents/skills/generate-release-notes/SKILL.md`](.agents/skills/generate-release-notes/SKILL.md) |
-| Updating the OpenGraph Marketplace catalog | [`docs/snippets/opengraph/library/AGENTS.md`](docs/snippets/opengraph/library/AGENTS.md) |
+| Updating the OpenGraph Marketplace catalog | [`docs/snippets/opengraph/marketplace/AGENTS.md`](docs/snippets/opengraph/marketplace/AGENTS.md) |
 
 Keep the root `AGENTS.md` focused on repository-wide guidance and this routing map. Put documentation-specific rules in `docs/AGENTS.md` or a more specific nested file.

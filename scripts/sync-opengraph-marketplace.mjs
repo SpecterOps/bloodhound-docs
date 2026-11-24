@@ -9,7 +9,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const repoRoot = fileURLToPath(new URL('../', import.meta.url));
-const dataFile = join(repoRoot, 'docs/snippets/opengraph/library/data/data.generated.jsx');
+const dataFile = join(repoRoot, 'docs/snippets/opengraph/marketplace/data/data.generated.jsx');
 const assetRoot = join(repoRoot, 'docs/assets/opengraph-marketplace');
 const args = process.argv.slice(2);
 
@@ -139,7 +139,7 @@ if (!existsSync(roots.bh) || !existsSync(roots.bhe)) {
 
 const [ceCatalog, bheCatalog] = await Promise.all([loadCatalog(roots.bh), loadCatalog(roots.bhe)]);
 const catalog = makeCatalog({ ce: ceCatalog, bhe: bheCatalog }, roots);
-const disclaimer = ceCatalog.COMMUNITY_EXTENSIONS_DISCLAIMER || '';
+const disclaimer = (ceCatalog.COMMUNITY_EXTENSIONS_DISCLAIMER || '').replace(/\bthis library\b/gi, 'this Marketplace');
 const generated = `// Generated from the local BloodHound and bloodhound-enterprise Marketplace catalogs. Do not edit directly.
 // Regenerate with: just sync-opengraph-marketplace
 
