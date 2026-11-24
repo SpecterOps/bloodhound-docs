@@ -10,13 +10,14 @@ export const OpenGraphMarketplace = ({ catalog = [], communityExtensionsDisclaim
   const query = search.trim().toLowerCase();
 
   const filteredCatalog = catalog.filter((item) => {
+    const editions = item.editions || [item.edition];
     const searchText = [item.name, item.author, item.description, item.publisher, item.section]
       .filter(Boolean)
       .join(' ')
       .toLowerCase();
 
     return (
-      (edition === 'all' || item.edition === edition) &&
+      (edition === 'all' || editions.includes(edition)) &&
       (type === 'all' || item.type === type) &&
       (publisher === 'all' || item.publisher === publisher) &&
       (availability === 'all' || item.availability === availability) &&
@@ -103,7 +104,7 @@ export const OpenGraphMarketplace = ({ catalog = [], communityExtensionsDisclaim
               {items.map((item) => {
                 const external = /^https?:\/\//i.test(item.href);
                 return (
-                  <article className="og-marketplace-card" key={`${item.edition}-${item.section}-${item.name}`}>
+                  <article className="og-marketplace-card" key={`${(item.editions || [item.edition]).join('-')}-${item.section}-${item.name}`}>
                     <div className="og-marketplace-card-heading">
                       <img src={item.logo} alt="" loading="lazy" />
                       <div>

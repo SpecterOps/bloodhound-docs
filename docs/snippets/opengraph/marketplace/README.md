@@ -8,7 +8,7 @@ See [`AGENTS.md`](AGENTS.md) for the catalog sync workflow.
 
 The generated catalog normalizes both application catalogs into these fields:
 
-- `edition`: `CE` or `Enterprise`.
+- `edition`: `CE` or `Enterprise` for edition-specific listings, or `editions`: an array of editions for shared listings.
 - `type`: `extension` or `integration`.
 - `section`: section title used by the docs page.
 - `categoryLabel`: card label shown immediately above the action button (`Enterprise Extension`, `Community Extension`, or `Integration`).

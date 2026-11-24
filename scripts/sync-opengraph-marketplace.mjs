@@ -31,7 +31,7 @@ function loadCatalog(repoPath) {
   return import(pathToFileURL(catalogPath).href);
 }
 
-function itemToDoc(item, { edition, section, categoryLabel, type, publicRoot, linkLabel }) {
+function itemToDoc(item, { edition, editions, section, categoryLabel, type, publicRoot, linkLabel }) {
   if (!item || typeof item !== 'object') fail(`${edition} catalog contains an invalid item.`);
 
   const name = item.name;
@@ -48,14 +48,14 @@ function itemToDoc(item, { edition, section, categoryLabel, type, publicRoot, li
     fail(`Logo for ${name} was not found under ${publicRoot}: ${logoPath}`);
   }
 
-  const extension = edition === 'CE' ? 'ce' : 'enterprise';
+  const extension = editions || edition === 'CE' ? 'ce' : 'enterprise';
   const logoRelative = join(extension, sourceRelative).split(sep).join('/');
   const targetLogo = join(assetRoot, logoRelative);
   mkdirSync(dirname(targetLogo), { recursive: true });
   copyFileSync(sourceLogo, targetLogo);
 
   return {
-    edition,
+    ...(editions ? { editions } : { edition }),
     type,
     section,
     categoryLabel,
@@ -94,34 +94,27 @@ function makeCatalog(catalogs, roots) {
     ...mapItems(catalogs.bhe.comingSoonExtensions, {
       edition: 'Enterprise', section: 'OpenGraph Enterprise Extensions in Development', categoryLabel: 'Enterprise Extension', type: 'extension', publicRoot: bhePublic, linkLabel: 'Sign up to learn more',
     }),
-    ...mapItems(catalogs.bhe.communityExtensions, {
-      edition: 'Enterprise', section: 'Community Extensions', categoryLabel: 'Community Extension', type: 'extension', publicRoot: bhePublic, linkLabel: 'View on GitHub',
-    }),
     ...mapItems(catalogs.bhe.integrations, {
-      edition: 'Enterprise', section: 'Integrations', categoryLabel: 'Integration', type: 'integration', publicRoot: bhePublic, linkLabel: 'Learn More',
+      edition: 'Enterprise', section: 'Enterprise Integrations', categoryLabel: 'Integration', type: 'integration', publicRoot: bhePublic, linkLabel: 'Learn More',
     }),
+    // Do not sync catalogs.ce.enterpriseExtensions/developmentExtensions; they are Enterprise offerings shown in the CE app.
+    // Community extension listings are shared across editions; sync the common list once.
     ...mapItems(catalogs.ce.communityExtensions, {
-      edition: 'CE', section: 'Community Extensions', categoryLabel: 'Community Extension', type: 'extension', publicRoot: cePublic, linkLabel: 'View on GitHub',
+      editions: ['Enterprise', 'CE'], section: 'Community Extensions', categoryLabel: 'Community Extension', type: 'extension', publicRoot: cePublic, linkLabel: 'View on GitHub',
     }),
+    // CE supplies community integrations; Enterprise integrations come from the BHE catalog above.
     ...mapItems(catalogs.ce.communityIntegrations, {
       edition: 'CE', section: 'Community Integrations', categoryLabel: 'Integration', type: 'integration', publicRoot: cePublic, linkLabel: 'Learn More',
-    }),
-    ...mapItems(catalogs.ce.enterpriseExtensions, {
-      edition: 'CE', section: 'OpenGraph Enterprise Extensions', categoryLabel: 'Enterprise Extension', type: 'extension', publicRoot: cePublic, linkLabel: 'Learn More',
-    }),
-    ...mapItems(catalogs.ce.developmentExtensions, {
-      edition: 'CE', section: 'OpenGraph Enterprise Extensions in Development', categoryLabel: 'Enterprise Extension', type: 'extension', publicRoot: cePublic, linkLabel: 'Sign up to learn more',
-    }),
-    ...mapItems(catalogs.ce.enterpriseIntegrations, {
-      edition: 'CE', section: 'Enterprise Integrations', categoryLabel: 'Integration', type: 'integration', publicRoot: cePublic, linkLabel: 'Learn More',
     }),
   );
 
   const identities = new Set();
   for (const item of items) {
-    const identity = `${item.edition}:${item.section}:${item.name}`.toLowerCase();
-    if (identities.has(identity)) fail(`Duplicate Marketplace item: ${identity}`);
-    identities.add(identity);
+    for (const edition of item.editions || [item.edition]) {
+      const identity = `${edition}:${item.section}:${item.name}`.toLowerCase();
+      if (identities.has(identity)) fail(`Duplicate Marketplace item: ${identity}`);
+      identities.add(identity);
+    }
   }
   return items;
 }
