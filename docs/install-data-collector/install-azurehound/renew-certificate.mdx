@@ -7,97 +7,50 @@ description: Replace an expiring certificate used by AzureHound Enterprise on Wi
 
 Rotate the certificate AzureHound Enterprise uses to authenticate to Microsoft Entra ID. AzureHound-generated certificates expire after one year.
 
-<Tip>
-  This procedure keeps the existing configuration and file paths in place while replacing the certificate and private key only.
-</Tip>
-
-Follow the steps in this procedure for AzureHound Enterprise running as a Windows service. If you run AzureHound in Docker or Kubernetes, update the certificate and key in the mounted files or secret for your deployment and restart the collector according to your platform's process.
-
 ## Prerequisites
 
 Before you begin, ensure you have the following:
 
-- Permission to stop and start the AzureHound service on its Windows host
-- Permission to read and update the service's `config.json` file and replace the certificate and private key at the paths configured in `cert` and `key`
-- Permission in Microsoft Entra ID to upload a certificate to the AzureHound application registration
-- The AzureHound Enterprise CLI used by your deployment
+- On the AzureHound Enterprise server:
+  - Permission to stop and start the AzureHound Enterprise service
+  - Permission to replace the existing AzureHound Enterprise certificate and key
+- In Microsoft Entra ID, permission to add/replace the certificate on the AzureHound Enterprise application
 
-Keep the private key and any configuration files containing credentials protected. Do not upload the private key to Microsoft Entra ID.
-
-## Renew the certificate
-
-The following steps guide you through renewing the certificate used by AzureHound Enterprise.
+You must use AzureHound's `configuration` command to generate new certificate and key files.
 
 <Steps>
-  <Step title="Record the service configuration and certificate paths">
+  <Step title="Stop the AzureHound service" />
 
-    1. On the AzureHound host, open the service configuration file. The default path is `C:\ProgramData\AzureHound\config.json`.
-    1. Record the values of `cert` and `key`, and note whether the configuration has a `keypass` value.
-    1. Back up the existing configuration, certificate, and private key to a protected location so you can restore them if needed.
-
+  <Step title="Identify the certificate and key locations">
+    1. Open AzureHound's `config.json` file, typically at `C:\ProgramData\azurehound\config.json`.
+    1. Expected locations are listed in the `cert` and `key` values.
   </Step>
-  <Step title="Generate a new certificate and private key">
 
-    1. Create a protected working directory for the generated files, such as `C:\AzureHound-Renewal`.
-    1. Run `azurehound.exe configure` with `--config` set to a temporary config path in that directory.
-    
-       This keeps the command from replacing the service configuration or another config in your user profile.
+  <Step title="Generate a new certificate and key">
+    1. Run the following command to start the AzureHound configuration process:
 
        ```cmd
-       azurehound.exe configure --config "C:\AzureHound-Renewal\config.json"
+       azurehound.exe configure
        ```
 
-    1. Enter the existing Azure region, Directory (tenant) ID, and Application (client) ID from the service configuration.
-    1. Select **Certificate**, confirm that you want to generate a certificate and key, and enter an optional private key passphrase.
-    1. Complete the remaining configuration prompts. The command writes a separate `config.json` and prints the locations of the generated `cert.pem` and `key.pem` files beside it.
-    
-       <Note>
-         Do not point the command at the service's `ProgramData` configuration file.
-       </Note>
+    1. Run the configuration in full. Use the existing `config.json` file as a reference when inputting values, like **Directory ID**.
 
-    1. Keep track of the generated certificate and key paths.
-    
-       <Note>
-         Do not use the newly generated `config.json` file as the service configuration.
-       </Note>
+    1. Choose **Authentication Method: Certificate**, and set an optional **Private Key Passphrase**.
 
+    1. The terminal prints the paths of the new certificate and private key, together with a new `config.json` file.
   </Step>
-  <Step title="Upload the new certificate to Microsoft Entra ID">
 
-    Upload the generated `cert.pem` to the AzureHound application registration by following [Upload certificate](/install-data-collector/install-azurehound/azure-configuration#certificate).
+  <Step title="Delete the new config.json file" />
 
-    Keep the existing certificate registered until you verify the collector is working with the new one.
+  <Step title="Move the new certificate and key">
+    Move the new certificate and private key into the locations referenced by the old `config.json` file.
 
+    If you set a private key passphrase, you must add it to the `config.json` file.
   </Step>
-  <Step title="Replace the certificate and key used by the service">
 
-    1. Stop the **AzureHound** service from the Windows Services application (`services.msc`).
-
-    1. Copy the new `cert.pem` and `key.pem` to the locations recorded for `cert` and `key`.
-    
-       Preserve the configured paths so the service continues to read the same files.
-
-    1. If you set a private key passphrase, update the `keypass` value in the service's existing `config.json`. If you did not set a passphrase, remove any old `keypass` value.
-
-    1. Remove the separate generated `config.json` after you have copied the certificate and key. It can contain sensitive configuration values.
-
-    1. Start the **AzureHound** service.
-
+  <Step title="Add the certificate to the Azure application">
+    See [AzureHound Enterprise Configuration](/install-data-collector/install-azurehound/azure-configuration#certificate) for details.
   </Step>
-  <Step title="Verify the collector and remove the old certificate">
 
-    In BloodHound Enterprise, confirm that the AzureHound collector client shows **Status: Ready** and a recent **Last Checkin**.
-
-    After confirming successful collection with the new certificate, remove the old certificate from the AzureHound application registration in Microsoft Entra ID.
-
-  </Step>
+  <Step title="Start the AzureHound service" />
 </Steps>
-
-## Troubleshoot certificate renewal
-
-If the service does not start or the collector does not check in:
-
-- Confirm that `cert` and `key` in the service configuration point to the replacement files and that the service account can read them.
-- If the private key is protected, confirm that `keypass` in the service configuration matches the passphrase used when you generated the key.
-- Confirm that you uploaded the matching `cert.pem` to the AzureHound application registration and that the old certificate is still registered until the new certificate works.
-- Restore the backed-up files and configuration if you need to return to the previous certificate while you troubleshoot.
