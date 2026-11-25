@@ -1,0 +1,56 @@
+---
+title: Renew an AzureHound Certificate
+description: Replace an expiring certificate used by AzureHound Enterprise on Windows.
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+Rotate the certificate AzureHound Enterprise uses to authenticate to Microsoft Entra ID. AzureHound-generated certificates expire after one year.
+
+## Prerequisites
+
+Before you begin, ensure you have the following:
+
+- On the AzureHound Enterprise server:
+  - Permission to stop and start the AzureHound Enterprise service
+  - Permission to replace the existing AzureHound Enterprise certificate and key
+- In Microsoft Entra ID, permission to add/replace the certificate on the AzureHound Enterprise application
+
+You must use AzureHound's `configuration` command to generate new certificate and key files.
+
+<Steps>
+  <Step title="Stop the AzureHound service" />
+
+  <Step title="Identify the certificate and key locations">
+    1. Open AzureHound's `config.json` file, typically at `C:\ProgramData\azurehound\config.json`.
+    1. Expected locations are listed in the `cert` and `key` values.
+  </Step>
+
+  <Step title="Generate a new certificate and key">
+    1. Run the following command to start the AzureHound configuration process:
+
+       ```cmd
+       azurehound.exe configure
+       ```
+
+    1. Run the configuration in full. Use the existing `config.json` file as a reference when inputting values, like **Directory ID**.
+
+    1. Choose **Authentication Method: Certificate**, and set an optional **Private Key Passphrase**.
+
+    1. The terminal prints the paths of the new certificate and private key, together with a new `config.json` file.
+  </Step>
+
+  <Step title="Delete the new config.json file" />
+
+  <Step title="Move the new certificate and key">
+    Move the new certificate and private key into the locations referenced by the old `config.json` file.
+
+    If you set a private key passphrase, you must add it to the `config.json` file.
+  </Step>
+
+  <Step title="Add the certificate to the Azure application">
+    See [AzureHound Enterprise Configuration](/install-data-collector/install-azurehound/azure-configuration#certificate) for details.
+  </Step>
+
+  <Step title="Start the AzureHound service" />
+</Steps>
