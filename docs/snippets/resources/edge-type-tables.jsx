@@ -119,7 +119,6 @@ export const nonTraversableADEdges = [
   { name: "IssuedSignedBy", href: "/resources/edges/issued-signed-by" },
   { name: "LocalToComputer", href: "/resources/edges/local-to-computer" },
   { name: "MemberOfLocalGroup", href: "/resources/edges/member-of-local-group" },
-  { name: "MemberOfZone", href: "/resources/edges/member-of-zone" },
   { name: "NTAuthStoreFor", href: "/resources/edges/nt-auth-store-for" },
   { name: "OIDGroupLink", href: "/resources/edges/oid-group-link" },
   { name: "OwnsRaw", href: "/resources/edges/owns-raw" },
