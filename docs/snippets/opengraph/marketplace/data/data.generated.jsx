@@ -301,6 +301,57 @@ export const marketplaceCatalog = [
     "type": "extension",
     "section": "Community Extensions",
     "categoryLabel": "Community Extension",
+    "name": "WinSSHound",
+    "author": "Robin Unglaub",
+    "publisher": "community",
+    "availability": "general",
+    "description": "Maps potential lateral movement through SSH server configurations in Active Directory environments.",
+    "href": "https://github.com/1r0BIT/WinSSHound",
+    "linkLabel": "View on GitHub",
+    "logo": "/assets/opengraph-marketplace/ce/img/product-logos/community-active-directory.png"
+  },
+  {
+    "editions": [
+      "Enterprise",
+      "CE"
+    ],
+    "type": "extension",
+    "section": "Community Extensions",
+    "categoryLabel": "Community Extension",
+    "name": "Agent-Hound",
+    "author": "Akiha Kusumoto and Shunri Kudo",
+    "publisher": "community",
+    "availability": "general",
+    "description": "Maps potential indirect prompt injection paths in AI agent environments for OpenGraph analysis.",
+    "href": "https://github.com/akhkusu/Agent-Hound",
+    "linkLabel": "View on GitHub",
+    "logo": "/assets/opengraph-marketplace/ce/img/product-logos/community-user-group.png"
+  },
+  {
+    "editions": [
+      "Enterprise",
+      "CE"
+    ],
+    "type": "extension",
+    "section": "Community Extensions",
+    "categoryLabel": "Community Extension",
+    "name": "IAMhounddog",
+    "author": "Virtue Security",
+    "publisher": "community",
+    "availability": "general",
+    "description": "Exports AWS IAM principals and permission relationships as OpenGraph data for access reviews.",
+    "href": "https://github.com/VirtueSecurity/IAMhounddog",
+    "linkLabel": "View on GitHub",
+    "logo": "/assets/opengraph-marketplace/ce/img/product-logos/aws.svg"
+  },
+  {
+    "editions": [
+      "Enterprise",
+      "CE"
+    ],
+    "type": "extension",
+    "section": "Community Extensions",
+    "categoryLabel": "Community Extension",
     "name": "Atlassian",
     "author": "werdhaihai",
     "publisher": "community",
@@ -420,6 +471,23 @@ export const marketplaceCatalog = [
     "type": "extension",
     "section": "Community Extensions",
     "categoryLabel": "Community Extension",
+    "name": "GitHoundPy",
+    "author": "Derrick Polakoff",
+    "publisher": "community",
+    "availability": "general",
+    "description": "A Python implementation of GitHound that exports GitHub organizations and permissions as OpenGraph data.",
+    "href": "https://github.com/CorvraLabs/GitHoundPy",
+    "linkLabel": "View on GitHub",
+    "logo": "/assets/opengraph-marketplace/ce/img/product-logos/github.svg"
+  },
+  {
+    "editions": [
+      "Enterprise",
+      "CE"
+    ],
+    "type": "extension",
+    "section": "Community Extensions",
+    "categoryLabel": "Community Extension",
     "name": "GitLab",
     "author": "Compass Security",
     "publisher": "community",
@@ -471,6 +539,40 @@ export const marketplaceCatalog = [
     "type": "extension",
     "section": "Community Extensions",
     "categoryLabel": "Community Extension",
+    "name": "Bloodhound-Kube",
+    "author": "Don Cowan",
+    "publisher": "community",
+    "availability": "general",
+    "description": "Collects Kubernetes and OpenShift resources, including custom resources, for OpenGraph analysis.",
+    "href": "https://github.com/HackinAhab/bloodhound-kube",
+    "linkLabel": "View on GitHub",
+    "logo": "/assets/opengraph-marketplace/ce/img/product-logos/community-kubernetes.png"
+  },
+  {
+    "editions": [
+      "Enterprise",
+      "CE"
+    ],
+    "type": "extension",
+    "section": "Community Extensions",
+    "categoryLabel": "Community Extension",
+    "name": "GoLinHound",
+    "author": "Lukas Klein",
+    "publisher": "community",
+    "availability": "general",
+    "description": "Maps Linux permissions, SSH authentication, and relationships between Linux hosts and directory identities.",
+    "href": "https://github.com/RantaSec/golinhound",
+    "linkLabel": "View on GitHub",
+    "logo": "/assets/opengraph-marketplace/ce/img/product-logos/community-network.png"
+  },
+  {
+    "editions": [
+      "Enterprise",
+      "CE"
+    ],
+    "type": "extension",
+    "section": "Community Extensions",
+    "categoryLabel": "Community Extension",
     "name": "Microsoft Exchange",
     "author": "FilipPwn",
     "publisher": "community",
@@ -513,6 +615,23 @@ export const marketplaceCatalog = [
     "href": "https://github.com/mordavid/NetworkHound",
     "linkLabel": "View on GitHub",
     "logo": "/assets/opengraph-marketplace/ce/img/product-logos/community-network.png"
+  },
+  {
+    "editions": [
+      "Enterprise",
+      "CE"
+    ],
+    "type": "extension",
+    "section": "Community Extensions",
+    "categoryLabel": "Community Extension",
+    "name": "npmHound",
+    "author": "Rahil Hassan",
+    "publisher": "community",
+    "availability": "general",
+    "description": "Models package dependencies and maintainer publishing permissions from the public npm registry.",
+    "href": "https://github.com/Dracaryzs/npmhound",
+    "linkLabel": "View on GitHub",
+    "logo": "/assets/opengraph-marketplace/ce/img/product-logos/community-user-group.png"
   },
   {
     "editions": [
@@ -683,6 +802,23 @@ export const marketplaceCatalog = [
     "href": "https://github.com/dazzyddos/PrivHound",
     "linkLabel": "View on GitHub",
     "logo": "/assets/opengraph-marketplace/ce/img/product-logos/community-windows.png"
+  },
+  {
+    "editions": [
+      "Enterprise",
+      "CE"
+    ],
+    "type": "extension",
+    "section": "Community Extensions",
+    "categoryLabel": "Community Extension",
+    "name": "BloodSOCer",
+    "author": "Mat Saulnier",
+    "publisher": "specterops",
+    "availability": "general",
+    "description": "Converts threat intelligence from MITRE ATT&CK, Sigma, and Atomic Red Team into OpenGraph data.",
+    "href": "https://github.com/Scoubi/BloodSOCer",
+    "linkLabel": "View on GitHub",
+    "logo": "/assets/opengraph-marketplace/ce/img/product-logos/community-specterops.png"
   },
   {
     "edition": "CE",
