@@ -188,6 +188,40 @@ Follow these steps to deploy OpenHound with Docker Compose and run a collector f
   </Step>
 </Steps>
 
+## Persist saved runs
+
+The OpenHound container image stores [saved runs](/openhound/configuration#saved-run-parameters) in `/var/lib/openhound/runs` on the container's filesystem. Saved runs survive a stop and start of the same container, but Docker deletes them when the container is removed or replaced, which can happen during an image update.
+
+To keep saved runs across container replacement, use the optional `docker-compose.persist.yml` file from the OpenHound examples. It mounts a separate named volume at `/var/lib/openhound` for each scheduler service.
+
+<Steps>
+  <Step title="Copy the persistence Compose file">
+    Copy the file into your OpenHound workspace:
+
+    ```bash
+    cp ~/openhound/OpenHound/example-configurations/bloodhound-enterprise/docker-compose.persist.yml ~/openhound/docker-compose.persist.yml
+    ```
+  </Step>
+
+  <Step title="Start the scheduler with both Compose files">
+    Pass both files on every Compose command for the service, for example:
+
+    ```bash
+    cd ~/openhound
+    docker compose -f docker-compose.yml -f docker-compose.persist.yml up -d scheduler-github
+    docker compose -f docker-compose.yml -f docker-compose.persist.yml logs -f scheduler-github
+    ```
+
+    Keep using the same Compose project name and file pair so Docker reuses the volumes. `docker compose down` keeps named volumes, but `docker compose down --volumes` deletes them and their data.
+  </Step>
+</Steps>
+
+<Warning>
+  Choose the storage mode before you start a collection. Adding a volume later hides any saved runs already in the container at that path, and Compose does not migrate them. Copy existing runs out of the container first.
+</Warning>
+
+The container runs as UID and GID `65532`. A new, empty named volume inherits the correct ownership. If you use an existing volume or a host bind mount such as `./collector-data/github:/var/lib/openhound` instead, make the directory writable by UID and GID `65532` before you start the scheduler.
+
 ## Troubleshooting
 
 - If Docker commands fail from WSL, confirm Docker Desktop WSL integration is enabled for your distribution.

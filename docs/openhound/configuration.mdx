@@ -369,6 +369,10 @@ The following parameters are configured under the `[normalize]` section in the c
 | `workers`        | NORMALIZE__WORKERS      | The amount of concurrent workers used during the DLT normalization phase | 1             |
 | `start_method`   | NORMALIZE__START_METHOD | The subprocess starting method (relevant for OS)                         | fork          |
 
+<Note>
+  If a normalization worker exits abruptly during conversion, for example because the container reached its memory limit, OpenHound retries the failed package once with a single normalization worker. The retry reuses the data already collected and does not call the source API again. If the retry also fails, the job fails. OpenHound cannot recover automatically if the job process or container itself is stopped.
+</Note>
+
 ### Load parameters
 
 The load phase is responsible for loading the converted OpenGraph files into the destination, which is either set to local file system or BloodHound Enterprise. 
@@ -380,3 +384,30 @@ The following parameters are configured under the `[load]` section in the config
 | `delete_completed_jobs`    | LOAD__DELETE_COMPLETED_JOBS    | Whether to delete completed jobs after a pipeline has completed.                                                | false          |
 | `truncate_staging_dataset` | LOAD__TRUNCATE_STAGING_DATASET | Whether to truncate the staging dataset after loading data into the destination.                                | false          |
 | `workers`                  | LOAD__WORKERS                  | The amount of concurrent workers used during the loading phase, is when uploading data to BloodHound Enterprise | 1             |
+
+### Saved run parameters
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise" style={{ width: "25%" }}/>
+
+Saved runs keep a copy of each scheduled collection job on disk. If a job fails after collection completes, you can [recover the saved run](/openhound/enterprise#recover-a-saved-run) without collecting data from the source again.
+
+The following parameter is configured under the `[openhound]` section in the configuration file.
+
+| OpenHound option | Environment Variable       | Description                                                                                       | Default Value |
+|------------------|----------------------------|---------------------------------------------------------------------------------------------------|---------------|
+| `runs_directory` | OPENHOUND__RUNS_DIRECTORY  | The directory where the scheduler stores a workspace for each job. Must be writable by the container user. | `/var/lib/openhound/runs` in the OpenHound container image. Not set otherwise. |
+
+```toml Example for ~/.dlt/config.toml with a saved runs directory
+[openhound]
+runs_directory = "/var/lib/openhound/runs"
+```
+
+The OpenHound container image enables saved runs at `/var/lib/openhound/runs` when `runs_directory` is not set. A `runs_directory` value in `config.toml` overrides the image default, and the `OPENHOUND__RUNS_DIRECTORY` environment variable overrides both. Set `OPENHOUND__RUNS_DIRECTORY` to an empty string to turn off saved runs.
+
+Each job gets a new run ID, and the scheduler logs the run directory when the job starts. A run directory contains the collected resource files, the pipeline state, the generated graph files, and a `run.json` file that records the job and its phase checkpoints.
+
+<Warning>
+  OpenHound never deletes saved runs automatically, including successful runs. Plan disk capacity for the runs directory, and remove a run only after you no longer need its data and no process is using it.
+</Warning>
+
+By default, saved runs are stored on the container's filesystem and are lost when the container is removed or replaced. To keep them, mount persistent storage at the runs directory. See [Deploy with Docker Compose](/openhound/deploy-with-compose#persist-saved-runs) or [Deploy with Kubernetes](/openhound/deploy-with-kubernetes#persist-saved-runs).

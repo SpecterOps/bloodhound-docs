@@ -57,6 +57,43 @@ kubectl create -n openhound secret generic okta-client-secret \
   --from-file=okta.json=./okta.json
 ```
 
+## Persist saved runs
+
+[Saved runs](/openhound/configuration#saved-run-parameters) stored on the container's filesystem can be lost when Kubernetes replaces the container or pod, including during a Helm upgrade. Persistence is disabled by default in the chart.
+
+To keep saved runs, create a PersistentVolumeClaim (PVC) in the same namespace as the Helm release. Choose a storage capacity and StorageClass that suit your cluster, and use a separate claim for each collector release.
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: openhound-jamf-runs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+```
+
+Then reference the claim in your `values.yaml`:
+
+```yaml
+persistence:
+  enabled: true
+  existingClaim: openhound-jamf-runs
+  mountPath: /var/lib/openhound/runs
+```
+
+The chart mounts the claim read-write and uses `mountPath` as the default saved runs directory. If you also set `runs_directory` or `OPENHOUND__RUNS_DIRECTORY`, make sure it points inside the mounted directory, because only files written under the mount persist.
+
+Keep the following in mind when you enable persistence:
+
+- Upgrades use the `Recreate` deployment strategy, so the old pod stops before the new pod starts. This causes collector downtime, so schedule upgrades between collection jobs.
+- The pod runs as user and group `65532` with `fsGroup` `65532`. Make sure the storage driver supports these permissions and that existing data is writable by that user.
+- Enabling persistence hides any files already at the mount path and does not migrate saved runs from an old pod. Copy any runs you need before you upgrade.
+- The chart references the existing PVC but never creates or deletes it. Reusing the claim keeps its data across upgrades and reinstalls. Deleting the claim or its backing volume can delete the data, depending on your cluster's storage policy.
+
 ## Installation
 
 Create a `values.yaml` file with your collector configuration using [values.example.yaml](https://raw.githubusercontent.com/SpecterOps/OpenHound/refs/heads/main/deployments/helm/values.example.yaml) as a reference.
