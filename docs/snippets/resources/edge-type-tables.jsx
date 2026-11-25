@@ -53,7 +53,6 @@ export const traversableADEdges = [
   { name: "SameForestTrust", href: "/resources/edges/same-forest-trust" },
   { name: "ServerIs", href: "/resources/edges/server-is" },
   { name: "SpoofSIDHistory", href: "/resources/edges/spoof-sid-history" },
-  { name: "SQLAdmin", href: "/resources/edges/sql-admin" },
   { name: "SyncedToADUser", href: "/resources/edges/synced-to-ad-user" },
   { name: "SyncedToEntraUser", href: "/resources/edges/synced-to-entra-user" },
   { name: "SyncLAPSPassword", href: "/resources/edges/sync-laps-password" },
