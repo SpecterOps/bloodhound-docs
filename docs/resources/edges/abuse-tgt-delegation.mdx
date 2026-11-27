@@ -19,11 +19,11 @@ Alternatively, attackers can target other privileged computers or users besides 
 The attack will fail if the target is a member of Protected Users or is marked as not trusted for delegation, as their TGTs will not be sent to hosts with unconstrained delegation. You can identify all protected principals using the following Cypher query in BloodHound:
 
 ```cypher
-MATCH (g:Group)
+OPTIONAL MATCH (n:Base)
+WHERE n.sensitive = TRUE
+OPTIONAL MATCH p = (:Base)-[:MemberOf*..]->(g:Group)
 WHERE g.objectid ENDS WITH "-525"
-MATCH (n:Base)
-WHERE n.sensitive = TRUE OR (n)-[:MemberOf*..]->(g)
-RETURN n
+RETURN n,p
 LIMIT 1000
 ```
 
