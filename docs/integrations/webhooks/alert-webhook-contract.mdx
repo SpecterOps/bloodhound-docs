@@ -1,0 +1,191 @@
+---
+title: Alert Webhook Contract
+description: Validate and process signed alert events sent to BloodHound Enterprise webhooks.
+---
+
+import EarlyAccessAccessNote from '/snippets/feature-flag-user-managed.mdx';
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+BloodHound Enterprise sends signed HTTPS POST requests to [configured alert webhooks](/manage-bloodhound/alerts/configure).
+
+<EarlyAccessAccessNote feature="Alerts" />
+
+This page documents the general webhook contract and the event-specific contracts currently supported. Use it to validate requests, route events, and process deliveries safely.
+
+## General webhook contract
+
+The webhook contract defines how BloodHound Enterprise sends, signs, and retries alert events. The [event-specific contract](/integrations/webhooks/alert-webhook-contract#collector-offline-event-contract) below defines the trigger and the contents of the event payload.
+
+### Receive the request
+
+BloodHound Enterprise sends a JSON request with the following headers:
+
+| Header | Purpose |
+| --- | --- |
+| `Content-Type: application/json` | Identifies the request body format. |
+| `X-Bloodhound-Signature` | Carries the signature timestamp and HMAC-SHA256 signature. |
+| `X-Bloodhound-Event-Type` | Lets your receiver route the alert event without parsing the body. |
+| `X-Bloodhound-Event-ID` | Identifies the alert event for idempotent processing. |
+
+Return a 2xx response after your receiver accepts the event. BloodHound Enterprise treats every other HTTP status, including redirects, as a failed delivery.
+
+### Event envelope
+
+The envelope stays stable across event versions. The `version` field identifies the shape of the `data` object.
+
+The following example shows the common envelope. The `event_type`, `version`, and `data` values depend on the event-specific contract:
+
+```json
+{
+  "event_id": "018f0e7b-60d6-7b9d-8f4a-2b8f68eb4aa0",
+  "event_type": "example.event",
+  "version": 1,
+  "timestamp": "2026-08-28T14:17:00Z",
+  "message": "Human-readable summary for the event.",
+  "data": {
+    "event_specific_field": "event-specific value"
+  }
+}
+```
+
+<ResponseField name="event_id" type="UUID" required>
+  Stable alert event identifier. It matches `X-Bloodhound-Event-ID` and is used to deduplicate deliveries.
+</ResponseField>
+<ResponseField name="event_type" type="string" required>
+  Alert event type identifier. Use it to route the event.
+</ResponseField>
+<ResponseField name="version" type="integer" required>
+  Payload data version. The event-specific contract defines the shape of the `data` object for each version.
+</ResponseField>
+<ResponseField name="timestamp" type="RFC 3339 timestamp" required>
+  Time BloodHound Enterprise created the alert event.
+</ResponseField>
+<ResponseField name="message" type="string" required>
+  Human-readable summary.
+</ResponseField>
+<ResponseField name="data" type="object" required>
+  Event-specific details.
+</ResponseField>
+
+### Verify the signature
+
+BloodHound Enterprise signs the exact raw request body with your alert webhook's HMAC secret. The signature header uses the following format:
+
+```text
+t=<unix-timestamp>,v1=<hex-hmac-sha256>
+```
+
+The signed value is the timestamp, a period, and the unmodified request body:
+
+```text
+HMAC-SHA256(secret, "{t}.{raw body}")
+```
+
+Do not parse and reserialize JSON before verification. That changes the body and invalidates the signature.
+
+### Delivery behavior
+
+| Behavior | Value |
+| --- | --- |
+| Request method | HTTPS POST |
+| Success response | Any 2xx HTTP response |
+| Request timeout | 7 seconds |
+| TLS requirement | TLS 1.2 or later |
+| Automatic retries | Up to seven total attempts: the initial delivery and up to six retries |
+| Retry timing | The first retry is scheduled after up to about six minutes. Later retries use a 4x backoff with up to 20% subtract-only jitter. The retry worker runs about every six minutes. |
+| Retry processing | The retry worker processes up to 30 due deliveries per run. A backlog can delay a retry beyond its scheduled time. |
+| Event History retention | Events and their delivery attempts are retained for 90 days. |
+
+BloodHound Enterprise treats a delivery as failed when the request times out, encounters a transport or TLS error, or returns a non-2xx response. Failed deliveries are retried according to the table and dead-lettered after the final failed attempt. Use the **Event History** page or the [retry attempt API](/reference/alerts/retry-alert-attempt) to requeue a failed delivery. A manual requeue gives it one additional send attempt.
+
+Retries and manual requeues can deliver the same event more than once. Use `event_id` to deduplicate events and make processing idempotent. Retries retain the event ID and payload timestamp but receive a new signature timestamp.
+
+Delivery order is not guaranteed. Initial deliveries and retries run independently, so events can arrive out of order. Use the event timestamp for context, not the arrival time.
+
+BloodHound Enterprise does not enforce a replay-timestamp tolerance. The examples reject signatures whose `t` value differs from the receiver's clock by more than five minutes. Set and enforce an appropriate window in your receiver.
+
+Return a 2xx response only after your receiver has accepted the event for processing. If your receiver cannot accept the event, return a non-2xx response so BloodHound Enterprise can record the failure and retry it when eligible.
+
+## Collector Offline event contract
+
+| Alert event | Identifier | Data version | Trigger |
+| --- | --- | --- | --- |
+| Collector Offline | `collector.status.offline` | `1` | A collector has not checked in for at least 20 minutes. |
+
+BloodHound Enterprise evaluates collector status about every seven minutes. It suppresses another alert event for the same collector for seven days and does not issue a recovery event.
+
+### Payload version 1
+
+The following example shows the general event envelope with the Collector Offline `data` object:
+
+```json
+{
+  "event_id": "018f0e7b-60d6-7b9d-8f4a-2b8f68eb4aa0",
+  "event_type": "collector.status.offline",
+  "version": 1,
+  "timestamp": "2026-08-28T14:17:00Z",
+  "message": "Collector example-collector may be offline. Last checkin time: 2026-08-28T13:55:00Z",
+  "data": {
+    "collector_id": "07165367-2977-4fdf-8b4f-6bff3bfe62f3",
+    "name": "example-collector",
+    "hostname": "collector01.example.test",
+    "ip_address": "192.0.2.10",
+    "type": "sharphound",
+    "version": "2.15.0",
+    "last_checkin": "2026-08-28T13:55:00Z",
+    "created_at": "2026-05-02T09:00:00Z",
+    "updated_at": "2026-08-28T13:55:00Z",
+    "auth_type": "bloodhound",
+    "issuer_address": "https://bloodhound.example.test",
+    "issuer_address_override": ""
+  }
+}
+```
+
+Version 1 includes the following fields in the `data` object. Every property is always present, non-null, and never omitted.
+
+An empty string or zero timestamp can appear when the corresponding database column has no value. These rules describe events generated by the current collector-offline producer.
+
+<ResponseField name="collector_id" type="UUID string" required>
+  Stable collector identifier.
+</ResponseField>
+<ResponseField name="name" type="string" required>
+  Collector name.
+</ResponseField>
+<ResponseField name="hostname" type="string" required>
+  Collector host name.
+</ResponseField>
+<ResponseField name="ip_address" type="string" required>
+  Collector IP address.
+</ResponseField>
+<ResponseField name="type" type="string" required>
+  Declared collector type: `azurehound`, `sharphound`, or `openhound`.
+</ResponseField>
+<ResponseField name="version" type="string" required>
+  Collector software version.
+</ResponseField>
+<ResponseField name="last_checkin" type="RFC 3339 timestamp string" required>
+  Collector's last check-in time in RFC 3339 UTC format.
+</ResponseField>
+<ResponseField name="created_at" type="RFC 3339 timestamp string" required>
+  Time the collector record was created.
+</ResponseField>
+<ResponseField name="updated_at" type="RFC 3339 timestamp string" required>
+  Time the collector record was last updated.
+</ResponseField>
+<ResponseField name="auth_type" type="string" required>
+  Declared collector authentication type: `bloodhound` or `windows`.
+</ResponseField>
+<ResponseField name="issuer_address" type="string" required>
+  Collector issuer address.
+</ResponseField>
+<ResponseField name="issuer_address_override" type="string" required>
+  Collector issuer address override. An empty string may indicate that no override is configured.
+</ResponseField>
+
+The event builder does not validate the declared collector type or authentication type against an enum.
+
+<Warning>
+  The payload can include infrastructure and collector metadata. Protect the receiving endpoint, restrict who can access stored payloads, and do not send the payload to an unapproved third party.
+</Warning>
