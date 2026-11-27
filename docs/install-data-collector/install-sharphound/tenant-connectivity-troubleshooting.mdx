@@ -1,0 +1,85 @@
+---
+title: Troubleshoot SharpHound Enterprise Connectivity
+description: Diagnose TLS trust failures that prevent SharpHound Enterprise from connecting to your BloodHound Enterprise tenant.
+---
+
+<img noZoom src="/assets/enterprise-edition-pill-tag.svg" alt="Applies to BloodHound Enterprise only"/>
+
+Use this guide when the SharpHound Enterprise service starts and then stops, or does not check in with your BloodHound Enterprise tenant, and its log contains an error such as:
+
+```text
+ERROR|RequestTimedOutError with Message='The request for handler GetSelf timed out'
+```
+
+This message means the initial `GetSelf` request failed; it does not identify the cause by itself. A network, proxy, or TLS certificate trust problem can cause this failure. The checks below help distinguish them.
+
+## Check connectivity and TLS
+
+Run these commands on the SharpHound Enterprise server in PowerShell. Replace `CODENAME` with your BloodHound Enterprise tenant codename and, if applicable, replace the proxy placeholder with the proxy configured for the collector.
+
+1. Check that the server can reach the tenant on TCP port `443`:
+
+   ```powershell
+   Test-NetConnection CODENAME.bloodhoundenterprise.io -Port 443
+   ```
+
+   If `TcpTestSucceeded` is `False`, troubleshoot the firewall, routing, or proxy path first. This result does not test certificate trust.
+
+2. Test the HTTPS connection with `curl.exe`. Use `curl.exe`, not `curl`, because Windows PowerShell can map `curl` to `Invoke-WebRequest`.
+
+   Without an explicit proxy:
+
+   ```powershell
+   curl.exe -v https://CODENAME.bloodhoundenterprise.io/
+   ```
+
+   Through a proxy:
+
+   ```powershell
+   curl.exe -x http://proxy.example.com:8080 -v https://CODENAME.bloodhoundenterprise.io/
+   ```
+
+   A TLS trust error such as `SEC_E_UNTRUSTED_ROOT` indicates that the TLS client cannot build a trusted certificate chain. A successful TLS handshake means this `curl.exe` test trusts the chain; it does not rule out a different proxy or TLS configuration used by the SharpHound service. Some `curl.exe` builds use a trust store other than Windows Schannel; check `curl.exe -V` if its result differs from the service behavior.
+
+## Check the computer certificate store
+
+Open the computer certificate store by running `certlm.msc`. Go to **Trusted Root Certification Authorities** > **Certificates** and check for the root certificates required by the certificate chain presented by your BloodHound Enterprise tenant URL.
+
+For the reported Amazon Trust Services issue, support identified these certificates:
+
+| Certificate subject | Role in the reported chain |
+| --- | --- |
+| `CN=Amazon Root CA 1, O=Amazon, C=US` | Amazon Trust Services root |
+| `CN=Starfield Services Root Certificate Authority - G2, O=Starfield Technologies, Inc., L=Scottsdale, S=Arizona, C=US` | Cross-signing root that can provide an alternate trust path |
+
+Certificate chains can vary. Confirm the chain presented by your BloodHound Enterprise tenant URL and use the certificate names and fingerprints in the [Amazon Trust Services repository](https://www.amazontrust.com/repository/) before importing certificates. Do not use a certificate based only on its filename.
+
+## Install missing Amazon Trust Services roots
+
+Download the required certificate files in DER format from the Amazon Trust Services repository. Compare each file's SHA-256 fingerprint with the repository entry before importing it.
+
+From an elevated PowerShell session, import the certificates that are missing from the computer's root store. Adjust the file paths to where you saved the downloaded certificates:
+
+```powershell
+Import-Certificate -FilePath .\AmazonRootCA1.cer -CertStoreLocation Cert:\LocalMachine\Root
+Import-Certificate -FilePath .\SFSRootCAG2.cer -CertStoreLocation Cert:\LocalMachine\Root
+```
+
+You can also import a certificate through `certlm.msc`: right-click **Trusted Root Certification Authorities**, select **All Tasks** > **Import**, then follow the prompts.
+
+Restart the service and repeat the HTTPS check:
+
+```powershell
+Restart-Service -Name "SHDelegator"
+curl.exe -v https://CODENAME.bloodhoundenterprise.io/
+```
+
+The connection should complete without a certificate trust error, the service should remain running, and the SharpHound Enterprise collector client should check in with BloodHound Enterprise.
+
+## Check for TLS inspection
+
+A proxy, endpoint detection and response (EDR) tool, or antivirus product may inspect TLS traffic and replace the certificate presented by your BloodHound Enterprise tenant URL with a certificate issued by your organization's inspection authority. This can cause a trust error even when the Amazon roots are installed.
+
+Ask your security team to verify whether TLS inspection applies to `CODENAME.bloodhoundenterprise.io`. If it does, configure the approved exclusion for your tenant and repeat the TLS check.
+
+For additional context, see the [AWS Certificate Manager overview](https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html) and the [Amazon Trust Services repository](https://www.amazontrust.com/repository/).
